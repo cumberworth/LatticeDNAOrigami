@@ -1,0 +1,25 @@
+{
+    "origami": {
+        "cyclic": true,
+        "identities": [
+            [-1],
+            [1]
+        ],
+        "sequences": [
+            "TCCCTCCCTAGATAGA"
+        ],
+        "configurations": [
+            {
+                "step": 0,
+                "chains": [
+                    {
+                        "index": 0,
+                        "identity": 0,
+                        "positions": [[0, 0, 0]],
+                        "orientations": [[0, 0, -1]]
+                    }
+                ]
+            }
+        ]
+    }
+}
