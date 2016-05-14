@@ -50,4 +50,4 @@ sim = GCMCSimulation(origami_system, move_settings, output_file)
 
 # Run
 N = 100000
-sim.run(N)
+sim.run(N, logging=10)
