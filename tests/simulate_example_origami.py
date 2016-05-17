@@ -11,14 +11,15 @@ from lattice_dna_origami.lattice_origami_domains import *
 #input_file = JSONInputFile('simple_loop.json')
 #input_file = JSONInputFile('cyclic_example.json')
 #input_file = JSONInputFile('single_domain.json')
-input_file = JSONInputFile('snodin_unbound.json')
+#input_file = JSONInputFile('snodin_unbound.json')
+input_file = JSONInputFile('snodin_assembled.json')
 step = 0
 
 # Set conditions
-temp = 330
+temp = 343
 
 # Staple strand concentration (M)
-strand_M = 1e-3
+strand_M = 1
 
 # Cation concentration (M)
 #cation_M = 1
@@ -29,11 +30,11 @@ cation_M = 0.5
 origami_system = OrigamiSystemSixteen(input_file, step, temp, strand_M, cation_M)
 
 # Specify moves to be used and associated probabilities
-move_settings = {MOVETYPE.CB_EXCHANGE_STAPLE: 0.25,
-                 MOVETYPE.CB_REGROW_STAPLE: 0.25,
-                 MOVETYPE.CB_REGROW_SCAFFOLD: 0.25,
-                 #MOVETYPE.CB_CONSERVED_TOPOLOGY: 0.25,
-                 MOVETYPE.ROTATE_ORIENTATION_VECTOR: 0.25}
+move_settings = {#MOVETYPE.CB_EXCHANGE_STAPLE: 0.25,
+                 #MOVETYPE.CB_REGROW_STAPLE: 0.25,
+                 #MOVETYPE.CB_REGROW_SCAFFOLD: 0.25,
+                 MOVETYPE.CB_CONSERVED_TOPOLOGY: 1}
+                 #MOVETYPE.ROTATE_ORIENTATION_VECTOR: 0.25}
 
 # Specify output file type and name
 #output_file_name = 'simple_loop_replica-0.hdf5'
