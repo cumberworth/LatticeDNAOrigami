@@ -31,9 +31,9 @@ origami_system = OrigamiSystemSixteen(input_file, step, temp, strand_M, cation_M
 
 # Specify moves to be used and associated probabilities
 move_settings = {MOVETYPE.CB_EXCHANGE_STAPLE: 0.25,
-                 MOVETYPE.CB_REGROW_STAPLE: 0.25,
+                 #MOVETYPE.CB_REGROW_STAPLE: 0.25,
                  MOVETYPE.CB_REGROW_SCAFFOLD: 0.25,
-                 #MOVETYPE.CB_CONSERVED_TOPOLOGY: 0.25,
+                 MOVETYPE.CB_CONSERVED_TOPOLOGY: 0.25,
                  MOVETYPE.ROTATE_ORIENTATION_VECTOR: 0.25}
 
 # Specify output file type and name
