@@ -12,7 +12,7 @@ from lattice_dna_origami.lattice_origami_domains import *
 
 def replica_sim(swap_freq, config_write_freq, count_write_freq, strand_M,
         cation_M, move_settings, input_filename, step, output_filename, temp,
-        pipe):
+        pipe, rep):
 
     # Simulation setup
     input_file = JSONInputFile(input_filename)
@@ -64,26 +64,32 @@ def exchange_accepted(energy1, energy2, temp1, temp2):
     return accept
 
 def replica_exchange(pipes, reps, temps, swaps, replicas):
-    energies = []
     pair = 0
+
+    # Indexed by temp index, contains indices to reps
+    tempi_to_repi = list(range(reps))
     for swap in range(swaps):
 
         # Wait for reps to finish
+        energies = []
         for pipe in pipes:
             pipe.poll(timeout=None)
             energies.append(pipe.recv())
 
-        print(energies)
         # Deal with ends that have no partner
         if reps % 2 != 0:
             if pair == 0:
-                pipes[0].send(temps[0])
+                repi = tempi_to_repi[0]
+                pipes[repi].send(temps[0])
             else:
-                pipes[-1].send(temps[-1])
+                repi = tempi_to_repi[-1]
+                pipes[repi].send(temps[-1])
         else:
             if pair == 1:
-                pipes[0].send(temps[0])
-                pipes[-1].send(temps[-1])
+                repi = tempi_to_repi[0]
+                pipes[repi].send(temps[0])
+                repi = tempi_to_repi[-1]
+                pipes[repi].send(temps[-1])
             else:
                 pass
 
@@ -91,17 +97,19 @@ def replica_exchange(pipes, reps, temps, swaps, replicas):
         for i in range(pair, reps - pair, 2):
             temp1 = temps[i]
             temp2 = temps[i + 1]
-            energy1 = energies[i]
-            energy2 = energies[i + 1]
+            repi1 = tempi_to_repi[i]
+            repi2 = tempi_to_repi[i + 1]
+            energy1 = energies[repi1]
+            energy2 = energies[repi2]
             if exchange_accepted(energy1, energy2, temp1, temp2):
-                temp1, temp2 = temp2, temp1
-                temps[i] = temp1
-                temps[i + 1] = temp2
+                repi1, repi2 = repi2, repi1
+                tempi_to_repi[i] = repi1
+                tempi_to_repi[i + 1] = repi2
             else:
                 pass
 
-            pipes[i].send(temp1)
-            pipes[i + 1].send(temp2)
+            pipes[repi1].send(temp1)
+            pipes[repi2].send(temp2)
 
         # Switch pair
         if pair == 0:
@@ -110,7 +118,7 @@ def replica_exchange(pipes, reps, temps, swaps, replicas):
             pair = 0
             
         # Print replica temperatures
-        print(*temps, sep=' ')
+        print(*tempi_to_repi, sep=' ')
 
     # Kill all replicas (this a very harsh method)
     for replica in replicas:
@@ -120,29 +128,29 @@ def main():
     reps = 4
     temps = [320, 330, 340, 350]
 
-    swap_freq = 1000
-    prod_steps = 10000
+    swap_freq = 10000
+    prod_steps = 100000
     if not value_is_multiple(prod_steps, swap_freq):
         print('Number of production steps must be a multiple of swap frequency.')
         sys.exit()
 
     swaps = prod_steps // swap_freq
 
-    config_write_freq = 1000
-    count_write_freq = 1000
-    if not value_is_multiple(swap_freq, config_write_freq) or not (
-            value_is_multiple(swap_freq, count_write_freq)):
-        print('Write swap frequencies must be multiples of write frequencies.')
-        sys.exit()
+    config_write_freq = 10000
+    count_write_freq = 0
+    #if not value_is_multiple(swap_freq, config_write_freq) or not (
+    #        value_is_multiple(swap_freq, count_write_freq)):
+    #    print('Write swap frequencies must be multiples of write frequencies.')
+    #    sys.exit()
 
     strand_M = 1e-3
     cation_M = 1
     move_settings = {MOVETYPE.EXCHANGE_STAPLE: 0.25,
-                     MOVETYPE.REGROW_STAPLE: 0.25,
-                     MOVETYPE.REGROW_SCAFFOLD: 0.25,
+                     MOVETYPE.CB_REGROW_STAPLE: 0.25,
+                     MOVETYPE.CB_CONSERVED_TOPOLOGY: 0.25,
                      MOVETYPE.ROTATE_ORIENTATION_VECTOR: 0.25}
 
-    input_filename = 'simple_loop_linear.json'
+    input_filename = 'snodin_unbound.json'
     step = 0
     output_root = 'remd_test'
 
@@ -156,7 +164,7 @@ def main():
         replica = multi.Process(target=replica_sim, args=(swap_freq,
             config_write_freq, count_write_freq, strand_M, cation_M,
             move_settings, input_filename, step, output_filename, temp,
-            pipe_replicaside))
+            pipe_replicaside, rep))
 
         replica.start()
         pipe_masterside.send(temp)
