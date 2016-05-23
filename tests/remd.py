@@ -159,7 +159,7 @@ def main():
     for rep, temp in enumerate(temps):
         pipe_masterside, pipe_replicaside = multi.Pipe()
         pipes_masterside.append(pipe_masterside)
-        output_filename = output_root + '_{}'.format(rep)
+        output_filename = output_root + '_{}.hdf5'.format(rep)
 
         replica = multi.Process(target=replica_sim, args=(swap_freq,
             config_write_freq, count_write_freq, strand_M, cation_M,
