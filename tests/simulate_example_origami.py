@@ -39,16 +39,15 @@ move_settings = {MOVETYPE.CB_EXCHANGE_STAPLE: 0.25,
 # Specify output file type and name
 #output_file_name = 'simple_loop_replica-0.hdf5'
 output_file_name = 'single_domain.hdf5'
-config_write_freq = 0
-count_write_freq = 1
 
 output_file = HDF5OutputFile(output_file_name, origami_system,
-        config_write_freq=config_write_freq,
-        count_write_freq=count_write_freq)
+        config_write_freq=0,
+        count_write_freq=1,
+        energy_write_freq=1)
 
 # Setup up simulation
 sim = GCMCSimulation(origami_system, move_settings, output_file)
 
 # Run
-N = 100000
+N = 1000
 sim.run(N, logging=10)
