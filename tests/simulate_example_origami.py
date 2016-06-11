@@ -12,7 +12,7 @@ from lattice_dna_origami.lattice_origami_domains import *
 #input_file = JSONInputFile('cyclic_example.json')
 #input_file = JSONInputFile('single_domain.json')
 #input_file = JSONInputFile('snodin_unbound.json')
-input_file = JSONInputFile('snodin_assembled.json')
+input_file = JSONInputFile('four_domain_loop.json')
 step = 0
 
 # Set conditions
@@ -38,12 +38,12 @@ move_settings = {MOVETYPE.CB_EXCHANGE_STAPLE: 0.25,
 
 # Specify output file type and name
 #output_file_name = 'simple_loop_replica-0.hdf5'
-output_file_name = 'single_domain.hdf5'
+output_file_name = 'four_domain_loop.hdf5'
 
 output_file = HDF5OutputFile(output_file_name, origami_system,
-        config_write_freq=0,
-        count_write_freq=1,
-        energy_write_freq=1)
+        config_write_freq=1,
+        count_write_freq=0,
+        energy_write_freq=10)
 
 # Setup up simulation
 sim = GCMCSimulation(origami_system, move_settings, output_file)
