@@ -1,6 +1,6 @@
 {
     "origami": {
-        "cyclic": true,
+        "cyclic": false,
         "identities": [
             [-1],
             [1]
