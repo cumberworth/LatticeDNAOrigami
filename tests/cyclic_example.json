@@ -8,7 +8,7 @@
             [3, 6],
             [5, 4]
         ],
-        "sequences": [
+        "sequences": [[
             "TCCCTCCCTAGATAGA",
             "GGGTGGGTGGGAGGGA",
             "CTCACTCAAAGGAAGG",
@@ -17,7 +17,19 @@
             "GCTAGCTAGCGGGCGG",
             "GATTCCATAAGATAAG",
             "GCTAGCTAGCCAGCGG"
-        ],
+        ], [
+            "AGGGAGGGATCTATCT",
+            "CGATCGATCGGTCGCC"
+        ], [
+            "CTAAGGTATTCTATTC",
+            "CCCACCCACCCTCCCT"
+        ], [
+            "GAGTGAGTTTCCTTCC",
+            "CGATCGATCGCCCGCC"
+        ], [
+            "CCTCCTTATTCTATTC",
+            "AACAACAACTTAACTT"
+        ]],
         "configurations": [
             {
                 "step": 0,

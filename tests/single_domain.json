@@ -5,9 +5,9 @@
             [-1],
             [1]
         ],
-        "sequences": [
+        "sequences": [[
             "TCCCTCCCTAGATAGA"
-        ],
+        ]],
         "configurations": [
             {
                 "step": 0,
