@@ -32,12 +32,12 @@ cation_M = 1
 origami_system = OrigamiSystemSixteen(input_file, step, temp, strand_M, cation_M, misbinding=False)
 
 # Specify moves to be used and associated probabilities
-move_settings = {#MOVETYPE.EXCHANGE_STAPLE: 1/3,
+move_settings = {MOVETYPE.EXCHANGE_STAPLE: 1/4,
                  #MOVETYPE.IDENTITY: 1}
-                 #MOVETYPE.CB_REGROW_STAPLE: 1/2,
-                 MOVETYPE.CB_REGROW_SCAFFOLD: 1/2,
+                 MOVETYPE.REGROW_STAPLE: 1/4,
+                 MOVETYPE.REGROW_SCAFFOLD: 1/4,
                  #MOVETYPE.CB_CONSERVED_TOPOLOGY: 1/4,
-                 MOVETYPE.ROTATE_ORIENTATION_VECTOR: 1/2}
+                 MOVETYPE.ROTATE_ORIENTATION_VECTOR: 1/4}
 
 # Specify output file type and name
 #output_file_name = 'simple_loop_replica-0.hdf5'
