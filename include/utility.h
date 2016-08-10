@@ -21,27 +21,36 @@ namespace Utility {
     struct IndexOutOfRange {};
     struct OrigamiMisuse {};
 
-    // Container for chain domain indices
-    struct CDPair {
-        int c;
-        int d;
-        bool operator==(const CDPair& cd_j) {return (this->c == cd_j.c and
-               this->d == cd_j.d);};
-    };
-
-    inline bool operator==(const CDPair& cd_i, const CDPair& cd_j) {return (cd_i.c == cd_j.c
-            and cd_i.d == cd_j.d);};
+    enum class Occupancy {
+          unassigned,
+          unbound,
+          bound,
+          misbound
+      };
 
     // Vector for Z3 space
-    class VectorThree: public array<int, 3> {
+    class VectorThree {
         public:
-            VectorThree(int x, int y, int z): array<int, 3> {{x, y, z}} {};
-            VectorThree(): array<int, 3> {{}} {};
-            VectorThree operator+(const VectorThree& v_2);
-            VectorThree operator-(const VectorThree& v_2);
+            VectorThree(int x, int y, int z): m_container {{x, y, z}} {};
+            VectorThree(): m_container {{0, 0, 0}} {};
+
             VectorThree operator-();
+
+            VectorThree operator+(const VectorThree& v_2) const;
+            VectorThree operator-(const VectorThree& v_2) const;
+            bool operator!=(const VectorThree& v_2) const;
+
+            int& operator[](const size_t& i) {return m_container[i];};
+            const int& at(const size_t& i) const {return m_container.at(i);};
+
             VectorThree rotate_half(VectorThree axis);
+
+        private:
+            array<int, 3> m_container;
     };
+
+    // Hash needs this, ambiguous to also have method
+    bool operator==(const VectorThree& v1, const VectorThree& v2);
 
     // Unit vectors
     const VectorThree xhat {1, 0, 0};

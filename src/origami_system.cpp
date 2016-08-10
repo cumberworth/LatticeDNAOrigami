@@ -177,16 +177,19 @@ void OrigamiSystem::initialize_complementary_associations() {
 
 void OrigamiSystem::initialize_energies() {
     // Calculate and store all energies
-    for (unsigned int c_i {0}; c_i != m_sequences.size(); c_i++) {
-        for (unsigned int c_j {0}; c_j != m_sequences.size(); c_j++) {
-            for (unsigned int d_i {0}; d_i != m_sequences[c_i].size(); d_i++) {
-                for (unsigned int d_j {0}; d_j != m_sequences[c_j].size(); d_j++) {
+    for (size_t c_i {0}; c_i != m_sequences.size(); c_i++) {
+        for (size_t c_j {0}; c_j != m_sequences.size(); c_j++) {
+            size_t c_i_length {m_sequences[c_i].size()};
+            size_t c_j_length {m_sequences[c_j].size()};
+            for (size_t d_i {0}; d_i != c_i_length; d_i++) {
+                for (size_t d_j {0}; d_j != c_j_length; d_j++) {
                     string seq_i {m_sequences[c_i][d_i]};
                     string seq_j {m_sequences[c_j][d_j]};
                     
-                    // Stupid ugly bullshit to deal with stupid size bullshit type
-                    CDPair cd_i {(int)c_i, (int)d_i};
-                    CDPair cd_j {(int)c_j, (int)d_j};
+                    CDPair cd_i {static_cast<int>(c_i), static_cast<int>(d_i),
+                            static_cast<int>(c_i_length)};
+                    CDPair cd_j {static_cast<int>(c_j), static_cast<int>(d_j),
+                            static_cast<int>(c_i_length)};
                     pair<CDPair, CDPair> key {cd_i, cd_j};
 
                     // Hybridization energies
@@ -678,45 +681,19 @@ void OrigamiSystem::check_domain_orientations_opposing(CDPair cd_i, CDPair cd_j)
     }
 }
 
-template<typename Origami_T>
-CDPair OrigamiSystemLinearScaffold<Origami_T>::increment_index(CDPair cd_i, int incr) {
-    int d_j {cd_i.d + incr};
-    if (d_j >= OrigamiSystem::chain_lengths()[cd_i.c] or d_j < 0) {
-        throw IndexOutOfRange {};
-    }
-    return CDPair {cd_i.c, d_j};
-}
-
-template<typename Origami_T>
-CDPair OrigamiSystemCyclicScaffold<Origami_T>::increment_index(CDPair cd_i, int incr) {
-    int d_j {cd_i.d + incr};
-    if (cd_i.c == OrigamiSystem::c_scaffold) {
-        d_j %= OrigamiSystem::chain_lengths()[OrigamiSystem::c_scaffold];
-    }
-    else {
-        if (d_j >= OrigamiSystem::chain_lengths()[cd_i.c] or d_j < 0) {
-            throw IndexOutOfRange {};
-        }
-    }
-    return CDPair {cd_i.c, d_j};
-}
-
-template<typename Origami_T>
-double OrigamiSystemWithMisbinding<Origami_T>::bind_noncomplementary_domains(
+double ?::bind_noncomplementary_domains(
         CDPair cd_i,
         CDPair cd_j) {
     return OrigamiSystem::hybridization_energy(cd_i, cd_j);
 }
 
-template<typename Origami_T>
-double OrigamiSystemWithoutMisbinding<Origami_T>::bind_noncomplementary_domains(
+double ?::bind_noncomplementary_domains(
         CDPair cd_i,
         CDPair cd_j) {
     throw ConstraintViolation {};
 }
 
-template<typename Origami_T>
-void OrigamiSystemSixteen<Origami_T>::check_twist_constraint(
+void ?::check_twist_constraint(
         VectorThree ndr,
         VectorThree ore_1,
         VectorThree ore_2) {

@@ -24,13 +24,6 @@ using namespace Utility;
 
 namespace Origami{
 
-    enum class Occupancy {
-        unassigned,
-        unbound,
-        bound,
-        misbound
-    };
-
     struct Chain {
         int index;
         int identity;

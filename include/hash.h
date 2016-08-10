@@ -41,8 +41,8 @@ namespace std {
     template<> struct hash<VectorThree> {
         inline size_t operator()(const VectorThree& v) const {
             size_t seed = 0;
-            for (auto i: v) {
-                ::hash_combine(seed, i);
+            for (unsigned int i {0}; i != 3; i++) {
+                ::hash_combine(seed, v.at(i));
             }
             return seed;
         }
