@@ -20,6 +20,7 @@ namespace Utility {
     struct NoElement {};
     struct IndexOutOfRange {};
     struct OrigamiMisuse {};
+    struct NotImplemented {};
 
     enum class Occupancy {
           unassigned,

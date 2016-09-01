@@ -1,17 +1,19 @@
 // utility.cpp
 
+#include<iostream>
 #include <vector>
 
 #include "utility.h"
 
 using namespace Utility;
 
+using std::cout;
 using std::vector;
 
 //template<typename Element_T>
 //int index(vector<Element_T> container, Element_T element) {
 int Utility::index(vector<int> container, int element) {
-    for (unsigned int i {0}; i != container.size(); i++) {
+    for (size_t i {0}; i != container.size(); i++) {
         if (container[i] == element) {
             return i;
         }
@@ -21,9 +23,9 @@ int Utility::index(vector<int> container, int element) {
 }
 
 VectorThree VectorThree::operator-() {
-    VectorThree neg;
-    for (auto i: m_container) {
-        neg[i] = -i;
+    VectorThree neg {};
+    for (size_t i {0}; i != 3; i++) {
+        neg[i] = -m_container[i];
     }
     return neg;
 }
@@ -39,7 +41,7 @@ VectorThree VectorThree::operator+(const VectorThree& v_2) const {
 VectorThree VectorThree::operator-(const VectorThree& v_2) const {
     VectorThree diff;
     for (unsigned int i {0}; i != 3; i++) {
-        diff[i] = v_2.at(i) - m_container[i];
+        diff[i] = m_container[i] - v_2.at(i);
     }
     return diff;
 }

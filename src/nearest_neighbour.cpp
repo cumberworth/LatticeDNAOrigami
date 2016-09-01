@@ -5,9 +5,11 @@
 #include <cmath>
 #include <algorithm>
 #include <vector>
+#include <iostream>
 
 #include "nearest_neighbour.h"
 
+using std::cout;
 using std::tuple;
 using std::string;
 using std::vector;
@@ -58,7 +60,7 @@ tuple<double, double> NearestNeighbour::calc_hybridization_H_and_S(string seq, d
     // Stacking energies (bound)
     double DH_stack {0};
     double DS_stack {0};
-    for (unsigned int nuc_i {0}; nuc_i != seq.size(); nuc_i++) {
+    for (unsigned int nuc_i {0}; nuc_i != seq.size() - 1; nuc_i++) {
         string c1 {seq[nuc_i]};
         string c2 {seq[nuc_i + 1]};
         string seq_pair {c1 + c2};
@@ -110,8 +112,9 @@ vector<string> NearestNeighbour::find_longest_contig_complement(
 
     // Iterate through all lengths and starting points
     vector<string> comp_seqs {};
-    for (int subseq_len {(int)seq_three.size()};  subseq_len != -1; subseq_len--) {
-        for (unsigned int start_i {0}; seq_three.size() - subseq_len + 1; start_i++) {
+    for (int subseq_len {(int)seq_three.size()}; subseq_len != 0; subseq_len--) {
+        for (unsigned int start_i {0}; start_i != (seq_three.size() - subseq_len
+                    + 1); start_i++) {
             string subseq {seq_three.substr(start_i, subseq_len)};
             std::size_t seq_i = seq_five.find(subseq);
             if (seq_i == string::npos) {

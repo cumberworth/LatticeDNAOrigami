@@ -13,7 +13,7 @@ all: $(TARGET)
 
 testing: $(TESTTARGET)
 
-$(TARGET): $(BUILD)main.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o
+$(TARGET): $(BUILD)main.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o $(BUILD)domain.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(TESTTARGET): $(BUILD)test.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o
@@ -36,6 +36,9 @@ $(BUILD)files.o: files.cpp files.h
 	$(CC) -o $@ -c $(CPPFLAGS) $<
 
 $(BUILD)json.o: jsoncpp.cpp json/json.h json/json-forwards.h
+	$(CC) -o $@ -c $(CPPFLAGS) $<
+
+$(BUILD)domain.o: domain.cpp domain.h
 	$(CC) -o $@ -c $(CPPFLAGS) $<
 
 $(BUILD)test.o: test.cpp

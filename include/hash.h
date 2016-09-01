@@ -4,7 +4,6 @@
 
 #include "utility.h"
 
-using Utility::CDPair;
 using Utility::VectorThree;
 
 /* Copied from a stack exchange question (which is copied from the BOOST
@@ -48,14 +47,6 @@ namespace std {
         }
     };
 
-    template<> struct hash<CDPair> {
-        inline size_t operator()(const CDPair& v) const {
-            size_t seed = 0;
-            ::hash_combine(seed, v.c);
-            ::hash_combine(seed, v.d);
-            return seed;
-        }
-    };
 }
 
 #endif // HASH_H

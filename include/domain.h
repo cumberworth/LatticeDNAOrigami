@@ -5,8 +5,7 @@
 
 #include "utility.h"
 
-using Utility::VectorThree;
-using Utility::Occupancy;
+using namespace Utility;
 
 namespace DomainContainer{
 
@@ -18,26 +17,29 @@ namespace DomainContainer{
             int m_d;
             int m_d_ident;
             int m_c_length;
-            VectorThree m_pos;
-            VectorThree m_occ;
-            Occupancy m_state;
-            Domain* m_bound_domain;
+            VectorThree m_pos {};
+            VectorThree m_ore {};
+            Occupancy m_state {Occupancy::unassigned};
+            Domain* m_bound_domain {nullptr};
 
-            Domain(int c, int c_ident, int d, int d_ident, int c_length,
-                    Domain* forward_domain, Domain* backward_domain): m_c {c},
+            Domain(int c, int c_ident, int d, int d_ident, int c_length): m_c {c},
                     m_c_ident {c_ident}, m_d {d}, m_d_ident {d_ident},
-                    m_c_length {c_length}, m_forward_domain {forward_domain},
-                    m_backward_domain {backward_domain} {m_state {Occupancy::unassigned;};
+                    m_c_length {c_length} {};
             Domain* operator+(int increment);
 
-        private:
-            Domain* m_forward_domain;
-            Domain* m_backward_domain;
+            virtual void check_twist_constraint(VectorThree ndr, Domain& cd_j) = 0;
+
+            Domain* m_forward_domain {nullptr};
+            Domain* m_backward_domain {nullptr};
     };
 
-    // Hash needs this, ambiguous to also have method
-    inline bool operator==(const Domain& cd_i, const Domain& cd_j) {return (cd_i.c == cd_j.c
-            and cd_i.d == cd_j.d);};
+    class SixteenDomain: public Domain {
+        using Domain::Domain;
+        public:
+//            SixteenDomain(int c, int c_ident, int d, int d_ident, int c_length):
+//                Domain {c, c_ident, d, d_ident, c_length} {};
+            void check_twist_constraint(VectorThree ndr, Domain& cd_j);
+    };
 
 }
 

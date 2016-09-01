@@ -13,6 +13,7 @@
 #include "utility.h"
 #include "nearest_neighbour.h"
 #include "hash.h"
+#include "domain.h"
 
 using std::vector;
 using std::pair;
@@ -21,9 +22,11 @@ using std::string;
 using std::valarray;
 
 using namespace Utility;
+using namespace DomainContainer;
 
 namespace Origami{
 
+    // For passing information between file objects and origami system
     struct Chain {
         int index;
         int identity;
@@ -45,6 +48,7 @@ namespace Origami{
             const double m_volume;
             const double m_cation_M;
             const double m_strand_M;
+            const bool m_cyclic;
             static const int c_scaffold {0};
     
             // Constructor and destructor
@@ -55,7 +59,8 @@ namespace Origami{
                     double temp,
                     double volume,
                     double cation_M,
-                    double strand_M);
+                    double strand_M,
+                    bool cyclic);
             ~OrigamiSystem() = default;
     
             // Copy and move
@@ -65,8 +70,9 @@ namespace Origami{
             OrigamiSystem& operator=(OrigamiSystem&&) = default;
     
             // Configuration properties
-            inline unordered_map<int, int> chain_lengths() const {return m_chain_lengths;};
-            inline int num_staples() const {return m_chain_lengths.size() - 1;};
+            vector<vector<Domain*>> m_domains {};
+//            inline unordered_map<int, int> chain_lengths() const {return m_chain_lengths;};
+            inline int num_staples() const {return m_domains.size() - 1;};
             inline int num_bound_domains() const {return m_num_fully_bound_domains;};
             inline double energy() const {return m_energy;};
     
@@ -74,79 +80,75 @@ namespace Origami{
             inline int num_staples_of_ident(int staple_ident) const {return
                     m_identity_to_index[staple_ident].size();};
             inline vector<int> complimentary_scaffold_domains(int staple_ident)
-                    const {return m_staple_ident_to_scaffold_ds[
-                            m_chain_identities.at(staple_ident)];};
+                    const {return m_staple_ident_to_scaffold_ds[staple_ident];};
     
             // Configuration accessors
             Chains chains() const;
-            inline VectorThree domain_position(CDPair cd_i) const {return
-                    m_positions.at(cd_i.c)[cd_i.d];};
-            inline VectorThree domain_orientation(CDPair cd_i) const {
-                return m_orientations.at(cd_i.c)[cd_i.d];};
-            inline Occupancy position_occupancy(VectorThree pos) const {
-                    return m_position_occupancies.at(pos);};
-            inline Occupancy domain_occupancy(CDPair cd_i) const {return
-                    m_domain_occupancies.at(cd_i);};
-            inline CDPair domain_bound_to(CDPair cd_i) const {return
-                    m_bound_d_to_bound_d.at(cd_i);};
-            inline CDPair unbound_domain_at(VectorThree pos) const {return
+            Occupancy position_occupancy(VectorThree pos) const;
+            inline Domain* unbound_domain_at(VectorThree pos) const {return
                     m_pos_to_unbound_d.at(pos);};
     
             // Constraint checkers
             void check_all_constraints() const;
             double check_domain_constraints(
-                    CDPair cd_i,
+                    Domain& cd_i,
                     VectorThree pos,
                     VectorThree ore);
     
             // Configuration modifiers
-            double unassign_domain(CDPair cd_i);
+            double unassign_domain(Domain& cd_i);
             int add_chain(int c_i_ident);
             int add_chain(int c_i_ident, int uc_i);
             void delete_chain(int c_i);
             void set_checked_domain_config(
-                    CDPair cd_i,
+                    Domain& cd_i,
                     VectorThree pos,
                     VectorThree ore);
             double set_domain_config(
-                    CDPair cd_i,
+                    Domain& cd_i,
                     VectorThree position,
                     VectorThree orientation);
-            void set_domain_orientation(CDPair cd_i, VectorThree ore);
+            void set_domain_orientation(Domain& cd_i, VectorThree ore);
             void centre();
 
         protected:
-    
-            // Accessors
-            double hybridization_energy(CDPair cd_i, CDPair cd_j) const;
-            double stacking_energy(CDPair cd_i, CDPair cd_j) const;
-            virtual CDPair increment_index(CDPair cd_i, int incr) = 0;
-    
+            virtual double bind_noncomplementary_domains(Domain& cd_i, Domain& cd_j);
+
         private:
     
-            // Indexing and associative variables
-            vector<int> m_chain_indices;
-            vector<vector<int>> m_staple_ident_to_scaffold_ds;
-            unordered_map<CDPair, CDPair> m_bound_d_to_bound_d;
-            unordered_map<VectorThree, CDPair> m_pos_to_unbound_d;
-            unordered_map<int, int> m_chain_identities;
-            vector<vector<int>> m_identity_to_index;
-            int m_current_c_i;
-    
-            // Configuration variables
-            unordered_map<int, int> m_chain_lengths;
-            unordered_map<int, vector<VectorThree>> m_positions;
-            unordered_map<int, vector<VectorThree>> m_orientations;
-            
-            // Occupancy variables
-            unordered_map<VectorThree, Occupancy> m_position_occupancies;
-            unordered_map<CDPair, Occupancy> m_domain_occupancies;
-            int m_num_fully_bound_domains;
+            // Data
 
-            // Energies variables
-            //vector<vector<vector<double>>> hybridization_energies;
-            unordered_map<pair<CDPair, CDPair>, double> m_hybridization_energies;
-            unordered_map<pair<CDPair, CDPair>, double> m_stacking_energies;
+            // Keeps track of all scaffold domains complementary to a domain on
+            // a given staple. Only tracks staple identity to the scaffold domain
+            // indices
+            vector<vector<int>> m_staple_ident_to_scaffold_ds {};
+
+            // Keeps track of unbound domains but indexed by position
+            unordered_map<VectorThree, Domain*> m_pos_to_unbound_d {};
+            
+            // Keep track of all the chains of each type
+            vector<vector<int>> m_identity_to_index {};
+
+            // May need to access the chain type by index in m_domains only
+            vector<int> m_chain_identities {};
+
+            // May need to know chain index by position in domains array directly
+            vector<int> m_chain_indices {};
+            
+            // The index that should be assigned to the next added chain
+            int m_current_c_i {};
+
+            // The state of all positiions occupied by a domain index by position
+            unordered_map<VectorThree, Occupancy> m_position_occupancies {};
+
+            // Number of fully complimentary domains bound
+            int m_num_fully_bound_domains {};
+
+            // Energy tables index by chain/domain identity pair
+            unordered_map<pair<int, int>, double> m_hybridization_energies {};
+            unordered_map<pair<int, int>, double> m_stacking_energies {};
+
+            // Current total energy of system
             double m_energy {0};
     
             // Intializers
@@ -154,76 +156,47 @@ namespace Origami{
             void initialize_energies();
             void initialize_config(Chains chains);
 
+            // Accessors
+            double hybridization_energy(const Domain& cd_i, const Domain& cd_j) const;
+            double stacking_energy(const Domain& cd_i, const Domain& cd_j) const;
+    
             // States updates
-            double unassign_bound_domain(CDPair cd_i);
-            void unassign_unbound_domain(CDPair cd_i);
-            void update_domain(CDPair cd_i, VectorThree pos, VectorThree ore);
+            double unassign_bound_domain(Domain& cd_i);
+            void unassign_unbound_domain(Domain& cd_i);
+            void update_domain(Domain& cd_i, VectorThree pos, VectorThree ore);
             void update_occupancies(
-                    CDPair cd_i,
+                    Domain& cd_i,
                     VectorThree position);
     
             // Constraint checkers
-            double bind_domain(CDPair cd_i);
-            virtual double bind_noncomplementary_domains(CDPair cd_i, CDPair cd_j) = 0;
-            double bind_complementary_domains(CDPair cd_i, CDPair cd_j);
-            bool check_domains_complementary(CDPair cd_i, CDPair cd_j);
-            double check_stacking(CDPair cd_new, CDPair cd_old);
-            void check_domain_pair_constraints(CDPair cd_i);
-            void check_helical_constraints(CDPair cd_1, CDPair cd_2);
-            void check_linear_helix_rear(CDPair cd_3);
-            void check_linear_helix(
-                    VectorThree ndr_1,
-                    VectorThree pos_2,
-                    VectorThree ore_2,
-                    CDPair cd_2);
-            void check_junction_front(CDPair cd_1);
-            void check_junction_rear(CDPair cd_4);
-            bool doubly_contiguous_junction(CDPair cd_1, CDPair cd_2);
-            void check_doubly_contiguous_junction(CDPair cd_2, CDPair cd_3);
+            double bind_domain(Domain& cd_i);
+            double bind_complementary_domains(Domain& cd_i, Domain& cd_j);
+            bool check_domains_complementary(Domain& cd_i, Domain& cd_j);
+            double check_stacking(Domain& cd_new, Domain& cd_old);
+            void check_domain_pair_constraints(Domain& cd_i);
+            void check_helical_constraints(Domain& cd_1, Domain& cd_2);
+            void check_linear_helix_rear(Domain& cd_3);
+            void check_linear_helix(VectorThree ndr_1, Domain& cd_2);
+            void check_junction_front(Domain& cd_1);
+            void check_junction_rear(Domain& cd_4);
+            bool doubly_contiguous_junction(Domain& cd_1, Domain& cd_2);
+            void check_doubly_contiguous_junction(Domain& cd_2, Domain& cd_3);
             void check_doubly_contiguous_junction(
-                    CDPair cd_1,
-                    CDPair cd_2,
-                    CDPair cd_3,
-                    CDPair cd_4);
-            void check_domain_orientations_opposing(CDPair cd_i, CDPair cd_j);
-            virtual void check_twist_constraint(
-                    VectorThree ndr,
-                    VectorThree ore_1,
-                    VectorThree ore_2) = 0;
+                    Domain& cd_1,
+                    Domain& cd_2,
+                    Domain& cd_3,
+                    Domain& cd_4);
+            void check_domain_orientations_opposing(Domain& cd_i, Domain& cd_j);
     };
 
-    template<typename Origami_T>
-    class OrigamiSystemWithMisbinding: public Origami_T {
-        protected:
-            double bind_noncomplementary_domains(CDPair cd_i, CDPair cd_j);
-    };
-
-    template<typename Origami_T>
-    class OrigamiSystemWithoutMisbinding: public Origami_T {
-        protected:
-            double bind_noncomplementary_domains(CDPair cd_i, CDPair cd_j);
-    };
-
-    template<typename Origami_T>
-    class OrigamiSystemLinearScaffold: public Origami_T {
+    class OrigamiSystemWithoutMisbinding: public OrigamiSystem {
         public:
-            CDPair increment_index(CDPair cd_i, int incr);
+            using OrigamiSystem::OrigamiSystem;
+
+        protected:
+            double bind_noncomplementary_domains(Domain& cd_i, Domain& cd_j);
     };
 
-    template<typename Origami_T>
-    class OrigamiSystemCyclicScaffold: public Origami_T {
-        public:
-            CDPair increment_index(CDPair cd_i, int incr);
-    };
-
-    template<typename Origami_T>
-    class OrigamiSystemSixteen: public Origami_T {
-        private:
-            void check_twist_constraint(
-                    VectorThree nrd,
-                    VectorThree ore_1,
-                    VectorThree ore_2);
-    };
 }
 
 #endif // ORIGAMI_H

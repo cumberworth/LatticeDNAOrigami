@@ -39,15 +39,15 @@ OrigamiSystemInputFile::OrigamiSystemInputFile(string filename) {
     }
 
     // Extract configuration
+    // Note for now always using first configuration, may change file format later
     Json::Value jsonconfig {jsonroot["origami"]["configurations"][0]["chains"]};
-    Chains chains {};
     for (unsigned int i {0}; i != jsonconfig.size(); i++) {
         Json::Value jsonchain {jsonconfig[i]};
         int index {jsonchain["index"].asInt()};
         int identity {jsonchain["identity"].asInt()};
         vector<VectorThree> positions {};
         vector<VectorThree> orientations {};
-        for (unsigned int j {0}; j != jsonchain.size(); j++) {
+        for (unsigned int j {0}; j != jsonchain["positions"].size(); j++) {
             int posx {jsonchain["positions"][j][0].asInt()};
             int posy {jsonchain["positions"][j][1].asInt()};
             int posz {jsonchain["positions"][j][2].asInt()};
@@ -58,6 +58,6 @@ OrigamiSystemInputFile::OrigamiSystemInputFile(string filename) {
             orientations.push_back(VectorThree {orex, orey, orez});
         }
         Chain chain {index, identity, positions, orientations};
-        chains.push_back(chain);
+        m_chains.push_back(chain);
     }
 }
