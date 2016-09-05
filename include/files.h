@@ -12,7 +12,7 @@ using namespace Origami;
 
 namespace Files {
 
-    class OrigamiSystemInputFile {
+    class OrigamiInputFile {
         // Input file for OrigamiSystem configuration and topology
         public:
             OrigamiSystemInputFile(string filename);
@@ -23,11 +23,11 @@ namespace Files {
             vector<Chain> m_chains;
     };
 
-    class OrigamiSystemOutputFile {
+    class OrigamiOutputFile {
         // Output file for OrigamiSystem configuration and topology
     };
 
-    class OrigamiSystemTrajOutputFile {
+    class OrigamiTrajOutputFile {
         // Trajectory output file for simulation configurations
     };
 }

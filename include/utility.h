@@ -5,9 +5,12 @@
 
 #include <vector>
 #include <array>
+#include <random>
+#include <functional>
 
 using std::vector;
 using std::array;
+using std::bind;
 
 namespace Utility {
     
@@ -21,6 +24,7 @@ namespace Utility {
     struct IndexOutOfRange {};
     struct OrigamiMisuse {};
     struct NotImplemented {};
+    struct MoveRejection {};
 
     enum class Occupancy {
           unassigned,
@@ -53,10 +57,27 @@ namespace Utility {
     // Hash needs this, ambiguous to also have method
     bool operator==(const VectorThree& v1, const VectorThree& v2);
 
-    // Unit vectors
+    // Base unit vectors
     const VectorThree xhat {1, 0, 0};
     const VectorThree yhat {0, 1, 0};
     const VectorThree zhat {0, 0, 1};
+
+    // All possible unit vectors
+    vector<VectorThree> vectors {
+            {1, 0, 0},
+            {-1, 0, 0},
+            {0, 1, 0},
+            {0, -1, 0},
+            {0, 0, 1},
+            {0, 0, -1}};
+
+    // Random numbers
+    std::mt19937_64 random_engine {};
+    std::uniform_real_distribution<double> uniform_real_dist {};
+    auto gen_uniform_real = bind(uniform_real_dist, random_engine);
+    std::uniform_int_distribution<int> uniform_int_dist_vectors(0, 5);
+    auto gen_uniform_vector_i = bind(uniform_int_dist_vectors, random_engine);
+
 }
 
 

@@ -187,6 +187,8 @@ int OrigamiSystem::add_chain(int c_i_ident, int c_i) {
 
         m_domains.back().push_back(domain);
         prev_domain = domain;
+
+        m_num_domains += 1;
     }
 
     return c_i;
@@ -205,6 +207,7 @@ void OrigamiSystem::delete_chain(int c_i) {
             + j);
     m_chain_indices.erase(m_chain_indices.begin() + i);
     m_chain_identities.erase(m_chain_identities.begin() + i);
+    m_num_domains -= m_domains[i].size();
     m_domains.erase(m_domains.begin() + i);
 }
 

@@ -73,6 +73,7 @@ namespace Origami{
             vector<vector<Domain*>> m_domains {};
 //            inline unordered_map<int, int> chain_lengths() const {return m_chain_lengths;};
             inline int num_staples() const {return m_domains.size() - 1;};
+            int m_num_domains {0};
             inline int num_bound_domains() const {return m_num_fully_bound_domains;};
             inline double energy() const {return m_energy;};
     
@@ -111,6 +112,12 @@ namespace Origami{
             void set_domain_orientation(Domain& cd_i, VectorThree ore);
             void centre();
 
+            // Keep track of all the chains of each type
+            vector<vector<int>> m_identity_to_index {};
+
+            // May need to know chain index by position in domains array directly
+            vector<int> m_chain_indices {};
+            
         protected:
             virtual double bind_noncomplementary_domains(Domain& cd_i, Domain& cd_j);
 
@@ -126,15 +133,9 @@ namespace Origami{
             // Keeps track of unbound domains but indexed by position
             unordered_map<VectorThree, Domain*> m_pos_to_unbound_d {};
             
-            // Keep track of all the chains of each type
-            vector<vector<int>> m_identity_to_index {};
-
             // May need to access the chain type by index in m_domains only
             vector<int> m_chain_identities {};
 
-            // May need to know chain index by position in domains array directly
-            vector<int> m_chain_indices {};
-            
             // The index that should be assigned to the next added chain
             int m_current_c_i {};
 

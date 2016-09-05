@@ -16,7 +16,7 @@ using namespace Origami;
 using namespace DomainContainer;
 
 int main() {
-    OrigamiSystemInputFile origami_input {"tests/snodin_assembled.json"};
+    OrigamiInputFile origami_input {"tests/snodin_assembled.json"};
     vector<vector<int>> identities {origami_input.m_identities};
     vector<vector<string>> sequences {origami_input.m_sequences};
     vector<Chain> chains {origami_input.m_chains};
