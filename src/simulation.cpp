@@ -53,7 +53,7 @@ void GCMCSimulation::run(int steps, int logging_freq=1, int center_freq=1) {
             m_origami_system.check_all_constraints();
         }
 
-        if (step != logging_freq) {
+        if (step % logging_freq == 0) {
             write_log_entry(step);
         }
 
@@ -65,7 +65,7 @@ unique_ptr<MCMovetype> GCMCSimulation::select_movetype() {
     unique_ptr<MCMovetype> movetype;
     double prob {gen_uniform_real()};
     for (size_t i {0}; i != m_cumulative_probs.size(); i++) {
-        if (m_cumulative_probs[i] < prob) {
+        if (prob < m_cumulative_probs[i]) {
             movetype = m_movetype_constructors[i](m_origami_system);
             break;
         }
@@ -73,7 +73,7 @@ unique_ptr<MCMovetype> GCMCSimulation::select_movetype() {
     return movetype;
 }
 
-void write_log_entry(int step) {
+void GCMCSimulation::write_log_entry(int step) {
     cout << step;
     cout << "\n";
 }

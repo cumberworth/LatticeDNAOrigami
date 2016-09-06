@@ -3,9 +3,13 @@
 #ifndef MOVETYPES_H
 #define MOVETYPES_H
 
+#include <iostream>
+
 #include <memory>
 
 #include "origami_system.h"
+
+using std::cout;
 
 using namespace Origami;
 using std::unique_ptr;
@@ -49,17 +53,9 @@ namespace Movetypes {
     };
 
     template<typename T>
-    unique_ptr<MCMovetype> movetype_constructor(OrigamiSystem origami_system);
+    unique_ptr<MCMovetype> movetype_constructor(OrigamiSystem& origami_system);
 
-    using MovetypeConstructor = unique_ptr<MCMovetype> (*)(OrigamiSystem origami_system);
-
-    struct Movetype {
-        MovetypeConstructor identity {movetype_constructor<MCMovetype>};
-        MovetypeConstructor orientation_rotation {movetype_constructor<MCMovetype>};
-        MovetypeConstructor staple_exchange {movetype_constructor<MCMovetype>};
-        MovetypeConstructor cb_staple_regrowth {movetype_constructor<MCMovetype>};
-        MovetypeConstructor ctcb_scaffold_regrowth {movetype_constructor<MCMovetype>};
-    };
+    using MovetypeConstructor = unique_ptr<MCMovetype> (*)(OrigamiSystem& origami_system);
 
     bool test_acceptance(double p_ratio, double modifier);
 
@@ -68,6 +64,7 @@ namespace Movetypes {
 
     class IdentityMCMovetype: public MCMovetype {
         public:
+            using MCMovetype::MCMovetype;
             bool attempt_move() {return true;};
     };
 
@@ -117,6 +114,20 @@ namespace Movetypes {
             using MCMovetype::MCMovetype;
     };
 
+    struct Movetype {
+        MovetypeConstructor identity {movetype_constructor<IdentityMCMovetype>};
+        MovetypeConstructor orientation_rotation {movetype_constructor<OrientationRotationMCMovetype>};
+        MovetypeConstructor staple_exchange {movetype_constructor<StapleExchangeMCMovetype>};
+//        MovetypeConstructor cb_staple_regrowth {movetype_constructor<MCMovetype>};
+ //       MovetypeConstructor ctcb_scaffold_regrowth {movetype_constructor<MCMovetype>};
+    };
+
+    const vector<MovetypeConstructor> movetype {
+        movetype_constructor<IdentityMCMovetype>,
+        movetype_constructor<OrientationRotationMCMovetype>,
+        movetype_constructor<StapleExchangeMCMovetype>};
+//        MovetypeConstructor cb_staple_regrowth {movetype_constructor<MCMovetype>};
+ //       MovetypeConstructor ctcb_scaffold_regrowth {movetype_constructor<MCMovetype>};
 }
 
 #endif // MOVETYPES_H

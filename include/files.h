@@ -15,7 +15,7 @@ namespace Files {
     class OrigamiInputFile {
         // Input file for OrigamiSystem configuration and topology
         public:
-            OrigamiSystemInputFile(string filename);
+            OrigamiInputFile(string filename);
 
             // Properties
             vector<vector<int>> m_identities;

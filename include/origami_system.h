@@ -74,7 +74,7 @@ namespace Origami{
 //            inline unordered_map<int, int> chain_lengths() const {return m_chain_lengths;};
             inline int num_staples() const {return m_domains.size() - 1;};
             int m_num_domains {0};
-            inline int num_bound_domains() const {return m_num_fully_bound_domains;};
+            inline int num_fully_bound_domains() const {return m_num_fully_bound_domains;};
             inline double energy() const {return m_energy;};
     
             // Staple properties
@@ -90,7 +90,7 @@ namespace Origami{
                     m_pos_to_unbound_d.at(pos);};
     
             // Constraint checkers
-            void check_all_constraints() const;
+            void check_all_constraints();
             double check_domain_constraints(
                     Domain& cd_i,
                     VectorThree pos,

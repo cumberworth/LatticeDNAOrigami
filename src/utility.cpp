@@ -80,3 +80,14 @@ VectorThree VectorThree::rotate_half(VectorThree axis) {
     }
     return rot;
 }
+
+int VectorThree::sum() {
+    return this->at(0) + this->at(1) + this->at(2);
+}
+
+int VectorThree::abssum() {
+    return abs(this->at(0)) + abs(this->at(1)) + abs(this->at(2));
+}
+
+std::mt19937_64 Utility::random_engine {};
+std::uniform_real_distribution<double> Utility::uniform_real_dist {};

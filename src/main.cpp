@@ -5,8 +5,8 @@
 #include "parser.h"
 #include "nearest_neighbour.h"
 #include "domain.h"
-#include "origami_system.h"
 #include "files.h"
+#include "simulation.h"
 
 using std::cout;
 
@@ -14,6 +14,8 @@ using namespace Utility;
 using namespace Files;
 using namespace Origami;
 using namespace DomainContainer;
+using namespace Simulation;
+using namespace Movetypes;
 
 int main() {
     OrigamiInputFile origami_input {"tests/snodin_assembled.json"};
@@ -29,6 +31,11 @@ int main() {
             1,
             1,
             false};
+
+    OrigamiTrajOutputFile trajout {};
+    GCMCSimulation sim {origami, trajout, {movetype[2]}, {1}};
+    sim.run(10, 1, 1);
+
     //origami.add_chain(1);
     //Domain& cd_i {*origami.m_domains[1][0]};
     //VectorThree pos_1 {0, 0, 0};

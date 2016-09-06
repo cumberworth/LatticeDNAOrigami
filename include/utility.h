@@ -49,6 +49,8 @@ namespace Utility {
             const int& at(const size_t& i) const {return m_container.at(i);};
 
             VectorThree rotate_half(VectorThree axis);
+            int sum();
+            int abssum();
 
         private:
             array<int, 3> m_container;
@@ -63,7 +65,7 @@ namespace Utility {
     const VectorThree zhat {0, 0, 1};
 
     // All possible unit vectors
-    vector<VectorThree> vectors {
+    const vector<VectorThree> vectors {
             {1, 0, 0},
             {-1, 0, 0},
             {0, 1, 0},
@@ -72,13 +74,13 @@ namespace Utility {
             {0, 0, -1}};
 
     // Random numbers
-    std::mt19937_64 random_engine {};
-    std::uniform_real_distribution<double> uniform_real_dist {};
-    auto gen_uniform_real = bind(uniform_real_dist, random_engine);
-    std::uniform_int_distribution<int> uniform_int_dist_vectors(0, 5);
-    auto gen_uniform_vector_i = bind(uniform_int_dist_vectors, random_engine);
+    extern std::mt19937_64 random_engine;
+    extern std::uniform_real_distribution<double> uniform_real_dist;
+    inline double gen_uniform_real() {return bind(uniform_real_dist, random_engine)();};
+    inline int gen_uniform_int(int lower, int upper) {
+            std::uniform_int_distribution<int> uniform_int_dist(lower, upper);
+            return bind(uniform_int_dist, random_engine)();};
 
 }
-
 
 #endif // UTILITY_H

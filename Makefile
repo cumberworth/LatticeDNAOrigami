@@ -1,5 +1,5 @@
 CC = g++
-CPPFLAGS = -I include
+CPPFLAGS = -g -I include
 LDFLAGS =
 
 BUILD = build/
@@ -13,10 +13,10 @@ all: $(TARGET)
 
 testing: $(TESTTARGET)
 
-$(TARGET): $(BUILD)main.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o $(BUILD)domain.o
+$(TARGET): $(BUILD)main.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o $(BUILD)domain.o $(BUILD)simulation.o $(BUILD)movetypes.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-$(TESTTARGET): $(BUILD)test.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o
+$(TESTTARGET): $(BUILD)test.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o $(BUILD)domain.o $(BUILD)simulation.o $(BUILD)movetypes.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 	$(TESTTARGET)
 
@@ -39,6 +39,12 @@ $(BUILD)json.o: jsoncpp.cpp json/json.h json/json-forwards.h
 	$(CC) -o $@ -c $(CPPFLAGS) $<
 
 $(BUILD)domain.o: domain.cpp domain.h
+	$(CC) -o $@ -c $(CPPFLAGS) $<
+
+$(BUILD)simulation.o: simulation.cpp simulation.h
+	$(CC) -o $@ -c $(CPPFLAGS) $<
+
+$(BUILD)movetypes.o: movetypes.cpp movetypes.h
 	$(CC) -o $@ -c $(CPPFLAGS) $<
 
 $(BUILD)test.o: test.cpp

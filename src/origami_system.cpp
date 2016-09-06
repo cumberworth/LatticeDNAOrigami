@@ -100,6 +100,25 @@ void OrigamiSystem::set_domain_orientation(Domain& cd_i, VectorThree ore) {
     }
 }
 
+void OrigamiSystem::centre() {
+    // Translate the system such that the first scaffold domain is on the origin
+
+    // The maps that go from a position to something need to be reset
+    unordered_map<VectorThree, Domain*> pos_to_unbound_d {};
+    unordered_map<VectorThree, Occupancy> position_occupancies {};
+    VectorThree refpos {m_domains[0][0]->m_pos};
+    for (auto chain: m_domains) {
+        for (auto domain: chain) {
+            VectorThree new_pos {domain->m_pos - refpos};
+            pos_to_unbound_d[new_pos] = m_pos_to_unbound_d[domain->m_pos];
+            position_occupancies[new_pos] = m_position_occupancies[domain->m_pos];
+            domain->m_pos = new_pos;
+        }
+    }
+    m_pos_to_unbound_d = pos_to_unbound_d;
+    m_position_occupancies = position_occupancies;
+}
+
 double OrigamiSystem::set_domain_config(
         Domain& cd_i,
         VectorThree pos,
@@ -195,20 +214,20 @@ int OrigamiSystem::add_chain(int c_i_ident, int c_i) {
 }
 
 void OrigamiSystem::delete_chain(int c_i) {
-    // Delete chain c_i
-    int c_i_ident {m_chain_identities[c_i]};
+    // Delete chain c_i_
     
-    // Index in m_domains of given chain
-    int i {m_chain_indices[c_i]};
+    int c_i_index {index(m_chain_indices, c_i)};
+    int c_i_ident {m_chain_identities[c_i_index]};
 
     // Index in m_identity_to_index of given index and type
+    cout << "delete chain\n";
     int j {index(m_identity_to_index[c_i_ident], c_i)};
     m_identity_to_index[c_i_ident].erase(m_identity_to_index[c_i_ident].begin()
             + j);
-    m_chain_indices.erase(m_chain_indices.begin() + i);
-    m_chain_identities.erase(m_chain_identities.begin() + i);
-    m_num_domains -= m_domains[i].size();
-    m_domains.erase(m_domains.begin() + i);
+    m_chain_indices.erase(m_chain_indices.begin() + c_i_index);
+    m_chain_identities.erase(m_chain_identities.begin() + c_i_index);
+    m_num_domains -= m_domains[c_i_index].size();
+    m_domains.erase(m_domains.begin() + c_i_index);
 }
 
 // Private methods
@@ -384,6 +403,7 @@ void OrigamiSystem::update_occupancies(Domain& cd_i, VectorThree pos) {
             m_pos_to_unbound_d[pos] = cd_i_p;
             break;
         default:
+            cout << "a\n";
             throw OrigamiMisuse {};
     }
 }
@@ -430,6 +450,46 @@ double OrigamiSystem::bind_complementary_domains(Domain& cd_i, Domain& cd_j) {
     delta_e += check_stacking(cd_i, cd_j);
 
     return delta_e;
+}
+
+void OrigamiSystem::check_all_constraints() {
+
+    // Unassign everything
+    for (auto chain: m_domains) {
+        for (auto domain: chain) {
+            unassign_domain(*domain);
+        }
+    }
+
+    // Reset configuration
+    for (auto chain: m_domains) {
+        for (auto domain: chain) {
+            try {
+                set_domain_config(*domain, domain->m_pos, domain->m_ore);
+            }
+            catch (ConstraintViolation) {
+            cout << "b\n";
+                throw OrigamiMisuse {};
+            }
+        }
+    }
+
+    // Check distance constraints
+    for (auto chain: m_domains) {
+        for (auto domain: chain) {
+            try {
+                Domain* next_domain {*domain + 1};
+                    VectorThree dist {next_domain->m_pos - domain->m_pos};
+                    if (dist.abssum() != 1) {
+                        cout << "c\n";
+                        throw OrigamiMisuse {};
+                    }
+                }
+            catch (IndexOutOfRange) {
+                continue;
+            }
+        }
+    }
 }
 
 bool OrigamiSystem::check_domains_complementary(Domain& cd_i, Domain& cd_j) {

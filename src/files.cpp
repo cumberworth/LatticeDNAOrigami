@@ -13,7 +13,7 @@ using std::cout;
 
 using namespace Files;
 
-OrigamiSystemInputFile::OrigamiSystemInputFile(string filename) {
+OrigamiInputFile::OrigamiInputFile(string filename) {
     ifstream jsonraw {filename, ifstream::binary};
     Json::Value jsonroot;
     jsonraw >> jsonroot;

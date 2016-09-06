@@ -45,24 +45,15 @@ void MCMovetype::reset_origami() {
 }
 
 Domain* MCMovetype::select_random_domain() {
-    std::uniform_int_distribution<int> dist(0, m_origami_system.m_domains.size());
-    auto gen_chain = bind(dist, random_engine);
-    int c_i_index {gen_chain()};
-    std::uniform_int_distribution<int> dist_domain(0, m_origami_system.m_domains[c_i_index].size());
-    auto gen_domain = bind(dist_domain, random_engine);
-    Domain* domain {m_origami_system.m_domains[c_i_index][gen_domain()]};
+    int c_i_index {gen_uniform_int(0, m_origami_system.m_domains.size() - 1)};
+    int d_i_index {gen_uniform_int(0, m_origami_system.m_domains[c_i_index].size() - 1)};
+    Domain* domain {m_origami_system.m_domains[c_i_index][d_i_index]};
 
     return domain;
 }
 
 int MCMovetype::select_random_staple_identity() {
-
-    // Randomly select staple identity and then staple of that identity
-    std::uniform_int_distribution<int> dist(1, m_origami_system.m_identities.size());
-    auto gen = bind(dist, random_engine);
-    int c_i_ident {gen()};
-
-    return c_i_ident;
+    return gen_uniform_int(1, m_origami_system.m_identities.size() - 1);
 }
 
 int MCMovetype::select_random_staple_of_identity(int c_i_ident) {
@@ -70,14 +61,14 @@ int MCMovetype::select_random_staple_of_identity(int c_i_ident) {
     if (staples == 0) {
         throw MoveRejection {};
     }
-    std::uniform_int_distribution<int> dist2(0, staples);
-    auto gen2 = bind(dist2, random_engine);
-    int c_i {m_origami_system.m_identity_to_index[c_i_ident][gen2()]};
+    int staple_i {gen_uniform_int(0, staples - 1)};
+    int c_i {m_origami_system.m_identity_to_index[c_i_ident][staple_i]};
 
     return c_i;
 }
 
 double MCMovetype::set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old) {
+    // Set growth point with new orientation
     VectorThree o_new = select_random_orientation();
     double delta_e {0};
     try {
@@ -92,15 +83,9 @@ double MCMovetype::set_growth_point(Domain& growth_domain_new, Domain& growth_do
     return delta_e;
 }
 
-void MCMovetype::calc_overcount(Domain& domain) {
-    if (domain.m_bound_domain != nullptr) {
-        size_t chain_length {m_origami_system.m_identities[domain.m_c_ident].size()};
-    }
-}
-
 template<typename T>
-unique_ptr<MCMovetype> Movetypes::movetype_constructor(OrigamiSystem origami_system) {
-    return new T {origami_system};
+unique_ptr<MCMovetype> Movetypes::movetype_constructor(OrigamiSystem& origami_system) {
+    return unique_ptr<MCMovetype> {new T {origami_system}};
 }
 
 bool Movetypes::test_acceptance(double p_ratio, double modifier) {
@@ -122,18 +107,17 @@ bool Movetypes::test_acceptance(double p_ratio, double modifier) {
 }
 
 VectorThree Movetypes::select_random_position(VectorThree p_prev) {
-    VectorThree vec {vectors[gen_uniform_vector_i()]};
+    VectorThree vec {vectors[gen_uniform_int(0, 5)]};
     return p_prev + vec;
 }
 
 VectorThree Movetypes::select_random_orientation() {
-    VectorThree vec {vectors[gen_uniform_vector_i()]};
+    VectorThree vec {vectors[gen_uniform_int(0, 5)]};
     return vec;
 }
 
 bool OrientationRotationMCMovetype::attempt_move() {
-
-    bool accept {false};
+    bool accept;
     
     // Select random chain and domain
     Domain* domain {select_random_domain()};
@@ -143,6 +127,8 @@ bool OrientationRotationMCMovetype::attempt_move() {
         accept = false;
         return accept;
     }
+
+    // All other cases accept
     else {
         accept = true;
     }
@@ -155,10 +141,24 @@ bool OrientationRotationMCMovetype::attempt_move() {
 }
 
 void MetMCMovetype::grow_staple(int d_i_index, vector<Domain*> selected_chain) {
-    auto first_iter {selected_chain.begin() + d_i_index};
-    auto last_iter {selected_chain.end() + selected_chain.size()};
-    vector<Domain*> domains_three_prime {first_iter, last_iter};
+    int old_num_bound_domains {m_origami_system.m_num_domains};
+
+    // Grow in three prime direction
+    auto first_iter3 {selected_chain.begin() + d_i_index};
+    auto last_iter3 {selected_chain.end() + selected_chain.size()};
+    vector<Domain*> domains_three_prime {first_iter3, last_iter3};
     grow_chain(domains_three_prime);
+
+    // Grow in five prime direction
+    auto first_iter5 {selected_chain.begin()};
+    auto last_iter5 {selected_chain.begin() + d_i_index};
+    vector<Domain*> domains_five_prime {first_iter5, last_iter5};
+    std::reverse(domains_five_prime.begin(), domains_five_prime.end());
+    grow_chain(domains_three_prime);
+
+    // Overcount correction
+    int overcount {old_num_bound_domains - m_origami_system.m_num_domains};
+    m_modifier /= overcount;
 }
 
 void MetMCMovetype::grow_chain(vector<Domain*> domains) {
@@ -174,12 +174,13 @@ void MetMCMovetype::grow_chain(vector<Domain*> domains) {
         catch (ConstraintViolation) {
             throw MoveRejection {};
         }
-        calc_overcount(*domain);
     }
 }
 
 bool StapleExchangeMCMovetype::attempt_move() {
-    bool accept {false};
+
+    // Select inertion or deletion with equal frequency
+    bool accept;
     if (gen_uniform_real() < 0.5) {
         accept = insert_staple();
     }
@@ -191,13 +192,13 @@ bool StapleExchangeMCMovetype::attempt_move() {
 }
 
 bool StapleExchangeMCMovetype::staple_insertion_accepted(int c_i_ident) {
-    double boltz_factor {exp(-m_delta_e / m_origami_system.m_temp)};
+    double boltz_factor {exp(-m_delta_e)};
     int Ni_new {m_origami_system.num_staples()};
 
     // Correct for extra states from additional staple domains
     size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
-    int extra_states {static_cast<int>(
-            pow(6, 2 * staple_length - 1 - preconstrained_df))};
+    int extra_df {2 * static_cast<int>(staple_length) - 1 - preconstrained_df};
+    int extra_states {static_cast<int>(pow(6, extra_df))};
     double ratio {extra_states / Ni_new * boltz_factor};
 
     // Correct for insertion into subset of volume
@@ -210,13 +211,14 @@ bool StapleExchangeMCMovetype::staple_insertion_accepted(int c_i_ident) {
 }
 
 bool StapleExchangeMCMovetype::staple_deletion_accepted(int c_i_ident) {
-    double boltz_factor {exp(-m_delta_e / m_origami_system.m_temp)};
+    double boltz_factor {exp(-m_delta_e)};
     int Ni_new {m_origami_system.num_staples()};
 
     // Correct for extra states from additional staple domains
     size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
-    int extra_states {static_cast<int>(
-            pow(6, 2 * staple_length - 1 - preconstrained_df))};
+    int extra_df {2 * static_cast<int>(staple_length) - 1 - preconstrained_df};
+    int extra_states {static_cast<int>(pow(6, extra_df))};
+
     double ratio {(Ni_new + 1) / extra_states * boltz_factor};
 
     return test_acceptance(ratio, m_modifier);
@@ -237,11 +239,11 @@ bool StapleExchangeMCMovetype::insert_staple() {
         m_added_domains.push_back(domain);
     }
 
-    // Select growth points and attempt binding
-    std::uniform_int_distribution<int> dist2(1, selected_chain.size());
-    auto gen2 = bind(dist2, random_engine);
-    int d_i_index {gen2()};
+    // Select growth point on added chain
+    int d_i_index {gen_uniform_int(1, selected_chain.size() - 1)};
     Domain* growth_domain_new {selected_chain[d_i_index]};
+
+    // Select and set growth point on current system
     select_and_set_growth_point(growth_domain_new);
 
     grow_staple(d_i_index, selected_chain);
@@ -251,8 +253,11 @@ bool StapleExchangeMCMovetype::insert_staple() {
 
 bool StapleExchangeMCMovetype::delete_staple() {
 
+    // Select random identity and staple of that type
     int c_i_ident {select_random_staple_identity()};
     int c_i {select_random_staple_of_identity(c_i_ident)};
+
+    // The index into m_domains
     int c_i_index {index(m_origami_system.m_chain_indices, c_i)};
     
     // Add stuff to reversions lists and unassign domsins
@@ -262,6 +267,8 @@ bool StapleExchangeMCMovetype::delete_staple() {
         m_deleted_domains.push_back(domain);
         m_delta_e += m_origami_system.unassign_domain(*domain);
     }
+
+    // Delete chain and test acceptance
     m_origami_system.delete_chain(c_i);
     m_deleted_chains.push_back({c_i, c_i_ident});
 
@@ -269,18 +276,21 @@ bool StapleExchangeMCMovetype::delete_staple() {
 }
 
 void StapleExchangeMCMovetype::select_and_set_growth_point(Domain* growth_domain_new) {
-    std::uniform_int_distribution<int> dist(1, m_origami_system.num_staples());
-    auto gen = bind(dist, random_engine);
-    int c_i_index {gen()};
+
+    // Select a different chain, excluding newest addition which is last index
+    int c_i_index {gen_uniform_int(0, m_origami_system.num_staples() - 1)};
     vector<Domain*> selected_chain {m_origami_system.m_domains[c_i_index]};
-    std::uniform_int_distribution<int> dist2(1, m_origami_system.num_staples());
-    auto gen2 = bind(dist2, random_engine);
-    Domain* growth_domain_old {selected_chain[gen2()]};
+
+    // Select a domain of the chain
+    int d_i_index  {gen_uniform_int(0, selected_chain.size() - 1)};
+    Domain* growth_domain_old {selected_chain[d_i_index]};
+
     m_delta_e += set_growth_point(*growth_domain_new, *growth_domain_old);
 }
 
 bool CBStapleRegrowthMCMovetype::attempt_move() {
 
     // Pick section of scaffold to regrow and determine
+    return false;
     
 }
