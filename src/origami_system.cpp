@@ -9,7 +9,7 @@
 #include "nearest_neighbour.h"
 
 using std::abs;
-using std::max;
+using std::max_element;
 using std::cout;
 
 using namespace NearestNeighbour;
@@ -119,6 +119,17 @@ void OrigamiSystem::centre() {
     m_position_occupancies = position_occupancies;
 }
 
+bool OrigamiSystem::check_domains_complementary(Domain& cd_i, Domain& cd_j) {
+    bool comp;
+    if (cd_i.m_d_ident == -cd_j.m_d_ident) {
+        comp = true;
+    }
+    else {
+        comp = false;
+    }
+    return comp;
+}
+
 double OrigamiSystem::set_domain_config(
         Domain& cd_i,
         VectorThree pos,
@@ -220,13 +231,15 @@ void OrigamiSystem::delete_chain(int c_i) {
     int c_i_ident {m_chain_identities[c_i_index]};
 
     // Index in m_identity_to_index of given index and type
-    cout << "delete chain\n";
     int j {index(m_identity_to_index[c_i_ident], c_i)};
     m_identity_to_index[c_i_ident].erase(m_identity_to_index[c_i_ident].begin()
             + j);
     m_chain_indices.erase(m_chain_indices.begin() + c_i_index);
     m_chain_identities.erase(m_chain_identities.begin() + c_i_index);
     m_num_domains -= m_domains[c_i_index].size();
+    for (auto domain: m_domains[c_i_index]) {
+        delete domain;
+    }
     m_domains.erase(m_domains.begin() + c_i_index);
 }
 
@@ -283,7 +296,7 @@ void OrigamiSystem::initialize_config(Chains chains) {
         }
     }
 
-    m_current_c_i = *max(m_chain_identities.begin(),
+    m_current_c_i = *max_element(m_chain_identities.begin(),
             m_chain_identities.end());
 }
 
@@ -468,7 +481,8 @@ void OrigamiSystem::check_all_constraints() {
                 set_domain_config(*domain, domain->m_pos, domain->m_ore);
             }
             catch (ConstraintViolation) {
-            cout << "b\n";
+                cout << "b\n";
+                set_domain_config(*domain, domain->m_pos, domain->m_ore);
                 throw OrigamiMisuse {};
             }
         }
@@ -490,17 +504,6 @@ void OrigamiSystem::check_all_constraints() {
             }
         }
     }
-}
-
-bool OrigamiSystem::check_domains_complementary(Domain& cd_i, Domain& cd_j) {
-    bool comp;
-    if (cd_i.m_d_ident == -cd_j.m_d_ident) {
-        comp = true;
-    }
-    else {
-        comp = false;
-    }
-    return comp;
 }
 
 double OrigamiSystem::check_stacking(Domain& cd_new, Domain& cd_old) {

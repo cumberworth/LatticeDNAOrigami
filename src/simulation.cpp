@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "utility.h"
+#include "random_gens.h"
 #include "movetypes.h"
 #include "simulation.h"
 
@@ -12,6 +13,7 @@ using std::cout;
 using namespace Movetypes;
 using namespace Simulation;
 using namespace Utility;
+using namespace RandomGen;
 
 GCMCSimulation::GCMCSimulation(
         OrigamiSystem origami_system,
@@ -26,11 +28,6 @@ GCMCSimulation::GCMCSimulation(
         cum_prob += movetype_probs[i];
         m_cumulative_probs.push_back(cum_prob);
     }
-
-    // Prepare random number generator
-    std::random_device true_random_engine {};
-    auto seed {true_random_engine()};
-    random_engine.seed(seed);
 }
 
 void GCMCSimulation::run(int steps, int logging_freq=1, int center_freq=1) {
@@ -54,7 +51,7 @@ void GCMCSimulation::run(int steps, int logging_freq=1, int center_freq=1) {
         }
 
         if (step % logging_freq == 0) {
-            write_log_entry(step);
+            write_log_entry(step, accepted);
         }
 
         // Write to traj file(s)
@@ -63,17 +60,18 @@ void GCMCSimulation::run(int steps, int logging_freq=1, int center_freq=1) {
 
 unique_ptr<MCMovetype> GCMCSimulation::select_movetype() {
     unique_ptr<MCMovetype> movetype;
-    double prob {gen_uniform_real()};
+    double prob {m_random_gens.uniform_real()};
     for (size_t i {0}; i != m_cumulative_probs.size(); i++) {
         if (prob < m_cumulative_probs[i]) {
-            movetype = m_movetype_constructors[i](m_origami_system);
+            movetype = m_movetype_constructors[i](m_origami_system, m_random_gens);
             break;
         }
     }
     return movetype;
 }
 
-void GCMCSimulation::write_log_entry(int step) {
-    cout << step;
+void GCMCSimulation::write_log_entry(int step, bool accepted) {
+    cout << "Step: " << step << "\n";
+    cout << "Accepted: " << accepted << "\n";
     cout << "\n";
 }

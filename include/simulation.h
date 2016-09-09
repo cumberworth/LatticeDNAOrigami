@@ -10,6 +10,7 @@
 #include "origami_system.h"
 #include "movetypes.h"
 #include "files.h"
+#include "ideal_random_walk.h"
 
 using std::vector;
 using std::unique_ptr;
@@ -18,6 +19,7 @@ using std::map;
 using namespace Origami;
 using namespace Movetypes;
 using namespace Files;
+using namespace IdealRandomWalk;
 
 namespace Simulation {
 
@@ -31,10 +33,15 @@ namespace Simulation {
 
             void run(int steps, int logging_freq, int center_freq);
 
+            IdealRandomWalks m_ideal_random_walks {};
+
         private:
 
             unique_ptr<MCMovetype> select_movetype();
-            void write_log_entry(int step);
+            void write_log_entry(int step, bool accepted);
+
+            // Random number generators
+            RandomGens m_random_gens {};
 
             // Big things
             OrigamiSystem m_origami_system;

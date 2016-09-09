@@ -1,7 +1,8 @@
 // utility.cpp
 
-#include<iostream>
+#include <iostream>
 #include <vector>
+#include <memory>
 
 #include "utility.h"
 
@@ -9,6 +10,7 @@ using namespace Utility;
 
 using std::cout;
 using std::vector;
+using std::unique_ptr;
 
 //template<typename Element_T>
 //int index(vector<Element_T> container, Element_T element) {
@@ -88,6 +90,3 @@ int VectorThree::sum() {
 int VectorThree::abssum() {
     return abs(this->at(0)) + abs(this->at(1)) + abs(this->at(2));
 }
-
-std::mt19937_64 Utility::random_engine {};
-std::uniform_real_distribution<double> Utility::uniform_real_dist {};

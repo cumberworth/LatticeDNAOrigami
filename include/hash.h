@@ -2,7 +2,11 @@
 #ifndef HASH_H
 #define HASH_H
 
+#include <iostream>
+
 #include "utility.h"
+
+using std::cout;
 
 using Utility::VectorThree;
 
@@ -40,7 +44,7 @@ namespace std {
     template<> struct hash<VectorThree> {
         inline size_t operator()(const VectorThree& v) const {
             size_t seed = 0;
-            for (unsigned int i {0}; i != 3; i++) {
+            for (size_t i {0}; i != 3; i++) {
                 ::hash_combine(seed, v.at(i));
             }
             return seed;

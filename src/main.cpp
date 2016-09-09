@@ -18,7 +18,7 @@ using namespace Simulation;
 using namespace Movetypes;
 
 int main() {
-    OrigamiInputFile origami_input {"tests/snodin_assembled.json"};
+    OrigamiInputFile origami_input {"tests/snodin_unbound.json"};
     vector<vector<int>> identities {origami_input.m_identities};
     vector<vector<string>> sequences {origami_input.m_sequences};
     vector<Chain> chains {origami_input.m_chains};
@@ -33,8 +33,9 @@ int main() {
             false};
 
     OrigamiTrajOutputFile trajout {};
-    GCMCSimulation sim {origami, trajout, {movetype[2]}, {1}};
-    sim.run(10, 1, 1);
+    vector<double> movetype_probs {1};
+    GCMCSimulation sim {origami, trajout, {movetype[3]}, movetype_probs};
+    sim.run(100000, 1, 1);
 
     //origami.add_chain(1);
     //Domain& cd_i {*origami.m_domains[1][0]};

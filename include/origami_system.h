@@ -118,6 +118,9 @@ namespace Origami{
             // May need to know chain index by position in domains array directly
             vector<int> m_chain_indices {};
             
+            // Configuration checkers
+            bool check_domains_complementary(Domain& cd_i, Domain& cd_j);
+
         protected:
             virtual double bind_noncomplementary_domains(Domain& cd_i, Domain& cd_j);
 
@@ -172,7 +175,6 @@ namespace Origami{
             // Constraint checkers
             double bind_domain(Domain& cd_i);
             double bind_complementary_domains(Domain& cd_i, Domain& cd_j);
-            bool check_domains_complementary(Domain& cd_i, Domain& cd_j);
             double check_stacking(Domain& cd_new, Domain& cd_old);
             void check_domain_pair_constraints(Domain& cd_i);
             void check_helical_constraints(Domain& cd_1, Domain& cd_2);

@@ -25,6 +25,7 @@ namespace DomainContainer{
             Domain(int c, int c_ident, int d, int d_ident, int c_length): m_c {c},
                     m_c_ident {c_ident}, m_d {d}, m_d_ident {d_ident},
                     m_c_length {c_length} {};
+            virtual ~Domain() = default;
             Domain* operator+(int increment);
 
             virtual void check_twist_constraint(VectorThree ndr, Domain& cd_j) = 0;

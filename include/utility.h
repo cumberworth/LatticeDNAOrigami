@@ -5,12 +5,16 @@
 
 #include <vector>
 #include <array>
-#include <random>
 #include <functional>
+#include <unordered_map>
+#include <memory>
 
 using std::vector;
 using std::array;
 using std::bind;
+using std::unordered_map;
+using std::pair;
+using std::unique_ptr;
 
 namespace Utility {
     
@@ -72,15 +76,6 @@ namespace Utility {
             {0, -1, 0},
             {0, 0, 1},
             {0, 0, -1}};
-
-    // Random numbers
-    extern std::mt19937_64 random_engine;
-    extern std::uniform_real_distribution<double> uniform_real_dist;
-    inline double gen_uniform_real() {return bind(uniform_real_dist, random_engine)();};
-    inline int gen_uniform_int(int lower, int upper) {
-            std::uniform_int_distribution<int> uniform_int_dist(lower, upper);
-            return bind(uniform_int_dist, random_engine)();};
-
 }
 
 #endif // UTILITY_H
