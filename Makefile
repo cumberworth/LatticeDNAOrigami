@@ -1,5 +1,5 @@
 CC = g++
-CPPFLAGS = -O3 -I include
+CPPFLAGS = -g -I include
 LDFLAGS =
 
 BUILD = build/
@@ -13,7 +13,7 @@ all: $(TARGET)
 
 testing: $(TESTTARGET)
 
-$(TARGET): $(BUILD)main.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o $(BUILD)domain.o $(BUILD)simulation.o $(BUILD)movetypes.o $(BUILD)random_gens.o
+$(TARGET): $(BUILD)main.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o $(BUILD)domain.o $(BUILD)simulation.o $(BUILD)movetypes.o $(BUILD)random_gens.o $(BUILD)ideal_random_walk.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(TESTTARGET): $(BUILD)test.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o $(BUILD)domain.o $(BUILD)simulation.o $(BUILD)movetypes.o
@@ -48,6 +48,9 @@ $(BUILD)movetypes.o: movetypes.cpp movetypes.h
 	$(CC) -o $@ -c $(CPPFLAGS) $<
 
 $(BUILD)random_gens.o: random_gens.cpp random_gens.h
+	$(CC) -o $@ -c $(CPPFLAGS) $<
+
+$(BUILD)ideal_random_walk.o: ideal_random_walk.cpp ideal_random_walk.h
 	$(CC) -o $@ -c $(CPPFLAGS) $<
 
 $(BUILD)test.o: test.cpp

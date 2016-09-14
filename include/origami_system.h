@@ -49,7 +49,7 @@ namespace Origami{
             const double m_cation_M;
             const double m_strand_M;
             const bool m_cyclic;
-            static const int c_scaffold {0};
+            const int c_scaffold {0};
     
             // Constructor and destructor
             OrigamiSystem(
@@ -121,6 +121,9 @@ namespace Origami{
             // Configuration checkers
             bool check_domains_complementary(Domain& cd_i, Domain& cd_j);
 
+            // Keeps track of unbound domains but indexed by position
+            unordered_map<VectorThree, Domain*> m_pos_to_unbound_d {};
+            
         protected:
             virtual double bind_noncomplementary_domains(Domain& cd_i, Domain& cd_j);
 
@@ -133,9 +136,6 @@ namespace Origami{
             // indices
             vector<vector<int>> m_staple_ident_to_scaffold_ds {};
 
-            // Keeps track of unbound domains but indexed by position
-            unordered_map<VectorThree, Domain*> m_pos_to_unbound_d {};
-            
             // May need to access the chain type by index in m_domains only
             vector<int> m_chain_identities {};
 

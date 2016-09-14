@@ -11,15 +11,17 @@
 using std::unordered_map;
 using std::pair;
 
+using namespace::Utility;
+
 namespace IdealRandomWalk {
 
     class IdealRandomWalks {
         public:
-            unsigned long long num_walks(VectorThree start_pos,
+            double num_walks(VectorThree start_pos,
                     VectorThree end_pos, int steps);
             
         private:
-            unordered_map<pair<VectorThree, int>, unsigned long long> m_num_walks {};
+            unordered_map<pair<VectorThree, int>, double > m_num_walks {};
     };
 }
 

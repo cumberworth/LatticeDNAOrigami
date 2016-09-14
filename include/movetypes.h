@@ -4,17 +4,21 @@
 #define MOVETYPES_H
 
 #include <iostream>
+#include <set>
 
 #include <memory>
 
 #include "random_gens.h"
 #include "origami_system.h"
+#include "ideal_random_walk.h"
 
 using std::cout;
 using std::unique_ptr;
+using std::set;
 
 using namespace Origami;
 using namespace RandomGen;
+using namespace IdealRandomWalk;
 
 namespace Movetypes {
 
@@ -115,6 +119,20 @@ namespace Movetypes {
             unordered_map<pair<int, int>, VectorThree> m_old_pos {};
             unordered_map<pair<int, int>, VectorThree> m_old_ore {};
 
+            void calc_biases(
+                    Domain& domain,
+                    VectorThree p_prev,
+                    vector<pair<VectorThree, VectorThree>>& configs,
+                    vector<double>& bfactors);
+            virtual vector<double> calc_bias(vector<double> bfactors,
+                    Domain*, vector<pair<VectorThree, VectorThree>>&, VectorThree) = 0;
+            void select_and_set_config(vector<Domain*> domains, int i);
+            void select_and_set_new_config(
+                    Domain& domain,
+                    vector<double> weights,
+                    vector<pair<VectorThree, VectorThree>> configs);
+            void select_and_set_old_config(Domain& domain);
+            bool test_cb_acceptance(double new_bias);
     };
 
     class CBStapleRegrowthMCMovetype: public CBMCMovetype {
@@ -123,22 +141,43 @@ namespace Movetypes {
             bool attempt_move();
         private:
             void grow_chain(vector<Domain*> domains);
-            void calculate_biases(
-                    Domain& domain,
-                    VectorThree p_prev,
-                    vector<pair<VectorThree, VectorThree>>& configs,
-                    vector<double>& bfactors);
-            vector<double> calc_bias(vector<double> bfactors);
-            void select_and_set_new_config(
-                    Domain& domain,
-                    vector<double> weights,
-                    vector<pair<VectorThree, VectorThree>> configs);
-            void select_and_set_old_config(Domain& domain);
+            vector<double> calc_bias(vector<double> bfactors,
+                    Domain*, vector<pair<VectorThree, VectorThree>>&, VectorThree);
     };
 
-    class CTCBScaffoldRegrowth: public CBMCMovetype {
+    class CTCBScaffoldRegrowthMCMovetype: public CBMCMovetype {
         public:
             using CBMCMovetype::CBMCMovetype;
+            bool attempt_move();
+        private:
+            IdealRandomWalks m_ideal_random_walks {};
+            unordered_map<Domain*, Domain*> m_growthpoints {};
+
+            // Map from chain to it's active endpoints
+            unordered_map<int, vector<pair<int, VectorThree>>> m_active_endpoints {};
+
+            // Map from chain to endpoints it will impose once grown
+            unordered_map<int, vector<Domain*>> m_inactive_endpoints {};
+
+            // Indexed by chain, then pairs of domain index and position
+            vector<Domain*> select_scaffold_indices();
+            set<int> find_staples_growthpoints_endpoints(vector<Domain*> scaffold_domains);
+            void scan_staple_topology(
+                    Domain* domain,
+                    set<int>& participating_chains,
+                    vector<Domain*>& scaffold_domains,
+                    bool& externally_bound);
+            void unassign_domains(vector<Domain*> domains);
+            void grow_chain(vector<Domain*> domains);
+            void grow_staple_and_update_endpoints(
+                    vector<Domain*> domains,
+                    int c_i,
+                    int i);
+            vector<double> calc_bias(
+                    vector<double> bfactors,
+                    Domain* domain,
+                    vector<pair<VectorThree, VectorThree>>& configs,
+                    VectorThree p_prev);
     };
 
     // Movetype construction
@@ -155,15 +194,15 @@ namespace Movetypes {
         MovetypeConstructor orientation_rotation {movetype_constructor<OrientationRotationMCMovetype>};
         MovetypeConstructor staple_exchange {movetype_constructor<StapleExchangeMCMovetype>};
         MovetypeConstructor cb_staple_regrowth {movetype_constructor<CBStapleRegrowthMCMovetype>};
- //       MovetypeConstructor ctcb_scaffold_regrowth {movetype_constructor<MCMovetype>};
+        MovetypeConstructor ctcb_scaffold_regrowth {movetype_constructor<CTCBScaffoldRegrowthMCMovetype>};
     };
 
     const vector<MovetypeConstructor> movetype {
         movetype_constructor<IdentityMCMovetype>,
         movetype_constructor<OrientationRotationMCMovetype>,
         movetype_constructor<StapleExchangeMCMovetype>,
-        movetype_constructor<CBStapleRegrowthMCMovetype>};
- //       MovetypeConstructor ctcb_scaffold_regrowth {movetype_constructor<MCMovetype>};
+        movetype_constructor<CBStapleRegrowthMCMovetype>,
+        movetype_constructor<CTCBScaffoldRegrowthMCMovetype>};
 }
 
 #endif // MOVETYPES_H
