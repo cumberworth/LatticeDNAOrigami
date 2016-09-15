@@ -33,9 +33,9 @@ int main() {
             false};
 
     OrigamiTrajOutputFile trajout {};
-    vector<double> movetype_probs {1};
-    GCMCSimulation sim {origami, trajout, {movetype[4]}, movetype_probs};
-    sim.run(10, 1, 1);
+    vector<double> movetype_probs {0.5, 0.5};
+    GCMCSimulation sim {origami, trajout, {movetype[3], movetype[5]}, movetype_probs};
+    sim.run(10000, 1, 1);
 
     //origami.add_chain(1);
     //Domain& cd_i {*origami.m_domains[1][0]};

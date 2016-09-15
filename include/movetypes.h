@@ -32,6 +32,8 @@ namespace Movetypes {
             virtual bool attempt_move() = 0;
             void reset_origami();
 
+            virtual string m_label() {return "MCMovetype";};
+
         protected:
             OrigamiSystem& m_origami_system;
             RandomGens& m_random_gens;
@@ -65,17 +67,23 @@ namespace Movetypes {
         public:
             using MCMovetype::MCMovetype;
             bool attempt_move() {return true;};
+
+            string m_label() {return "IdentityMCMovetype";};
     };
 
     class OrientationRotationMCMovetype: public MCMovetype {
         public:
             using MCMovetype::MCMovetype;
             bool attempt_move();
+
+            string m_label() {return "OrientationRotationMCMovetype";};
     };
 
     class RegrowthMCMovetype: public MCMovetype {
         public:
             using MCMovetype::MCMovetype;
+
+            string m_label() {return "RegrowthMCMovetype";};
         protected:
             double set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old);
             void grow_staple(int d_i_index, vector<Domain*> selected_chain);
@@ -85,17 +93,20 @@ namespace Movetypes {
     class MetMCMovetype: public RegrowthMCMovetype {
         public:
             using RegrowthMCMovetype::RegrowthMCMovetype;
+
+            string m_label() {return "MetMCMovetype";};
         protected:
             double m_delta_e {0};
 
             void grow_chain(vector<Domain*> domains);
     };
 
-    class StapleExchangeMCMovetype: public MetMCMovetype {
+    class MetStapleExchangeMCMovetype: public MetMCMovetype {
         public:
             using MetMCMovetype::MetMCMovetype;
             bool attempt_move();
 
+            string m_label() {return "MetStapleExchangeMCMovetype";};
         protected:
 
             // These can be overidden for a derived class the excludes misbinding
@@ -113,6 +124,8 @@ namespace Movetypes {
     class CBMCMovetype: public RegrowthMCMovetype {
         public:
             using RegrowthMCMovetype::RegrowthMCMovetype;
+
+            string m_label() {return "CBMCMovetype";};
         protected:
             double m_bias {1};
             bool m_regrow_old {false};
@@ -132,13 +145,40 @@ namespace Movetypes {
                     vector<double> weights,
                     vector<pair<VectorThree, VectorThree>> configs);
             void select_and_set_old_config(Domain& domain);
+            double set_old_growth_point(Domain& growth_domain_new, Domain& growth_domain_old);
             bool test_cb_acceptance(double new_bias);
+    };
+
+    class CBStapleExchangeMCMovetype: public CBMCMovetype {
+        public:
+            using CBMCMovetype::CBMCMovetype;
+            bool attempt_move();
+
+            string m_label() {return "CBStapleExchangeMCMovetype";};
+        protected:
+
+            // These can be overidden for a derived class the excludes misbinding
+            int preconstrained_df {0};
+            int m_insertion_sites {m_origami_system.m_num_domains};
+
+        private:
+            bool staple_insertion_accepted(int c_i_ident);
+            bool staple_deletion_accepted(int c_i_ident);
+            vector<double> calc_bias(vector<double> bfactors,
+                    Domain*, vector<pair<VectorThree, VectorThree>>&, VectorThree);
+            bool insert_staple();
+            bool delete_staple();
+            void select_and_set_growth_point(Domain* growth_domain_new);
+            void grow_chain(vector<Domain*> domains);
+
     };
 
     class CBStapleRegrowthMCMovetype: public CBMCMovetype {
         public:
             using CBMCMovetype::CBMCMovetype;
             bool attempt_move();
+
+            string m_label() {return "CBStapleRegrowthMCMovetype";};
         private:
             void grow_chain(vector<Domain*> domains);
             vector<double> calc_bias(vector<double> bfactors,
@@ -149,6 +189,8 @@ namespace Movetypes {
         public:
             using CBMCMovetype::CBMCMovetype;
             bool attempt_move();
+
+            string m_label() {return "CTCBScaffoldRegrowthMCMovetype";};
         private:
             IdealRandomWalks m_ideal_random_walks {};
             unordered_map<Domain*, Domain*> m_growthpoints {};
@@ -165,13 +207,13 @@ namespace Movetypes {
             void scan_staple_topology(
                     Domain* domain,
                     set<int>& participating_chains,
+                    vector<pair<Domain*, Domain*>>& potential_growthpoints,
                     vector<Domain*>& scaffold_domains,
                     bool& externally_bound);
             void unassign_domains(vector<Domain*> domains);
             void grow_chain(vector<Domain*> domains);
             void grow_staple_and_update_endpoints(
                     vector<Domain*> domains,
-                    int c_i,
                     int i);
             vector<double> calc_bias(
                     vector<double> bfactors,
@@ -192,7 +234,8 @@ namespace Movetypes {
     struct Movetype {
         MovetypeConstructor identity {movetype_constructor<IdentityMCMovetype>};
         MovetypeConstructor orientation_rotation {movetype_constructor<OrientationRotationMCMovetype>};
-        MovetypeConstructor staple_exchange {movetype_constructor<StapleExchangeMCMovetype>};
+        MovetypeConstructor staple_exchange {movetype_constructor<MetStapleExchangeMCMovetype>};
+        MovetypeConstructor cb_staple_exchange {movetype_constructor<CBStapleExchangeMCMovetype>};
         MovetypeConstructor cb_staple_regrowth {movetype_constructor<CBStapleRegrowthMCMovetype>};
         MovetypeConstructor ctcb_scaffold_regrowth {movetype_constructor<CTCBScaffoldRegrowthMCMovetype>};
     };
@@ -200,7 +243,8 @@ namespace Movetypes {
     const vector<MovetypeConstructor> movetype {
         movetype_constructor<IdentityMCMovetype>,
         movetype_constructor<OrientationRotationMCMovetype>,
-        movetype_constructor<StapleExchangeMCMovetype>,
+        movetype_constructor<MetStapleExchangeMCMovetype>,
+        movetype_constructor<CBStapleExchangeMCMovetype>,
         movetype_constructor<CBStapleRegrowthMCMovetype>,
         movetype_constructor<CTCBScaffoldRegrowthMCMovetype>};
 }

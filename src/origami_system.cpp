@@ -546,7 +546,7 @@ void OrigamiSystem::check_domain_pair_constraints(Domain& cd_i) {
         Domain* cd_2;
         try {
             cd_1 = cd_i + i;
-            cd_2 = cd_1 + 1;
+            cd_2 = (*cd_1) + 1;
         }
         catch (IndexOutOfRange) {
             continue;

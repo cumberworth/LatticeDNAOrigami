@@ -38,7 +38,7 @@ namespace Simulation {
         private:
 
             unique_ptr<MCMovetype> select_movetype();
-            void write_log_entry(int step, bool accepted);
+            void write_log_entry(int step, MCMovetype& movetype, bool accepted);
 
             // Random number generators
             RandomGens m_random_gens {};

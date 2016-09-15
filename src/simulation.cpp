@@ -51,7 +51,7 @@ void GCMCSimulation::run(int steps, int logging_freq=1, int center_freq=1) {
         }
 
         if (step % logging_freq == 0) {
-            write_log_entry(step, accepted);
+            write_log_entry(step, *movetype, accepted);
         }
 
         // Write to traj file(s)
@@ -70,8 +70,10 @@ unique_ptr<MCMovetype> GCMCSimulation::select_movetype() {
     return movetype;
 }
 
-void GCMCSimulation::write_log_entry(int step, bool accepted) {
+void GCMCSimulation::write_log_entry(int step, MCMovetype& movetype, bool accepted) {
     cout << "Step: " << step << "\n";
+    cout << "Movetype: " << movetype.m_label() << "\n";
+    cout << "Staples: " << m_origami_system.num_staples() << "\n";
     cout << "Accepted: " << accepted << "\n";
     cout << "\n";
 }
