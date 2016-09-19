@@ -26,8 +26,8 @@ namespace Simulation {
     class GCMCSimulation {
         public:
             GCMCSimulation(
-                    OrigamiSystem origami_system,
-                    OrigamiTrajOutputFile output_file,
+                    OrigamiSystem& origami_system,
+                    vector<OrigamiOutputFile*> output_files,
                     vector<MovetypeConstructor> movetype_constructors,
                     vector<double> movetype_probs);
 
@@ -44,8 +44,8 @@ namespace Simulation {
             RandomGens m_random_gens {};
 
             // Big things
-            OrigamiSystem m_origami_system;
-            OrigamiTrajOutputFile m_output_file;
+            OrigamiSystem& m_origami_system;
+            vector <OrigamiOutputFile*> m_output_files;
 
             // Movetype information
             vector<MovetypeConstructor> m_movetype_constructors;

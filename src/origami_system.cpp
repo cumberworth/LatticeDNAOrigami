@@ -23,17 +23,17 @@ OrigamiSystem::OrigamiSystem(
         const vector<vector<string>>& sequences,
         const Chains& chains,
         double temp,
-        double volume,
+        double lattice_site_volume,
         double cation_M,
-        double strand_M,
+        double staple_M,
         bool cyclic) :
 
         m_identities {identities},
         m_sequences {sequences},
         m_temp {temp},
-        m_volume {volume},
         m_cation_M {cation_M},
-        m_strand_M {strand_M},
+        m_staple_M {staple_M},
+    	m_volume {molarity_to_lattice_volume(m_staple_M, lattice_site_volume)},
         m_cyclic {cyclic} {
 
     initialize_complementary_associations();
@@ -92,7 +92,7 @@ double OrigamiSystem::unassign_domain(Domain& cd_i) {
 
 void OrigamiSystem::set_domain_orientation(Domain& cd_i, VectorThree ore) {
     Occupancy occupancy {cd_i.m_state};
-    if (occupancy == Occupancy::bound or occupancy == Occupancy::misbound) {
+    if (occupancy == Occupancy::bound) {
         throw ConstraintViolation {};
     }
     else {
@@ -801,3 +801,19 @@ double OrigamiSystemWithoutMisbinding::bind_noncomplementary_domains(
         Domain& cd_j) {
     throw ConstraintViolation {};
 }
+
+double Origami::molarity_to_lattice_volume(double molarity, double lattice_site_volume) {
+    // Given a molarity, calculate the volume that cancels the fugacity.
+    // Volume is in units of number of lattice sites.
+
+    // Number of lattice sites per L (1 L * (1000) cm^3 / L * m^3 / (10^2)^3 cm^3)
+    double sites_per_litre {1e-3 / lattice_site_volume};
+
+    // u = KB*T*ln(p), where p is the number of particles per lattice site
+    // g = exp(1/(-KB*T)*u) = exp(ln(p)) = p
+    // V * p = 1, V = 1 / p
+    // So just convert molarity to number of particles per lattice site
+    double V {1 / (molarity * Utility::NA / sites_per_litre)};
+    return V;
+}
+

@@ -61,6 +61,8 @@ namespace Movetypes {
             Domain* select_random_domain();
             int select_random_staple_identity();
             int select_random_staple_of_identity(int c_i_ident);
+            bool staple_is_connector(vector<Domain*> staple);
+            bool scan_for_scaffold_domain(Domain*, set<int>& participating_chains);
     };
 
     class IdentityMCMovetype: public MCMovetype {

@@ -35,6 +35,9 @@ void MCMovetype::reset_origami() {
     // Delete chains that were added
     for (auto c_i: m_added_chains) {
         m_origami_system.delete_chain(c_i);
+
+        // Roll back index numbering to prevent excessivly large indices
+        m_origami_system.m_current_c_i -= 1;
     }
 
     // Re-add chains that were deleted and revert domains to previous positions
@@ -121,6 +124,66 @@ int MCMovetype::select_random_staple_of_identity(int c_i_ident) {
     int c_i {m_origami_system.m_identity_to_index[c_i_ident][staple_i]};
 
     return c_i;
+}
+
+bool MCMovetype::staple_is_connector(vector<Domain*> staple) {
+    for (auto cur_domain: staple) {
+        if (cur_domain->m_state != Occupancy::unbound) {
+            Domain* bound_domain {cur_domain->m_bound_domain};
+            if (bound_domain->m_c == m_origami_system.c_scaffold) {
+                continue;
+            }
+
+            // Do I really need to clear this?
+            set<int> participating_chains {cur_domain->m_c};
+            if (not scan_for_scaffold_domain(bound_domain, participating_chains)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool MCMovetype::scan_for_scaffold_domain(
+        Domain* domain,
+        set<int>& participating_chains) {
+
+    bool bound_to_scaffold {false};
+    participating_chains.insert(domain->m_c);
+    int c_i_index {index(m_origami_system.m_chain_indices, domain->m_c)};
+    vector<Domain*> staple {m_origami_system.m_domains[c_i_index]};
+    for (auto cur_domain: staple) {
+        if (cur_domain == domain) {
+            continue;
+        }
+        Domain* bound_domain {cur_domain->m_bound_domain};
+        if (bound_domain != nullptr) {
+
+            // Skip if bound to self
+            if (bound_domain->m_c == domain->m_c) {
+                continue;
+            }
+
+            // Check if bound to scaffold
+            bool domain_on_scaffold {bound_domain->m_c == m_origami_system.c_scaffold};
+            if (domain_on_scaffold) {
+                return true;
+            }
+
+            // Check if bound domain already in progress
+            if (participating_chains.count(bound_domain->m_c) > 0) {
+                continue;
+            }
+            else {
+                bound_to_scaffold = scan_for_scaffold_domain(bound_domain,
+                        participating_chains);
+            }
+            if (bound_to_scaffold) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 double RegrowthMCMovetype::set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old) {
@@ -636,14 +699,18 @@ bool CBStapleRegrowthMCMovetype::attempt_move() {
         throw MoveRejection {};
     }
 
-    // Select a staple to regrow and a growth point on it
+    // Select a staple to regrow
     int c_i_index {m_random_gens.uniform_int(1, m_origami_system.num_staples())};
     vector<Domain*> selected_chain {m_origami_system.m_domains[c_i_index]};
+
+    // Reject if staple is connector
+    if (staple_is_connector(selected_chain)) {
+        return false;
+    }
+
+    // Select growth points on chains
     int growth_d_new {m_random_gens.uniform_int(0, selected_chain.size() - 1)};
     Domain* growth_domain_new {selected_chain[growth_d_new]};
-
-    // Select a growth point on one of the other chains
-    // THIS IS WRONG
     Domain* growth_domain_old {select_random_domain()};
     while (growth_domain_old->m_c == growth_domain_new->m_c) {
         growth_domain_old = select_random_domain();

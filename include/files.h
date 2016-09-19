@@ -5,8 +5,11 @@
 
 #include <string>
 #include <vector>
+#include <fstream>
 
 #include "origami_system.h"
+
+using std::ofstream;
 
 using namespace Origami;
 
@@ -24,11 +27,22 @@ namespace Files {
     };
 
     class OrigamiOutputFile {
-        // Output file for OrigamiSystem configuration and topology
+        // Output file interface
+        public:
+            virtual void write(int step) = 0;
+            int m_write_freq;
     };
 
-    class OrigamiTrajOutputFile {
+    class OrigamiTrajOutputFile: public OrigamiOutputFile {
         // Trajectory output file for simulation configurations
+        public:
+            OrigamiTrajOutputFile(string filename, int write_freq, OrigamiSystem& origami_system);
+            void write(int step);
+
+        private:
+            string m_filename;
+            OrigamiSystem& m_origami_system;
+            ofstream m_file;
     };
 }
 

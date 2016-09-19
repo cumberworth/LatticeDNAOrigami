@@ -45,9 +45,9 @@ namespace Origami{
             const vector<vector<int>> m_identities;
             const vector<vector<string>> m_sequences;
             const double m_temp;
-            const double m_volume;
             const double m_cation_M;
-            const double m_strand_M;
+            const double m_staple_M;
+            const double m_volume;
             const bool m_cyclic;
             const int c_scaffold {0};
     
@@ -57,9 +57,9 @@ namespace Origami{
                     const vector<vector<string>>& sequences,
                     const Chains& chains,
                     double temp,
-                    double volume,
+                    double lattice_site_volume,
                     double cation_M,
-                    double strand_M,
+                    double staple_M,
                     bool cyclic);
             ~OrigamiSystem() = default;
     
@@ -124,6 +124,9 @@ namespace Origami{
             // Keeps track of unbound domains but indexed by position
             unordered_map<VectorThree, Domain*> m_pos_to_unbound_d {};
             
+            // The index that should be assigned to the next added chain
+            int m_current_c_i {};
+
         protected:
             virtual double bind_noncomplementary_domains(Domain& cd_i, Domain& cd_j);
 
@@ -138,9 +141,6 @@ namespace Origami{
 
             // May need to access the chain type by index in m_domains only
             vector<int> m_chain_identities {};
-
-            // The index that should be assigned to the next added chain
-            int m_current_c_i {};
 
             // The state of all positiions occupied by a domain index by position
             unordered_map<VectorThree, Occupancy> m_position_occupancies {};
@@ -199,6 +199,8 @@ namespace Origami{
         protected:
             double bind_noncomplementary_domains(Domain& cd_i, Domain& cd_j);
     };
+
+    double molarity_to_lattice_volume(double molarity, double lattice_site_volume);
 
 }
 

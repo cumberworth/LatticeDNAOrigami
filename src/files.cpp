@@ -61,3 +61,34 @@ OrigamiInputFile::OrigamiInputFile(string filename) {
         m_chains.push_back(chain);
     }
 }
+
+OrigamiTrajOutputFile::OrigamiTrajOutputFile(
+        string filename,
+        int write_freq,
+        OrigamiSystem& origami_system) :
+        m_filename {filename},
+        m_origami_system {origami_system} {
+
+    m_write_freq = write_freq;
+    m_file.open(m_filename);
+}
+
+void OrigamiTrajOutputFile::write(int step) {
+    m_file << step << "\n";
+    for (auto chain: m_origami_system.m_domains) {
+        m_file << chain[0]->m_c << " " << chain[0]->m_c_ident << "\n";
+        for (auto domain: chain) {
+            for (int i {0}; i != 3; i++) {
+                m_file << domain->m_pos[i] << " ";
+            }
+        }
+        m_file << "\n";
+        for (auto domain: chain) {
+            for (int i {0}; i != 3; i++) {
+                m_file << domain->m_ore[i] << " ";
+            }
+        }
+        m_file << "\n";
+    }
+    m_file << "\n";
+}

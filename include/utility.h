@@ -30,6 +30,9 @@ namespace Utility {
     struct NotImplemented {};
     struct MoveRejection {};
 
+    // Constrants
+    const double NA {6.022140857};
+
     enum class Occupancy {
           unassigned,
           unbound,

@@ -16,11 +16,11 @@ using namespace Utility;
 using namespace RandomGen;
 
 GCMCSimulation::GCMCSimulation(
-        OrigamiSystem origami_system,
-        OrigamiTrajOutputFile output_file,
+        OrigamiSystem& origami_system,
+        vector<OrigamiOutputFile*> output_files,
         vector<MovetypeConstructor> movetype_constructors,
         vector<double> movetype_probs) :
-        m_origami_system {origami_system}, m_output_file {output_file}, m_movetype_constructors {movetype_constructors} {
+        m_origami_system {origami_system}, m_output_files {output_files}, m_movetype_constructors {movetype_constructors} {
 
     // Create cumulative probability array
     double cum_prob {0};
@@ -50,11 +50,17 @@ void GCMCSimulation::run(int steps, int logging_freq=1, int center_freq=1) {
             m_origami_system.check_all_constraints();
         }
 
-        if (step % logging_freq == 0) {
+        // Write log entry to standard out
+        if (logging_freq !=0 and step % logging_freq == 0) {
             write_log_entry(step, *movetype, accepted);
         }
 
-        // Write to traj file(s)
+        // Write system properties to file
+        for (auto output_file: m_output_files) {
+            if (output_file->m_write_freq != 0 and step % output_file->m_write_freq == 0) {
+                output_file->write(step);
+            }
+        }
     }
 }
 

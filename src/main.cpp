@@ -10,6 +10,7 @@
 
 using std::cout;
 
+using namespace Parser;
 using namespace Utility;
 using namespace Files;
 using namespace Origami;
@@ -17,36 +18,33 @@ using namespace DomainContainer;
 using namespace Simulation;
 using namespace Movetypes;
 
-int main() {
-    OrigamiInputFile origami_input {"tests/snodin_unbound.json"};
+int main(int argc, char* argv[]) {
+    InputParameters input_parameters {argc, argv};
+
+    // Setup origami system
+    OrigamiInputFile origami_input {input_parameters.m_origami_input_filename};
     vector<vector<int>> identities {origami_input.m_identities};
     vector<vector<string>> sequences {origami_input.m_sequences};
-    vector<Chain> chains {origami_input.m_chains};
+    vector<Chain> configs {origami_input.m_chains};
     OrigamiSystem origami {
             identities,
             sequences,
-            chains,
-            300,
-            1,
-            1,
-            1,
-            false};
+            configs,
+            input_parameters.m_temp,
+            input_parameters.m_staple_M,
+            input_parameters.m_cation_M,
+            input_parameters.m_lattice_site_volume,
+            input_parameters.m_cyclic};
 
-    OrigamiTrajOutputFile trajout {};
-    vector<double> movetype_probs {0.5, 0.5};
-    GCMCSimulation sim {origami, trajout, {movetype[3], movetype[5]}, movetype_probs};
-    sim.run(10000, 1, 1);
+    // Setup simulation
+    OrigamiTrajOutputFile config_out {input_parameters.m_configs_output_filename,
+           input_parameters.m_configs_output_freq, origami};
+    vector<OrigamiOutputFile*> outs {&config_out};
+    GCMCSimulation sim {origami,
+        outs,
+        input_parameters.m_movetype_constructors,
+        input_parameters.m_movetype_probs};
 
-    //origami.add_chain(1);
-    //Domain& cd_i {*origami.m_domains[1][0]};
-    //VectorThree pos_1 {0, 0, 0};
-    //VectorThree ore_1 {-1, 0, 0};
-    //origami.set_domain_config(cd_i, pos_1, ore_1);
-    //VectorThree pos_2 {1, 0, 0};
-    //VectorThree ore_2 {1, 0, 0};
-    //origami.set_domain_config(cd_i, pos_2, ore_2);
-    // parse input file
-    // setup io
-    // setup sim
-    // run sim
+    sim.run(input_parameters.m_steps, input_parameters.m_logging_freq,
+            input_parameters.m_centering_freq);
 }
