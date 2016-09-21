@@ -816,4 +816,3 @@ double Origami::molarity_to_lattice_volume(double molarity, double lattice_site_
     double V {1 / (molarity * Utility::NA / sites_per_litre)};
     return V;
 }
-

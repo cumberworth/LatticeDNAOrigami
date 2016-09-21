@@ -28,7 +28,7 @@ namespace Parser {
             double m_staple_M {1};
 
             // mol/L
-            double m_cation_M;
+            double m_cation_M {1};
 
             // L
             double m_lattice_site_volume {1};

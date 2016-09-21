@@ -25,7 +25,9 @@ double NearestNeighbour::calc_hybridization_energy(
         double cation_M) {
     double DH;
     double DS;
-    tie(DH, DS) = calc_hybridization_H_and_S(seq, cation_M);
+    tuple<double, double> tied_result {calc_hybridization_H_and_S(seq, cation_M)};
+    DH = std::get<0>(tied_result);
+    DS = std::get<1>(tied_result);
     double DG {DH - temp * DS};
     
     // Convert from kcal/mol to unitless dimension
@@ -68,8 +70,8 @@ tuple<double, double> NearestNeighbour::calc_hybridization_H_and_S(string seq, d
         string c4 {comp_seq[nuc_i + 1]};
         string comp_seq_pair {c3 + c4};
         string key {seq_pair + "/" + comp_seq_pair};
-        DH_stack = NN_Enthalpy.at(key);
-        DS_stack = NN_Entropy.at(key);
+        DH_stack += NN_Enthalpy.at(key);
+        DS_stack += NN_Entropy.at(key);
     }
 
     // Terminal AT penalties
@@ -88,7 +90,8 @@ tuple<double, double> NearestNeighbour::calc_hybridization_H_and_S(string seq, d
     double DS_hybrid = DS_init + DS_sym + DS_stack + DS_at;
     DS_hybrid += 0.368 * (seq.size() / 2) * log(cation_M) / 1000;
 
-    return tie(DH_hybrid, DS_hybrid);
+    tuple<double, double> tied_result {tie(DH_hybrid, DS_hybrid)};
+    return tied_result;
 }
 
 vector<string> NearestNeighbour::find_longest_contig_complement(
