@@ -1,5 +1,5 @@
 CC = g++
-CPPFLAGS = -g -I include
+CPPFLAGS = -O3 -I include
 LDFLAGS = -lboost_program_options
 
 BUILD = build/
