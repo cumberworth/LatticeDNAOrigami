@@ -735,6 +735,7 @@ bool CBStapleRegrowthMCMovetype::attempt_move() {
     if (bound_domains.empty()) {
         throw OrigamiMisuse {};
     }
+
     // Grow staple
     m_regrow_old = false;
     double delta_e {0};
