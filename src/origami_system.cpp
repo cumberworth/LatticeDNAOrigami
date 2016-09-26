@@ -153,7 +153,7 @@ double OrigamiSystem::check_domain_constraints(
         VectorThree pos,
         VectorThree ore) {
     // Updates positions and orientations and returns without reverting if no 
-    // constraint violation. But states remained unassigned.
+    // constraint violation. But states left unassigned.
     Occupancy occupancy {position_occupancy(pos)};
     double delta_e {0};
 
@@ -169,12 +169,15 @@ double OrigamiSystem::check_domain_constraints(
             break;
         case Occupancy::unbound:
             update_domain(*cd_i_p, pos, ore);
+            update_occupancies(*cd_i_p, pos);
             try {
                 delta_e += bind_domain(*cd_i_p);
             }
             catch (ConstraintViolation) {
+                unassign_domain(*cd_i_p);
                 throw;
             }
+            unassign_domain(*cd_i_p);
             break;
         case Occupancy::unassigned:
             update_domain(*cd_i_p, pos, ore);
@@ -423,7 +426,7 @@ void OrigamiSystem::update_occupancies(Domain& cd_i, VectorThree pos) {
 
 double OrigamiSystem::bind_domain(Domain& cd_i) {
     // Check constraints for an unbound to (mis)bound transition
-    Domain& cd_j {*unbound_domain_at(cd_i.m_pos)};
+    Domain& cd_j {*cd_i.m_bound_domain};
     double delta_e {0};
     bool comp {check_domains_complementary(cd_i, cd_j)};
     if (comp) {
@@ -574,7 +577,7 @@ void OrigamiSystem::check_helical_constraints(Domain& cd_1, Domain& cd_2) {
 
         // Check doubly contiguous constraint
         if (bound_same_chain) {
-            if (cd_bound_1.m_d == cd_bound_2.m_d + 1) {
+            if (cd_bound_1.m_d == cd_bound_2.m_d - 1) {
                 throw ConstraintViolation {};
             }
             else {
@@ -593,7 +596,7 @@ void OrigamiSystem::check_helical_constraints(Domain& cd_1, Domain& cd_2) {
 
         // Check double contiguous constraint
         if (bound_same_chain) {
-            if (cd_bound_1.m_d == cd_bound_2.m_d - 1) {
+            if (cd_bound_1.m_d == cd_bound_2.m_d + 1) {
                 throw ConstraintViolation {};
             }
             else {
