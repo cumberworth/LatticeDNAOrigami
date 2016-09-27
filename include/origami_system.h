@@ -71,17 +71,22 @@ namespace Origami{
     
             // Configuration properties
             vector<vector<Domain*>> m_domains {};
-//            inline unordered_map<int, int> chain_lengths() const {return m_chain_lengths;};
-            inline int num_staples() const {return m_domains.size() - 1;};
+//            inline unordered_map<int, int> chain_lengths() const {return m_chain_lengths;}
+            inline int num_staples() const {return m_domains.size() - 1;}
+            int num_unique_staples() const;
             int m_num_domains {0};
-            inline int num_fully_bound_domains() const {return m_num_fully_bound_domains;};
-            inline double energy() const {return m_energy;};
+            inline int num_bound_domain_pairs() const {return (m_num_domains -
+                    m_pos_to_unbound_d.size()) / 2;}
+            inline int num_fully_bound_domain_pairs() const {return m_num_fully_bound_domain_pairs;}
+            inline int num_misbound_domain_pairs() const {
+                    return num_bound_domain_pairs() - num_fully_bound_domain_pairs();}
+            inline double energy() const {return m_energy;}
     
             // Staple properties
             inline int num_staples_of_ident(int staple_ident) const {return
-                    m_identity_to_index[staple_ident].size();};
+                    m_identity_to_index[staple_ident].size();}
             inline vector<int> complimentary_scaffold_domains(int staple_ident)
-                    const {return m_staple_ident_to_scaffold_ds[staple_ident];};
+                    const {return m_staple_ident_to_scaffold_ds[staple_ident];}
     
             // Configuration accessors
             Chains chains() const;
@@ -146,7 +151,7 @@ namespace Origami{
             unordered_map<VectorThree, Occupancy> m_position_occupancies {};
 
             // Number of fully complimentary domains bound
-            int m_num_fully_bound_domains {};
+            int m_num_fully_bound_domain_pairs {};
 
             // Energy tables index by chain/domain identity pair
             unordered_map<pair<int, int>, double> m_hybridization_energies {};

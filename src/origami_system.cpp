@@ -41,6 +41,18 @@ OrigamiSystem::OrigamiSystem(
     initialize_config(chains);
 }
 
+int OrigamiSystem::num_unique_staples() const {
+    int unique_staple_count {0};
+    for (auto indices: m_identity_to_index) {
+        if (indices.size() > 0) {
+            unique_staple_count++;
+        }
+    }
+
+    // Minus one to remove scaffold
+    return unique_staple_count - 1;
+}
+
 Chains OrigamiSystem::chains() const {
     // Return chains data structure for current config
     Chains chains;
@@ -75,7 +87,7 @@ double OrigamiSystem::unassign_domain(Domain& cd_i) {
     double delta_e {0};
     switch (occupancy) {
         case Occupancy::bound:
-            m_num_fully_bound_domains -= 1;
+            m_num_fully_bound_domain_pairs -= 1;
             delta_e += unassign_bound_domain(cd_i);
             break;
         case Occupancy::misbound:
@@ -398,7 +410,7 @@ void OrigamiSystem::update_occupancies(Domain& cd_i, VectorThree pos) {
             Domain* cd_j {unbound_domain_at(pos)};
             if (cd_i_p->m_d_ident == -cd_j->m_d_ident) {
                 new_state = Occupancy::bound;
-                m_num_fully_bound_domains += 1;
+                m_num_fully_bound_domain_pairs += 1;
             }
             else {
                 new_state = Occupancy::misbound;

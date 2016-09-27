@@ -38,8 +38,10 @@ int main(int argc, char* argv[]) {
 
     // Setup simulation
     OrigamiTrajOutputFile config_out {input_parameters.m_configs_output_filename,
-           input_parameters.m_configs_output_freq, origami};
-    vector<OrigamiOutputFile*> outs {&config_out};
+            input_parameters.m_configs_output_freq, origami};
+    OrigamiCountsOutputFile counts_out {input_parameters.m_counts_output_filename,
+            input_parameters.m_counts_output_freq, origami};
+    vector<OrigamiOutputFile*> outs {&config_out, &counts_out};
     GCMCSimulation sim {origami,
         outs,
         input_parameters.m_movetype_constructors,

@@ -29,21 +29,27 @@ namespace Files {
     class OrigamiOutputFile {
         // Output file interface
         public:
+            OrigamiOutputFile(string filename, int write_freq, OrigamiSystem& origami_system);
             virtual void write(int step) = 0;
             int m_write_freq;
+            string m_filename;
+            OrigamiSystem& m_origami_system;
+            ofstream m_file;
     };
 
     class OrigamiTrajOutputFile: public OrigamiOutputFile {
         // Trajectory output file for simulation configurations
         public:
-            OrigamiTrajOutputFile(string filename, int write_freq, OrigamiSystem& origami_system);
+            using OrigamiOutputFile::OrigamiOutputFile;
             void write(int step);
-
-        private:
-            string m_filename;
-            OrigamiSystem& m_origami_system;
-            ofstream m_file;
     };
+
+    class OrigamiCountsOutputFile: public OrigamiOutputFile {
+        public:
+            using OrigamiOutputFile::OrigamiOutputFile;
+            void write(int step);
+    };
+
 }
 
 #endif // FILES_H

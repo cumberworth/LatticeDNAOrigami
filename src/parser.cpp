@@ -39,6 +39,8 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("origami_input_filename", po::value<string>(), "Origami input filename")
         ("configs_output_filename", po::value<string>(), "Configuration output filename")
         ("configs_output_freq", po::value<int>(), "Configuration output write frequency")
+        ("counts_output_filename", po::value<string>(), "Counts output filename")
+        ("counts_output_freq", po::value<int>(), "Coounts output write frequency")
         ("temp", po::value<double>(), "System temperature (K)")
         ("staple_M", po::value<double>(), "Staple concentration (mol/L)")
         ("cation_M", po::value<double>(), "Cation concentration (mol/L)")
@@ -75,6 +77,19 @@ InputParameters::InputParameters(int argc, char* argv[]) {
             m_configs_output_filename = vm["configs_output_filename"].as<string>();
         else {
             cout << "Configuration output filename needed.";
+            exit(1);
+        }
+    }
+
+    if (vm.count("counts_output_freq")) {
+        m_counts_output_freq = vm["counts_output_freq"].as<int>();
+    }
+
+    if (m_configs_output_freq != 0) {
+        if (vm.count("counts_output_filename"))
+            m_counts_output_filename = vm["counts_output_filename"].as<string>();
+        else {
+            cout << "Count output filename needed.";
             exit(1);
         }
     }

@@ -20,6 +20,8 @@ namespace Parser {
             string m_origami_input_filename;
             string m_configs_output_filename;
             int m_configs_output_freq {0};
+            string m_counts_output_filename;
+            int m_counts_output_freq {0};
 
             // Kelvin
             double m_temp {300};

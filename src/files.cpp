@@ -62,7 +62,7 @@ OrigamiInputFile::OrigamiInputFile(string filename) {
     }
 }
 
-OrigamiTrajOutputFile::OrigamiTrajOutputFile(
+OrigamiOutputFile::OrigamiOutputFile(
         string filename,
         int write_freq,
         OrigamiSystem& origami_system) :
@@ -90,5 +90,15 @@ void OrigamiTrajOutputFile::write(int step) {
         }
         m_file << "\n";
     }
+    m_file << "\n";
+}
+
+void OrigamiCountsOutputFile::write(int step) {
+    m_file << step << " ";
+    m_file << m_origami_system.num_staples() << " ";
+    m_file << m_origami_system.num_unique_staples() << " ";
+    m_file << m_origami_system.num_bound_domain_pairs() << " ";
+    m_file << m_origami_system.num_fully_bound_domain_pairs() << " ";
+    m_file << m_origami_system.num_misbound_domain_pairs() << " ";
     m_file << "\n";
 }
