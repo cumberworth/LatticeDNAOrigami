@@ -45,7 +45,7 @@ void GCMCSimulation::run(int steps, int logging_freq=1, int center_freq=1) {
             movetype->reset_origami();
         }
 
-        if (step % center_freq == 0) {
+        if (center_freq != 0 and step % center_freq == 0) {
             m_origami_system.centre();
             m_origami_system.check_all_constraints();
         }
