@@ -1,6 +1,6 @@
 CC = g++
-CPPFLAGS = -I include -g
-LDFLAGS = -lboost_program_options
+CPPFLAGS = -I include -pg -g
+LDFLAGS = -lboost_program_options -pg -g
 BUILD = build/
 vpath %.h include
 vpath %.cpp src

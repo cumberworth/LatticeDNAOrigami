@@ -223,7 +223,7 @@ void RegrowthMCMovetype::grow_staple(int d_i_index, vector<Domain*> selected_cha
 
     // Overcount correction
     int overcount {old_num_bound_domains - m_origami_system.m_num_domains};
-    m_modifier /= overcount;
+    m_modifier /= (overcount + 1);
 }
 
 bool OrientationRotationMCMovetype::attempt_move() {
