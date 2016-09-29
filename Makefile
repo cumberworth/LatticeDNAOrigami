@@ -7,6 +7,7 @@ BUILD = build/
 vpath %.h include
 vpath %.cpp src
 
+INSTALL_LOC = ../../bin/latticeDNAOrigami
 TARGET = bin/latticeDNAOrigami
 TESTTARGET = tests/testLatticeDNAOrigami
 
@@ -17,7 +18,7 @@ testing: $(TESTTARGET)
 $(TARGET): $(BUILD)main.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o $(BUILD)domain.o $(BUILD)simulation.o $(BUILD)movetypes.o $(BUILD)random_gens.o $(BUILD)ideal_random_walk.o $(BUILD)parser.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-$(TESTTARGET): $(BUILD)test.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o $(BUILD)domain.o $(BUILD)simulation.o $(BUILD)movetypes.o
+$(TESTTARGET): $(BUILD)test.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o $(BUILD)domain.o $(BUILD)simulation.o $(BUILD)movetypes.o $(BUILD)random_gens.o $(BUILD)ideal_random_walk.o $(BUILD)parser.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 	$(TESTTARGET)
 
@@ -60,6 +61,9 @@ $(BUILD)parser.o: parser.cpp parser.h
 $(BUILD)test.o: test.cpp
 	$(CC) -o $@ -c $(CPPFLAGS) $<
 
-.PHONY: clean
+.PHONY: clean install
 clean:
 	rm $(BUILD)*.o
+
+install:
+	cp $(TARGET) $(INSTALL_LOC)

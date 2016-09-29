@@ -79,15 +79,17 @@ tuple<double, double> NearestNeighbour::calc_hybridization_H_and_S(string seq, d
     if (seq.front() == 'A' or seq.front() == 'T') {
         terminal_at_pairs += 1;
     }
-    if (seq.back() == 'A' or seq.front() == 'T') {
+    if (seq.back() == 'A' or seq.back() == 'T') {
         terminal_at_pairs +=1;
     }
-    double DH_at {NN_Enthalpy.at("TERMINAL_AT_PENALTY")};
-    double DS_at {NN_Entropy.at("TERMINAL_AT_PENALTY")};
+    double DH_at {NN_Enthalpy.at("TERMINAL_AT_PENALTY") * terminal_at_pairs};
+    double DS_at {NN_Entropy.at("TERMINAL_AT_PENALTY") * terminal_at_pairs};
 
     // Sum and correct for salt
     double DH_hybrid = DH_init + DH_stack + DH_at;
     double DS_hybrid = DS_init + DS_sym + DS_stack + DS_at;
+
+    // Consider specifying num phosphates to account for sequences with terminal residues
     DS_hybrid += 0.368 * (seq.size() / 2) * log(cation_M) / 1000;
 
     tuple<double, double> tied_result {tie(DH_hybrid, DS_hybrid)};

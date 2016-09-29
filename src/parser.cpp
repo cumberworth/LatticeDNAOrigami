@@ -85,7 +85,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         m_counts_output_freq = vm["counts_output_freq"].as<int>();
     }
 
-    if (m_configs_output_freq != 0) {
+    if (m_counts_output_freq != 0) {
         if (vm.count("counts_output_filename"))
             m_counts_output_filename = vm["counts_output_filename"].as<string>();
         else {

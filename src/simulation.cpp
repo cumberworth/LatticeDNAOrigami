@@ -2,6 +2,7 @@
 
 #include <random>
 #include <iostream>
+#include <set>
 
 #include "utility.h"
 #include "random_gens.h"
@@ -77,9 +78,9 @@ unique_ptr<MCMovetype> GCMCSimulation::select_movetype() {
 }
 
 void GCMCSimulation::write_log_entry(int step, MCMovetype& movetype, bool accepted) {
-    cout << "Step: " << step << "\n";
-    cout << "Movetype: " << movetype.m_label() << "\n";
-    cout << "Staples: " << m_origami_system.num_staples() << "\n";
-    cout << "Accepted: " << accepted << "\n";
+    cout << "Step: " << step << " ";
+    cout << "Movetype: " << movetype.m_label() << " ";
+    cout << "Staples: " << m_origami_system.num_staples() << " ";
+    cout << "Accepted: " << accepted << " ";
     cout << "\n";
 }

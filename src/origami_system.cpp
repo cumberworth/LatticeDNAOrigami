@@ -66,6 +66,7 @@ Chains OrigamiSystem::chains() const {
             orientations.push_back(domain->m_ore);
         }
         Chain chain {c_i, c_i_ident, positions, orientations};
+        chains.push_back(chain);
     }
     return chains;
 }
@@ -146,6 +147,9 @@ double OrigamiSystem::set_domain_config(
         Domain& cd_i,
         VectorThree pos,
         VectorThree ore) {
+    if (cd_i.m_state != Occupancy::unassigned) {
+        throw OrigamiMisuse {};
+    }
     // Check constraints and update if obeyed, otherwise throw
     double delta_e {check_domain_constraints(cd_i, pos, ore)};
     update_occupancies(cd_i, pos);
@@ -746,7 +750,7 @@ void OrigamiSystem::check_junction_rear(Domain& cd_4) {
 }
 
 bool OrigamiSystem::doubly_contiguous_junction(Domain& cd_1, Domain& cd_2) {
-    // Given that d1 and d2 exist and are bound
+    // Given that d1 and d2 exist and are bound and contiguous
 
     // Check doubly contiguous
     Domain& cd_bound_1 {*cd_1.m_bound_domain};
@@ -755,7 +759,7 @@ bool OrigamiSystem::doubly_contiguous_junction(Domain& cd_1, Domain& cd_2) {
         return false;
     }
 
-    if (cd_bound_1.m_d != cd_bound_2.m_d - 1) {
+    if (cd_bound_2.m_d != cd_bound_1.m_d - 1) {
         return false;
     }
 
@@ -763,6 +767,9 @@ bool OrigamiSystem::doubly_contiguous_junction(Domain& cd_1, Domain& cd_2) {
     VectorThree ndr {cd_2.m_pos - cd_1.m_pos};
     VectorThree ore_1 {cd_1.m_ore};
     if (ndr != ore_1) {
+
+        // To be clear, this is only used to check for changes in junction
+        // constraints; if it's been set before the local constraints were okay
         return false;
     }
 
