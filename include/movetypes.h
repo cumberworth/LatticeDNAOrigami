@@ -28,6 +28,7 @@ namespace Movetypes {
         public:
             MCMovetype(OrigamiSystem& origami_system, RandomGens& random_gens) : m_origami_system
                     {origami_system}, m_random_gens {random_gens} {};
+            virtual ~MCMovetype() {};
 
             virtual bool attempt_move() = 0;
             void reset_origami();
@@ -113,7 +114,7 @@ namespace Movetypes {
 
             // These can be overidden for a derived class the excludes misbinding
             int preconstrained_df {0};
-            int m_insertion_sites {m_origami_system.m_num_domains};
+            int m_insertion_sites {m_origami_system.num_domains()};
 
         private:
             bool staple_insertion_accepted(int c_i_ident);
@@ -161,7 +162,7 @@ namespace Movetypes {
 
             // These can be overidden for a derived class the excludes misbinding
             int preconstrained_df {0};
-            int m_insertion_sites {m_origami_system.m_num_domains};
+            int m_insertion_sites {m_origami_system.num_domains()};
 
         private:
             bool staple_insertion_accepted(int c_i_ident);

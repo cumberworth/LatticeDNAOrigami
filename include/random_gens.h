@@ -16,6 +16,7 @@ namespace RandomGen {
     class RandomGens {
         public:
             RandomGens();
+            ~RandomGens();
 
             std::mt19937_64 m_random_engine {};
             std::uniform_real_distribution<double> m_uniform_real_dist;

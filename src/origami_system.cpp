@@ -41,6 +41,14 @@ OrigamiSystem::OrigamiSystem(
     initialize_config(chains);
 }
 
+OrigamiSystem::~OrigamiSystem() {
+    for (auto chain: m_domains) {
+        for (auto domain: chain) {
+            delete domain;
+        }
+    }
+}
+
 int OrigamiSystem::num_unique_staples() const {
     int unique_staple_count {0};
     for (auto indices: m_identity_to_index) {
@@ -173,9 +181,6 @@ double OrigamiSystem::check_domain_constraints(
     Occupancy occupancy {position_occupancy(pos)};
     double delta_e {0};
 
-    // Reference to domain seems to go out of scope, temp hack to circumvent
-    // (On airplane so no internet)
-    Domain* cd_i_p {&cd_i};
     switch (occupancy) {
         case Occupancy::bound:
             throw ConstraintViolation {};
@@ -184,19 +189,19 @@ double OrigamiSystem::check_domain_constraints(
             throw ConstraintViolation {};
             break;
         case Occupancy::unbound:
-            update_domain(*cd_i_p, pos, ore);
-            update_occupancies(*cd_i_p, pos);
+            update_domain(cd_i, pos, ore);
+            update_occupancies(cd_i, pos);
             try {
-                delta_e += bind_domain(*cd_i_p);
+                delta_e += bind_domain(cd_i);
             }
             catch (ConstraintViolation) {
-                unassign_domain(*cd_i_p);
+                unassign_domain(cd_i);
                 throw;
             }
-            unassign_domain(*cd_i_p);
+            unassign_domain(cd_i);
             break;
         case Occupancy::unassigned:
-            update_domain(*cd_i_p, pos, ore);
+            update_domain(cd_i, pos, ore);
     }
     return delta_e;
 }
@@ -407,12 +412,10 @@ void OrigamiSystem::update_occupancies(Domain& cd_i, VectorThree pos) {
     Occupancy occupancy {position_occupancy(pos)};
     Occupancy new_state;
 
-    // Reference pointer hack for switch
-    Domain* cd_i_p {&cd_i};
     switch (occupancy) {
         case Occupancy::unbound: {
             Domain* cd_j {unbound_domain_at(pos)};
-            if (cd_i_p->m_d_ident == -cd_j->m_d_ident) {
+            if (cd_i.m_d_ident == -cd_j->m_d_ident) {
                 new_state = Occupancy::bound;
                 m_num_fully_bound_domain_pairs += 1;
             }
@@ -421,18 +424,18 @@ void OrigamiSystem::update_occupancies(Domain& cd_i, VectorThree pos) {
             }
 
             m_pos_to_unbound_d.erase(pos);
-            cd_i_p->m_state = new_state;
+            cd_i.m_state = new_state;
             cd_j->m_state = new_state;
             m_position_occupancies[pos] = new_state;
-            cd_j->m_bound_domain = cd_i_p;
-            cd_i_p->m_bound_domain = cd_j;
+            cd_j->m_bound_domain = &cd_i;
+            cd_i.m_bound_domain = cd_j;
             break;
         }
         case Occupancy::unassigned:
             new_state = Occupancy::unbound;
-            cd_i_p->m_state = new_state;
+            cd_i.m_state = new_state;
             m_position_occupancies[pos] = new_state;
-            m_pos_to_unbound_d[pos] = cd_i_p;
+            m_pos_to_unbound_d[pos] = &cd_i;
             break;
         default:
             cout << "a\n";

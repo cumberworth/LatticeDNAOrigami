@@ -41,6 +41,23 @@ namespace Origami{
         // Cubic lattice domain-level resolution model of DNA origami
         public:
     
+            OrigamiSystem(
+                    const vector<vector<int>>& identities,
+                    const vector<vector<string>>& sequences,
+                    const Chains& chains,
+                    double temp,
+                    double lattice_site_volume,
+                    double cation_M,
+                    double staple_M,
+                    bool cyclic);
+            ~OrigamiSystem();
+
+            // THESE NEED TO BE IMPLEMENTED TO DEAL WITH THE DOMAIN POINTER VECTOR
+            OrigamiSystem(const OrigamiSystem&) = default;
+            OrigamiSystem& operator=(const OrigamiSystem&) = default;
+            OrigamiSystem(OrigamiSystem&&) = default;
+            OrigamiSystem& operator=(OrigamiSystem&&) = default;
+    
             // Configuration independent system properties
             const vector<vector<int>> m_identities;
             const vector<vector<string>> m_sequences;
@@ -51,30 +68,11 @@ namespace Origami{
             const bool m_cyclic;
             const int c_scaffold {0};
     
-            // Constructor and destructor
-            OrigamiSystem(
-                    const vector<vector<int>>& identities,
-                    const vector<vector<string>>& sequences,
-                    const Chains& chains,
-                    double temp,
-                    double lattice_site_volume,
-                    double cation_M,
-                    double staple_M,
-                    bool cyclic);
-            ~OrigamiSystem() = default;
-    
-            // Copy and move
-            OrigamiSystem(const OrigamiSystem&) = default;
-            OrigamiSystem& operator=(const OrigamiSystem&) = default;
-            OrigamiSystem(OrigamiSystem&&) = default;
-            OrigamiSystem& operator=(OrigamiSystem&&) = default;
-    
             // Configuration properties
             vector<vector<Domain*>> m_domains {};
-//            inline unordered_map<int, int> chain_lengths() const {return m_chain_lengths;}
             inline int num_staples() const {return m_domains.size() - 1;}
             int num_unique_staples() const;
-            int m_num_domains {0};
+            inline int num_domains() {return m_num_domains;};
             inline int num_bound_domain_pairs() const {return (m_num_domains -
                     m_pos_to_unbound_d.size()) / 2;}
             inline int num_fully_bound_domain_pairs() const {return m_num_fully_bound_domain_pairs;}
@@ -136,6 +134,7 @@ namespace Origami{
             virtual double bind_noncomplementary_domains(Domain& cd_i, Domain& cd_j);
 
         private:
+            int m_num_domains {0};
     
             // Data
 

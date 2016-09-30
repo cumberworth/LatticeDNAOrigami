@@ -96,7 +96,7 @@ bool MCMovetype::test_acceptance(double p_ratio) {
 }
 
 Domain* MCMovetype::select_random_domain() {
-    int d_i_index {m_random_gens.uniform_int(0, m_origami_system.m_num_domains - 1)};
+    int d_i_index {m_random_gens.uniform_int(0, m_origami_system.num_domains() - 1)};
     int counter {0};
     for (auto chain: m_origami_system.m_domains) {
         for (auto domain: chain) {
@@ -206,7 +206,7 @@ double RegrowthMCMovetype::set_growth_point(Domain& growth_domain_new, Domain& g
 void RegrowthMCMovetype::grow_staple(int d_i_index, vector<Domain*> selected_chain) {
     // Grow staple in both directions out from growth point
     // The indices passed to grow chain should include the growth point
-    int old_num_bound_domains {m_origami_system.m_num_domains};
+    int old_num_bound_domains {m_origami_system.num_domains()};
 
     // Grow in three prime direction (staple domains increase in 3' direction)
     auto first_iter3 {selected_chain.begin() + d_i_index};
@@ -222,7 +222,7 @@ void RegrowthMCMovetype::grow_staple(int d_i_index, vector<Domain*> selected_cha
     grow_chain(domains_five_prime);
 
     // Overcount correction
-    int overcount {old_num_bound_domains - m_origami_system.m_num_domains};
+    int overcount {old_num_bound_domains - m_origami_system.num_domains()};
     m_modifier /= (overcount + 1);
 }
 
