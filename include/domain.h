@@ -32,7 +32,7 @@ namespace DomainContainer{
 
             Domain* operator+(int increment);
 
-            virtual void check_twist_constraint(VectorThree ndr, Domain& cd_j) = 0;
+            virtual bool check_twist_constraint(VectorThree ndr, Domain& cd_j) = 0;
 
             Domain* m_forward_domain {nullptr};
             Domain* m_backward_domain {nullptr};
@@ -43,7 +43,7 @@ namespace DomainContainer{
         public:
 //            SixteenDomain(int c, int c_ident, int d, int d_ident, int c_length):
 //                Domain {c, c_ident, d, d_ident, c_length} {};
-            void check_twist_constraint(VectorThree ndr, Domain& cd_j);
+            bool check_twist_constraint(VectorThree ndr, Domain& cd_j);
     };
 
 }

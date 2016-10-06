@@ -125,7 +125,7 @@ double OrigamiSystem::unassign_domain(Domain& cd_i) {
 void OrigamiSystem::set_domain_orientation(Domain& cd_i, VectorThree ore) {
     Occupancy occupancy {cd_i.m_state};
     if (occupancy == Occupancy::bound) {
-        throw ConstraintViolation {};
+        m_constraints_violated = true;
     }
     else {
         cd_i.m_ore = ore;
@@ -172,8 +172,10 @@ double OrigamiSystem::set_domain_config(
 
     // Check constraints and update if obeyed, otherwise throw
     double delta_e {check_domain_constraints(cd_i, pos, ore)};
-    update_occupancies(cd_i, pos);
-    m_energy += delta_e;
+    if (not m_constraints_violated) {
+        update_occupancies(cd_i, pos);
+        m_energy += delta_e;
+    }
     return delta_e;
 }
 
@@ -208,21 +210,15 @@ double OrigamiSystem::check_domain_constraints(
 
     switch (occupancy) {
         case Occupancy::bound:
-            throw ConstraintViolation {};
+            m_constraints_violated = true;
             break;
         case Occupancy::misbound:
-            throw ConstraintViolation {};
+            m_constraints_violated = true;
             break;
         case Occupancy::unbound:
             update_domain(cd_i, pos, ore);
             update_occupancies(cd_i, pos);
-            try {
-                delta_e += bind_domain(cd_i);
-            }
-            catch (ConstraintViolation) {
-                internal_unassign_domain(cd_i);
-                throw;
-            }
+            delta_e += bind_domain(cd_i);
             internal_unassign_domain(cd_i);
             break;
         case Occupancy::unassigned:
@@ -342,6 +338,9 @@ void OrigamiSystem::initialize_config(Chains chains) {
             VectorThree pos = chain.positions[d_i];
             VectorThree ore = chain.orientations[d_i];
             set_domain_config(*domain, pos, ore);
+            if (m_constraints_violated) {
+                throw OrigamiMisuse {};
+            }
         }
     }
 
@@ -494,21 +493,41 @@ double OrigamiSystem::bind_noncomplementary_domains(
 
 double OrigamiSystem::bind_complementary_domains(Domain& cd_i, Domain& cd_j) {
     // cd_i is new
-    check_domain_orientations_opposing(cd_i, cd_j);
-    check_domain_pair_constraints(cd_i);
-    check_domain_pair_constraints(cd_j);
+    m_constraints_violated = true;
+    if (not check_domain_orientations_opposing(cd_i, cd_j)) {
+        return 0;
+    }
+    if (not check_domain_pair_constraints(cd_i)) {
+        return 0;
+    }
+    if (not check_domain_pair_constraints(cd_j)) {
+        return 0;
+    }
 
     // Missed one linear helix check per chain
-    check_linear_helix_rear(cd_i);
-    check_linear_helix_rear(cd_j);
+    if (not check_linear_helix_rear(cd_i)) {
+        return 0;
+    }
+    if (not check_linear_helix_rear(cd_j)) {
+        return 0;
+    }
 
     // Missed two contiguous junction checks per chain
-    check_junction_front(cd_i);
-    check_junction_front(cd_j);
-    check_junction_rear(cd_i);
-    check_junction_rear(cd_j);
+    if (not check_junction_front(cd_i)) {
+        return 0;
+    }
+    if (not check_junction_front(cd_j)) {
+        return 0;
+    }
+    if (not check_junction_rear(cd_i)) {
+        return 0;
+    }
+    if (not check_junction_rear(cd_j)) {
+        return 0;
+    }
 
     // Collect energies
+    m_constraints_violated = false;
     double delta_e {0};
     delta_e += hybridization_energy(cd_i, cd_j);
     delta_e += check_stacking(cd_i, cd_j);
@@ -528,10 +547,8 @@ void OrigamiSystem::check_all_constraints() {
     // Reset configuration
     for (auto chain: m_domains) {
         for (auto domain: chain) {
-            try {
-                set_domain_config(*domain, domain->m_pos, domain->m_ore);
-            }
-            catch (ConstraintViolation) {
+            set_domain_config(*domain, domain->m_pos, domain->m_ore);
+            if (m_constraints_violated) {
                 cout << "b\n";
                 set_domain_config(*domain, domain->m_pos, domain->m_ore);
                 throw OrigamiMisuse {};
@@ -586,7 +603,8 @@ double OrigamiSystem::check_stacking(Domain& cd_new, Domain& cd_old) {
     return delta_e;
 }
 
-void OrigamiSystem::check_domain_pair_constraints(Domain& cd_i) {
+bool OrigamiSystem::check_domain_pair_constraints(Domain& cd_i) {
+    bool pair_constraints_obeyed {true};
     // Check both pairs
     for (int i: {-1, 0}) {
         Domain* cd_1 {cd_i + i};
@@ -595,15 +613,20 @@ void OrigamiSystem::check_domain_pair_constraints(Domain& cd_i) {
             continue;
         }
         if (cd_1->m_state == Occupancy::bound and cd_2->m_state == Occupancy::bound) {
-            check_helical_constraints(*cd_1, *cd_2);
+            if (not check_helical_constraints(*cd_1, *cd_2)) {
+                pair_constraints_obeyed = false;
+                break;
+            }
         }
         else {
         }
     }
+    return pair_constraints_obeyed;
 }
 
-void OrigamiSystem::check_helical_constraints(Domain& cd_1, Domain& cd_2) {
+bool OrigamiSystem::check_helical_constraints(Domain& cd_1, Domain& cd_2) {
     // Given that d1 and d2 exist and are bound
+    bool helical_constraints_obeyed {true};
 
     // Calculate next domain vector
     VectorThree ndr {cd_2.m_pos - cd_1.m_pos};
@@ -618,17 +641,19 @@ void OrigamiSystem::check_helical_constraints(Domain& cd_1, Domain& cd_2) {
         // Check doubly contiguous constraint
         if (bound_same_chain) {
             if (cd_bound_1.m_d == cd_bound_2.m_d - 1) {
-                throw ConstraintViolation {};
+                helical_constraints_obeyed = false;
             }
             else {
-                check_doubly_contiguous_junction(cd_1, cd_2);
+                if (not check_doubly_contiguous_junction(cd_1, cd_2)) {
+                    helical_constraints_obeyed = false;
+                }
             }
         }
     }
 
     // Non-physical case
     else if (cd_1.m_ore == -ndr) {
-        throw ConstraintViolation {};
+        helical_constraints_obeyed = false;
     }
 
     // Same helix case
@@ -637,29 +662,37 @@ void OrigamiSystem::check_helical_constraints(Domain& cd_1, Domain& cd_2) {
         // Check double contiguous constraint
         if (bound_same_chain) {
             if (cd_bound_1.m_d == cd_bound_2.m_d + 1) {
-                throw ConstraintViolation {};
+                helical_constraints_obeyed = false;
             }
             else {
-                cd_1.check_twist_constraint(ndr, cd_2);
-                check_linear_helix(ndr, cd_2);
+                if (cd_1.check_twist_constraint(ndr, cd_2)) {
+                    if (not check_linear_helix(ndr, cd_2)) {
+                        helical_constraints_obeyed = false;
+                    }
+                }
+                else {
+                    helical_constraints_obeyed = false;
+                }
             }
         }
     }
+    return helical_constraints_obeyed;
 }
 
-void OrigamiSystem::check_linear_helix_rear(Domain& cd_3) {
+bool OrigamiSystem::check_linear_helix_rear(Domain& cd_3) {
     // Check linear helix constraints given rear domain exists and bound
-        Domain* cd_2 {cd_3 + -1};
-        Domain* cd_1 {cd_3 + -2};
+    bool linear_if_helix {true};
+    Domain* cd_2 {cd_3 + -1};
+    Domain* cd_1 {cd_3 + -2};
     if (cd_1 == nullptr or cd_2 == nullptr) {
-        return;
+        return linear_if_helix;
     }
     
     // Domains 1 and 2 not bound
     bool cd_1_bound {cd_1->m_state == Occupancy::bound};
     bool cd_2_bound {cd_2->m_state == Occupancy::bound};
     if (not (cd_1_bound and cd_2_bound)) {
-        return;
+        return linear_if_helix;
     }
     VectorThree ndr_1 {cd_2->m_pos - cd_1->m_pos};
     VectorThree ndr_2 {cd_3.m_pos - cd_2->m_pos};
@@ -667,53 +700,57 @@ void OrigamiSystem::check_linear_helix_rear(Domain& cd_3) {
     VectorThree ore_2 {cd_2->m_ore};
     // Domains 1 and 2 are junction
     if (ndr_1 == ore_1) {
-        return;
+        return linear_if_helix;
     }
 
     // Domains 2 and 3 are junction
     if (ndr_2 == ore_2) {
-        return;
+        return linear_if_helix;
     }
 
     // Domains are linear
     if (ndr_1 == ndr_2) {
-        return;
+        return linear_if_helix;
     }
 
-    throw ConstraintViolation {};
+    linear_if_helix = false;
+    return linear_if_helix;
 }
 
-void OrigamiSystem::check_linear_helix(VectorThree ndr_1,Domain& cd_2) {
+bool OrigamiSystem::check_linear_helix(VectorThree ndr_1,Domain& cd_2) {
+    bool linear_if_helix {true};
     Domain* cd_3 {cd_2 + 1};
     if (cd_3 == nullptr) {
-        return;
+        return linear_if_helix;
     }
 
     // Third domain not bound or unasssigned
     if (cd_3->m_state != Occupancy::bound) {
-        return;
+        return linear_if_helix;
     }
 
     // Third domain part of new helix
     VectorThree ndr_2 {cd_3->m_pos - cd_2.m_pos};
     if (ndr_2 == cd_2.m_ore) {
-        return;
+        return linear_if_helix;
     }
 
     // Third domain linear
     if (ndr_1 == ndr_2) {
-        return;
+        return linear_if_helix;
     }
 
-    throw ConstraintViolation {};
+    linear_if_helix = false;
+    return linear_if_helix;
 }
 
-void OrigamiSystem::check_junction_front(Domain& cd_1) {
+bool OrigamiSystem::check_junction_front(Domain& cd_1) {
+    bool junction_constraints_obeyed {true};
     Domain* cd_2 {cd_1 + 1};
     Domain* cd_3 {cd_1 + 2};
     Domain* cd_4 {cd_1 + 3};
     if (cd_2 == nullptr or cd_3 == nullptr or cd_4 == nullptr) {
-        return;
+        return junction_constraints_obeyed;
     }
 
     // Check that all domains in bound state
@@ -721,23 +758,24 @@ void OrigamiSystem::check_junction_front(Domain& cd_1) {
     bool cd_3_bound {cd_3->m_state == Occupancy::bound};
     bool cd_4_bound {cd_4->m_state == Occupancy::bound};
     if (not (cd_2_bound and cd_3_bound and cd_4_bound)) {
-        return;
+        return junction_constraints_obeyed;
     }
 
     if (not doubly_contiguous_junction(*cd_2, *cd_3)) {
-        return;
+        return junction_constraints_obeyed;
     }
 
     return check_doubly_contiguous_junction(cd_1, *cd_2, *cd_3, *cd_4);
 }
 
-void OrigamiSystem::check_junction_rear(Domain& cd_4) {
+bool OrigamiSystem::check_junction_rear(Domain& cd_4) {
     // Check junction given d4 exists
+    bool junction_constraints_obeyed {true};
     Domain* cd_3 {cd_4 + -1};
     Domain* cd_2 {cd_4 + -2};
     Domain* cd_1 {cd_4 + -3};
     if (cd_1 == nullptr or cd_2 == nullptr or cd_3 == nullptr) {
-        return;
+        return junction_constraints_obeyed;
     }
 
     // Check that all domains in bound state
@@ -745,11 +783,11 @@ void OrigamiSystem::check_junction_rear(Domain& cd_4) {
     bool cd_2_bound {cd_2->m_state == Occupancy::bound};
     bool cd_3_bound {cd_3->m_state == Occupancy::bound};
     if (not (cd_1_bound and cd_2_bound and cd_3_bound)) {
-        return;
+        return junction_constraints_obeyed;
     }
 
     if (not doubly_contiguous_junction(*cd_2, *cd_3)) {
-        return;
+        return junction_constraints_obeyed;
     }
 
     return check_doubly_contiguous_junction(*cd_1, *cd_2, *cd_3, cd_4);
@@ -782,47 +820,58 @@ bool OrigamiSystem::doubly_contiguous_junction(Domain& cd_1, Domain& cd_2) {
     return true;
 }
 
-void OrigamiSystem::check_doubly_contiguous_junction(Domain& cd_2, Domain& cd_3) {
+bool OrigamiSystem::check_doubly_contiguous_junction(Domain& cd_2, Domain& cd_3) {
     // Already know d_2 and d_3 are doubly contiguous junction
+    bool junction_constraints_obeyed {true};
     Domain* cd_1 {cd_2 + -1};
     Domain* cd_4 {cd_3 + 1};
     if (cd_1 == nullptr or cd_4 == nullptr) {
-        return;
+        return junction_constraints_obeyed;
     }
 
     bool cd_1_bound {cd_1->m_state == Occupancy::bound};
     bool cd_4_bound {cd_4->m_state == Occupancy::bound};
     if (not (cd_1_bound and cd_4_bound)) {
-        return;
+        return junction_constraints_obeyed;
     }
-    return check_doubly_contiguous_junction(*cd_1, cd_2, cd_3, *cd_4);
+    junction_constraints_obeyed = check_doubly_contiguous_junction(*cd_1, cd_2,
+            cd_3, *cd_4);
+    return junction_constraints_obeyed;
 }
 
-void OrigamiSystem::check_doubly_contiguous_junction(
+bool OrigamiSystem::check_doubly_contiguous_junction(
         Domain& cd_1,
         Domain& cd_2,
         Domain& cd_3,
         Domain& cd_4) {
     // Calling functions already check for existance and boundeness of d1-4.
+
+    bool junction_constraints_obeyed;
     VectorThree ndr_1 {cd_2.m_pos - cd_1.m_pos};
     VectorThree ndr_3 {cd_4.m_pos - cd_3.m_pos};
     if (ndr_1 == -ndr_3) {
-        return;
-    }
-    throw ConstraintViolation {};
-}
-
-void OrigamiSystem::check_domain_orientations_opposing(Domain& cd_i, Domain& cd_j) {
-    if (cd_i.m_ore != -cd_j.m_ore) {
-        throw ConstraintViolation {};
+        junction_constraints_obeyed = true;
     }
     else {
+        junction_constraints_obeyed = false;
     }
+
+    return junction_constraints_obeyed;
+}
+
+bool OrigamiSystem::check_domain_orientations_opposing(Domain& cd_i, Domain& cd_j) {
+    bool domain_orientations_opposing {true};
+    if (cd_i.m_ore != -cd_j.m_ore) {
+        domain_orientations_opposing = false;
+        return domain_orientations_opposing;
+    }
+    return domain_orientations_opposing;
 }
 
 double OrigamiSystemWithoutMisbinding::bind_noncomplementary_domains(
         Domain&, Domain&) {
-    throw ConstraintViolation {};
+    m_constraints_violated = true;
+    return 0;
 }
 
 double Origami::molarity_to_lattice_volume(double molarity, double lattice_site_volume) {

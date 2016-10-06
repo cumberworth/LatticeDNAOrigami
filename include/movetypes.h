@@ -44,6 +44,7 @@ namespace Movetypes {
             OrigamiSystem& m_origami_system;
             RandomGens& m_random_gens;
             IdealRandomWalks& m_ideal_random_walks;
+            bool m_rejected {false};
 
             // Lists of modified domains for move reversal
             vector<pair<int, int>> m_modified_domains {};

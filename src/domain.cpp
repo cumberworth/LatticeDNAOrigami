@@ -36,12 +36,11 @@ Domain* Domain::operator+(int incr) {
     }
 }
 
-void SixteenDomain::check_twist_constraint(VectorThree ndr, Domain& cd_2) {
+bool SixteenDomain::check_twist_constraint(VectorThree ndr, Domain& cd_2) {
+    bool twist_constraint_obeyed {true};
     VectorThree ore_1_rotated {m_ore.rotate_half(ndr)};
-    if (ore_1_rotated == cd_2.m_ore) {
-            return;
+    if (not (ore_1_rotated == cd_2.m_ore)) {
+        twist_constraint_obeyed = false;
     }
-    else {
-          throw ConstraintViolation {};
-    }
+    return twist_constraint_obeyed;
 }

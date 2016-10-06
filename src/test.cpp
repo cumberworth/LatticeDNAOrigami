@@ -383,7 +383,6 @@ SCENARIO("Implemented helical constraints consistent with intended") {
     double staple_M {1e-3};
     double lattice_site_volume {4e-28};
     bool cyclic {false};
-    bool constraints_violated {false};
     GIVEN("Origami system with 2 16 nt scaffold domans and 1 2 domain staple") {
 
         // System setup
@@ -419,9 +418,8 @@ SCENARIO("Implemented helical constraints consistent with intended") {
             origami.set_domain_config(scaffold_d_2, {0, 1, 0}, {-1, 0, 0});
             origami.set_domain_config(staple_d_1, {0, 0, 0}, {-1, 0, 0});
             origami.set_domain_config(staple_d_2, {0, 1, 0}, {1, 0, 0});
-            constraints_violated = false;
             THEN("The configuration is allowed") {
-                REQUIRE(constraints_violated == false);
+                REQUIRE(origami.m_constraints_violated == false);
             }
         }
         WHEN("The staple binds to it's domains with any other configuration") {
@@ -429,75 +427,45 @@ SCENARIO("Implemented helical constraints consistent with intended") {
                 origami.set_domain_config(scaffold_d_1, {0, 0, 0}, {1, 0, 0});
                 origami.set_domain_config(scaffold_d_2, {0, 1, 0}, {0, -1, 0});
                 origami.set_domain_config(staple_d_1, {0, 0, 0}, {-1, 0, 0});
-                try {
-                    origami.set_domain_config(staple_d_2, {0, 1, 0}, {0, 1, 0});
-                    constraints_violated = false;
-                }
-                catch (ConstraintViolation) {
-                    constraints_violated = true;
-                }
+                origami.set_domain_config(staple_d_2, {0, 1, 0}, {0, 1, 0});
                 THEN("The configuration is not allowed") {
-                    REQUIRE(constraints_violated == true);
+                    REQUIRE(origami.m_constraints_violated == true);
                 }
             }
             WHEN("Incorrect twist 2") {
                 origami.set_domain_config(scaffold_d_1, {0, 0, 0}, {1, 0, 0});
                 origami.set_domain_config(scaffold_d_2, {0, 1, 0}, {1, 0, 0});
                 origami.set_domain_config(staple_d_1, {0, 0, 0}, {-1, 0, 0});
-                try {
-                    origami.set_domain_config(staple_d_2, {0, 1, 0}, {-1, 0, 0});
-                    constraints_violated = false;
-                }
-                catch (ConstraintViolation) {
-                    constraints_violated = true;
-                }
+                origami.set_domain_config(staple_d_2, {0, 1, 0}, {-1, 0, 0});
                 THEN("The configuration is not allowed") {
-                    REQUIRE(constraints_violated == true);
+                    REQUIRE(origami.m_constraints_violated == true);
                 }
             }
             WHEN("Incorrect twist 3") {
                 origami.set_domain_config(scaffold_d_1, {0, 0, 0}, {1, 0, 0});
                 origami.set_domain_config(scaffold_d_2, {0, 1, 0}, {0, 1, 0});
                 origami.set_domain_config(staple_d_1, {0, 0, 0}, {-1, 0, 0});
-                try {
-                    origami.set_domain_config(staple_d_2, {0, 1, 0}, {0, -1, 0});
-                    constraints_violated = false;
-                }
-                catch (ConstraintViolation) {
-                    constraints_violated = true;
-                }
+                origami.set_domain_config(staple_d_2, {0, 1, 0}, {0, -1, 0});
                 THEN("The configuration is not allowed") {
-                    REQUIRE(constraints_violated == true);
+                    REQUIRE(origami.m_constraints_violated == true);
                 }
             }
             WHEN("Incorrect twist 4") {
                 origami.set_domain_config(scaffold_d_1, {0, 0, 0}, {1, 0, 0});
                 origami.set_domain_config(scaffold_d_2, {0, 1, 0}, {0, 0, -1});
                 origami.set_domain_config(staple_d_1, {0, 0, 0}, {-1, 0, 0});
-                try {
-                    origami.set_domain_config(staple_d_2, {0, 1, 0}, {0, 0, 1});
-                    constraints_violated = false;
-                }
-                catch (ConstraintViolation) {
-                    constraints_violated = true;
-                }
+                origami.set_domain_config(staple_d_2, {0, 1, 0}, {0, 0, 1});
                 THEN("The configuration is not allowed") {
-                    REQUIRE(constraints_violated == true);
+                    REQUIRE(origami.m_constraints_violated == true);
                 }
             }
             WHEN("Incorrect twist 5") {
                 origami.set_domain_config(scaffold_d_1, {0, 0, 0}, {1, 0, 0});
                 origami.set_domain_config(scaffold_d_2, {0, 1, 0}, {0, 0, 1});
                 origami.set_domain_config(staple_d_1, {0, 0, 0}, {-1, 0, 0});
-                try {
-                    origami.set_domain_config(staple_d_2, {0, 1, 0}, {0, 0, -1});
-                    constraints_violated = false;
-                }
-                catch (ConstraintViolation) {
-                    constraints_violated = true;
-                }
+                origami.set_domain_config(staple_d_2, {0, 1, 0}, {0, 0, -1});
                 THEN("The configuration is not allowed") {
-                    REQUIRE(constraints_violated == true);
+                    REQUIRE(origami.m_constraints_violated == true);
                 }
             }
         }
@@ -552,15 +520,9 @@ SCENARIO("Implemented helical constraints consistent with intended") {
             origami.set_domain_config(scaffold_d_2, {0, 0, 0}, {1, 0, 0});
             origami.set_domain_config(scaffold_d_3, {0, 1, 0}, {-1, 0, 0});
             origami.set_domain_config(staple2_d_1, {0, 1, 0}, {1, 0, 0});
-            try {
-                origami.set_domain_config(staple2_d_2, {0, 0, 0}, {-1, 0, 0});
-                constraints_violated = false;
-            }
-            catch (ConstraintViolation) {
-                constraints_violated = true;
-            }
+            origami.set_domain_config(staple2_d_2, {0, 0, 0}, {-1, 0, 0});
             THEN("The configuration not allowed") {
-                REQUIRE(constraints_violated == true);
+                REQUIRE(origami.m_constraints_violated == true);
             }
         }
         WHEN("The first staple is bound to it's domains as a junction") {
@@ -568,9 +530,8 @@ SCENARIO("Implemented helical constraints consistent with intended") {
             origami.set_domain_config(scaffold_d_3, {0, 1, 0}, {0, 1, 0});
             origami.set_domain_config(staple2_d_1, {0, 1, 0}, {0, -1, 0});
             origami.set_domain_config(staple2_d_2, {0, 0, 0}, {0, -1, 0});
-            constraints_violated = false;
             THEN("The configuration is allowed") {
-                REQUIRE(constraints_violated == false);
+                REQUIRE(origami.m_constraints_violated == false);
             }
         }
         WHEN("The first staple is bound to it's domains with any other configuration") {
@@ -578,15 +539,9 @@ SCENARIO("Implemented helical constraints consistent with intended") {
                 origami.set_domain_config(scaffold_d_2, {0, 0, 0}, {1, 0, 0});
                 origami.set_domain_config(scaffold_d_3, {0, 1, 0}, {-1, 0, 0});
                 origami.set_domain_config(staple2_d_1, {0, 1, 0}, {1, 0, 0});
-                try {
-                    origami.set_domain_config(staple2_d_2, {0, 0, 0}, {-1, 0, 0});
-                    constraints_violated = false;
-                }
-                catch (ConstraintViolation) {
-                    constraints_violated = true;
-                }
+                origami.set_domain_config(staple2_d_2, {0, 0, 0}, {-1, 0, 0});
                 THEN("The configuration is allowed") {
-                    REQUIRE(constraints_violated == true);
+                    REQUIRE(origami.m_constraints_violated == true);
                 }
             }
         }
@@ -604,9 +559,8 @@ SCENARIO("Implemented helical constraints consistent with intended") {
                     origami.set_domain_config(staple1_d_1, {0, 0, 0}, {-1, 0, 0});
                     origami.set_domain_config(staple12_d_2, {0, 0, 1}, {-1, 0, 0});
                     origami.set_domain_config(scaffold_d_1, {0, 0, 0}, {1, 0, 0});
-                    constraints_violated = false;
                     THEN("The configuration is allowed") {
-                        REQUIRE(constraints_violated == false);
+                        REQUIRE(origami.m_constraints_violated == false);
                     }
                 }
                 WHEN("Incorrectly") {
@@ -617,15 +571,9 @@ SCENARIO("Implemented helical constraints consistent with intended") {
                     origami.set_domain_config(staple2_d_2, {0, 1, 0}, {0, 0, -1});
                     origami.set_domain_config(staple1_d_1, {0, 0, 0}, {-1, 0, 0});
                     origami.set_domain_config(staple12_d_2, {0, 2, 1}, {0, 0, 1});
-                    try {
-                        origami.set_domain_config(scaffold_d_1, {0, 0, 0}, {1, 0, 0});
-                        constraints_violated = false;
-                    }
-                    catch (ConstraintViolation) {
-                        constraints_violated = true;
-                    }
+                    origami.set_domain_config(scaffold_d_1, {0, 0, 0}, {1, 0, 0});
                     THEN("The configuration is not allowed") {
-                        REQUIRE(constraints_violated == true);
+                        REQUIRE(origami.m_constraints_violated == true);
                     }
                 }
             }
@@ -639,9 +587,8 @@ SCENARIO("Implemented helical constraints consistent with intended") {
                     origami.set_domain_config(staple1_d_1, {0, 0, 0}, {-1, 0, 0});
                     origami.set_domain_config(staple12_d_2, {0, 0, 1}, {-1, 0, 0});
                     origami.set_domain_config(scaffold_d_2, {0, 1, 0}, {0, 0, 1});
-                    constraints_violated = false;
                     THEN("The configuration is allowed") {
-                        REQUIRE(constraints_violated == false);
+                        REQUIRE(origami.m_constraints_violated == false);
                     }
                 }
                 WHEN("Incorrectly") {
@@ -652,15 +599,9 @@ SCENARIO("Implemented helical constraints consistent with intended") {
                     origami.set_domain_config(staple2_d_2, {0, 1, 0}, {0, 0, -1});
                     origami.set_domain_config(staple1_d_1, {0, 0, 0}, {-1, 0, 0});
                     origami.set_domain_config(staple12_d_2, {0, 2, 1}, {0, 0, 1});
-                    try {
-                        origami.set_domain_config(scaffold_d_2, {0, 1, 0}, {0, 0, 1});
-                        constraints_violated = false;
-                    }
-                    catch (ConstraintViolation) {
-                        constraints_violated = true;
-                    }
+                    origami.set_domain_config(scaffold_d_2, {0, 1, 0}, {0, 0, 1});
                     THEN("The configuration is not allowed") {
-                        REQUIRE(constraints_violated == true);
+                        REQUIRE(origami.m_constraints_violated == true);
                     }
                 }
             }
@@ -674,9 +615,8 @@ SCENARIO("Implemented helical constraints consistent with intended") {
                     origami.set_domain_config(staple1_d_1, {0, 0, 0}, {-1, 0, 0});
                     origami.set_domain_config(staple12_d_2, {0, 0, 1}, {-1, 0, 0});
                     origami.set_domain_config(scaffold_d_3, {0, 1, 1}, {0, 0, 1});
-                    constraints_violated = false;
                     THEN("The configuration is allowed") {
-                        REQUIRE(constraints_violated == false);
+                        REQUIRE(origami.m_constraints_violated == false);
                     }
                 }
                 WHEN("Incorrectly") {
@@ -687,15 +627,9 @@ SCENARIO("Implemented helical constraints consistent with intended") {
                     origami.set_domain_config(staple2_d_2, {0, 1, 0}, {0, 0, -1});
                     origami.set_domain_config(staple1_d_1, {0, 0, 0}, {-1, 0, 0});
                     origami.set_domain_config(staple12_d_2, {0, 2, 1}, {0, 0, 1});
-                    try {
-                        origami.set_domain_config(scaffold_d_3, {0, 1, 1}, {0, 0, 1});
-                        constraints_violated = false;
-                    }
-                    catch (ConstraintViolation) {
-                        constraints_violated = true;
-                    }
+                    origami.set_domain_config(scaffold_d_3, {0, 1, 1}, {0, 0, 1});
                     THEN("The configuration is not allowed") {
-                        REQUIRE(constraints_violated == true);
+                        REQUIRE(origami.m_constraints_violated == true);
                     }
                 }
             }
@@ -709,9 +643,8 @@ SCENARIO("Implemented helical constraints consistent with intended") {
                     origami.set_domain_config(staple1_d_1, {0, 0, 0}, {-1, 0, 0});
                     origami.set_domain_config(staple12_d_2, {0, 0, 1}, {-1, 0, 0});
                     origami.set_domain_config(scaffold_d_4, {0, 0, 1}, {1, 0, 0});
-                    constraints_violated = false;
                     THEN("The configuration is allowed") {
-                        REQUIRE(constraints_violated == false);
+                        REQUIRE(origami.m_constraints_violated == false);
                     }
                 }
                 WHEN("Incorrectly") {
@@ -722,15 +655,9 @@ SCENARIO("Implemented helical constraints consistent with intended") {
                     origami.set_domain_config(staple2_d_2, {0, 1, 0}, {0, 0, -1});
                     origami.set_domain_config(staple1_d_1, {0, 0, 0}, {-1, 0, 0});
                     origami.set_domain_config(staple12_d_2, {0, 2, 1}, {0, 0, 1});
-                    try {
-                        origami.set_domain_config(scaffold_d_4, {0, 2, 1}, {0, 0, -1});
-                        constraints_violated = false;
-                    }
-                    catch (ConstraintViolation) {
-                        constraints_violated = true;
-                    }
+                    origami.set_domain_config(scaffold_d_4, {0, 2, 1}, {0, 0, -1});
                     THEN("The configuration is not allowed") {
-                        REQUIRE(constraints_violated == true);
+                        REQUIRE(origami.m_constraints_violated == true);
                     }
                 }
             }
@@ -744,9 +671,8 @@ SCENARIO("Implemented helical constraints consistent with intended") {
                     origami.set_domain_config(staple2_d_2, {0, 1, 0}, {0, 0, -1});
                     origami.set_domain_config(staple12_d_2, {0, 0, 1}, {-1, 0, 0});
                     origami.set_domain_config(staple1_d_1, {0, 0, 0}, {-1, 0, 0});
-                    constraints_violated = false;
                     THEN("The configuration is allowed") {
-                        REQUIRE(constraints_violated == false);
+                        REQUIRE(origami.m_constraints_violated == false);
                     }
                 }
                 WHEN("Incorrectly") {
@@ -757,15 +683,9 @@ SCENARIO("Implemented helical constraints consistent with intended") {
                     origami.set_domain_config(staple2_d_1, {0, 1, 1}, {0, 0, -1});
                     origami.set_domain_config(staple2_d_2, {0, 1, 0}, {0, 0, -1});
                     origami.set_domain_config(staple12_d_2, {0, 2, 1}, {0, 0, 1});
-                    try {
-                        origami.set_domain_config(staple1_d_1, {0, 0, 0}, {-1, 0, 0});
-                        constraints_violated = false;
-                    }
-                    catch (ConstraintViolation) {
-                        constraints_violated = true;
-                    }
+                    origami.set_domain_config(staple1_d_1, {0, 0, 0}, {-1, 0, 0});
                     THEN("The configuration is not allowed") {
-                        REQUIRE(constraints_violated == true);
+                        REQUIRE(origami.m_constraints_violated == true);
                     }
                 }
             }
@@ -779,9 +699,8 @@ SCENARIO("Implemented helical constraints consistent with intended") {
                     origami.set_domain_config(staple2_d_2, {0, 1, 0}, {0, 0, -1});
                     origami.set_domain_config(staple1_d_1, {0, 0, 0}, {-1, 0, 0});
                     origami.set_domain_config(staple12_d_2, {0, 0, 1}, {-1, 0, 0});
-                    constraints_violated = false;
                     THEN("The configuration is allowed") {
-                        REQUIRE(constraints_violated == false);
+                        REQUIRE(origami.m_constraints_violated == false);
                     }
                 }
                 WHEN("Incorrectly") {
@@ -792,15 +711,9 @@ SCENARIO("Implemented helical constraints consistent with intended") {
                     origami.set_domain_config(staple2_d_1, {0, 1, 1}, {0, 0, -1});
                     origami.set_domain_config(staple2_d_2, {0, 1, 0}, {0, 0, -1});
                     origami.set_domain_config(staple1_d_1, {0, 0, 0}, {-1, 0, 0});
-                    try {
-                        origami.set_domain_config(staple12_d_2, {0, 2, 1}, {0, 0, 1});
-                        constraints_violated = false;
-                    }
-                    catch (ConstraintViolation) {
-                        constraints_violated = true;
-                    }
+                    origami.set_domain_config(staple12_d_2, {0, 2, 1}, {0, 0, 1});
                     THEN("The configuration is not allowed") {
-                        REQUIRE(constraints_violated == true);
+                        REQUIRE(origami.m_constraints_violated == true);
                     }
                 }
             }
@@ -814,9 +727,8 @@ SCENARIO("Implemented helical constraints consistent with intended") {
                     origami.set_domain_config(staple1_d_1, {0, 0, 0}, {-1, 0, 0});
                     origami.set_domain_config(staple12_d_2, {0, 0, 1}, {-1, 0, 0});
                     origami.set_domain_config(staple2_d_1, {0, 1, 1}, {0, 0, -1});
-                    constraints_violated = false;
                     THEN("The configuration is allowed") {
-                        REQUIRE(constraints_violated == false);
+                        REQUIRE(origami.m_constraints_violated == false);
                     }
                 }
                 WHEN("Incorrectly") {
@@ -827,15 +739,9 @@ SCENARIO("Implemented helical constraints consistent with intended") {
                     origami.set_domain_config(staple2_d_2, {0, 1, 0}, {0, 0, -1});
                     origami.set_domain_config(staple1_d_1, {0, 0, 0}, {-1, 0, 0});
                     origami.set_domain_config(staple12_d_2, {0, 2, 1}, {0, 0, 1});
-                    try {
-                        origami.set_domain_config(staple2_d_1, {0, 1, 1}, {0, 0, -1});
-                        constraints_violated = false;
-                    }
-                    catch (ConstraintViolation) {
-                        constraints_violated = true;
-                    }
+                    origami.set_domain_config(staple2_d_1, {0, 1, 1}, {0, 0, -1});
                     THEN("The configuration is not allowed") {
-                        REQUIRE(constraints_violated == true);
+                        REQUIRE(origami.m_constraints_violated == true);
                     }
                 }
             }
@@ -849,9 +755,8 @@ SCENARIO("Implemented helical constraints consistent with intended") {
                     origami.set_domain_config(staple1_d_1, {0, 0, 0}, {-1, 0, 0});
                     origami.set_domain_config(staple12_d_2, {0, 0, 1}, {-1, 0, 0});
                     origami.set_domain_config(staple2_d_2, {0, 1, 0}, {0, 0, -1});
-                    constraints_violated = false;
                     THEN("The configuration is allowed") {
-                        REQUIRE(constraints_violated == false);
+                        REQUIRE(origami.m_constraints_violated == false);
                     }
                 }
                 WHEN("Incorrectly") {
@@ -862,15 +767,9 @@ SCENARIO("Implemented helical constraints consistent with intended") {
                     origami.set_domain_config(staple2_d_1, {0, 1, 1}, {0, 0, -1});
                     origami.set_domain_config(staple1_d_1, {0, 0, 0}, {-1, 0, 0});
                     origami.set_domain_config(staple12_d_2, {0, 2, 1}, {0, 0, 1});
-                    try {
-                        origami.set_domain_config(staple2_d_2, {0, 1, 0}, {0, 0, -1});
-                        constraints_violated = false;
-                    }
-                    catch (ConstraintViolation) {
-                        constraints_violated = true;
-                    }
+                    origami.set_domain_config(staple2_d_2, {0, 1, 0}, {0, 0, -1});
                     THEN("The configuration is not allowed") {
-                        REQUIRE(constraints_violated == true);
+                        REQUIRE(origami.m_constraints_violated == true);
                     }
                 }
             }
@@ -908,9 +807,8 @@ SCENARIO("Implemented helical constraints consistent with intended") {
             origami.set_domain_config(*origami.get_domain(1, 0), {0, 0, 0}, {0, 0, -1});
             origami.set_domain_config(*origami.get_domain(1, 1), {0, 1, 0}, {0, 0, 1});
             origami.set_domain_config(*origami.get_domain(2, 1), {0, 2, 0}, {0, 0, -1});
-            constraints_violated = false;
             THEN("Configuration allowed") {
-                REQUIRE(constraints_violated == false);
+                REQUIRE(origami.m_constraints_violated == false);
             }
         }
         WHEN("First three domains of scaffold are in same non-linear helix") {
@@ -919,15 +817,9 @@ SCENARIO("Implemented helical constraints consistent with intended") {
             origami.set_domain_config(*origami.get_domain(0, 2), {1, 1, 0}, {0, 0, 1});
             origami.set_domain_config(*origami.get_domain(1, 0), {0, 0, 0}, {0, 0, -1});
             origami.set_domain_config(*origami.get_domain(1, 1), {0, 1, 0}, {0, 0, 1});
-            try {
-                origami.set_domain_config(*origami.get_domain(2, 1), {1, 1, 0}, {0, 0, -1});
-                constraints_violated = false;
-            }
-            catch (ConstraintViolation) {
-                constraints_violated = true;
-            }
+            origami.set_domain_config(*origami.get_domain(2, 1), {1, 1, 0}, {0, 0, -1});
             THEN("Configuration allowed") {
-                REQUIRE(constraints_violated == true);
+                REQUIRE(origami.m_constraints_violated == true);
             }
         }
     }

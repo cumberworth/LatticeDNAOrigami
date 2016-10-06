@@ -69,6 +69,7 @@ namespace Origami{
             const int c_scaffold {0};
     
             // Configuration properties
+            bool m_constraints_violated {false};
             vector<Domain*> get_chain(int c_i);
             inline vector<vector<Domain*>> get_chains() {return m_domains;}
             vector<Domain*> get_last_chain() {return m_domains.back();}
@@ -179,20 +180,20 @@ namespace Origami{
             double bind_domain(Domain& cd_i);
             double bind_complementary_domains(Domain& cd_i, Domain& cd_j);
             double check_stacking(Domain& cd_new, Domain& cd_old);
-            void check_domain_pair_constraints(Domain& cd_i);
-            void check_helical_constraints(Domain& cd_1, Domain& cd_2);
-            void check_linear_helix_rear(Domain& cd_3);
-            void check_linear_helix(VectorThree ndr_1, Domain& cd_2);
-            void check_junction_front(Domain& cd_1);
-            void check_junction_rear(Domain& cd_4);
+            bool check_domain_pair_constraints(Domain& cd_i);
+            bool check_helical_constraints(Domain& cd_1, Domain& cd_2);
+            bool check_linear_helix_rear(Domain& cd_3);
+            bool check_linear_helix(VectorThree ndr_1, Domain& cd_2);
+            bool check_junction_front(Domain& cd_1);
+            bool check_junction_rear(Domain& cd_4);
             bool doubly_contiguous_junction(Domain& cd_1, Domain& cd_2);
-            void check_doubly_contiguous_junction(Domain& cd_2, Domain& cd_3);
-            void check_doubly_contiguous_junction(
+            bool check_doubly_contiguous_junction(Domain& cd_2, Domain& cd_3);
+            bool check_doubly_contiguous_junction(
                     Domain& cd_1,
                     Domain& cd_2,
                     Domain& cd_3,
                     Domain& cd_4);
-            void check_domain_orientations_opposing(Domain& cd_i, Domain& cd_j);
+            bool check_domain_orientations_opposing(Domain& cd_i, Domain& cd_j);
     };
 
     class OrigamiSystemWithoutMisbinding: public OrigamiSystem {

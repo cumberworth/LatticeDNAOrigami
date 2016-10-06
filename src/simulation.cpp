@@ -35,12 +35,7 @@ void GCMCSimulation::run(int steps, int logging_freq=1, int center_freq=1) {
     for (int step {1}; step != (steps + 1); step ++) {
         unique_ptr<MCMovetype> movetype {select_movetype()};
         bool accepted;
-        try {
-            accepted = movetype->attempt_move();
-        }
-        catch (MoveRejection) {
-            accepted = false;
-        }
+        accepted = movetype->attempt_move();
 
         if (not accepted) {
             movetype->reset_origami();
