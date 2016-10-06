@@ -49,6 +49,15 @@ OrigamiSystem::~OrigamiSystem() {
     }
 }
 
+vector<Domain*> OrigamiSystem::get_chain(int c_i) {
+    int c_i_index {index(m_chain_indices, c_i)};
+    return m_domains[c_i_index];
+}
+
+Domain* OrigamiSystem::get_domain(int c_i, int d_i) {
+    return get_chain(c_i)[d_i];
+}
+
 int OrigamiSystem::num_unique_staples() const {
     int unique_staple_count {0};
     for (auto indices: m_identity_to_index) {
@@ -81,11 +90,11 @@ Chains OrigamiSystem::chains() const {
 
 Occupancy OrigamiSystem::position_occupancy(VectorThree pos) const {
     Occupancy occ;
-    try {
-        occ = m_position_occupancies.at(pos);
-    }
-    catch (std::out_of_range) {
+    if (m_position_occupancies.count(pos) == 0) {
         occ = Occupancy::unassigned;
+    }
+    else {
+        occ = m_position_occupancies.at(pos);
     }
     return occ;
 }
@@ -97,6 +106,7 @@ double OrigamiSystem::unassign_domain(Domain& cd_i) {
     switch (occupancy) {
         case Occupancy::bound:
             m_num_fully_bound_domain_pairs -= 1;
+            delta_e += check_stacking(cd_i, *cd_i.m_bound_domain);
             delta_e += unassign_bound_domain(cd_i);
             break;
         case Occupancy::misbound:
@@ -105,9 +115,10 @@ double OrigamiSystem::unassign_domain(Domain& cd_i) {
         case Occupancy::unbound:
             unassign_unbound_domain(cd_i);
             break;
-         case Occupancy::unassigned:
+        case Occupancy::unassigned:
             break;
     }
+    m_energy += delta_e;
     return delta_e;
 }
 
@@ -158,18 +169,32 @@ double OrigamiSystem::set_domain_config(
     if (cd_i.m_state != Occupancy::unassigned) {
         throw OrigamiMisuse {};
     }
+
     // Check constraints and update if obeyed, otherwise throw
     double delta_e {check_domain_constraints(cd_i, pos, ore)};
     update_occupancies(cd_i, pos);
+    m_energy += delta_e;
     return delta_e;
 }
 
-void OrigamiSystem::set_checked_domain_config(
+double OrigamiSystem::set_checked_domain_config(
         Domain& cd_i,
         VectorThree pos,
         VectorThree ore) {
     update_domain(cd_i, pos, ore);
     update_occupancies(cd_i, pos);
+
+    // Update internal energy
+    double delta_e {0};
+    if (cd_i.m_state == Occupancy::misbound) {
+        delta_e += hybridization_energy(cd_i, *cd_i.m_bound_domain);
+    }
+    else if (cd_i.m_state == Occupancy::bound) {
+        delta_e += hybridization_energy(cd_i, *cd_i.m_bound_domain);
+        delta_e += check_stacking(cd_i, *cd_i.m_bound_domain);
+    }
+    m_energy += delta_e;
+    return delta_e;
 }
 
 double OrigamiSystem::check_domain_constraints(
@@ -195,10 +220,10 @@ double OrigamiSystem::check_domain_constraints(
                 delta_e += bind_domain(cd_i);
             }
             catch (ConstraintViolation) {
-                unassign_domain(cd_i);
+                internal_unassign_domain(cd_i);
                 throw;
             }
-            unassign_domain(cd_i);
+            internal_unassign_domain(cd_i);
             break;
         case Occupancy::unassigned:
             update_domain(cd_i, pos, ore);
@@ -377,6 +402,10 @@ double OrigamiSystem::hybridization_energy(const Domain& cd_i,
 double OrigamiSystem::stacking_energy(const Domain& cd_i, const Domain& cd_j) const {
     pair<int, int> key {cd_i.m_d_ident, cd_j.m_d_ident};
     return m_stacking_energies.at(key);
+}
+
+void OrigamiSystem::internal_unassign_domain(Domain& cd_i) {
+    m_energy -= unassign_domain(cd_i);
 }
 
 double OrigamiSystem::unassign_bound_domain(Domain& cd_i) {
@@ -822,8 +851,7 @@ void OrigamiSystem::check_domain_orientations_opposing(Domain& cd_i, Domain& cd_
 }
 
 double OrigamiSystemWithoutMisbinding::bind_noncomplementary_domains(
-        Domain& cd_i,
-        Domain& cd_j) {
+        Domain&, Domain&) {
     throw ConstraintViolation {};
 }
 

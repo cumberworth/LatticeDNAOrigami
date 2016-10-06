@@ -29,10 +29,17 @@ namespace Files {
     class OrigamiOutputFile {
         // Output file interface
         public:
-            OrigamiOutputFile(string filename, int write_freq, OrigamiSystem& origami_system);
+            OrigamiOutputFile(
+                    string filename,
+                    int write_freq,
+                    OrigamiSystem& origami_system);
+
             virtual void write(int step) = 0;
-            int m_write_freq;
-            string m_filename;
+
+            const string m_filename;
+            const int m_write_freq;
+
+        protected:
             OrigamiSystem& m_origami_system;
             ofstream m_file;
     };

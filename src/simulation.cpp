@@ -70,7 +70,7 @@ unique_ptr<MCMovetype> GCMCSimulation::select_movetype() {
     double prob {m_random_gens.uniform_real()};
     for (size_t i {0}; i != m_cumulative_probs.size(); i++) {
         if (prob < m_cumulative_probs[i]) {
-            movetype = m_movetype_constructors[i](m_origami_system, m_random_gens);
+            movetype = m_movetype_constructors[i](m_origami_system, m_random_gens, m_ideal_random_walks);
             break;
         }
     }
@@ -82,5 +82,6 @@ void GCMCSimulation::write_log_entry(int step, MCMovetype& movetype, bool accept
     cout << "Movetype: " << movetype.m_label() << " ";
     cout << "Staples: " << m_origami_system.num_staples() << " ";
     cout << "Accepted: " << accepted << " ";
+    cout << "Energy: " << m_origami_system.energy() << " ";
     cout << "\n";
 }

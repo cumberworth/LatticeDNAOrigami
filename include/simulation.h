@@ -33,8 +33,6 @@ namespace Simulation {
 
             void run(int steps, int logging_freq, int center_freq);
 
-            IdealRandomWalks m_ideal_random_walks {};
-
         private:
 
             unique_ptr<MCMovetype> select_movetype();
@@ -42,6 +40,7 @@ namespace Simulation {
 
             // Random number generators
             RandomGens m_random_gens {};
+            IdealRandomWalks m_ideal_random_walks {};
 
             // Big things
             OrigamiSystem& m_origami_system;

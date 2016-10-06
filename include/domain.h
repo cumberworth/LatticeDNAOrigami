@@ -12,11 +12,14 @@ namespace DomainContainer{
     // Container for chain domain indices
     class Domain {
         public:
-            int m_c;
-            int m_c_ident;
-            int m_d;
-            int m_d_ident;
-            int m_c_length;
+
+            // Constant attributes
+            const int m_c;
+            const int m_c_ident;
+            const int m_d;
+            const int m_d_ident;
+            const int m_c_length;
+            // Modifiable attributes
             VectorThree m_pos {};
             VectorThree m_ore {};
             Occupancy m_state {Occupancy::unassigned};
@@ -26,6 +29,7 @@ namespace DomainContainer{
                     m_c_ident {c_ident}, m_d {d}, m_d_ident {d_ident},
                     m_c_length {c_length} {};
             virtual ~Domain() = default;
+
             Domain* operator+(int increment);
 
             virtual void check_twist_constraint(VectorThree ndr, Domain& cd_j) = 0;

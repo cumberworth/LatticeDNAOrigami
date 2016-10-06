@@ -16,6 +16,9 @@ double IdealRandomWalks::num_walks(
 
     // Check stored values
     VectorThree DR {end_pos - start_pos};
+
+    // Only work with one permutation of DR
+    DR = DR.absolute().sort();
     pair<VectorThree, int> walk_key {DR, steps};
     try {
         return m_num_walks.at(walk_key);
@@ -25,10 +28,7 @@ double IdealRandomWalks::num_walks(
     int DX {DR[0]};
     int DY {DR[1]};
     int DZ {DR[2]};
-    //cout << "Steps: " << steps << "\n";
-    //cout << "DR: " << DX << " " << DY << " " << DZ << "\n";
     int Nminus {(steps - DX - DY - DZ) / 2};
-    //cout << "Nminus: " << Nminus << "\n";
     int Nplus {(steps - DX - DY + DZ) / 2};
     double walks {0};
 
@@ -37,7 +37,6 @@ double IdealRandomWalks::num_walks(
 
         // Add entry
         m_num_walks[walk_key] =  walks;
-        //cout << "Number of walks: " << walks << "\n\n";
         return walks;
     }
     
@@ -69,7 +68,6 @@ double IdealRandomWalks::num_walks(
 
     // Add entries
     m_num_walks[walk_key] =  walks;
-    //cout << "Number of walks: " << walks << "\n\n";
 
     return walks;
 }

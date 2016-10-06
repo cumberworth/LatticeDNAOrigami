@@ -69,7 +69,10 @@ namespace Origami{
             const int c_scaffold {0};
     
             // Configuration properties
-            vector<vector<Domain*>> m_domains {};
+            vector<Domain*> get_chain(int c_i);
+            inline vector<vector<Domain*>> get_chains() {return m_domains;}
+            vector<Domain*> get_last_chain() {return m_domains.back();}
+            Domain* get_domain(int c_i, int d_i);
             inline int num_staples() const {return m_domains.size() - 1;}
             int num_unique_staples() const;
             inline int num_domains() {return m_num_domains;};
@@ -78,19 +81,17 @@ namespace Origami{
             inline int num_fully_bound_domain_pairs() const {return m_num_fully_bound_domain_pairs;}
             inline int num_misbound_domain_pairs() const {
                     return num_bound_domain_pairs() - num_fully_bound_domain_pairs();}
-            inline double energy() const {return m_energy;}
-    
-            // Staple properties
             inline int num_staples_of_ident(int staple_ident) const {return
                     m_identity_to_index[staple_ident].size();}
+            inline vector<int> staples_of_ident(int c_ident) {return m_identity_to_index[c_ident];}
             inline vector<int> complimentary_scaffold_domains(int staple_ident)
                     const {return m_staple_ident_to_scaffold_ds[staple_ident];}
-    
-            // Configuration accessors
             Chains chains() const;
             Occupancy position_occupancy(VectorThree pos) const;
             inline Domain* unbound_domain_at(VectorThree pos) const {return
                     m_pos_to_unbound_d.at(pos);};
+            bool check_domains_complementary(Domain& cd_i, Domain& cd_j);
+            inline double energy() const {return m_energy;}
     
             // Constraint checkers
             void check_all_constraints();
@@ -104,7 +105,7 @@ namespace Origami{
             int add_chain(int c_i_ident);
             int add_chain(int c_i_ident, int uc_i);
             void delete_chain(int c_i);
-            void set_checked_domain_config(
+            double set_checked_domain_config(
                     Domain& cd_i,
                     VectorThree pos,
                     VectorThree ore);
@@ -115,18 +116,6 @@ namespace Origami{
             void set_domain_orientation(Domain& cd_i, VectorThree ore);
             void centre();
 
-            // Keep track of all the chains of each type
-            vector<vector<int>> m_identity_to_index {};
-
-            // May need to know chain index by position in domains array directly
-            vector<int> m_chain_indices {};
-            
-            // Configuration checkers
-            bool check_domains_complementary(Domain& cd_i, Domain& cd_j);
-
-            // Keeps track of unbound domains but indexed by position
-            unordered_map<VectorThree, Domain*> m_pos_to_unbound_d {};
-            
             // The index that should be assigned to the next added chain
             int m_current_c_i {};
 
@@ -134,18 +123,27 @@ namespace Origami{
             virtual double bind_noncomplementary_domains(Domain& cd_i, Domain& cd_j);
 
         private:
-            int m_num_domains {0};
-    
             // Data
+            vector<vector<Domain*>> m_domains {};
+            int m_num_domains {0};
 
             // Keeps track of all scaffold domains complementary to a domain on
             // a given staple. Only tracks staple identity to the scaffold domain
             // indices
             vector<vector<int>> m_staple_ident_to_scaffold_ds {};
 
+            // Position in domains array to chain index
+            vector<int> m_chain_indices {};
+            
+            // Identity to list of all chains of that type
+            vector<vector<int>> m_identity_to_index {};
+
             // May need to access the chain type by index in m_domains only
             vector<int> m_chain_identities {};
 
+            // Keeps track of unbound domains but indexed by position
+            unordered_map<VectorThree, Domain*> m_pos_to_unbound_d {};
+            
             // The state of all positiions occupied by a domain index by position
             unordered_map<VectorThree, Occupancy> m_position_occupancies {};
 
@@ -169,6 +167,7 @@ namespace Origami{
             double stacking_energy(const Domain& cd_i, const Domain& cd_j) const;
     
             // States updates
+            void internal_unassign_domain(Domain& cd_i);
             double unassign_bound_domain(Domain& cd_i);
             void unassign_unbound_domain(Domain& cd_i);
             void update_domain(Domain& cd_i, VectorThree pos, VectorThree ore);
@@ -205,7 +204,6 @@ namespace Origami{
     };
 
     double molarity_to_lattice_volume(double molarity, double lattice_site_volume);
-
 }
 
 #endif // ORIGAMI_H

@@ -58,6 +58,8 @@ namespace Utility {
             VectorThree rotate_half(VectorThree axis);
             int sum();
             int abssum();
+            VectorThree absolute();
+            VectorThree sort();
 
         private:
             array<int, 3> m_container;

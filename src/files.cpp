@@ -67,15 +67,15 @@ OrigamiOutputFile::OrigamiOutputFile(
         int write_freq,
         OrigamiSystem& origami_system) :
         m_filename {filename},
+        m_write_freq {write_freq},
         m_origami_system {origami_system} {
 
-    m_write_freq = write_freq;
     m_file.open(m_filename);
 }
 
 void OrigamiTrajOutputFile::write(int step) {
     m_file << step << "\n";
-    for (auto chain: m_origami_system.m_domains) {
+    for (auto chain: m_origami_system.get_chains()) {
         m_file << chain[0]->m_c << " " << chain[0]->m_c_ident << "\n";
         for (auto domain: chain) {
             for (int i {0}; i != 3; i++) {

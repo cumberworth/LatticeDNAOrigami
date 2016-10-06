@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <memory>
+#include <algorithm>
 
 #include "utility.h"
 
@@ -68,6 +69,7 @@ bool Utility::operator==(const VectorThree& v1, const VectorThree& v2) {
 
 VectorThree VectorThree::rotate_half(VectorThree axis) {
     VectorThree rot = *this;
+    axis = axis.absolute();
     if (axis == xhat) {
         rot[1] = -rot[1];
         rot[2] = -rot[2];
@@ -88,5 +90,18 @@ int VectorThree::sum() {
 }
 
 int VectorThree::abssum() {
-    return abs(this->at(0)) + abs(this->at(1)) + abs(this->at(2));
+    return abs(m_container[0]) + abs(m_container[1]) + abs(m_container[2]);
+}
+
+VectorThree VectorThree::absolute() {
+    return {abs(m_container[0]), abs(m_container[1]), abs(m_container[2])};
+}
+
+VectorThree VectorThree::sort() {
+    array<int, 3> sorted_container {m_container};
+    std::sort(sorted_container.begin(), sorted_container.end());
+    int x {sorted_container[0]};
+    int y {sorted_container[1]};
+    int z {sorted_container[2]};
+    return {VectorThree {x, y, z}};
 }

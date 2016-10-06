@@ -29,6 +29,170 @@ SCENARIO("Longest contiguous complementary sequence extracted") {
     }
 }
 
+SCENARIO("Computed ideal random walks match hand calculated values") {
+    IdealRandomWalks ideal_walk {};
+    GIVEN("A starting point, endpoint, and number of remaining steps") {
+        VectorThree start_pos {0, 0, 0};
+        VectorThree end_pos {0, 2, 3};
+        int N {5};
+        double number_of_walks {10};
+        THEN("The calculated value matches the hand calculated one") {
+            REQUIRE(number_of_walks == ideal_walk.num_walks(start_pos, end_pos, N));
+        }
+        start_pos = {0, 0, 0};
+        end_pos = {0, 2, 3};
+        N = 6;
+        number_of_walks = 0;
+        THEN("The calculated value matches the hand calculated one") {
+            REQUIRE(number_of_walks == ideal_walk.num_walks(start_pos, end_pos, N));
+        }
+        start_pos = {0, 0, 0};
+        end_pos = {0, 2, 3};
+        N = 7;
+        number_of_walks = 665;
+        THEN("The calculated value matches the hand calculated one") {
+            REQUIRE(number_of_walks == ideal_walk.num_walks(start_pos, end_pos, N));
+        }
+        start_pos = {0, 0, 0};
+        end_pos = {0, 2, 3};
+        N = 51;
+        number_of_walks = 5.947398897268465e+36;
+        THEN("The calculated value matches the hand calculated one") {
+            REQUIRE(number_of_walks == ideal_walk.num_walks(start_pos, end_pos, N));
+        }
+        start_pos = {1, 2, 3};
+        end_pos = {3, 4, 5};
+        N = 8;
+        double num_walks_1 {ideal_walk.num_walks(start_pos, end_pos, N)};
+        double num_walks_2 {ideal_walk.num_walks(start_pos, end_pos, N)};
+        VectorThree origin {0, 0, 0};
+        VectorThree DR {2, 2, 2};
+        double num_walks_3 {ideal_walk.num_walks(origin, DR, N)};
+        THEN("Switching start and endpoint leads to no change in num walks") {
+            REQUIRE(num_walks_1 == num_walks_2);
+            REQUIRE(num_walks_1 == num_walks_3);
+        }
+        vector<double> list_num_walks {};
+        list_num_walks.push_back(ideal_walk.num_walks(origin, {1, 2, 3}, 8));
+        list_num_walks.push_back(ideal_walk.num_walks(origin, {-1, 2, 3}, 8));
+        list_num_walks.push_back(ideal_walk.num_walks(origin, {1, -2, 3}, 8));
+        list_num_walks.push_back(ideal_walk.num_walks(origin, {1, 2, -3}, 8));
+        list_num_walks.push_back(ideal_walk.num_walks(origin, {-1, -2, 3}, 8));
+        list_num_walks.push_back(ideal_walk.num_walks(origin, {-1, 2, -3}, 8));
+        list_num_walks.push_back(ideal_walk.num_walks(origin, {1, -2, -3}, 8));
+        list_num_walks.push_back(ideal_walk.num_walks(origin, {-1, -2, -3}, 8));
+        THEN("The sign on the value of the difference of the compenents is irrelevant") {
+            for (auto n_walks: list_num_walks) {
+                REQUIRE(n_walks == list_num_walks[0]);
+            }
+        }
+        list_num_walks.clear();
+        list_num_walks.push_back(ideal_walk.num_walks(origin, {1, 2, 3}, 8));
+        list_num_walks.push_back(ideal_walk.num_walks(origin, {2, 1, 3}, 8));
+        list_num_walks.push_back(ideal_walk.num_walks(origin, {3, 2, 1}, 8));
+        list_num_walks.push_back(ideal_walk.num_walks(origin, {1, 3, 2}, 8));
+        THEN("The order of the components of the difference is irrelevant") {
+            for (auto n_walks: list_num_walks) {
+                REQUIRE(n_walks == list_num_walks[0]);
+            }
+        }
+    }
+}
+
+SCENARIO("Computed growthpoints, endpoints, and regrowth staples match expected") {
+    double temp {1};
+    double staple_M {1};
+    double cation_M {1};
+    double lattice_site_volume {1};
+    bool cyclic {false};
+    IdealRandomWalks ideal_random_walks {};
+    GIVEN("Fully assembled snodin origami system") {
+        // System setup
+        string system_filename {"tests/snodin_assembled.json"};
+
+        OrigamiInputFile origami_input {system_filename};
+        vector<vector<int>> identities {origami_input.m_identities};
+        vector<vector<string>> sequences {origami_input.m_sequences};
+        vector<Chain> configs {origami_input.m_chains};
+
+        OrigamiSystem origami {
+                identities,
+                sequences,
+                configs,
+                temp,
+                staple_M,
+                cation_M,
+                lattice_site_volume,
+                cyclic};
+        vector<Domain*> scaffold_domains {origami.get_chain(0)};
+        WHEN("Calculate constraintpoints for first three domains") {
+            vector<Domain*> selected_scaffold_domains {scaffold_domains.begin(),
+                    scaffold_domains.begin() + 3};
+            Constraintpoints constraintpoints {origami, ideal_random_walks};
+            constraintpoints.calculate_constraintpoints(selected_scaffold_domains);
+            THEN("Expected") {
+                bool s1_is_gp {constraintpoints.is_growthpoint(selected_scaffold_domains[0])};
+                REQUIRE(s1_is_gp == true);
+                bool s2_is_gp {constraintpoints.is_growthpoint(selected_scaffold_domains[1])};
+                REQUIRE(s2_is_gp == false);
+                bool s3_is_gp {constraintpoints.is_growthpoint(selected_scaffold_domains[2])};
+                REQUIRE(s3_is_gp == false);
+                Domain* dtg {constraintpoints.get_domain_to_grow(selected_scaffold_domains[0])};
+                int staple_c_i {origami.staples_of_ident(1)[0]};
+                Domain* domain_to_grow {origami.get_chain(staple_c_i)[0]};
+                REQUIRE(dtg == domain_to_grow);
+                auto active_endpoints {constraintpoints.get_active_endpoints(0)};
+                REQUIRE(active_endpoints.size() == 1);
+                REQUIRE(active_endpoints[0].first == 2);
+                Domain* sd {origami.get_domain(2, 1)};
+                Domain* inactive_endpoint {constraintpoints.get_inactive_endpoints(sd)};
+                REQUIRE(inactive_endpoint == selected_scaffold_domains[1]);
+            }
+        }
+        WHEN("Calculate constraintpoints for last four domains") {
+            vector<Domain*> selected_scaffold_domains {scaffold_domains.end() - 4,
+                    scaffold_domains.end()};
+            Constraintpoints constraintpoints {origami, ideal_random_walks};
+            constraintpoints.calculate_constraintpoints(selected_scaffold_domains);
+            THEN("Expected") {
+                bool s1_is_gp {constraintpoints.is_growthpoint(selected_scaffold_domains[0])};
+                REQUIRE(s1_is_gp == true);
+                bool s2_is_gp {constraintpoints.is_growthpoint(selected_scaffold_domains[1])};
+                REQUIRE(s2_is_gp == false);
+                bool s3_is_gp {constraintpoints.is_growthpoint(selected_scaffold_domains[2])};
+                REQUIRE(s3_is_gp == true);
+                bool s4_is_gp {constraintpoints.is_growthpoint(selected_scaffold_domains[3])};
+                REQUIRE(s4_is_gp == false);
+                auto active_endpoints {constraintpoints.get_active_endpoints(0)};
+                REQUIRE(active_endpoints.size() == 0);
+                Domain* inact_d_1 {selected_scaffold_domains[1]->m_bound_domain};
+                Domain* inact_d_2 {selected_scaffold_domains[3]->m_bound_domain};
+                Domain* inactive_endpoint_1 {constraintpoints.get_inactive_endpoints(inact_d_1)};
+                Domain* inactive_endpoint_2 {constraintpoints.get_inactive_endpoints(inact_d_2)};
+                REQUIRE(inactive_endpoint_1 == selected_scaffold_domains[1]);
+                REQUIRE(inactive_endpoint_2 == selected_scaffold_domains[3]);
+            }
+            WHEN("Constraints is updated as if growing") {
+                constraintpoints.update_endpoints(selected_scaffold_domains[0]->m_bound_domain);
+                constraintpoints.update_endpoints(selected_scaffold_domains[1]->m_bound_domain);
+                auto active_endpoints {constraintpoints.get_active_endpoints(0)};
+                REQUIRE(active_endpoints.size() == 1);
+                REQUIRE(active_endpoints[0].first == selected_scaffold_domains[1]->m_d);
+                constraintpoints.update_endpoints(selected_scaffold_domains[1]);
+                constraintpoints.update_endpoints(selected_scaffold_domains[2]);
+                active_endpoints = constraintpoints.get_active_endpoints(0);
+                REQUIRE(active_endpoints.size() == 0);
+                constraintpoints.update_endpoints(selected_scaffold_domains[2]->m_bound_domain);
+                constraintpoints.update_endpoints(selected_scaffold_domains[3]->m_bound_domain);
+                active_endpoints = constraintpoints.get_active_endpoints(0);
+                REQUIRE(active_endpoints.size() == 1);
+                REQUIRE(active_endpoints[0].first == selected_scaffold_domains[3]->m_d);
+                constraintpoints.update_endpoints(selected_scaffold_domains[3]);
+            }
+        }
+    }
+}
+
 SCENARIO("Computed energies match hand calculated values") {
     double cation_M {1};
     double temp {300};
@@ -98,10 +262,10 @@ SCENARIO("Computed energies match hand calculated values") {
                 lattice_site_volume,
                 cyclic};
 
-        Domain& scaffold_d_1 {*origami.m_domains[0][0]};
-        Domain& scaffold_d_2 {*origami.m_domains[0][1]};
-        Domain& staple_d_1 {*origami.m_domains[1][0]};
-        Domain& staple_d_2 {*origami.m_domains[1][1]};
+        Domain& scaffold_d_1 {*origami.get_domain(0, 0)};
+        Domain& scaffold_d_2 {*origami.get_domain(0, 1)};
+        Domain& staple_d_1 {*origami.get_domain(1, 0)};
+        Domain& staple_d_2 {*origami.get_domain(1, 1)};
 
         origami.unassign_domain(scaffold_d_1);
         origami.unassign_domain(scaffold_d_2);
@@ -188,7 +352,7 @@ SCENARIO("Computed energies match hand calculated values") {
         }
         WHEN("Staple 1 and staple 1 bind") {
             origami.add_chain(1);
-            Domain& staple2_d_1 {*origami.m_domains[2][0]};
+            Domain& staple2_d_1 {*origami.get_domain(2, 0)};
             origami.set_domain_config(staple_d_1, {0, 0, 0}, {1, 0, 0});
             double delta_e {origami.set_domain_config(staple2_d_1, {0, 0, 0},
                     {-1, 0, 0})};
@@ -198,7 +362,7 @@ SCENARIO("Computed energies match hand calculated values") {
         }
         WHEN("Staple 2 and staple 2 bind") {
             origami.add_chain(1);
-            Domain& staple2_d_2 {*origami.m_domains[2][1]};
+            Domain& staple2_d_2 {*origami.get_domain(2, 1)};
             origami.set_domain_config(staple_d_2, {0, 0, 0}, {1, 0, 0});
             double delta_e {origami.set_domain_config(staple2_d_2, {0, 0, 0},
                     {-1, 0, 0})};
@@ -240,10 +404,10 @@ SCENARIO("Implemented helical constraints consistent with intended") {
                 lattice_site_volume,
                 cyclic};
 
-        Domain& scaffold_d_1 {*origami.m_domains[0][0]};
-        Domain& scaffold_d_2 {*origami.m_domains[0][1]};
-        Domain& staple_d_1 {*origami.m_domains[1][0]};
-        Domain& staple_d_2 {*origami.m_domains[1][1]};
+        Domain& scaffold_d_1 {*origami.get_domain(0, 0)};
+        Domain& scaffold_d_2 {*origami.get_domain(0, 1)};
+        Domain& staple_d_1 {*origami.get_domain(1, 0)};
+        Domain& staple_d_2 {*origami.get_domain(1, 1)};
 
         origami.unassign_domain(scaffold_d_1);
         origami.unassign_domain(scaffold_d_2);
@@ -366,14 +530,14 @@ SCENARIO("Implemented helical constraints consistent with intended") {
         origami.add_chain(1);
         origami.add_chain(2);
 
-        Domain& scaffold_d_1 {*origami.m_domains[0][0]};
-        Domain& scaffold_d_2 {*origami.m_domains[0][1]};
-        Domain& scaffold_d_3 {*origami.m_domains[0][2]};
-        Domain& scaffold_d_4 {*origami.m_domains[0][3]};
-        Domain& staple1_d_1 {*origami.m_domains[1][0]};
-        Domain& staple1_d_2 {*origami.m_domains[1][1]};
-        Domain& staple2_d_1 {*origami.m_domains[2][0]};
-        Domain& staple2_d_2 {*origami.m_domains[2][1]};
+        Domain& scaffold_d_1 {*origami.get_domain(0, 0)};
+        Domain& scaffold_d_2 {*origami.get_domain(0, 1)};
+        Domain& scaffold_d_3 {*origami.get_domain(0, 2)};
+        Domain& scaffold_d_4 {*origami.get_domain(0, 3)};
+        Domain& staple1_d_1 {*origami.get_domain(1, 0)};
+        Domain& staple1_d_2 {*origami.get_domain(1, 1)};
+        Domain& staple2_d_1 {*origami.get_domain(2, 0)};
+        Domain& staple2_d_2 {*origami.get_domain(2, 1)};
 
         origami.unassign_domain(scaffold_d_1);
         origami.unassign_domain(scaffold_d_2);
@@ -428,8 +592,8 @@ SCENARIO("Implemented helical constraints consistent with intended") {
         }
         WHEN("Two copies of the second staple are bound to their respective domains") {
             origami.add_chain(1);
-            Domain& staple12_d_1 {*origami.m_domains[3][0]};
-            Domain& staple12_d_2 {*origami.m_domains[3][1]};
+            Domain& staple12_d_1 {*origami.get_domain(3, 0)};
+            Domain& staple12_d_2 {*origami.get_domain(3, 1)};
             WHEN("Add scaffold 1 last") {
                 WHEN("Correctly") {
                     origami.set_domain_config(scaffold_d_2, {0, 1, 0}, {0, 0, 1});
@@ -732,31 +896,31 @@ SCENARIO("Implemented helical constraints consistent with intended") {
                 lattice_site_volume,
                 cyclic};
 
-        for (auto domain: origami.m_domains[0]) {
+        for (auto domain: origami.get_chain(0)) {
             origami.unassign_domain(*domain);
         }
         origami.add_chain(1);
         origami.add_chain(2);
         WHEN("First three domains of scaffold are in same linear helix") {
-            origami.set_domain_config(*origami.m_domains[0][0], {0, 0, 0}, {0, 0, 1});
-            origami.set_domain_config(*origami.m_domains[0][1], {0, 1, 0}, {0, 0, -1});
-            origami.set_domain_config(*origami.m_domains[0][2], {0, 2, 0}, {0, 0, 1});
-            origami.set_domain_config(*origami.m_domains[1][0], {0, 0, 0}, {0, 0, -1});
-            origami.set_domain_config(*origami.m_domains[1][1], {0, 1, 0}, {0, 0, 1});
-            origami.set_domain_config(*origami.m_domains[2][1], {0, 2, 0}, {0, 0, -1});
+            origami.set_domain_config(*origami.get_domain(0, 0), {0, 0, 0}, {0, 0, 1});
+            origami.set_domain_config(*origami.get_domain(0, 1), {0, 1, 0}, {0, 0, -1});
+            origami.set_domain_config(*origami.get_domain(0, 2), {0, 2, 0}, {0, 0, 1});
+            origami.set_domain_config(*origami.get_domain(1, 0), {0, 0, 0}, {0, 0, -1});
+            origami.set_domain_config(*origami.get_domain(1, 1), {0, 1, 0}, {0, 0, 1});
+            origami.set_domain_config(*origami.get_domain(2, 1), {0, 2, 0}, {0, 0, -1});
             constraints_violated = false;
             THEN("Configuration allowed") {
                 REQUIRE(constraints_violated == false);
             }
         }
         WHEN("First three domains of scaffold are in same non-linear helix") {
-            origami.set_domain_config(*origami.m_domains[0][0], {0, 0, 0}, {0, 0, 1});
-            origami.set_domain_config(*origami.m_domains[0][1], {0, 1, 0}, {0, 0, -1});
-            origami.set_domain_config(*origami.m_domains[0][2], {1, 1, 0}, {0, 0, 1});
-            origami.set_domain_config(*origami.m_domains[1][0], {0, 0, 0}, {0, 0, -1});
-            origami.set_domain_config(*origami.m_domains[1][1], {0, 1, 0}, {0, 0, 1});
+            origami.set_domain_config(*origami.get_domain(0, 0), {0, 0, 0}, {0, 0, 1});
+            origami.set_domain_config(*origami.get_domain(0, 1), {0, 1, 0}, {0, 0, -1});
+            origami.set_domain_config(*origami.get_domain(0, 2), {1, 1, 0}, {0, 0, 1});
+            origami.set_domain_config(*origami.get_domain(1, 0), {0, 0, 0}, {0, 0, -1});
+            origami.set_domain_config(*origami.get_domain(1, 1), {0, 1, 0}, {0, 0, 1});
             try {
-                origami.set_domain_config(*origami.m_domains[2][1], {1, 1, 0}, {0, 0, -1});
+                origami.set_domain_config(*origami.get_domain(2, 1), {1, 1, 0}, {0, 0, -1});
                 constraints_violated = false;
             }
             catch (ConstraintViolation) {
