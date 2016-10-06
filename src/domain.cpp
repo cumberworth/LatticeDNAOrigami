@@ -18,7 +18,7 @@ Domain* Domain::operator+(int incr) {
     if (incr > 0) {
         incr -= 1;
         if (m_forward_domain == nullptr) {
-            throw IndexOutOfRange {};
+            return nullptr;
         }
         Domain* domain {(*m_forward_domain) + incr};
         return domain;
@@ -26,7 +26,7 @@ Domain* Domain::operator+(int incr) {
     else if (incr < 0) {
         incr += 1;
         if (m_backward_domain == nullptr) {
-            throw IndexOutOfRange {};
+            return nullptr;
         }
         Domain* domain {(*m_backward_domain) + incr};
         return domain;

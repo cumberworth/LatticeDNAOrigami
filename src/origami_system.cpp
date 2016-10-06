@@ -542,16 +542,16 @@ void OrigamiSystem::check_all_constraints() {
     // Check distance constraints
     for (auto chain: m_domains) {
         for (auto domain: chain) {
-            try {
-                Domain* next_domain {*domain + 1};
-                    VectorThree dist {next_domain->m_pos - domain->m_pos};
-                    if (dist.abssum() != 1) {
-                        cout << "c\n";
-                        throw OrigamiMisuse {};
-                    }
-                }
-            catch (IndexOutOfRange) {
+            Domain* next_domain {*domain + 1};
+            if (next_domain == nullptr) {
                 continue;
+            }
+            else {
+                VectorThree dist {next_domain->m_pos - domain->m_pos};
+                if (dist.abssum() != 1) {
+                    cout << "c\n";
+                    throw OrigamiMisuse {};
+                }
             }
         }
     }
@@ -561,13 +561,9 @@ double OrigamiSystem::check_stacking(Domain& cd_new, Domain& cd_old) {
     // Check both sides
     double delta_e {0};
     for (int i: {-1, 0}) {
-        Domain* cd_i;
-        Domain* cd_j;
-        try {
-            cd_i = cd_old + i;
-            cd_j = (*cd_i) + 1;
-        }
-        catch (IndexOutOfRange) {
+        Domain* cd_i {cd_old + i};
+        Domain* cd_j {cd_old + (i + 1)};
+        if (cd_i == nullptr or cd_j == nullptr) {
             continue;
         }
         bool cd_j_bound {cd_j->m_state == Occupancy::bound};
@@ -593,13 +589,9 @@ double OrigamiSystem::check_stacking(Domain& cd_new, Domain& cd_old) {
 void OrigamiSystem::check_domain_pair_constraints(Domain& cd_i) {
     // Check both pairs
     for (int i: {-1, 0}) {
-        Domain* cd_1;
-        Domain* cd_2;
-        try {
-            cd_1 = cd_i + i;
-            cd_2 = (*cd_1) + 1;
-        }
-        catch (IndexOutOfRange) {
+        Domain* cd_1 {cd_i + i};
+        Domain* cd_2 {cd_i + (i + 1)};
+        if (cd_1 == nullptr or cd_2 == nullptr) {
             continue;
         }
         if (cd_1->m_state == Occupancy::bound and cd_2->m_state == Occupancy::bound) {
@@ -657,13 +649,9 @@ void OrigamiSystem::check_helical_constraints(Domain& cd_1, Domain& cd_2) {
 
 void OrigamiSystem::check_linear_helix_rear(Domain& cd_3) {
     // Check linear helix constraints given rear domain exists and bound
-    Domain* cd_1;
-    Domain* cd_2;
-    try {
-        cd_2 = cd_3 + -1;
-        cd_1 = (*cd_2) + -1;
-    }
-    catch (IndexOutOfRange) {
+        Domain* cd_2 {cd_3 + -1};
+        Domain* cd_1 {cd_3 + -2};
+    if (cd_1 == nullptr or cd_2 == nullptr) {
         return;
     }
     
@@ -696,11 +684,8 @@ void OrigamiSystem::check_linear_helix_rear(Domain& cd_3) {
 }
 
 void OrigamiSystem::check_linear_helix(VectorThree ndr_1,Domain& cd_2) {
-    Domain* cd_3;
-    try {
-        cd_3 = cd_2 + 1;
-    }
-    catch (IndexOutOfRange) {
+    Domain* cd_3 {cd_2 + 1};
+    if (cd_3 == nullptr) {
         return;
     }
 
@@ -724,16 +709,10 @@ void OrigamiSystem::check_linear_helix(VectorThree ndr_1,Domain& cd_2) {
 }
 
 void OrigamiSystem::check_junction_front(Domain& cd_1) {
-    // Check junction given d1 exists
-    Domain* cd_2;
-    Domain* cd_3;
-    Domain* cd_4;
-    try {
-        cd_2 = cd_1 + 1;
-        cd_3 = cd_1 + 2;
-        cd_4 = cd_1 + 3;
-    }
-    catch (IndexOutOfRange) {
+    Domain* cd_2 {cd_1 + 1};
+    Domain* cd_3 {cd_1 + 2};
+    Domain* cd_4 {cd_1 + 3};
+    if (cd_2 == nullptr or cd_3 == nullptr or cd_4 == nullptr) {
         return;
     }
 
@@ -754,15 +733,10 @@ void OrigamiSystem::check_junction_front(Domain& cd_1) {
 
 void OrigamiSystem::check_junction_rear(Domain& cd_4) {
     // Check junction given d4 exists
-    Domain* cd_1;
-    Domain* cd_2;
-    Domain* cd_3;
-    try {
-        cd_3 = cd_4 + -1;
-        cd_2 = cd_4 + -2;
-        cd_1 = cd_4 + -3;
-    }
-    catch (IndexOutOfRange) {
+    Domain* cd_3 {cd_4 + -1};
+    Domain* cd_2 {cd_4 + -2};
+    Domain* cd_1 {cd_4 + -3};
+    if (cd_1 == nullptr or cd_2 == nullptr or cd_3 == nullptr) {
         return;
     }
 
@@ -810,13 +784,9 @@ bool OrigamiSystem::doubly_contiguous_junction(Domain& cd_1, Domain& cd_2) {
 
 void OrigamiSystem::check_doubly_contiguous_junction(Domain& cd_2, Domain& cd_3) {
     // Already know d_2 and d_3 are doubly contiguous junction
-    Domain* cd_1;
-    Domain* cd_4;
-    try {
-        cd_1 = cd_2 + -1;
-        cd_4 = cd_3 + 1;
-    }
-    catch (IndexOutOfRange) {
+    Domain* cd_1 {cd_2 + -1};
+    Domain* cd_4 {cd_3 + 1};
+    if (cd_1 == nullptr or cd_4 == nullptr) {
         return;
     }
 
