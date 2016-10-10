@@ -176,8 +176,8 @@ namespace Movetypes {
             int m_insertion_sites {m_origami_system.num_domains()};
 
         private:
-            bool staple_insertion_accepted(int c_i_ident);
-            bool staple_deletion_accepted(int c_i_ident);
+            double calc_staple_insertion_acc_ratio(int c_i_ident);
+            double calc_staple_deletion_acc_ratio(int c_i_ident);
             vector<double> calc_bias(vector<double> bfactors,
                     Domain*, vector<pair<VectorThree, VectorThree>>&, VectorThree,
                     vector<Domain*>);

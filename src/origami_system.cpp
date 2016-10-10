@@ -167,6 +167,7 @@ double OrigamiSystem::set_domain_config(
         VectorThree pos,
         VectorThree ore) {
     if (cd_i.m_state != Occupancy::unassigned) {
+        cout << "e\n";
         throw OrigamiMisuse {};
     }
 
@@ -339,6 +340,7 @@ void OrigamiSystem::initialize_config(Chains chains) {
             VectorThree ore = chain.orientations[d_i];
             set_domain_config(*domain, pos, ore);
             if (m_constraints_violated) {
+                cout << "f\n";
                 throw OrigamiMisuse {};
             }
         }
@@ -537,10 +539,16 @@ double OrigamiSystem::bind_complementary_domains(Domain& cd_i, Domain& cd_j) {
 
 void OrigamiSystem::check_all_constraints() {
 
-    // Unassign everything
+    // Unassign everything (and check nothing was already unassigned)
     for (auto chain: m_domains) {
         for (auto domain: chain) {
-            unassign_domain(*domain);
+            if (domain->m_state == Occupancy::unassigned) {
+                cout << "g\n";
+                throw OrigamiMisuse {};
+            }
+            else {
+                unassign_domain(*domain);
+            }
         }
     }
 

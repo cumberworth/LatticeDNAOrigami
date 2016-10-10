@@ -25,13 +25,11 @@ namespace Utility {
 
     // Exception types
     struct NoElement {};
-    struct IndexOutOfRange {};
     struct OrigamiMisuse {};
     struct NotImplemented {};
-    struct MoveRejection {};
 
     // Constrants
-    const double NA {6.022140857};
+    const double NA {6.022140857e23};
 
     enum class Occupancy {
           unassigned,

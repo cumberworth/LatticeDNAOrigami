@@ -15,6 +15,23 @@ using std::cout;
 using namespace Parser;
 using namespace Movetypes;
 
+Fraction::Fraction(string unparsed_fraction) {
+    string delimiter {"/"};
+    auto delim_pos {unparsed_fraction.find(delimiter)};
+
+    // Assume is real number
+    if (delim_pos == string::npos) {
+        m_numerator = stod(unparsed_fraction);
+        m_denominator = 1;
+    }
+    else {
+        auto end_pos {unparsed_fraction.size()};
+        m_numerator = stod(unparsed_fraction.substr(0, delim_pos));
+        m_denominator = stod(unparsed_fraction.substr(delim_pos + 1, end_pos));
+    }
+    m_double_fraction = m_numerator / m_denominator;
+}
+
 InputParameters::InputParameters(int argc, char* argv[]) {
 
     // Command line parser for getting config file name
@@ -49,10 +66,10 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("steps", po::value<int>(), "Number of MC steps")
         ("logging_freq", po::value<int>(), "Logging frequency")
         ("centering_freq", po::value<int>(), "Centering frequency")
-        ("orientation_rotation", po::value<double>(), "Orientational rotation movetype probability")
-        ("cb_staple_exchange", po::value<double>(), "CB staple exchange movetype probability")
-        ("cb_staple_regrowth", po::value<double>(), "CB staple regrowth movetype probability")
-        ("ctcb_scaffold_regrowth", po::value<double>(), "CTCB scaffold regrowth movetype probability")
+        ("orientation_rotation", po::value<string>(), "Orientational rotation movetype probability")
+        ("cb_staple_exchange", po::value<string>(), "CB staple exchange movetype probability")
+        ("cb_staple_regrowth", po::value<string>(), "CB staple regrowth movetype probability")
+        ("ctcb_scaffold_regrowth", po::value<string>(), "CTCB scaffold regrowth movetype probability")
         ;
 
     po::variables_map vm;
@@ -127,22 +144,30 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     }
 
     if (vm.count("orientation_rotation")) {
-        m_movetype_probs.push_back(vm["orientation_rotation"].as<double>());
+        string unparsed_fraction {vm["orientation_rotation"].as<string>()};
+        Fraction prob {unparsed_fraction};
+        m_movetype_probs.push_back(prob.to_double());
         m_movetype_constructors.push_back(movetype[1]);
     }
 
     if (vm.count("cb_staple_exchange")) {
-        m_movetype_probs.push_back(vm["cb_staple_exchange"].as<double>());
+        string unparsed_fraction {vm["cb_staple_exchange"].as<string>()};
+        Fraction prob {unparsed_fraction};
+        m_movetype_probs.push_back(prob.to_double());
         m_movetype_constructors.push_back(movetype[3]);
     }
 
     if (vm.count("cb_staple_regrowth")) {
-        m_movetype_probs.push_back(vm["cb_staple_regrowth"].as<double>());
+        string unparsed_fraction {vm["cb_staple_regrowth"].as<string>()};
+        Fraction prob {unparsed_fraction};
+        m_movetype_probs.push_back(prob.to_double());
         m_movetype_constructors.push_back(movetype[4]);
     }
 
     if (vm.count("ctcb_scaffold_regrowth")) {
-        m_movetype_probs.push_back(vm["ctcb_scaffold_regrowth"].as<double>());
+        string unparsed_fraction {vm["ctcb_scaffold_regrowth"].as<string>()};
+        Fraction prob {unparsed_fraction};
+        m_movetype_probs.push_back(prob.to_double());
         m_movetype_constructors.push_back(movetype[5]);
     }
 }

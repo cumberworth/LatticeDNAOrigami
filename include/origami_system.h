@@ -35,8 +35,6 @@ namespace Origami{
     };
     using Chains = vector<Chain>;
 
-    struct ConstraintViolation {};
-
     class OrigamiSystem {
         // Cubic lattice domain-level resolution model of DNA origami
         public:

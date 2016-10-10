@@ -3,6 +3,9 @@
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
 
+#define private public
+#define protected public
+
 #include "parser.h"
 #include "nearest_neighbour.h"
 #include "domain.h"
@@ -19,6 +22,26 @@ using namespace DomainContainer;
 using namespace Simulation;
 using namespace Movetypes;
 using namespace NearestNeighbour;
+
+bool compare_vector_contents(vector<double> first_vector, vector<double> second_vector) {
+    // Check if elements the same regardless of order
+    if (first_vector.size() != second_vector.size()) {
+        return false;
+    }
+    for (auto ele1: first_vector) {
+        bool v2_contains_ele {false};
+        for (auto ele2: second_vector) {
+            if (ele1 == ele2) {
+                v2_contains_ele = true;
+                break;
+            }
+        }
+        if (not v2_contains_ele) {
+            return false;
+        }
+    }
+    return true;
+}
 
 SCENARIO("Longest contiguous complementary sequence extracted") {
     GIVEN("A non-fully complementary pair of sequences") {
@@ -821,6 +844,114 @@ SCENARIO("Implemented helical constraints consistent with intended") {
             THEN("Configuration allowed") {
                 REQUIRE(origami.m_constraints_violated == true);
             }
+        }
+    }
+}
+
+SCENARIO("Example moves work as expected") {
+    double temp {350};
+    double staple_M {1e-3};
+    double cation_M {1};
+    double lattice_site_volume {4e-28};
+    bool cyclic {false};
+    RandomGens random_gens {};
+    IdealRandomWalks ideal_random_walks {};
+
+    // Coordination number of lattice
+    double k {6};
+    GIVEN("Four domain loop system") {
+        // Scaffold: 1 2 3 4, staple 1: 1 4, staple 2: 3 2
+
+        // System setup
+        string system_filename {"tests/four_domain_loop.json"};
+
+        OrigamiInputFile origami_input {system_filename};
+        vector<vector<int>> identities {origami_input.m_identities};
+        vector<vector<string>> sequences {origami_input.m_sequences};
+        vector<Chain> configs {origami_input.m_chains};
+
+        OrigamiSystem origami {
+                identities,
+                sequences,
+                configs,
+                temp,
+                staple_M,
+                cation_M,
+                lattice_site_volume,
+                cyclic};
+
+        origami.add_chain(1);
+        origami.add_chain(2);
+
+        Domain& scaffold_d_1 {*origami.get_domain(0, 0)};
+        Domain& scaffold_d_2 {*origami.get_domain(0, 1)};
+        Domain& scaffold_d_3 {*origami.get_domain(0, 2)};
+        Domain& scaffold_d_4 {*origami.get_domain(0, 3)};
+        Domain& staple1_d_1 {*origami.get_domain(1, 0)};
+        Domain& staple1_d_2 {*origami.get_domain(1, 1)};
+        Domain& staple2_d_1 {*origami.get_domain(2, 0)};
+        Domain& staple2_d_2 {*origami.get_domain(2, 1)};
+
+        origami.unassign_domain(scaffold_d_1);
+        origami.unassign_domain(scaffold_d_2);
+        origami.unassign_domain(scaffold_d_3);
+        origami.unassign_domain(scaffold_d_4);
+        origami.unassign_domain(staple1_d_1);
+        origami.unassign_domain(staple1_d_2);
+        origami.unassign_domain(staple2_d_1);
+        origami.unassign_domain(staple2_d_2);
+
+        WHEN("Staple exchange move attempted") {
+            double expected_new_bias {1};
+
+            // Setup movetype
+            CBStapleExchangeMCMovetype movetype {origami, random_gens, ideal_random_walks};
+
+            // Set initial configuration, staple 2 bound 
+            origami.set_domain_config(scaffold_d_1, {0, 0, 0}, {0, -1, 0});
+            origami.set_domain_config(scaffold_d_2, {1, 0, 0}, {0, 1, 0});
+            origami.set_domain_config(scaffold_d_3, {1, 1, 0}, {0, 1, 0});
+            origami.set_domain_config(scaffold_d_4, {0, 1, 0}, {0, -1, 0});
+            origami.set_domain_config(staple2_d_1, {1, 1, 0}, {0, -1, 0});
+            origami.set_domain_config(staple2_d_2, {1, 0, 0}, {0, -1, 0});
+
+            // Set first staple domain
+            double delta_e {0};
+            delta_e += movetype.set_old_growth_point(staple1_d_1, scaffold_d_1);
+
+            // This is done in a method that has random selections happening
+            movetype.m_bias *= k * exp(-delta_e);
+            expected_new_bias *= k * exp(-delta_e);
+
+            // Set second staple domain
+            vector<pair<VectorThree, VectorThree>> configs {};
+            vector<double> bfactors {};
+            VectorThree p_prev {0, 0, 0};
+            movetype.calc_biases(staple1_d_2, p_prev, configs, bfactors);
+            vector<Domain*> domains {&staple1_d_1, &staple2_d_2};
+            vector<double> weights {movetype.calc_bias(bfactors, &staple1_d_2,
+                    configs, p_prev, domains)};
+
+            delta_e = origami.hybridization_energy(scaffold_d_4, staple1_d_2);
+            double Ri = exp(-delta_e) + 6*4;
+            expected_new_bias *= Ri;
+            vector<double> expected_weights {exp(-delta_e) / Ri, 6/Ri, 6/Ri, 6/Ri, 6/Ri};
+            REQUIRE(compare_vector_contents(weights, expected_weights));
+
+            // Calculate acceptance ratio
+            double calc_ratio {movetype.calc_staple_insertion_acc_ratio(staple1_d_1.m_c_ident)};
+            double expected_ratio {expected_new_bias / pow(6, 2) * pow(6, 3)};
+            REQUIRE(calc_ratio == expected_ratio);
+
+            // To get modifier correct (overcounting specifically), need to
+            // reset movetype bias and grow staple after setting the growthpoint.
+            // Note this will have the potential of growing differently, but the
+            // probability of this occuring is low
+            movetype.m_bias *= k * exp(-delta_e);
+            movetype.grow_staple(staple1_d_1.m_d, domains);
+            double calc_p_accept {movetype.m_modifier};
+            double expected_p_accept {pow(6, 3) * 4 / origami.m_volume};
+            REQUIRE(calc_p_accept == expected_p_accept);
         }
     }
 }

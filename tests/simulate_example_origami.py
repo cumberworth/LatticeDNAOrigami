@@ -3,8 +3,11 @@
 """Run a basic simulation of the example origami system."""
 
 import sys
-sys.path.append('../')
-from lattice_dna_origami.lattice_origami_domains import *
+sys.path.insert(0, '../')
+
+from lattice_dna_origami.origami_io import *
+from lattice_dna_origami.origami_system import *
+
 
 # Specificy initial configuration by setting input file and step number
 #input_file = JSONInputFile('simple_loop_linear.json')
@@ -19,10 +22,10 @@ input_file = JSONInputFile('snodin_assembled.json')
 step = 0
 
 # Set conditions
-temp = 300
+temp = 350
 
 # Staple strand concentration (M)
-strand_M = 1
+strand_M = 1e-3
 
 # Cation concentration (M)
 #cation_M = 1
@@ -33,9 +36,9 @@ cation_M = 1
 origami_system = OrigamiSystemSixteen(input_file, step, temp, strand_M, cation_M, misbinding=False)
 
 # Specify moves to be used and associated probabilities
-move_settings = {#MOVETYPE.EXCHANGE_STAPLE: 1/4,
+move_settings = {MOVETYPE.EXCHANGE_STAPLE: 1}
                  #MOVETYPE.IDENTITY: 1}
-                 MOVETYPE.CB_REGROW_STAPLE: 1}
+                 #MOVETYPE.CB_REGROW_STAPLE: 1}
                  #MOVETYPE.REGROW_SCAFFOLD: 1/4,
                  #MOVETYPE.CB_CONSERVED_TOPOLOGY: 1/4,
                  #MOVETYPE.ROTATE_ORIENTATION_VECTOR: 1/4}

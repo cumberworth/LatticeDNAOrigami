@@ -12,6 +12,16 @@ using std::string;
 using namespace Movetypes;
 
 namespace Parser {
+    class Fraction {
+        public:
+            Fraction(string unparsed_fraction);
+            inline double to_double() const {return m_double_fraction;}
+        private:
+            double m_double_fraction;
+            double m_numerator;
+            double m_denominator;
+    };
+
     class InputParameters {
         public:
             InputParameters(int argc, char* argv[]);
