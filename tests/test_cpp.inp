@@ -1,0 +1,16 @@
+temp=340
+staple_M=1e-4
+cation_M=1
+lattice_site_volume=4e-28
+origami_input_filename=tests/snodin_unbound.json
+configs_output_filename=tests/snodin_unbound.trj
+configs_output_freq=0
+counts_output_filename=tests/snodin_unbound.counts
+counts_output_freq=10000
+logging_freq=10000
+centering_freq=10000
+steps=10000000
+orientation_rotation=1/4
+cb_staple_exchange=1/4
+cb_staple_regrowth=1/4
+ctcb_scaffold_regrowth=1/4
