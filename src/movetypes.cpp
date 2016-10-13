@@ -39,19 +39,6 @@ void MCMovetype::reset_origami() {
         m_origami_system.m_current_c_i -= 1;
     }
 
-    // Re-add chains that were deleted and revert domains to previous positions
-    for (auto c_index_identity: m_deleted_chains) {
-        int c_i {c_index_identity.first};
-        m_origami_system.add_chain(c_index_identity.second, c_i);
-        for (auto d_i: m_deleted_domains[c_i]) {
-            pair<int, int> key {c_i, d_i};
-            VectorThree pos {m_prev_pos[key]};
-            VectorThree ore {m_prev_ore[key]};
-            Domain* domain {m_origami_system.get_domain(c_i, d_i)};
-            m_origami_system.set_checked_domain_config(*domain, pos, ore);
-        }
-    }
-
     // Revert modified domains to previous positions
     for (auto c_i_d_i: m_modified_domains) {
         int c_i {c_i_d_i.first};
@@ -205,7 +192,7 @@ double RegrowthMCMovetype::set_growth_point(Domain& growth_domain_new, Domain& g
 void RegrowthMCMovetype::grow_staple(int d_i_index, vector<Domain*> selected_chain) {
     // Grow staple in both directions out from growth point
     // The indices passed to grow chain should include the growth point
-    int old_num_bound_domains {m_origami_system.num_domains()};
+    int old_num_bound_domains {m_origami_system.num_fully_bound_domain_pairs()};
 
     // Grow in three prime direction (staple domains increase in 3' direction)
     auto first_iter3 {selected_chain.begin() + d_i_index};
@@ -227,30 +214,39 @@ void RegrowthMCMovetype::grow_staple(int d_i_index, vector<Domain*> selected_cha
     }
 
     // Overcount correction
-    int overcount {old_num_bound_domains - m_origami_system.num_domains()};
+    int overcount {m_origami_system.num_fully_bound_domain_pairs() - old_num_bound_domains};
     m_modifier /= (overcount + 1);
 }
 
 bool OrientationRotationMCMovetype::attempt_move() {
     bool accept;
     
-    // Select random chain and domain
+    // Select random chain, domain, and orientation
     Domain* domain {select_random_domain()};
+    VectorThree o_new {select_random_orientation()};
 
-    // Reject if in bound state
     if (domain->m_state == Occupancy::bound) {
-        accept = false;
-        return accept;
+        VectorThree o_old {domain->m_ore};
+        Domain* bound_domain {domain->m_bound_domain};
+        m_origami_system.unassign_domain(*bound_domain);
+        m_origami_system.set_domain_orientation(*domain, o_new);
+        VectorThree pos {domain->m_pos};
+        m_origami_system.set_domain_config(*bound_domain, pos, -o_new);
+        if (m_origami_system.m_constraints_violated) {
+            accept = false;
+            m_origami_system.unassign_domain(*bound_domain);
+            m_origami_system.set_domain_orientation(*domain, o_old);
+            m_origami_system.set_checked_domain_config(*bound_domain, pos, -o_old);
+        }
+        else {
+            accept = true;
+        }
     }
-
-    // All other cases accept
     else {
+        m_origami_system.set_domain_orientation(*domain, o_new);
         accept = true;
     }
 
-    // Select random orientation and update
-    VectorThree o_new {select_random_orientation()};
-    m_origami_system.set_domain_orientation(*domain, o_new);
 
     return accept;
 }
@@ -355,6 +351,7 @@ bool MetStapleExchangeMCMovetype::insert_staple() {
 bool MetStapleExchangeMCMovetype::delete_staple() {
     bool accepted;
 
+    cout << "BROKEN\n";
     // Select random identity and staple of that type
     int c_i_ident {select_random_staple_identity()};
     int c_i {select_random_staple_of_identity(c_i_ident)};
@@ -371,13 +368,11 @@ bool MetStapleExchangeMCMovetype::delete_staple() {
         pair<int, int> key {c_i, d_i};
         m_prev_pos[key] = domain->m_pos;
         m_prev_ore[key] = domain->m_ore;
-        m_deleted_domains[c_i].push_back(d_i);
         m_delta_e += m_origami_system.unassign_domain(*domain);
     }
 
     // Delete chain and test acceptance
     m_origami_system.delete_chain(c_i);
-    m_deleted_chains.push_back({c_i, c_i_ident});
 
     return staple_deletion_accepted(c_i_ident);
 }
@@ -437,6 +432,9 @@ void CBMCMovetype::calc_biases(
                     configs.push_back({p_new, o_new});
                     bfactor *= exp(-delta_e);
                     bfactors.push_back(bfactor);
+                }
+                else {
+                    m_origami_system.m_constraints_violated = false;
                 }
                 break;
             }
@@ -510,11 +508,11 @@ void CBMCMovetype::select_and_set_old_config(Domain& domain) {
 }
 
 double CBMCMovetype::set_old_growth_point(Domain& growth_domain_new, Domain& growth_domain_old) {
-    VectorThree o_old {-growth_domain_old.m_ore};
+    pair<int, int> key {growth_domain_new.m_c, growth_domain_new.m_d};
+    VectorThree o_old {m_old_ore[key]};
     double delta_e {0};
     delta_e += m_origami_system.set_checked_domain_config(growth_domain_new,
             growth_domain_old.m_pos, o_old);
-    pair<int, int> key {growth_domain_new.m_c, growth_domain_new.m_d};
     m_assigned_domains.push_back(key);
 
     return delta_e;
@@ -558,6 +556,35 @@ void CBMCMovetype::setup_for_regrow_old() {
     m_old_ore = m_prev_ore;
 }
 
+vector<pair<Domain*, Domain*>> CBMCMovetype::find_bound_domains(
+        vector<Domain*> selected_chain) {
+
+    vector<pair<Domain*, Domain*>> bound_domains {};
+    for (auto domain: selected_chain) {
+        if (domain->m_bound_domain != nullptr) {
+
+            // New domain, old domain
+            bound_domains.push_back({domain, domain->m_bound_domain});
+        }
+    }
+
+    if (bound_domains.empty()) {
+        cout << "d\n";
+        throw OrigamiMisuse {};
+    }
+
+    return bound_domains;
+}
+
+pair<Domain*, Domain*> CBMCMovetype::select_old_growthpoint(
+        vector<pair<Domain*, Domain*>> bound_domains) {
+
+    int bound_domain_index {m_random_gens.uniform_int(0, bound_domains.size() - 1)};
+    Domain* growth_domain_new {bound_domains[bound_domain_index].first};
+    Domain* growth_domain_old {bound_domains[bound_domain_index].second};
+    return {growth_domain_new, growth_domain_old};
+}
+
 bool CBStapleExchangeMCMovetype::attempt_move() {
     // Select inertion or deletion with equal frequency
     bool accept;
@@ -593,13 +620,13 @@ double CBStapleExchangeMCMovetype::calc_staple_insertion_acc_ratio(int c_i_ident
 double CBStapleExchangeMCMovetype::calc_staple_deletion_acc_ratio(int c_i_ident) {
     size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
     m_bias /= pow(6, staple_length);
-    int Ni_new {m_origami_system.num_staples()};
+    int Ni {m_origami_system.num_staples_of_ident(c_i_ident)};
 
     // Correct for extra states from additional staple domains
     int extra_df {2 * static_cast<int>(staple_length) - 1 - preconstrained_df};
     double extra_states {pow(6, extra_df)};
 
-    double ratio {(static_cast<double>(Ni_new) + 1) / extra_states / m_bias};
+    double ratio {static_cast<double>(Ni) / extra_states / m_bias};
 
     return ratio;
 }
@@ -608,15 +635,6 @@ vector<double> CBStapleExchangeMCMovetype::calc_bias(vector<double> weights,
         Domain*, vector<pair<VectorThree, VectorThree>>&, VectorThree,
         vector<Domain*>) {
     // Calculate rosenbluth weight
-
-    // Set weights of positions involving binding to 0
-//    for (size_t i {0}; i != configs.size(); i++) {
-//
-//        // CHECK IF THIS IS CORRECT (like in principle)
-//        if (m_origami_system.position_occupancy(configs[i].first) == Occupancy::unbound) {
-//            weights[i] = 0;
-//        }
-//    }
     double rosenbluth_i {0};
     for (auto weight: weights) {
         rosenbluth_i += weight;
@@ -627,6 +645,7 @@ vector<double> CBStapleExchangeMCMovetype::calc_bias(vector<double> weights,
         m_rejected = true;
     }
     else {
+        m_bias *= rosenbluth_i;
         for (size_t i {0}; i != weights.size(); i++) {
             weights[i] /= rosenbluth_i;
         }
@@ -686,54 +705,51 @@ bool CBStapleExchangeMCMovetype::delete_staple() {
         return accepted;
     }
 
-    // Find growth piont
-    // Also check if staple bound to more than one domain, reject if so
-    Domain* growth_domain_new;
-    Domain* growth_domain_old;
-    int bound_domains {0};
-    for (auto domain: staple) {
-        if (domain->m_state != Occupancy::unbound) {
-            bound_domains += 1;
-            growth_domain_new = domain;
-            growth_domain_old = domain->m_bound_domain;
-        }
-        if (bound_domains > 1) {
-            accepted = false;
-            return accepted;
-        }
-    }
+    // Select growth point
+    auto bound_domains {find_bound_domains(staple)};
+    auto growthpoint {select_old_growthpoint(bound_domains)};
     
-    // Add stuff to reversions lists and unassign domsins
-    int chain_length {static_cast<int>(staple.size())};
-    for (int d_i {0}; d_i != chain_length; d_i++) {
-        Domain* domain {staple[d_i]};
-        pair<int, int> key {c_i, d_i};
-        m_old_pos[key] = domain->m_pos;
-        m_old_ore[key] = domain->m_ore;
-        m_origami_system.unassign_domain(*domain);
-    }
+    // Add stuff to reversions lists and unassign domains
+    unassign_for_regrowth(staple);
 
     // Regrow chain to calculate Rosenbluth weight
     m_regrow_old = true;
-    double delta_e {set_old_growth_point(*growth_domain_new, *growth_domain_old)};
+    double delta_e {set_old_growth_point(*growthpoint.first, *growthpoint.second)};
     m_bias *= 6 * exp(-delta_e);
-    grow_staple(growth_domain_new->m_d, staple);
-
-    // Prepare reversion list, unassign domains, and delete chain
-    m_assigned_domains.clear();
-    m_prev_pos = m_old_pos;
-    m_prev_ore = m_old_ore;
-    for (int d_i {0}; d_i != chain_length; d_i++) {
-        Domain* domain {staple[d_i]};
-        m_deleted_domains[c_i].push_back(d_i);
-        m_origami_system.unassign_domain(*domain);
-    }
-    m_origami_system.delete_chain(c_i);
-    m_deleted_chains.push_back({c_i, c_i_ident});
+    grow_staple(growthpoint.first->m_d, staple);
 
     double ratio {calc_staple_deletion_acc_ratio(c_i_ident)};
     accepted = test_acceptance(ratio);
+
+    if (accepted) {
+        unassign_and_delete_staple(c_i, staple);
+    }
+
+    // No need for reseting with this movetype
+    m_assigned_domains.clear();
+
     return accepted;
+}
+
+void CBStapleExchangeMCMovetype::unassign_and_delete_staple(
+        int c_i,
+        vector<Domain*> staple) {
+    for (auto domain: staple) {
+        m_origami_system.unassign_domain(*domain);
+    }
+    m_origami_system.delete_chain(c_i);
+}
+
+void CBStapleExchangeMCMovetype::unassign_for_regrowth(vector<Domain*> domains) {
+    // No need for reversion list
+    for (auto domain: domains) {
+        pair<int, int> key {domain->m_c, domain->m_d};
+        m_old_pos[key] = domain->m_pos;
+        m_old_ore[key] = domain->m_ore;
+
+        // Would be double counting to include delta_e in bias
+        m_origami_system.unassign_domain(*domain);
+    }
 }
 
 void CBStapleExchangeMCMovetype::grow_chain(vector<Domain*> domains) {
@@ -839,35 +855,6 @@ pair<Domain*, Domain*> CBStapleRegrowthMCMovetype::select_new_growthpoint(
     return {growth_domain_new, growth_domain_old};
 }
 
-pair<Domain*, Domain*> CBStapleRegrowthMCMovetype::select_old_growthpoint(
-        vector<pair<Domain*, Domain*>> bound_domains) {
-
-    int bound_domain_index {m_random_gens.uniform_int(0, bound_domains.size() - 1)};
-    Domain* growth_domain_new {bound_domains[bound_domain_index].first};
-    Domain* growth_domain_old {bound_domains[bound_domain_index].second};
-    return {growth_domain_new, growth_domain_old};
-}
-
-vector<pair<Domain*, Domain*>> CBStapleRegrowthMCMovetype::find_bound_domains(
-        vector<Domain*> selected_chain) {
-
-    vector<pair<Domain*, Domain*>> bound_domains {};
-    for (auto domain: selected_chain) {
-        if (domain->m_bound_domain != nullptr) {
-
-            // New domain, old domain
-            bound_domains.push_back({domain, domain->m_bound_domain});
-        }
-    }
-
-    if (bound_domains.empty()) {
-        cout << "d\n";
-        throw OrigamiMisuse {};
-    }
-
-    return bound_domains;
-}
-
 void CBStapleRegrowthMCMovetype::grow_chain(vector<Domain*> domains) {
     for (size_t i {1}; i != domains.size(); i++) {
         select_and_set_config(domains, i);
@@ -892,6 +879,7 @@ vector<double> CBStapleRegrowthMCMovetype::calc_bias(vector<double> bfactors,
         m_rejected = true;
     }
     else {
+        m_bias *= rosenbluth_i;
         for (auto bfactor: bfactors) {
             weights.push_back(bfactor / rosenbluth_i);
         }

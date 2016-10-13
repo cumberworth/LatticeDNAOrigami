@@ -28,6 +28,7 @@ namespace Origami{
 
     // For passing information between file objects and origami system
     struct Chain {
+        bool operator==(Chain chain_2);
         int index;
         int identity;
         vector<VectorThree> positions;
@@ -75,8 +76,10 @@ namespace Origami{
             inline int num_staples() const {return m_domains.size() - 1;}
             int num_unique_staples() const;
             inline int num_domains() {return m_num_domains;};
-            inline int num_bound_domain_pairs() const {return (m_num_domains -
-                    m_pos_to_unbound_d.size()) / 2;}
+
+            // CONSIDER MAKING THIS MORE ROBUST
+            inline int num_bound_domain_pairs() const {return ((m_num_domains / 2) -
+                    m_pos_to_unbound_d.size() / 2);}
             inline int num_fully_bound_domain_pairs() const {return m_num_fully_bound_domain_pairs;}
             inline int num_misbound_domain_pairs() const {
                     return num_bound_domain_pairs() - num_fully_bound_domain_pairs();}

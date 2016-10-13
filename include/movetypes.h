@@ -51,10 +51,6 @@ namespace Movetypes {
             vector<pair<int, int>> m_assigned_domains {};
             vector<int> m_added_chains {};
 
-            // Contains the chain index and the identity, respectively
-            vector<pair<int, int>> m_deleted_chains {};
-            map<int, vector<int>> m_deleted_domains {};
-
             // Domains mapped to previous configs
             unordered_map<pair<int, int>, VectorThree> m_prev_pos {};
             unordered_map<pair<int, int>, VectorThree> m_prev_ore {};
@@ -121,7 +117,8 @@ namespace Movetypes {
 
             // These can be overidden for a derived class the excludes misbinding
             int preconstrained_df {0};
-            int m_insertion_sites {m_origami_system.num_domains()};
+            int m_insertion_sites {m_origami_system.num_domains() -
+                    m_origami_system.num_bound_domain_pairs()};
 
         private:
             bool staple_insertion_accepted(int c_i_ident);
@@ -161,11 +158,23 @@ namespace Movetypes {
             bool test_cb_acceptance();
             void unassign_domains(vector<Domain*>);
             void setup_for_regrow_old();
+            vector<pair<Domain*, Domain*>> find_bound_domains(
+                    vector<Domain*> selected_chain);
+            pair<Domain*, Domain*> select_old_growthpoint(
+                    vector<pair<Domain*, Domain*>> bound_domains);
     };
 
     class CBStapleExchangeMCMovetype: public CBMCMovetype {
         public:
             using CBMCMovetype::CBMCMovetype;
+            CBStapleExchangeMCMovetype(
+                    OrigamiSystem& origami_system,
+                    RandomGens& random_gens,
+                    IdealRandomWalks& ideal_random_walks) :
+                    CBMCMovetype(
+                            origami_system,
+                            random_gens,
+                            ideal_random_walks) {}
             bool attempt_move();
 
             string m_label() {return "CBStapleExchangeMCMovetype";};
@@ -173,7 +182,8 @@ namespace Movetypes {
 
             // These can be overidden for a derived class the excludes misbinding
             int preconstrained_df {0};
-            int m_insertion_sites {m_origami_system.num_domains()};
+            int m_insertion_sites {m_origami_system.num_domains() -
+                    m_origami_system.num_bound_domain_pairs()};
 
         private:
             double calc_staple_insertion_acc_ratio(int c_i_ident);
@@ -183,8 +193,10 @@ namespace Movetypes {
                     vector<Domain*>);
             bool insert_staple();
             bool delete_staple();
+            void unassign_and_delete_staple(int c_i,vector<Domain*> staple);
             void select_and_set_growth_point(Domain* growth_domain_new);
             void grow_chain(vector<Domain*> domains);
+            void unassign_for_regrowth(vector<Domain*>);
 
     };
 
@@ -199,10 +211,6 @@ namespace Movetypes {
                     pair<Domain*, Domain*> growthpoint,
                     vector<Domain*> selected_chain);
             pair<Domain*, Domain*> select_new_growthpoint(
-                    vector<Domain*> selected_chain);
-            pair<Domain*, Domain*> select_old_growthpoint(
-                    vector<pair<Domain*, Domain*>> bound_domains);
-            vector<pair<Domain*, Domain*>> find_bound_domains(
                     vector<Domain*> selected_chain);
             void grow_chain(vector<Domain*> domains);
             vector<double> calc_bias(vector<double> bfactors,

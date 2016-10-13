@@ -102,7 +102,7 @@ vector<string> NearestNeighbour::find_longest_contig_complement(
     // Find smallest sequence
     string seq_three;
     string seq_five;
-    if (seq_i.size() < seq_j.size()) {
+    if (seq_i.size() <= seq_j.size()) {
         seq_three = seq_j;
         reverse(seq_three.begin(), seq_three.end());
         seq_five = seq_i;
@@ -121,16 +121,14 @@ vector<string> NearestNeighbour::find_longest_contig_complement(
         for (unsigned int start_i {0}; start_i != (seq_three.size() - subseq_len
                     + 1); start_i++) {
             string subseq {seq_three.substr(start_i, subseq_len)};
-            std::size_t seq_i = seq_five.find(subseq);
-            if (seq_i == string::npos) {
-                continue;
+            size_t subseq_i {seq_five.find(subseq)};
+            int subseq_count {0};
+            while(subseq_i != string::npos) {
+                subseq_i = seq_five.find(subseq, subseq_i + 1);
+                subseq_count++;
             }
-            else {
-                string comp_seq {seq_five.substr(seq_i, subseq_len)};
-                comp_seqs.push_back(comp_seq);
-                // Only considers one instance of the subsequence. To be 
-                // consistent consider checking for all instances and weight
-                // appropreatelly
+            for (int i {0}; i != subseq_count; i++) {
+                comp_seqs.push_back(subseq);
             }
         }
         if (comp_seqs.empty()) {

@@ -18,6 +18,19 @@ using namespace Origami;
 
 // Public methods
 
+bool Chain::operator==(Chain chain_2) {
+    bool index_match {this->index == chain_2.index};
+    bool identity_match {this->identity == chain_2.index};
+    bool positions_match {this->positions == chain_2.positions};
+    bool orientations_match {this->orientations == chain_2.orientations};
+    if (index_match and identity_match and positions_match and orientations_match) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
 OrigamiSystem::OrigamiSystem(
         const vector<vector<int>>& identities,
         const vector<vector<string>>& sequences,
@@ -552,6 +565,18 @@ void OrigamiSystem::check_all_constraints() {
         }
     }
 
+    // Check that energy has returned to 0 (eps is totally arbitrary)
+    double eps {0.000001};
+    if (m_energy < -eps or m_energy > eps) {
+        cout << "Iconsistency in system energy\n";
+        throw OrigamiMisuse {};
+    }
+    else {
+
+        // Prevent rounding errors from building up
+        m_energy = 0;
+    }
+
     // Reset configuration
     for (auto chain: m_domains) {
         for (auto domain: chain) {
@@ -672,16 +697,14 @@ bool OrigamiSystem::check_helical_constraints(Domain& cd_1, Domain& cd_2) {
             if (cd_bound_1.m_d == cd_bound_2.m_d + 1) {
                 helical_constraints_obeyed = false;
             }
-            else {
-                if (cd_1.check_twist_constraint(ndr, cd_2)) {
-                    if (not check_linear_helix(ndr, cd_2)) {
-                        helical_constraints_obeyed = false;
-                    }
-                }
-                else {
-                    helical_constraints_obeyed = false;
-                }
+        }
+        if (cd_1.check_twist_constraint(ndr, cd_2)) {
+            if (not check_linear_helix(ndr, cd_2)) {
+                helical_constraints_obeyed = false;
             }
+        }
+        else {
+            helical_constraints_obeyed = false;
         }
     }
     return helical_constraints_obeyed;
