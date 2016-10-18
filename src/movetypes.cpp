@@ -272,7 +272,7 @@ void MetMCMovetype::grow_chain(vector<Domain*> domains) {
         Domain* prev_domain {domains[i - 1]};
         VectorThree new_p {select_random_position(prev_domain->m_pos)};
         VectorThree new_o {select_random_orientation()};
-        m_origami_system.set_domain_config(*domain, new_p, new_o);
+        m_delta_e += m_origami_system.set_domain_config(*domain, new_p, new_o);
         if (m_origami_system.m_constraints_violated) {
             m_rejected = true;
             break;
