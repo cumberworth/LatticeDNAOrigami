@@ -1361,7 +1361,7 @@ vector<double> CTCBScaffoldRegrowthMCMovetype::calc_bias(
         Occupancy pos_occ {m_origami_system.position_occupancy(cur_pos)};
         if (pos_occ == Occupancy::unbound) {
             Domain* occ_domain {m_origami_system.unbound_domain_at(cur_pos)};
-            bool binding_same_chain {occ_domain->m_d == domain->m_d};
+            bool binding_same_chain {occ_domain->m_c == domain->m_c};
             bool endpoint {m_constraintpoints.endpoint_reached(domain, cur_pos)};
             if (not (binding_same_chain or endpoint)) {
                 weights[i] = 0;
