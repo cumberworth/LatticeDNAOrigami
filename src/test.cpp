@@ -1006,6 +1006,8 @@ SCENARIO("Example moves work as expected") {
             REQUIRE(compare_approx_vector_contents(weights, expected_weights));
 
             // Calculate acceptance ratio
+            // Expects inverted modifier
+            movetype.m_modifier = 1 / movetype.m_modifier;
             double calc_ratio {movetype.calc_staple_insertion_acc_ratio(staple1_d_1.m_c_ident)};
             double expected_ratio {expected_new_bias / pow(6, 2) * pow(6, 3)};
             REQUIRE(Approx(calc_ratio) == expected_ratio);
@@ -1052,10 +1054,13 @@ SCENARIO("Example moves work as expected") {
             double Ri = exp(-delta_e) + 6*4;
             expected_new_bias *= Ri;
 
+            // Expects inverted modifier
+            movetype.m_modifier = 1 / movetype.m_modifier;
             double calc_ratio {movetype.calc_staple_deletion_acc_ratio(staple1_d_1.m_c_ident)};
             double expected_ratio {pow(6, 2) / (expected_new_bias * pow(6, 3))};
             REQUIRE(Approx(calc_ratio) == expected_ratio);
-            double expected_mod {1/2.};
+
+            double expected_mod {1. / 2};
             REQUIRE(expected_mod == movetype.m_modifier);
         }
         WHEN("CB staple regrowth move attempted") {

@@ -585,6 +585,9 @@ double CBMCMovetype::set_old_growth_point(Domain& growth_domain_new, Domain& gro
 }
 
 bool CBMCMovetype::test_cb_acceptance() {
+    // Revert modifier
+    m_modifier = 1 / m_modifier;
+      
     double ratio {m_new_bias / m_bias};
     bool accepted;
     if (test_acceptance(ratio)) {
@@ -620,6 +623,7 @@ void CBMCMovetype::setup_for_regrow_old() {
     m_assigned_domains.clear();
     m_old_pos = m_prev_pos;
     m_old_ore = m_prev_ore;
+    m_modifier = 1. / m_modifier;
 }
 
 vector<pair<Domain*, Domain*>> CBMCMovetype::find_bound_domains(
@@ -665,6 +669,9 @@ bool CBStapleExchangeMCMovetype::attempt_move() {
 }
 
 double CBStapleExchangeMCMovetype::calc_staple_insertion_acc_ratio(int c_i_ident) {
+    // Revert modifier
+    m_modifier = 1 / m_modifier;
+      
     size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
     m_bias /= pow(6, staple_length);
     int Ni_new {m_origami_system.num_staples_of_ident(c_i_ident)};
@@ -684,6 +691,9 @@ double CBStapleExchangeMCMovetype::calc_staple_insertion_acc_ratio(int c_i_ident
 }
 
 double CBStapleExchangeMCMovetype::calc_staple_deletion_acc_ratio(int c_i_ident) {
+    // Revert modifier
+    m_modifier = 1 / m_modifier;
+      
     size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
     m_bias /= pow(6, staple_length);
     int Ni {m_origami_system.num_staples_of_ident(c_i_ident)};
