@@ -1286,19 +1286,21 @@ vector<Domain*> CTCBScaffoldRegrowthMCMovetype::select_scaffold_indices() {
     // Linear domains
     else {
 
-        // Ensure start domain is 5'
-        if (start_domain->m_d > end_domain->m_d) {
-            Domain* temp {start_domain};
-            start_domain = end_domain;
-            end_domain = temp;
+        // Find direction of regrowth
+        int dir;
+        if (end_domain->m_d > start_domain->m_d) {
+            dir = 1;
         }
-        for (int d_i {start_domain->m_d}; d_i != end_domain->m_d + 1; d_i ++) {
+        else {
+            dir = -1;
+        }
+        for (int d_i {start_domain->m_d}; d_i != end_domain->m_d + dir; d_i += dir) {
             Domain* cur_domain {scaffold[d_i]};
             domains.push_back(cur_domain);
         }
 
         // If end domain is end of chain, no endpoint
-        if (end_domain->m_forward_domain != nullptr) {
+        if (end_domain->m_forward_domain != nullptr and end_domain->m_backward_domain != nullptr) {
             m_constraintpoints.add_active_endpoint(end_domain, end_domain->m_pos);
         }
     }

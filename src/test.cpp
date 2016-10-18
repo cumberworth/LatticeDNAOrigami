@@ -1397,7 +1397,7 @@ SCENARIO("Origami system can reset after move") {
 
 SCENARIO("Methods with random elements give correct distribution") {
     double eps {0.01};
-    double temp {1000};
+    double temp {300};
     double staple_M {1};
     double cation_M {1};
     double lattice_site_volume {1};
