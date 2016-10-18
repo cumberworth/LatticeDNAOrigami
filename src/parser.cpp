@@ -67,6 +67,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("logging_freq", po::value<int>(), "Logging frequency")
         ("centering_freq", po::value<int>(), "Centering frequency")
         ("orientation_rotation", po::value<string>(), "Orientational rotation movetype probability")
+        ("met_staple_regrowth", po::value<string>(), "Met staple regrowth movetype probability")
         ("cb_staple_exchange", po::value<string>(), "CB staple exchange movetype probability")
         ("cb_staple_regrowth", po::value<string>(), "CB staple regrowth movetype probability")
         ("ctcb_scaffold_regrowth", po::value<string>(), "CTCB scaffold regrowth movetype probability")
@@ -150,24 +151,31 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         m_movetype_constructors.push_back(movetype[1]);
     }
 
+    if (vm.count("met_staple_regrowth")) {
+        string unparsed_fraction {vm["met_staple_regrowth"].as<string>()};
+        Fraction prob {unparsed_fraction};
+        m_movetype_probs.push_back(prob.to_double());
+        m_movetype_constructors.push_back(movetype[3]);
+    }
+
     if (vm.count("cb_staple_exchange")) {
         string unparsed_fraction {vm["cb_staple_exchange"].as<string>()};
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
-        m_movetype_constructors.push_back(movetype[3]);
+        m_movetype_constructors.push_back(movetype[4]);
     }
 
     if (vm.count("cb_staple_regrowth")) {
         string unparsed_fraction {vm["cb_staple_regrowth"].as<string>()};
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
-        m_movetype_constructors.push_back(movetype[4]);
+        m_movetype_constructors.push_back(movetype[5]);
     }
 
     if (vm.count("ctcb_scaffold_regrowth")) {
         string unparsed_fraction {vm["ctcb_scaffold_regrowth"].as<string>()};
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
-        m_movetype_constructors.push_back(movetype[5]);
+        m_movetype_constructors.push_back(movetype[6]);
     }
 }

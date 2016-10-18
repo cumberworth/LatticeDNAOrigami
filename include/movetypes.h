@@ -94,6 +94,7 @@ namespace Movetypes {
             double set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old);
             void grow_staple(int d_i_index, vector<Domain*> selected_chain);
             virtual void grow_chain(vector<Domain*> domains) = 0;
+            pair<Domain*, Domain*> select_new_growthpoint(vector<Domain*> selected_chain);
     };
 
     class MetMCMovetype: public RegrowthMCMovetype {
@@ -105,6 +106,7 @@ namespace Movetypes {
             double m_delta_e {0};
 
             void grow_chain(vector<Domain*> domains);
+            void unassign_domains(vector<Domain*> domains);
     };
 
     class MetStapleExchangeMCMovetype: public MetMCMovetype {
@@ -112,7 +114,7 @@ namespace Movetypes {
             using MetMCMovetype::MetMCMovetype;
             bool attempt_move();
 
-            string m_label() {return "MetStapleExchangeMCMovetype";};
+            string m_label() {return "MetStapleExchangeMCMovetype";}
         protected:
 
             // These can be overidden for a derived class the excludes misbinding
@@ -126,6 +128,14 @@ namespace Movetypes {
             bool insert_staple();
             bool delete_staple();
             void select_and_set_growth_point(Domain* growth_domain_new);
+    };
+
+    class MetStapleRegrowthMCMovetype: public MetMCMovetype {
+        public:
+            using MetMCMovetype::MetMCMovetype;
+            bool attempt_move();
+
+            string m_label() {return "MetStapleRegrowthMCMovetype";}
     };
 
     class CBMCMovetype: public RegrowthMCMovetype {
@@ -209,8 +219,6 @@ namespace Movetypes {
         private:
             void set_growthpoint_and_grow_staple(
                     pair<Domain*, Domain*> growthpoint,
-                    vector<Domain*> selected_chain);
-            pair<Domain*, Domain*> select_new_growthpoint(
                     vector<Domain*> selected_chain);
             void grow_chain(vector<Domain*> domains);
             vector<double> calc_bias(vector<double> bfactors,
@@ -317,7 +325,8 @@ namespace Movetypes {
     struct Movetype {
         MovetypeConstructor identity {movetype_constructor<IdentityMCMovetype>};
         MovetypeConstructor orientation_rotation {movetype_constructor<OrientationRotationMCMovetype>};
-        MovetypeConstructor staple_exchange {movetype_constructor<MetStapleExchangeMCMovetype>};
+        MovetypeConstructor met_staple_exchange {movetype_constructor<MetStapleExchangeMCMovetype>};
+        MovetypeConstructor met_staple_regrowth {movetype_constructor<MetStapleExchangeMCMovetype>};
         MovetypeConstructor cb_staple_exchange {movetype_constructor<CBStapleExchangeMCMovetype>};
         MovetypeConstructor cb_staple_regrowth {movetype_constructor<CBStapleRegrowthMCMovetype>};
         MovetypeConstructor ctcb_scaffold_regrowth {movetype_constructor<CTCBScaffoldRegrowthMCMovetype>};
@@ -327,6 +336,7 @@ namespace Movetypes {
         movetype_constructor<IdentityMCMovetype>,
         movetype_constructor<OrientationRotationMCMovetype>,
         movetype_constructor<MetStapleExchangeMCMovetype>,
+        movetype_constructor<MetStapleRegrowthMCMovetype>,
         movetype_constructor<CBStapleExchangeMCMovetype>,
         movetype_constructor<CBStapleRegrowthMCMovetype>,
         movetype_constructor<CTCBScaffoldRegrowthMCMovetype>};

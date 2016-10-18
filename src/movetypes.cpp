@@ -221,6 +221,18 @@ void RegrowthMCMovetype::grow_staple(int d_i_index, vector<Domain*> selected_cha
     m_modifier /= (overcount + 1);
 }
 
+pair<Domain*, Domain*> RegrowthMCMovetype::select_new_growthpoint(
+        vector<Domain*> selected_chain) {
+
+    int growth_d_new {m_random_gens.uniform_int(0, selected_chain.size() - 1)};
+    Domain* growth_domain_new {selected_chain[growth_d_new]};
+    Domain* growth_domain_old {select_random_domain()};
+    while (growth_domain_old->m_c == growth_domain_new->m_c) {
+        growth_domain_old = select_random_domain();
+    }
+    return {growth_domain_new, growth_domain_old};
+}
+
 bool OrientationRotationMCMovetype::attempt_move() {
     bool accept;
     
@@ -269,6 +281,16 @@ void MetMCMovetype::grow_chain(vector<Domain*> domains) {
             pair<int, int> key {domain->m_c, domain->m_d};
             m_assigned_domains.push_back(key);
         }
+    }
+}
+
+void MetMCMovetype::unassign_domains(vector<Domain*> domains) {
+    for (auto domain: domains) {
+        pair<int, int> key {domain->m_c, domain->m_d};
+        m_prev_pos[key] = domain->m_pos;
+        m_prev_ore[key] = domain->m_ore;
+        m_modified_domains.push_back(key);
+        m_delta_e += m_origami_system.unassign_domain(*domain);
     }
 }
 
@@ -391,6 +413,47 @@ void MetStapleExchangeMCMovetype::select_and_set_growth_point(Domain* growth_dom
     Domain* growth_domain_old {selected_chain[d_i]};
 
     m_delta_e += set_growth_point(*growth_domain_new, *growth_domain_old);
+}
+
+bool MetStapleRegrowthMCMovetype::attempt_move() {
+    bool accepted;
+
+    // No staples to regrow
+    if (m_origami_system.num_staples() == 0) {
+        accepted = false;
+        return accepted;
+    }
+
+    // Select a staple to regrow
+    int c_i_index {m_random_gens.uniform_int(1, m_origami_system.num_staples())};
+    vector<Domain*> selected_chain {m_origami_system.get_chains()[c_i_index]};
+
+    // Reject if staple is connector
+    if (staple_is_connector(selected_chain)) {
+        accepted = false;
+        return accepted;
+    }
+
+    // Select growth points on chains
+    pair<Domain*, Domain*> growthpoint {select_new_growthpoint(selected_chain)};
+
+    unassign_domains(selected_chain);
+
+    // Grow staple
+    m_delta_e += set_growth_point(*growthpoint.first, *growthpoint.second);
+    if (m_rejected) {
+        accepted = false;
+        return accepted;
+    }
+    grow_staple(growthpoint.first->m_d, selected_chain);
+    if (m_rejected) {
+        accepted = false;
+        return accepted;
+    }
+
+    double boltz_factor {exp(-m_delta_e)};
+    accepted = test_acceptance(boltz_factor);
+    return accepted;
 }
 
 void CBMCMovetype::calc_biases(
@@ -844,18 +907,6 @@ void CBStapleRegrowthMCMovetype::set_growthpoint_and_grow_staple(
         m_bias *= exp(-delta_e);
         grow_staple(growthpoint.first->m_d, selected_chain);
     }
-}
-
-pair<Domain*, Domain*> CBStapleRegrowthMCMovetype::select_new_growthpoint(
-        vector<Domain*> selected_chain) {
-
-    int growth_d_new {m_random_gens.uniform_int(0, selected_chain.size() - 1)};
-    Domain* growth_domain_new {selected_chain[growth_d_new]};
-    Domain* growth_domain_old {select_random_domain()};
-    while (growth_domain_old->m_c == growth_domain_new->m_c) {
-        growth_domain_old = select_random_domain();
-    }
-    return {growth_domain_new, growth_domain_old};
 }
 
 void CBStapleRegrowthMCMovetype::grow_chain(vector<Domain*> domains) {
