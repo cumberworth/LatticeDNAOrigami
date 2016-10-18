@@ -1006,19 +1006,11 @@ SCENARIO("Example moves work as expected") {
             REQUIRE(compare_approx_vector_contents(weights, expected_weights));
 
             // Calculate acceptance ratio
-            // Expects inverted modifier
-            movetype.m_modifier = 1 / movetype.m_modifier;
+            movetype.m_modifier = 1./2;
             double calc_ratio {movetype.calc_staple_insertion_acc_ratio(staple1_d_1.m_c_ident)};
             double expected_ratio {expected_new_bias / pow(6, 2) * pow(6, 3)};
             REQUIRE(Approx(calc_ratio) == expected_ratio);
 
-            // To get modifier correct (overcounting specifically), need to
-            // reset movetype bias and grow staple after setting the growthpoint.
-            // Note this will have the potential of growing differently, but the
-            // probability of this occuring is low
-            delta_e = origami.hybridization_energy(scaffold_d_1, staple1_d_1);
-            movetype.m_bias = k * exp(-delta_e);
-            movetype.grow_staple(staple1_d_1.m_d, domains);
             double calc_p_accept {movetype.m_modifier};
 
             // This value accounts for the staple being added before the movetype
@@ -1059,9 +1051,6 @@ SCENARIO("Example moves work as expected") {
             double calc_ratio {movetype.calc_staple_deletion_acc_ratio(staple1_d_1.m_c_ident)};
             double expected_ratio {pow(6, 2) / (expected_new_bias * pow(6, 3))};
             REQUIRE(Approx(calc_ratio) == expected_ratio);
-
-            double expected_mod {1. / 2};
-            REQUIRE(expected_mod == movetype.m_modifier);
         }
         WHEN("CB staple regrowth move attempted") {
 
@@ -1435,10 +1424,10 @@ SCENARIO("Methods with random elements give correct distribution") {
             unordered_map<pair<int, int>, double> exp_dist {{{0, 0}, 0.25}, {{0, 1}, 0.25}, 
                 {{1, 0}, 0.25}, {{1, 1}, 0.25}};
             unordered_map<pair<int, int>, double> calc_dist {};
-            for (int i {0}; i != 10000; i++) {
+            for (int i {0}; i != 100000; i++) {
                 Domain* domain {movetype.select_random_domain()};
                 pair<int, int> key {domain->m_d, domain->m_c};
-                calc_dist[key] += 1./10000;
+                calc_dist[key] += 1./100000;
             }
             bool dists_match = true;
             for (int d {0}; d != 2; d++) {
@@ -1459,9 +1448,9 @@ SCENARIO("Methods with random elements give correct distribution") {
             vector<VectorThree> new_pos {{4, 4, 1}, {2, 4, 1}, {3, 5, 1},
                     {3, 3, 1}, {3, 4, 2}, {3, 4, 0}};
             unordered_map<VectorThree, double> calc_dist {};
-            for (int i {0}; i != 10000; i++) {
+            for (int i {0}; i != 100000; i++) {
                 VectorThree pos {movetype.select_random_position(p_prev)};
-                calc_dist[pos] += 1./10000;
+                calc_dist[pos] += 1./100000;
             }
             bool dists_match = true;
             for (auto pos: new_pos) {
@@ -1483,22 +1472,27 @@ SCENARIO("Methods with random elements give correct distribution") {
             origami.set_domain_config(staple_d_1, {0, 0, 0}, {0, 1, 0});
             origami.set_domain_config(staple_d_2, {0, 1, 0}, {0, 1, 0});
 
-            double exp_p {1./5};
-            vector<VectorThree> new_pos {{-1, 0, 0}, {0, 1, 0}, {0, -1, 0},
-                    {0, 0, 1}, {0, 0, -1}};
+            double exp_p {1./6};
+            vector<VectorThree> new_pos {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0},
+                    {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
             unordered_map<VectorThree, double> calc_dist {};
-            for (int i {0}; i != 10000; i++) {
+            int accepted_moves {0};
+            for (int i {0}; i != 100000; i++) {
                 CTCBScaffoldRegrowthMCMovetype ct_movetype {origami, random_gens, ideal_random_walks};
                 bool accepted {ct_movetype.attempt_move()};
-                VectorThree pos {origami.get_domain(1, 1)->m_pos};
-                calc_dist[pos] += 1./10000;
                 if (not accepted) {
                     ct_movetype.reset_origami();
+                }
+                else {
+                    origami.centre();
+                    VectorThree pos {origami.get_domain(1, 1)->m_pos};
+                    calc_dist[pos]++;
+                    accepted_moves++;
                 }
             }
             bool dists_match = true;
             for (auto pos: new_pos) {
-                double calc_p {calc_dist[pos]};
+                double calc_p {calc_dist[pos] / accepted_moves};
                 if (calc_p < (exp_p - eps) or calc_p > (exp_p + eps)) {
                     dists_match = false;
                 }

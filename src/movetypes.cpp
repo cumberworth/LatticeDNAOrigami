@@ -585,9 +585,6 @@ double CBMCMovetype::set_old_growth_point(Domain& growth_domain_new, Domain& gro
 }
 
 bool CBMCMovetype::test_cb_acceptance() {
-    // Revert modifier
-    m_modifier = 1 / m_modifier;
-      
     double ratio {m_new_bias / m_bias};
     bool accepted;
     if (test_acceptance(ratio)) {
@@ -618,12 +615,12 @@ void CBMCMovetype::setup_for_regrow_old() {
     // Save relevant state variables for acceptance testing and resetting
     m_regrow_old = true;
     m_new_bias = m_bias;
+    m_new_modifier = m_modifier;
     m_bias = 1;
     m_modified_domains.clear();
     m_assigned_domains.clear();
     m_old_pos = m_prev_pos;
     m_old_ore = m_prev_ore;
-    m_modifier = 1. / m_modifier;
 }
 
 vector<pair<Domain*, Domain*>> CBMCMovetype::find_bound_domains(
@@ -669,9 +666,6 @@ bool CBStapleExchangeMCMovetype::attempt_move() {
 }
 
 double CBStapleExchangeMCMovetype::calc_staple_insertion_acc_ratio(int c_i_ident) {
-    // Revert modifier
-    m_modifier = 1 / m_modifier;
-      
     size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
     m_bias /= pow(6, staple_length);
     int Ni_new {m_origami_system.num_staples_of_ident(c_i_ident)};
@@ -691,9 +685,6 @@ double CBStapleExchangeMCMovetype::calc_staple_insertion_acc_ratio(int c_i_ident
 }
 
 double CBStapleExchangeMCMovetype::calc_staple_deletion_acc_ratio(int c_i_ident) {
-    // Revert modifier
-    m_modifier = 1 / m_modifier;
-      
     size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
     m_bias /= pow(6, staple_length);
     int Ni {m_origami_system.num_staples_of_ident(c_i_ident)};
@@ -794,6 +785,8 @@ bool CBStapleExchangeMCMovetype::delete_staple() {
     m_bias *= 6 * exp(-delta_e);
     grow_staple(growthpoint.first->m_d, staple);
 
+    // Remove overcounting correction
+    m_modifier = 1;
     double ratio {calc_staple_deletion_acc_ratio(c_i_ident)};
     accepted = test_acceptance(ratio);
 
@@ -898,7 +891,8 @@ bool CBStapleRegrowthMCMovetype::attempt_move() {
     // Grow staple
     set_growthpoint_and_grow_staple(growthpoint, selected_chain);
 
-    // Test acceptance
+    // Revert modifier and test acceptance
+    m_modifier = m_new_modifier;
     accepted = test_cb_acceptance();
     return accepted;
 }
@@ -1254,6 +1248,8 @@ bool CTCBScaffoldRegrowthMCMovetype::attempt_move() {
 
     grow_chain(scaffold_domains);
 
+    // Reset modifier and test acceptance
+    m_modifier = 1;
     accepted = test_cb_acceptance();
     return accepted;
 }
