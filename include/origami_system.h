@@ -81,6 +81,7 @@ namespace Origami{
             inline int num_bound_domain_pairs() const {return ((m_num_domains / 2) -
                     m_pos_to_unbound_d.size() / 2);}
             inline int num_fully_bound_domain_pairs() const {return m_num_fully_bound_domain_pairs;}
+            inline int num_self_bound_domain_pairs() const {return m_num_self_bound_domain_pairs;}
             inline int num_misbound_domain_pairs() const {
                     return num_bound_domain_pairs() - num_fully_bound_domain_pairs();}
             inline int num_staples_of_ident(int staple_ident) const {return
@@ -151,6 +152,9 @@ namespace Origami{
 
             // Number of fully complimentary domains bound
             int m_num_fully_bound_domain_pairs {};
+
+            // Number of self-misbound domains
+            int m_num_self_bound_domain_pairs {};
 
             // Energy tables index by chain/domain identity pair
             unordered_map<pair<int, int>, double> m_hybridization_energies {};
