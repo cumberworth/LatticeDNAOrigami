@@ -1042,7 +1042,8 @@ double Constraintpoints::calc_num_walks_prod(
         int endpoint_d_i {endpoint.first};
         int first_d_i {domains.front()->m_d};
         int last_d_i {domains.back()->m_d};
-        if ((endpoint_d_i >= first_d_i and endpoint_d_i <= last_d_i) or
+        if (domain->m_c == m_origami_system.c_scaffold or
+                (endpoint_d_i >= first_d_i and endpoint_d_i <= last_d_i) or
                 (endpoint_d_i >= last_d_i and endpoint_d_i <= first_d_i)) {
             int steps {abs(endpoint_d_i - domain->m_d) + step_offset};
             VectorThree endpoint_p {endpoint.second};
