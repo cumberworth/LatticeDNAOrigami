@@ -476,11 +476,11 @@ void CBMCMovetype::calc_biases(
         VectorThree p_new {p_prev + v};
 
         // Check energies of each configuration
-		switch (m_origami_system.position_occupancy(p_new)) {
+        switch (m_origami_system.position_occupancy(p_new)) {
             case Occupancy::bound:
-			case Occupancy::misbound:
+            case Occupancy::misbound:
                 continue;
-        	case Occupancy::unbound: {
+            case Occupancy::unbound: {
                 Domain* unbound_domain {m_origami_system.unbound_domain_at(p_new)};
                 bool domains_complementary {m_origami_system.check_domains_complementary(
                         domain, *unbound_domain)};
@@ -630,6 +630,7 @@ vector<pair<Domain*, Domain*>> CBMCMovetype::find_bound_domains(
 
     vector<pair<Domain*, Domain*>> bound_domains {};
     for (auto domain: selected_chain) {
+        // shouldn't this be only non-self binding (only would effect staple size > 2)
         if (domain->m_bound_domain != nullptr) {
 
             // New domain, old domain
@@ -1267,6 +1268,16 @@ vector<Domain*> CTCBScaffoldRegrowthMCMovetype::select_scaffold_indices() {
         end_domain = scaffold[m_random_gens.uniform_int(0, scaffold.size() - 1)];
     }
     
+    // Find direction of regrowth
+    int dir;
+    if (end_domain->m_d > start_domain->m_d) {
+        dir = 1;
+    }
+    else {
+        dir = -1;
+    }
+    Domain* endpoint_domain {(*end_domain) + dir};
+
     vector<Domain*> domains {};
 
     // Cyclic domains
@@ -1279,28 +1290,19 @@ vector<Domain*> CTCBScaffoldRegrowthMCMovetype::select_scaffold_indices() {
             d_i = cur_domain->m_d;
         }
         domains.push_back(end_domain);
-        m_constraintpoints.add_active_endpoint(end_domain, end_domain->m_pos);
+        m_constraintpoints.add_active_endpoint(endpoint_domain, endpoint_domain->m_pos);
     }
 
     // Linear domains
     else {
-
-        // Find direction of regrowth
-        int dir;
-        if (end_domain->m_d > start_domain->m_d) {
-            dir = 1;
-        }
-        else {
-            dir = -1;
-        }
         for (int d_i {start_domain->m_d}; d_i != end_domain->m_d + dir; d_i += dir) {
             Domain* cur_domain {scaffold[d_i]};
             domains.push_back(cur_domain);
         }
 
         // If end domain is end of chain, no endpoint
-        if (end_domain->m_forward_domain != nullptr and end_domain->m_backward_domain != nullptr) {
-            m_constraintpoints.add_active_endpoint(end_domain, end_domain->m_pos);
+        if (endpoint_domain != nullptr) {
+            m_constraintpoints.add_active_endpoint(endpoint_domain, endpoint_domain->m_pos);
         }
     }
 
