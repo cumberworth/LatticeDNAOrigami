@@ -452,8 +452,6 @@ bool MetStapleRegrowthMCMovetype::attempt_move() {
     }
 
     double boltz_factor {exp(-m_delta_e)};
-    // DEGUB
-    m_modifier = 1;
     accepted = test_acceptance(boltz_factor);
     return accepted;
 }
@@ -895,8 +893,7 @@ bool CBStapleRegrowthMCMovetype::attempt_move() {
     set_growthpoint_and_grow_staple(growthpoint, selected_chain);
 
     // Revert modifier and test acceptance
-    //m_modifier = m_new_modifier;
-    m_modifier = 1;
+    m_modifier = m_new_modifier;
     accepted = test_cb_acceptance();
     return accepted;
 }
