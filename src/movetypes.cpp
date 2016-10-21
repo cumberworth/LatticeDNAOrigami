@@ -893,8 +893,7 @@ bool CBStapleRegrowthMCMovetype::attempt_move() {
     set_growthpoint_and_grow_staple(growthpoint, selected_chain);
 
     // Revert modifier and test acceptance
-    //m_modifier = m_new_modifier;
-    m_modifier = 1;
+    m_modifier = m_new_modifier;
     accepted = test_cb_acceptance();
     return accepted;
 }
