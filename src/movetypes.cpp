@@ -192,7 +192,7 @@ double RegrowthMCMovetype::set_growth_point(Domain& growth_domain_new, Domain& g
 void RegrowthMCMovetype::grow_staple(int d_i_index, vector<Domain*> selected_chain) {
     // Grow staple in both directions out from growth point
     // The indices passed to grow chain should include the growth point
-    int old_num_bound_domains {m_origami_system.num_fully_bound_domain_pairs() -
+    int old_num_bound_domains {m_origami_system.num_bound_domain_pairs() -
             m_origami_system.num_self_bound_domain_pairs()};
 
     // Grow in three prime direction (staple domains increase in 3' direction)
@@ -215,7 +215,7 @@ void RegrowthMCMovetype::grow_staple(int d_i_index, vector<Domain*> selected_cha
     }
 
     // Overcount correction
-    int overcount {m_origami_system.num_fully_bound_domain_pairs() -
+    int overcount {m_origami_system.num_bound_domain_pairs() -
             m_origami_system.num_self_bound_domain_pairs() -
             old_num_bound_domains};
     m_modifier /= (overcount + 1);
@@ -1206,9 +1206,7 @@ bool CTCBScaffoldRegrowthMCMovetype::attempt_move() {
     bool accepted;
 
     m_regrow_old = false;
-    //DEBUG
-    //vector<Domain*> scaffold_domains {select_scaffold_indices()};
-    vector<Domain*> scaffold_domains {m_origami_system.get_chain(0)};
+    vector<Domain*> scaffold_domains {select_scaffold_indices()};
 
     m_constraintpoints.calculate_constraintpoints(scaffold_domains);
     set<int> staples {m_constraintpoints.staples_to_be_regrown()};
@@ -1370,15 +1368,13 @@ vector<double> CTCBScaffoldRegrowthMCMovetype::calc_bias(
         }
 
         // Bias weights with number of walks
-        //DEBUG
-        //weights[i] *= m_constraintpoints.calc_num_walks_prod(domain, cur_pos,
-        //        domains);
+        weights[i] *= m_constraintpoints.calc_num_walks_prod(domain, cur_pos,
+                domains);
     }
 
     // Calculate number of walks for previous position
-    //DEBUG
-    //double prod_num_walks {m_constraintpoints.calc_num_walks_prod(domain,
-     //       p_prev, domains, 1)};
+    double prod_num_walks {m_constraintpoints.calc_num_walks_prod(domain,
+            p_prev, domains, 1)};
 
     // Modified Rosenbluth
     double weights_sum {0};
@@ -1391,9 +1387,7 @@ vector<double> CTCBScaffoldRegrowthMCMovetype::calc_bias(
         m_rejected = true;
     }
     else {
-        //DEBUG
-        //double bias {weights_sum / prod_num_walks};
-        double bias {weights_sum};
+        double bias {weights_sum / prod_num_walks};
         m_bias *= bias;
 
         // Normalize
