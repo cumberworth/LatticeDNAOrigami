@@ -1206,6 +1206,7 @@ bool CTCBScaffoldRegrowthMCMovetype::attempt_move() {
     bool accepted;
 
     m_regrow_old = false;
+    //DEBUG
     //vector<Domain*> scaffold_domains {select_scaffold_indices()};
     vector<Domain*> scaffold_domains {m_origami_system.get_chain(0)};
 
@@ -1369,13 +1370,15 @@ vector<double> CTCBScaffoldRegrowthMCMovetype::calc_bias(
         }
 
         // Bias weights with number of walks
-        weights[i] *= m_constraintpoints.calc_num_walks_prod(domain, cur_pos,
-                domains);
+        //DEBUG
+        //weights[i] *= m_constraintpoints.calc_num_walks_prod(domain, cur_pos,
+        //        domains);
     }
 
     // Calculate number of walks for previous position
-    double prod_num_walks {m_constraintpoints.calc_num_walks_prod(domain,
-            p_prev, domains, 1)};
+    //DEBUG
+    //double prod_num_walks {m_constraintpoints.calc_num_walks_prod(domain,
+     //       p_prev, domains, 1)};
 
     // Modified Rosenbluth
     double weights_sum {0};
@@ -1388,7 +1391,9 @@ vector<double> CTCBScaffoldRegrowthMCMovetype::calc_bias(
         m_rejected = true;
     }
     else {
-        double bias {weights_sum / prod_num_walks};
+        //DEBUG
+        //double bias {weights_sum / prod_num_walks};
+        double bias {weights_sum};
         m_bias *= bias;
 
         // Normalize
