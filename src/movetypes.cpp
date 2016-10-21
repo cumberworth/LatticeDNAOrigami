@@ -1206,7 +1206,8 @@ bool CTCBScaffoldRegrowthMCMovetype::attempt_move() {
     bool accepted;
 
     m_regrow_old = false;
-    vector<Domain*> scaffold_domains {select_scaffold_indices()};
+    //vector<Domain*> scaffold_domains {select_scaffold_indices()};
+    vector<Domain*> scaffold_domains {m_origami_system.get_chain(0)};
 
     m_constraintpoints.calculate_constraintpoints(scaffold_domains);
     set<int> staples {m_constraintpoints.staples_to_be_regrown()};
