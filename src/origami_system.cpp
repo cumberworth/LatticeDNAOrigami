@@ -119,10 +119,12 @@ double OrigamiSystem::unassign_domain(Domain& cd_i) {
     switch (occupancy) {
         case Occupancy::bound:
             m_num_fully_bound_domain_pairs -= 1;
+            m_num_bound_domain_pairs -= 1;
             delta_e += check_stacking(cd_i, *cd_i.m_bound_domain);
             delta_e += unassign_bound_domain(cd_i);
             break;
         case Occupancy::misbound:
+            m_num_bound_domain_pairs -= 1;
             if (cd_i.m_bound_domain->m_c == cd_i.m_c) {
                 m_num_self_bound_domain_pairs -= 1;
             }
@@ -461,6 +463,7 @@ void OrigamiSystem::update_occupancies(Domain& cd_i, VectorThree pos) {
     switch (occupancy) {
         case Occupancy::unbound: {
             Domain* cd_j {unbound_domain_at(pos)};
+            m_num_bound_domain_pairs += 1;
             if (cd_i.m_d_ident == -cd_j->m_d_ident) {
                 new_state = Occupancy::bound;
                 m_num_fully_bound_domain_pairs += 1;

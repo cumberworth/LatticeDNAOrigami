@@ -78,8 +78,7 @@ namespace Origami{
             inline int num_domains() {return m_num_domains;};
 
             // CONSIDER MAKING THIS MORE ROBUST
-            inline int num_bound_domain_pairs() const {return ((m_num_domains / 2) -
-                    m_pos_to_unbound_d.size() / 2);}
+            inline int num_bound_domain_pairs() const {return m_num_bound_domain_pairs;}
             inline int num_fully_bound_domain_pairs() const {return m_num_fully_bound_domain_pairs;}
             inline int num_self_bound_domain_pairs() const {return m_num_self_bound_domain_pairs;}
             inline int num_misbound_domain_pairs() const {
@@ -150,11 +149,14 @@ namespace Origami{
             // The state of all positiions occupied by a domain index by position
             unordered_map<VectorThree, Occupancy> m_position_occupancies {};
 
+            // Number of bound domain pairs
+            int m_num_bound_domain_pairs {0};
+
             // Number of fully complimentary domains bound
-            int m_num_fully_bound_domain_pairs {};
+            int m_num_fully_bound_domain_pairs {0};
 
             // Number of self-misbound domains
-            int m_num_self_bound_domain_pairs {};
+            int m_num_self_bound_domain_pairs {0};
 
             // Energy tables index by chain/domain identity pair
             unordered_map<pair<int, int>, double> m_hybridization_energies {};
