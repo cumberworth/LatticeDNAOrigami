@@ -723,6 +723,10 @@ vector<double> CBStapleExchangeMCMovetype::calc_bias(vector<double> weights,
 }
 
 bool CBStapleExchangeMCMovetype::insert_staple() {
+    //DEBUG
+    if (m_origami_system.num_staples() == 2) {
+        return false;
+    }
     bool accepted;
 
     // Select and add chain of random identity
