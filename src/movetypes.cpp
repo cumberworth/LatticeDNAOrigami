@@ -329,7 +329,6 @@ bool MetStapleExchangeMCMovetype::staple_insertion_accepted(int c_i_ident) {
 
 bool MetStapleExchangeMCMovetype::staple_deletion_accepted(int c_i_ident) {
     double boltz_factor {exp(-m_delta_e)};
-    cout << m_delta_e << "\n";
     int Ni {m_origami_system.num_staples()};
 
     // Correct for extra states from additional staple domains
