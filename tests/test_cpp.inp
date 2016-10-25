@@ -11,6 +11,6 @@ logging_freq=1
 centering_freq=1
 steps=10000000
 orientation_rotation=1/4
-cb_staple_exchange=1/4
+met_staple_exchange=1/4
 cb_staple_regrowth=1/4
 ctcb_scaffold_regrowth=1/4

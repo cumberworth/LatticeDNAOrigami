@@ -67,6 +67,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("logging_freq", po::value<int>(), "Logging frequency")
         ("centering_freq", po::value<int>(), "Centering frequency")
         ("orientation_rotation", po::value<string>(), "Orientational rotation movetype probability")
+        ("met_staple_exchange", po::value<string>(), "Met staple exchange movetype probability")
         ("met_staple_regrowth", po::value<string>(), "Met staple regrowth movetype probability")
         ("cb_staple_exchange", po::value<string>(), "CB staple exchange movetype probability")
         ("cb_staple_regrowth", po::value<string>(), "CB staple regrowth movetype probability")
@@ -149,6 +150,13 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
         m_movetype_constructors.push_back(movetype[1]);
+    }
+
+    if (vm.count("met_staple_exchange")) {
+        string unparsed_fraction {vm["met_staple_exchange"].as<string>()};
+        Fraction prob {unparsed_fraction};
+        m_movetype_probs.push_back(prob.to_double());
+        m_movetype_constructors.push_back(movetype[2]);
     }
 
     if (vm.count("met_staple_regrowth")) {
