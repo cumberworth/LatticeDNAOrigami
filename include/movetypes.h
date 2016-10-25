@@ -127,7 +127,6 @@ namespace Movetypes {
             bool staple_deletion_accepted(int c_i_ident);
             bool insert_staple();
             bool delete_staple();
-            void select_and_set_growth_point(Domain* growth_domain_new);
     };
 
     class MetStapleRegrowthMCMovetype: public MetMCMovetype {
@@ -205,7 +204,6 @@ namespace Movetypes {
             bool insert_staple();
             bool delete_staple();
             void unassign_and_delete_staple(int c_i,vector<Domain*> staple);
-            void select_and_set_growth_point(Domain* growth_domain_new);
             void grow_chain(vector<Domain*> domains);
             void unassign_for_regrowth(vector<Domain*>);
 
