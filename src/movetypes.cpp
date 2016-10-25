@@ -335,7 +335,6 @@ bool MetStapleExchangeMCMovetype::staple_deletion_accepted(int c_i_ident) {
     size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
     double extra_df {2 * static_cast<double>(staple_length) - 1 - preconstrained_df};
     double extra_states {pow(6, extra_df)};
-
     double ratio {Ni / extra_states * boltz_factor};
 
     return test_acceptance(ratio);

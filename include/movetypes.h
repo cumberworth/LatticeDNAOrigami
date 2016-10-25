@@ -119,8 +119,10 @@ namespace Movetypes {
 
             // These can be overidden for a derived class the excludes misbinding
             int preconstrained_df {0};
-            int m_insertion_sites {m_origami_system.num_domains() -
-                    m_origami_system.num_bound_domain_pairs()};
+            //DEBUG
+            //int m_insertion_sites {m_origami_system.num_domains() -
+            //        m_origami_system.num_bound_domain_pairs()};
+            int m_insertion_sites {m_origami_system.num_domains()};
 
         private:
             bool staple_insertion_accepted(int c_i_ident);
