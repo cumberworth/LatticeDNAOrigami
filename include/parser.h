@@ -50,6 +50,11 @@ namespace Parser {
             int m_centering_freq {0};
             vector<double> m_movetype_probs {};
             vector<MovetypeConstructor> m_movetype_constructors {};
+            string m_simulation_type {"constant_temp"};
+            double m_max_temp {};
+            double m_min_temp {};
+            double m_temp_interval {};
+            int m_steps_per_temp {};
     };
 }
 

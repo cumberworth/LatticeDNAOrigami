@@ -60,7 +60,7 @@ namespace Origami{
             // Configuration independent system properties
             const vector<vector<int>> m_identities;
             const vector<vector<string>> m_sequences;
-            const double m_temp;
+            double m_temp;
             const double m_cation_M;
             const double m_staple_M;
             const double m_volume;
@@ -77,7 +77,6 @@ namespace Origami{
             int num_unique_staples() const;
             inline int num_domains() {return m_num_domains;};
 
-            // CONSIDER MAKING THIS MORE ROBUST
             inline int num_bound_domain_pairs() const {return m_num_bound_domain_pairs;}
             inline int num_fully_bound_domain_pairs() const {return m_num_fully_bound_domain_pairs;}
             inline int num_self_bound_domain_pairs() const {return m_num_self_bound_domain_pairs;}
@@ -117,6 +116,9 @@ namespace Origami{
                     VectorThree orientation);
             void set_domain_orientation(Domain& cd_i, VectorThree ore);
             void centre();
+
+            // System state modifiers
+            void update_temp(double temp);
 
             // The index that should be assigned to the next added chain
             int m_current_c_i {};
@@ -162,12 +164,18 @@ namespace Origami{
             unordered_map<pair<int, int>, double> m_hybridization_energies {};
             unordered_map<pair<int, int>, double> m_stacking_energies {};
 
+            // Energies tables indexed by temperature
+            unordered_map<double, unordered_map<pair<int, int>, double>> 
+                    m_hybridization_energy_tables {};
+            unordered_map<double, unordered_map<pair<int, int>, double>> 
+                    m_stacking_energy_tables {};
+
             // Current total energy of system
             double m_energy {0};
     
             // Intializers
             void initialize_complementary_associations();
-            void initialize_energies();
+            void calculate_energies();
             void initialize_config(Chains chains);
 
             // Accessors
@@ -182,6 +190,7 @@ namespace Origami{
             void update_occupancies(
                     Domain& cd_i,
                     VectorThree position);
+            void update_energy();
     
             // Constraint checkers
             double bind_domain(Domain& cd_i);

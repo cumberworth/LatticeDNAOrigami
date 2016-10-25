@@ -72,6 +72,11 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("cb_staple_exchange", po::value<string>(), "CB staple exchange movetype probability")
         ("cb_staple_regrowth", po::value<string>(), "CB staple regrowth movetype probability")
         ("ctcb_scaffold_regrowth", po::value<string>(), "CTCB scaffold regrowth movetype probability")
+        ("simulation_type", po::value<string>(), "constant_temp or annealing")
+        ("max_temp", po::value<double>(), "Maximum temperature for annealing")
+        ("min_temp", po::value<double>(), "Minimum temperature for annealing")
+        ("temp_interval", po::value<double>(), "Temperature interval for annealing")
+        ("steps_per_temp", po::value<int>(), "Steps per temperature in annealing")
         ;
 
     po::variables_map vm;
@@ -185,5 +190,25 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
         m_movetype_constructors.push_back(movetype[6]);
+    }
+
+    if (vm.count("simulation_type")) {
+        m_simulation_type = vm["simulation_type"].as<string>();
+    }
+
+    if (vm.count("max_temp")) {
+        m_max_temp = vm["max_temp"].as<double>();
+    }
+
+    if (vm.count("min_temp")) {
+        m_min_temp = vm["min_temp"].as<double>();
+    }
+
+    if (vm.count("temp_interval")) {
+        m_temp_interval = vm["temp_interval"].as<double>();
+    }
+
+    if (vm.count("steps_per_temp")) {
+        m_steps_per_temp = vm["steps_per_temp"].as<int>();
     }
 }

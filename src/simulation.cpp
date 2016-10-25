@@ -31,7 +31,7 @@ GCMCSimulation::GCMCSimulation(
     }
 }
 
-void GCMCSimulation::run(int steps, int logging_freq=1, int center_freq=1) {
+void GCMCSimulation::run_constant_temp(int steps, int logging_freq=1, int center_freq=1) {
     for (int step {1}; step != (steps + 1); step ++) {
         unique_ptr<MCMovetype> movetype {select_movetype()};
         bool accepted;
@@ -60,6 +60,20 @@ void GCMCSimulation::run(int steps, int logging_freq=1, int center_freq=1) {
     }
 }
 
+void GCMCSimulation::run_annealing(int steps_per_temp, double max_temp,
+        double min_temp, double temp_interval, int logging_freq,
+        int center_freq) {
+    if (fmod(max_temp - min_temp, temp_interval) != 0) {
+        cout << "Bad temperature interval";
+    }
+    double temp {max_temp};
+    while (temp >= min_temp) {
+        m_origami_system.update_temp(temp);
+        run_constant_temp(steps_per_temp, logging_freq, center_freq);
+        temp -= temp_interval;
+    }
+}
+
 unique_ptr<MCMovetype> GCMCSimulation::select_movetype() {
     unique_ptr<MCMovetype> movetype;
     double prob {m_random_gens.uniform_real()};
@@ -77,6 +91,7 @@ void GCMCSimulation::write_log_entry(int step, MCMovetype& movetype, bool accept
     cout << "Movetype: " << movetype.m_label() << " ";
     cout << "Staples: " << m_origami_system.num_staples() << " ";
     cout << "Accepted: " << accepted << " ";
+    cout << "Temp: " << m_origami_system.m_temp << " ";
     cout << "Energy: " << m_origami_system.energy() << " ";
     cout << "\n";
 }

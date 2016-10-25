@@ -1015,7 +1015,7 @@ SCENARIO("Example moves work as expected") {
 
             // This value accounts for the staple being added before the movetype
             // was created, meaning there are two extra domains
-            double expected_p_accept {4 / origami.m_volume};
+            double expected_p_accept {6 / origami.m_volume};
             REQUIRE(calc_p_accept == expected_p_accept);
         }
         WHEN("CB staple exchange (deletion) move attempted") {

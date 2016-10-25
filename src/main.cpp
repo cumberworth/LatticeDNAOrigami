@@ -47,6 +47,17 @@ int main(int argc, char* argv[]) {
         input_parameters.m_movetype_constructors,
         input_parameters.m_movetype_probs};
 
-    sim.run(input_parameters.m_steps, input_parameters.m_logging_freq,
-            input_parameters.m_centering_freq);
+    if (input_parameters.m_simulation_type == "constant_temp") {
+        sim.run_constant_temp(input_parameters.m_steps,
+                input_parameters.m_logging_freq,
+                input_parameters.m_centering_freq);
+    }
+    else if (input_parameters.m_simulation_type == "annealing") {
+        sim.run_annealing(input_parameters.m_steps_per_temp,
+                input_parameters.m_max_temp,
+                input_parameters.m_min_temp,
+                input_parameters.m_temp_interval,
+                input_parameters.m_logging_freq,
+                input_parameters.m_centering_freq);
+    }
 }

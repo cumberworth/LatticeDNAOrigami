@@ -31,7 +31,13 @@ namespace Simulation {
                     vector<MovetypeConstructor> movetype_constructors,
                     vector<double> movetype_probs);
 
-            void run(int steps, int logging_freq, int center_freq);
+            void run_constant_temp(int steps, int logging_freq, int center_freq);
+            void run_annealing(int steps_per_temp,
+                    double max_temp,
+                    double min_temp,
+                    double temp_interval,
+                    int logging_freq,
+                    int center_freq);
 
         private:
 

@@ -50,8 +50,8 @@ OrigamiSystem::OrigamiSystem(
         m_cyclic {cyclic} {
 
     initialize_complementary_associations();
-    initialize_energies();
     initialize_config(chains);
+    update_temp(m_temp);
 }
 
 OrigamiSystem::~OrigamiSystem() {
@@ -167,6 +167,21 @@ void OrigamiSystem::centre() {
     }
     m_pos_to_unbound_d = pos_to_unbound_d;
     m_position_occupancies = position_occupancies;
+}
+
+void OrigamiSystem::update_temp(double temp) {
+    m_temp = temp;
+    if (m_hybridization_energy_tables.count(temp) == 0) {
+        calculate_energies();
+        m_hybridization_energy_tables[temp] = m_hybridization_energies;
+        m_stacking_energy_tables[temp] = m_stacking_energies;
+    }
+    else {
+        unordered_map<pair<int, int>, double> m_hybrid_old {m_hybridization_energies};
+        m_hybridization_energies = m_hybridization_energy_tables[temp];
+        m_stacking_energies = m_stacking_energy_tables[temp];
+    }
+    update_energy();
 }
 
 bool OrigamiSystem::check_domains_complementary(Domain& cd_i, Domain& cd_j) {
@@ -329,6 +344,7 @@ void OrigamiSystem::initialize_complementary_associations() {
 }
 
 void OrigamiSystem::initialize_config(Chains chains) {
+    // Must still run check_all_constraints
 
     // Create domain objects
     for (size_t i {0}; i != chains.size(); i++) {
@@ -356,11 +372,8 @@ void OrigamiSystem::initialize_config(Chains chains) {
             Domain* domain {m_domains[c_i][d_i]};
             VectorThree pos = chain.positions[d_i];
             VectorThree ore = chain.orientations[d_i];
-            set_domain_config(*domain, pos, ore);
-            if (m_constraints_violated) {
-                cout << "f\n";
-                throw OrigamiMisuse {};
-            }
+            domain->m_pos = pos;
+            domain->m_ore = ore;
         }
     }
 
@@ -368,7 +381,7 @@ void OrigamiSystem::initialize_config(Chains chains) {
             m_chain_identities.end());
 }
 
-void OrigamiSystem::initialize_energies() {
+void OrigamiSystem::calculate_energies() {
     // Calculate and store all energies
     for (size_t c_i {0}; c_i != m_sequences.size(); c_i++) {
         for (size_t c_j {0}; c_j != m_sequences.size(); c_j++) {
@@ -559,6 +572,24 @@ double OrigamiSystem::bind_complementary_domains(Domain& cd_i, Domain& cd_j) {
     return delta_e;
 }
 
+void OrigamiSystem::update_energy() {
+
+    // Unassign everything (and check nothing was already unassigned)
+    for (auto chain: m_domains) {
+        for (auto domain: chain) {
+            unassign_domain(*domain);
+        }
+    }
+    m_energy = 0;
+
+    // Reset configuration
+    for (auto chain: m_domains) {
+        for (auto domain: chain) {
+            set_domain_config(*domain, domain->m_pos, domain->m_ore);
+        }
+    }
+}
+
 void OrigamiSystem::check_all_constraints() {
 
     // Unassign everything (and check nothing was already unassigned)
@@ -577,7 +608,7 @@ void OrigamiSystem::check_all_constraints() {
     // Check that energy has returned to 0 (eps is totally arbitrary)
     double eps {0.000001};
     if (m_energy < -eps or m_energy > eps) {
-        cout << "Iconsistency in system energy\n";
+        cout << "Inconsistency in system energy\n";
         throw OrigamiMisuse {};
     }
     else {
