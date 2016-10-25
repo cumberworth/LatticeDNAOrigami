@@ -315,7 +315,7 @@ bool MetStapleExchangeMCMovetype::staple_insertion_accepted(int c_i_ident) {
     // Correct for extra states from additional staple domains
     size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
     int extra_df {2 * static_cast<int>(staple_length) - 1 - preconstrained_df};
-    int extra_states {static_cast<int>(pow(6, extra_df))};
+    double extra_states {pow(6, extra_df)};
     double ratio {extra_states / Ni_new * boltz_factor};
 
     // Correct for insertion into subset of volume
@@ -329,14 +329,15 @@ bool MetStapleExchangeMCMovetype::staple_insertion_accepted(int c_i_ident) {
 
 bool MetStapleExchangeMCMovetype::staple_deletion_accepted(int c_i_ident) {
     double boltz_factor {exp(-m_delta_e)};
+    cout << m_delta_e << "\n";
     int Ni {m_origami_system.num_staples()};
 
     // Correct for extra states from additional staple domains
     size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
-    int extra_df {2 * static_cast<int>(staple_length) - 1 - preconstrained_df};
+    double extra_df {2 * static_cast<double>(staple_length) - 1 - preconstrained_df};
     double extra_states {pow(6, extra_df)};
 
-    double ratio {Ni / extra_states / boltz_factor};
+    double ratio {Ni / extra_states * boltz_factor};
 
     return test_acceptance(ratio);
 }
@@ -394,14 +395,11 @@ bool MetStapleExchangeMCMovetype::delete_staple() {
         return accepted;
     }
 
-    // Test acceptance
+    // Unassign domains and test acceptance
+    unassign_domains(staple);
     accepted = staple_deletion_accepted(c_i_ident);
     if (accepted) {
-        vector<Domain*> staple {m_origami_system.get_chain(c_i)};
-        for (auto domain: staple) {
-            m_delta_e += m_origami_system.unassign_domain(*domain);
-        }
-    m_origami_system.delete_chain(c_i);
+        m_origami_system.delete_chain(c_i);
     }
 
     return accepted;
@@ -666,9 +664,9 @@ double CBStapleExchangeMCMovetype::calc_staple_insertion_acc_ratio(int c_i_ident
     m_bias /= pow(6, staple_length);
 
     // Correct for extra states from additional staple domains
-    int extra_df {2 * static_cast<int>(staple_length) - 1 - preconstrained_df};
+    double extra_df {2 * static_cast<double>(staple_length) - 1 - preconstrained_df};
     double extra_states {pow(6, extra_df)};
-    double ratio {extra_states / static_cast<double>(Ni_new) * m_bias};
+    double ratio {extra_states / Ni_new * m_bias};
 
     // Correct for insertion into subset of volume
     m_modifier *= m_insertion_sites / m_origami_system.m_volume;
@@ -687,10 +685,10 @@ double CBStapleExchangeMCMovetype::calc_staple_deletion_acc_ratio(int c_i_ident)
     m_bias /= pow(6, staple_length);
 
     // Correct for extra states from additional staple domains
-    int extra_df {2 * static_cast<int>(staple_length) - 1 - preconstrained_df};
+    double extra_df {2 * static_cast<double>(staple_length) - 1 - preconstrained_df};
     double extra_states {pow(6, extra_df)};
 
-    double ratio {static_cast<double>(Ni) / extra_states / m_bias};
+    double ratio {Ni / extra_states / m_bias};
 
     return ratio;
 }
