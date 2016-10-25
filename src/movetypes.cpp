@@ -329,7 +329,7 @@ bool MetStapleExchangeMCMovetype::staple_insertion_accepted(int c_i_ident) {
 
 bool MetStapleExchangeMCMovetype::staple_deletion_accepted(int c_i_ident) {
     double boltz_factor {exp(-m_delta_e)};
-    int Ni {m_origami_system.num_staples()};
+    int Ni {m_origami_system.num_staples_of_ident(c_i_ident)};
 
     // Correct for extra states from additional staple domains
     size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
