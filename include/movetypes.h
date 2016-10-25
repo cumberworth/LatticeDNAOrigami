@@ -119,9 +119,8 @@ namespace Movetypes {
 
             // These can be overidden for a derived class the excludes misbinding
             int preconstrained_df {0};
-            //DEBUG
-            //int m_insertion_sites {m_origami_system.num_domains() -
-            //        m_origami_system.num_bound_domain_pairs()};
+
+            // I select by domains not by sites, so this is consistent
             int m_insertion_sites {m_origami_system.num_domains()};
 
         private:
@@ -194,8 +193,9 @@ namespace Movetypes {
 
             // These can be overidden for a derived class the excludes misbinding
             int preconstrained_df {0};
-            int m_insertion_sites {m_origami_system.num_domains() -
-                    m_origami_system.num_bound_domain_pairs()};
+
+            // I select by domains not by sites, so this is consistent
+            int m_insertion_sites {m_origami_system.num_domains()};
 
         private:
             double calc_staple_insertion_acc_ratio(int c_i_ident);
