@@ -19,10 +19,10 @@ using namespace Simulation;
 using namespace Movetypes;
 
 int main(int argc, char* argv[]) {
-    InputParameters input_parameters {argc, argv};
+    InputParameters params {argc, argv};
 
     // Setup origami system
-    OrigamiInputFile origami_input {input_parameters.m_origami_input_filename};
+    OrigamiInputFile origami_input {params.m_origami_input_filename};
     vector<vector<int>> identities {origami_input.m_identities};
     vector<vector<string>> sequences {origami_input.m_sequences};
     vector<Chain> configs {origami_input.m_chains};
@@ -30,34 +30,28 @@ int main(int argc, char* argv[]) {
             identities,
             sequences,
             configs,
-            input_parameters.m_temp,
-            input_parameters.m_staple_M,
-            input_parameters.m_cation_M,
-            input_parameters.m_lattice_site_volume,
-            input_parameters.m_cyclic};
+            params.m_temp,
+            params.m_staple_M,
+            params.m_cation_M,
+            params.m_lattice_site_volume,
+            params.m_cyclic};
 
     // Setup simulation
-    OrigamiTrajOutputFile config_out {input_parameters.m_configs_output_filename,
-            input_parameters.m_configs_output_freq, origami};
-    OrigamiCountsOutputFile counts_out {input_parameters.m_counts_output_filename,
-            input_parameters.m_counts_output_freq, origami};
-    vector<OrigamiOutputFile*> outs {&config_out, &counts_out};
-    GCMCSimulation sim {origami,
-        outs,
-        input_parameters.m_movetype_constructors,
-        input_parameters.m_movetype_probs};
 
-    if (input_parameters.m_simulation_type == "constant_temp") {
-        sim.run_constant_temp(input_parameters.m_steps,
-                input_parameters.m_logging_freq,
-                input_parameters.m_centering_freq);
+    GCMCSimulation* sim;
+    if (params.m_simulation_type == "constant_temp") {
+        sim = new ConstantTGCMCSimulation {origami, params};
     }
-    else if (input_parameters.m_simulation_type == "annealing") {
-        sim.run_annealing(input_parameters.m_steps_per_temp,
-                input_parameters.m_max_temp,
-                input_parameters.m_min_temp,
-                input_parameters.m_temp_interval,
-                input_parameters.m_logging_freq,
-                input_parameters.m_centering_freq);
+    else if (params.m_simulation_type == "annealing") {
+        sim = new AnnealingGCMCSimulation {origami, params};
     }
+    else if (params.m_simulation_type == "parallel_tempering") {
+        sim = new PTGCMCSimulation {origami, params};
+    }
+    else {
+        cout << "No such simulation type.\n";
+        std::exit(1);
+    }
+    sim->run();
+    delete sim;
 }

@@ -15,6 +15,21 @@ using std::cout;
 using namespace Parser;
 using namespace Movetypes;
 
+vector<double> Parser::string_to_double_vector(string string_v) {
+    string delim {" "};
+    size_t start_pos {0};
+    size_t delim_pos {string_v.find(delim)};
+    vector<double> v {};
+    while (delim_pos != string::npos) {
+        v.push_back(stod(string_v.substr(start_pos, delim_pos)));
+        start_pos = delim_pos + 1;
+        delim_pos = string_v.find(delim, start_pos);
+    }
+    v.push_back(stod(string_v.substr(start_pos, string_v.size())));
+
+    return v;
+}
+
 Fraction::Fraction(string unparsed_fraction) {
     string delimiter {"/"};
     auto delim_pos {unparsed_fraction.find(delimiter)};
@@ -53,16 +68,17 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     // Setup parser
     po::options_description desc {};
     desc.add_options()
+
+        // System input and parameters
         ("origami_input_filename", po::value<string>(), "Origami input filename")
-        ("configs_output_filename", po::value<string>(), "Configuration output filename")
-        ("configs_output_freq", po::value<int>(), "Configuration output write frequency")
-        ("counts_output_filename", po::value<string>(), "Counts output filename")
-        ("counts_output_freq", po::value<int>(), "Coounts output write frequency")
         ("temp", po::value<double>(), "System temperature (K)")
         ("staple_M", po::value<double>(), "Staple concentration (mol/L)")
         ("cation_M", po::value<double>(), "Cation concentration (mol/L)")
         ("lattice_site_volume", po::value<double>(), "Volume per lattice site (L)")
         ("cyclic", po::value<bool>(), "Cyclic scaffold")
+
+        // General simulation parameters
+        ("simulation_type", po::value<string>(), "constant_temp, annealing, or parallel_tempering")
         ("steps", po::value<int>(), "Number of MC steps")
         ("logging_freq", po::value<int>(), "Logging frequency")
         ("centering_freq", po::value<int>(), "Centering frequency")
@@ -72,11 +88,23 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("cb_staple_exchange", po::value<string>(), "CB staple exchange movetype probability")
         ("cb_staple_regrowth", po::value<string>(), "CB staple regrowth movetype probability")
         ("ctcb_scaffold_regrowth", po::value<string>(), "CTCB scaffold regrowth movetype probability")
-        ("simulation_type", po::value<string>(), "constant_temp or annealing")
+
+        // Annealing simulation parameters
         ("max_temp", po::value<double>(), "Maximum temperature for annealing")
         ("min_temp", po::value<double>(), "Minimum temperature for annealing")
         ("temp_interval", po::value<double>(), "Temperature interval for annealing")
         ("steps_per_temp", po::value<int>(), "Steps per temperature in annealing")
+
+        // Parallel tempering options 
+        ("temps", po::value<string>(), "Temperature list")
+        ("num_reps", po::value<int>(), "Number of replicas")
+        ("exchange_interval", po::value<int>(), "Steps between exchange attempts")
+
+
+        // Output options
+        ("output_filebase", po::value<string>(), "Base name for output files")
+        ("configs_output_freq", po::value<int>(), "Configuration output write frequency")
+        ("counts_output_freq", po::value<int>(), "Coounts output write frequency")
         ;
 
     po::variables_map vm;
@@ -87,35 +115,13 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     if (vm.count("origami_input_filename")) {
         m_origami_input_filename = vm["origami_input_filename"].as<string>();
     }
-    else {
-        cout << "Origami input filename needed.";
-        exit(1);
-    }
 
     if (vm.count("configs_output_freq")) {
         m_configs_output_freq = vm["configs_output_freq"].as<int>();
     }
 
-    if (m_configs_output_freq != 0) {
-        if (vm.count("configs_output_filename"))
-            m_configs_output_filename = vm["configs_output_filename"].as<string>();
-        else {
-            cout << "Configuration output filename needed.";
-            exit(1);
-        }
-    }
-
     if (vm.count("counts_output_freq")) {
         m_counts_output_freq = vm["counts_output_freq"].as<int>();
-    }
-
-    if (m_counts_output_freq != 0) {
-        if (vm.count("counts_output_filename"))
-            m_counts_output_filename = vm["counts_output_filename"].as<string>();
-        else {
-            cout << "Count output filename needed.";
-            exit(1);
-        }
     }
 
     if (vm.count("temp")) {
@@ -210,5 +216,22 @@ InputParameters::InputParameters(int argc, char* argv[]) {
 
     if (vm.count("steps_per_temp")) {
         m_steps_per_temp = vm["steps_per_temp"].as<int>();
+    }
+
+    if (vm.count("temps")) {
+        string temps_s = vm["temps"].as<string>();
+        m_temps = string_to_double_vector(temps_s);
+    }
+
+    if (vm.count("num_reps")) {
+        m_num_reps = vm["num_reps"].as<int>();
+    }
+
+    if (vm.count("exchange_interval")) {
+        m_exchange_interval = vm["exchange_interval"].as<int>();
+    }
+
+    if (vm.count("output_filebase")) {
+        m_output_filebase = vm["output_filebase"].as<string>();
     }
 }

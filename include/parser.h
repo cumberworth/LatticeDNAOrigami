@@ -12,6 +12,8 @@ using std::string;
 using namespace Movetypes;
 
 namespace Parser {
+    vector<double> string_to_double_vector(string string_v);
+
     class Fraction {
         public:
             Fraction(string unparsed_fraction);
@@ -26,12 +28,8 @@ namespace Parser {
         public:
             InputParameters(int argc, char* argv[]);
 
-            // Parameters
+            // System input parameters
             string m_origami_input_filename;
-            string m_configs_output_filename;
-            int m_configs_output_freq {0};
-            string m_counts_output_filename;
-            int m_counts_output_freq {0};
 
             // Kelvin
             double m_temp {300};
@@ -45,16 +43,31 @@ namespace Parser {
             // L
             double m_lattice_site_volume {1};
             bool m_cyclic {false};
+
+            // General simulation parameters
+            string m_simulation_type {"constant_temp"};
             int m_steps {0};
             int m_logging_freq {0};
             int m_centering_freq {0};
-            vector<double> m_movetype_probs {};
             vector<MovetypeConstructor> m_movetype_constructors {};
-            string m_simulation_type {"constant_temp"};
+            vector<double> m_movetype_probs {};
+
+            // Annealing simulation parameters
             double m_max_temp {};
             double m_min_temp {};
             double m_temp_interval {};
             int m_steps_per_temp {};
+
+            // Parallel tempring simulation parameters
+            vector<double> m_temps {};
+            int m_num_reps {};
+            int m_exchange_interval {};
+
+            // Output options
+            string m_output_filebase;
+            int m_configs_output_freq {0};
+            int m_counts_output_freq {0};
+
     };
 }
 
