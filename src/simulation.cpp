@@ -183,7 +183,7 @@ void PTGCMCSimulation::run() {
             write_swap_entry();
         }
     }
-    if (m_world.rank() == m_master_rep) {
+    if (m_rank == m_master_rep) {
         write_acceptance_freqs(attempt_count, swap_count);
     }
 }
