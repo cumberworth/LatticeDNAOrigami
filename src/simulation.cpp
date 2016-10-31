@@ -39,6 +39,12 @@ GCMCSimulation::GCMCSimulation(OrigamiSystem& origami_system,
     }
 }
 
+GCMCSimulation::~GCMCSimulation() {
+    for (auto output_file: m_output_files) {
+        delete output_file;
+    }
+}
+
 void GCMCSimulation::simulate(int steps, int start_step) {
 
     for (int step {start_step + 1}; step != (steps + start_step + 1); step ++) {
@@ -100,7 +106,8 @@ ConstantTGCMCSimulation::ConstantTGCMCSimulation(OrigamiSystem& origami_system,
         m_steps {params.m_steps} {
 
     m_logging_stream = &cout;
-    setup_output_files(params, params.m_output_filebase, m_origami_system);
+    m_output_files = setup_output_files(params, params.m_output_filebase,
+            m_origami_system);
 }
 
 AnnealingGCMCSimulation::AnnealingGCMCSimulation(OrigamiSystem& origami_system,
@@ -115,7 +122,8 @@ AnnealingGCMCSimulation::AnnealingGCMCSimulation(OrigamiSystem& origami_system,
         cout << "Bad temperature interval";
     }
     m_logging_stream = &cout;
-    setup_output_files(params, params.m_output_filebase, m_origami_system);
+    m_output_files = setup_output_files(params, params.m_output_filebase,
+            m_origami_system);
 }
 
 void AnnealingGCMCSimulation::run() {
@@ -138,7 +146,8 @@ PTGCMCSimulation::PTGCMCSimulation(OrigamiSystem& origami_system,
     m_swaps = params.m_steps / m_exchange_interval;
     string string_rank {std::to_string(m_rank)};
     string output_filebase {params.m_output_filebase + "-" + string_rank};
-    setup_output_files(params, output_filebase, m_origami_system);
+    m_output_files = setup_output_files(params, output_filebase,
+            m_origami_system);
     m_logging_stream = new ofstream {output_filebase + ".out"};
 
     // Initialize temp of each replica
@@ -185,6 +194,7 @@ void PTGCMCSimulation::run() {
     }
     if (m_rank == m_master_rep) {
         write_acceptance_freqs(attempt_count, swap_count);
+        m_swapfile.close();
     }
 }
 
@@ -201,14 +211,14 @@ void PTGCMCSimulation::attempt_exchange(int swap_i,
     // Collect results and add own
     vector<double> energies {m_origami_system.energy()};
     for (int rep_i {1}; rep_i != m_num_reps; rep_i++) {
-        pair<double, int> msg;
-        m_world.recv(rep_i, swap_i, msg);
-        energies.push_back(msg.first);
+        double energy;
+        m_world.recv(rep_i, swap_i, energy);
+        energies.push_back(energy);
     }
 
     // Iterate through pairs in current set and attempt swap
     int swap_set {swap_i % 2};
-    for (int i {swap_set}; i < (m_num_reps - swap_set); i += 2) {
+    for (int i {swap_set}; i < (m_num_reps - 1); i += 2) {
         attempt_count[i]++;
 
         // Collect values

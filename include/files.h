@@ -19,6 +19,7 @@ namespace Files {
         // Input file for OrigamiSystem configuration and topology
         public:
             OrigamiInputFile(string filename);
+            virtual ~OrigamiInputFile() {};
 
             // Properties
             vector<vector<int>> m_identities;
@@ -33,6 +34,7 @@ namespace Files {
                     string filename,
                     int write_freq,
                     OrigamiSystem& origami_system);
+            virtual ~OrigamiOutputFile() {};
 
             virtual void write(int step) = 0;
 

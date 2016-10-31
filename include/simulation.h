@@ -42,7 +42,7 @@ namespace Simulation {
             GCMCSimulation(
                     OrigamiSystem& origami_system,
                     InputParameters params);
-            virtual ~GCMCSimulation() {};
+            virtual ~GCMCSimulation();
             virtual void run() = 0;
 
         protected:
@@ -93,6 +93,7 @@ namespace Simulation {
             PTGCMCSimulation(
                     OrigamiSystem& origami_system,
                     InputParameters params);
+            ~PTGCMCSimulation() {delete m_logging_stream;}
             void run();
 
         private:
