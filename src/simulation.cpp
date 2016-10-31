@@ -188,7 +188,6 @@ void PTGCMCSimulation::run() {
         }
         else {
             attempt_exchange(swap_i, attempt_count, swap_count);
-            m_temp = m_temps[m_master_rep];
             write_swap_entry();
         }
     }
@@ -242,8 +241,14 @@ void PTGCMCSimulation::attempt_exchange(int swap_i,
     }
 
     // Send temps
-    for (int rep_i {1}; rep_i != m_num_reps; rep_i++) {
-        m_world.send(rep_i, swap_i, m_temps[rep_i]);
+    for (int temp_i {0}; temp_i != m_num_reps; temp_i++) {
+        int rep_i {m_tempi_to_repi[temp_i]};
+        if (rep_i == m_master_rep) {
+            m_temp = m_temps[temp_i];
+        }
+        else {
+            m_world.send(rep_i, swap_i, m_temps[temp_i]);
+        }
     }
 }
 
