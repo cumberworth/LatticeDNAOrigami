@@ -8,7 +8,7 @@ cyclic=false
 
 # General simulation parameterse
 simulation_type=constant_temp
-steps=10000
+steps=10000000
 logging_freq=10000
 centering_freq=10000
 orientation_rotation=1/4

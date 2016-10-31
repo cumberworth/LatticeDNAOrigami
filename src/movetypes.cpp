@@ -344,9 +344,9 @@ bool MetStapleExchangeMCMovetype::insert_staple() {
     bool accepted;
 
     //DEBUG
-    //if (m_origami_system.num_staples() == 2) {
-    //    return false;
-    //}
+    if (m_origami_system.num_staples() == 2) {
+        return false;
+    }
 
     // Select and add chain of random identity
     int c_i_ident {select_random_staple_identity()};
