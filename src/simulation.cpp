@@ -227,8 +227,8 @@ void PTGCMCSimulation::attempt_exchange(int swap_i,
         int repi2 {m_tempi_to_repi[i + 1]};
 
         // Energies are actually E/B, so multiply by T
-        double energy1 {energies[repi1] * temp1};
-        double energy2 {energies[repi2] * temp2};
+        double energy1 {energies[i] * temp1};
+        double energy2 {energies[i + 1] * temp2};
         bool accept {test_acceptance(temp1, temp2, energy1, energy2)};
         if (accept) {
             swap_count[i]++;

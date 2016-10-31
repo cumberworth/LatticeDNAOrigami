@@ -8,7 +8,7 @@ cyclic=false
 
 # General simulation parameterse
 simulation_type=parallel_tempering
-steps=100000
+steps=1000000
 logging_freq=10000
 centering_freq=10000
 orientation_rotation=1/4
@@ -17,8 +17,8 @@ cb_staple_regrowth=1/4
 ctcb_scaffold_regrowth=1/4
 
 # Parallel tempering options
-temps=330 331 332 333 334 335 336
-num_reps=7
+temps=330 390
+num_reps=2
 exchange_interval=10000
 
 # Output options
