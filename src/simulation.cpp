@@ -172,6 +172,7 @@ PTGCMCSimulation::PTGCMCSimulation(OrigamiSystem& origami_system,
             m_swapfile <<  temp << " ";
         }
         m_swapfile << "\n";
+        write_swap_entry();
     }
 }
 
