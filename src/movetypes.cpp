@@ -343,13 +343,14 @@ bool MetStapleExchangeMCMovetype::staple_deletion_accepted(int c_i_ident) {
 bool MetStapleExchangeMCMovetype::insert_staple() {
     bool accepted;
 
+    // Select and add chain of random identity
+    int c_i_ident {select_random_staple_identity()};
+
     //DEBUG
-    if (m_origami_system.num_staples() == 2) {
+    if (m_origami_system.num_staples_of_ident(c_i_ident) == 2) {
         return false;
     }
 
-    // Select and add chain of random identity
-    int c_i_ident {select_random_staple_identity()};
     int c_i {m_origami_system.add_chain(c_i_ident)};
     m_added_chains.push_back(c_i);
 
@@ -715,15 +716,16 @@ vector<double> CBStapleExchangeMCMovetype::calc_bias(vector<double> weights,
 }
 
 bool CBStapleExchangeMCMovetype::insert_staple() {
-
-    //DEBUG
-    if (m_origami_system.num_staples() == 2) {
-        return false;
-    }
     bool accepted;
 
     // Select and add chain of random identity
     int c_i_ident {select_random_staple_identity()};
+
+    //DEBUG
+    if (m_origami_system.num_staples_of_ident(c_i_ident) == 2) {
+        return false;
+    }
+
     int c_i {m_origami_system.add_chain(c_i_ident)};
     m_added_chains.push_back(c_i);
 
