@@ -64,7 +64,7 @@ namespace Movetypes {
             int select_random_staple_of_identity(int c_i_ident);
             VectorThree select_random_position(VectorThree p_prev);
             VectorThree select_random_orientation();
-            bool test_acceptance(double p_ratio);
+            bool test_acceptance(long double p_ratio);
             bool staple_is_connector(vector<Domain*> staple);
             bool scan_for_scaffold_domain(Domain*, set<int>& participating_chains);
     };
@@ -144,8 +144,8 @@ namespace Movetypes {
 
             string m_label() {return "CBMCMovetype";};
         protected:
-            double m_bias {1};
-            double m_new_bias {1};
+            long double m_bias {1};
+            long double m_new_bias {1};
             double m_new_modifier {1};
             bool m_regrow_old {false};
             unordered_map<pair<int, int>, VectorThree> m_old_pos {};
@@ -242,7 +242,7 @@ namespace Movetypes {
             void update_endpoints(Domain* domain);
             Domain* get_domain_to_grow(Domain* domain);
             bool endpoint_reached(Domain* domain, VectorThree pos);
-            double calc_num_walks_prod(Domain* domain, VectorThree pos,
+            long double calc_num_walks_prod(Domain* domain, VectorThree pos,
                     vector<Domain*> domains, int step_offset=0);
 
             // For debugging

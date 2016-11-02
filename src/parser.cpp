@@ -76,6 +76,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("cation_M", po::value<double>(), "Cation concentration (mol/L)")
         ("lattice_site_volume", po::value<double>(), "Volume per lattice site (L)")
         ("cyclic", po::value<bool>(), "Cyclic scaffold")
+        ("energy_filebase", po::value<string>(), "Filebase for read/write of energies")
 
         // General simulation parameters
         ("simulation_type", po::value<string>(), "constant_temp, annealing, or parallel_tempering")
@@ -88,6 +89,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("cb_staple_exchange", po::value<string>(), "CB staple exchange movetype probability")
         ("cb_staple_regrowth", po::value<string>(), "CB staple regrowth movetype probability")
         ("ctcb_scaffold_regrowth", po::value<string>(), "CTCB scaffold regrowth movetype probability")
+        ("num_walks_filename", po::value<string>(), "Precalculated number of ideal random walks archive")
 
         // Annealing simulation parameters
         ("max_temp", po::value<double>(), "Maximum temperature for annealing")
@@ -144,6 +146,10 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         m_cyclic = vm["cyclic"].as<bool>();
     }
 
+    if (vm.count("energy_filebase")) {
+        m_energy_filebase = vm["energy_filebase"].as<string>();
+    }
+
     if (vm.count("steps")) {
         m_steps = vm["steps"].as<int>();
     }
@@ -196,6 +202,10 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
         m_movetype_constructors.push_back(movetype[6]);
+    }
+
+    if (vm.count("num_walks_filename")) {
+        m_num_walks_filename = vm["num_walks_filename"].as<string>();
     }
 
     if (vm.count("simulation_type")) {

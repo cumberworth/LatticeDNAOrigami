@@ -94,7 +94,7 @@ VectorThree MCMovetype::select_random_orientation() {
     return vec;
 }
 
-bool MCMovetype::test_acceptance(double p_ratio) {
+bool MCMovetype::test_acceptance(long double p_ratio) {
     double p_accept = fmin(1, p_ratio) * m_modifier;
     bool accept;
     if (p_accept == 1) {
@@ -574,7 +574,7 @@ double CBMCMovetype::set_old_growth_point(Domain& growth_domain_new, Domain& gro
 }
 
 bool CBMCMovetype::test_cb_acceptance() {
-    double ratio {m_new_bias / m_bias};
+    long double ratio {m_new_bias / m_bias};
     bool accepted;
     if (test_acceptance(ratio)) {
         reset_origami();
@@ -665,7 +665,7 @@ double CBStapleExchangeMCMovetype::calc_staple_insertion_acc_ratio(int c_i_ident
     // Correct for extra states from additional staple domains
     double extra_df {2 * static_cast<double>(staple_length) - 1 - preconstrained_df};
     double extra_states {pow(6, extra_df)};
-    double ratio {extra_states / Ni_new * m_bias};
+    long double ratio {extra_states / Ni_new * m_bias};
 
     // Correct for insertion into subset of volume
     m_modifier *= m_insertion_sites / m_origami_system.m_volume;
@@ -687,7 +687,7 @@ double CBStapleExchangeMCMovetype::calc_staple_deletion_acc_ratio(int c_i_ident)
     double extra_df {2 * static_cast<double>(staple_length) - 1 - preconstrained_df};
     double extra_states {pow(6, extra_df)};
 
-    double ratio {Ni / extra_states / m_bias};
+    long double ratio {Ni / extra_states / m_bias};
 
     return ratio;
 }
@@ -747,7 +747,7 @@ bool CBStapleExchangeMCMovetype::insert_staple() {
         return accepted;
     }
 
-    double ratio {calc_staple_insertion_acc_ratio(c_i_ident)};
+    long double ratio {calc_staple_insertion_acc_ratio(c_i_ident)};
     accepted = test_acceptance(ratio);
     return accepted;
 }
@@ -785,7 +785,7 @@ bool CBStapleExchangeMCMovetype::delete_staple() {
 
     // Remove overcounting correction
     m_modifier = 1;
-    double ratio {calc_staple_deletion_acc_ratio(c_i_ident)};
+    long double ratio {calc_staple_deletion_acc_ratio(c_i_ident)};
     accepted = test_acceptance(ratio);
 
     if (accepted) {
@@ -1003,24 +1003,49 @@ bool Constraintpoints::endpoint_reached(Domain* domain, VectorThree pos) {
     return reached;
 }
 
-double Constraintpoints::calc_num_walks_prod(
+long double Constraintpoints::calc_num_walks_prod(
         Domain* domain,
         VectorThree pos,
         vector<Domain*> domains,
         // For calculating previous position endpoints
         int step_offset) {
 
-    double prod_num_walks {1};
+    long double prod_num_walks {1};
     for (auto endpoint: m_active_endpoints[domain->m_c]) {
 
         // Check if endpoint in current stretch of domains being regrown (
-        // staples are grown out from there growth pointion two seperate
-        // directions
+        // staples are grown out from their growth point in two seperate
+        // directions)
         int endpoint_d_i {endpoint.first};
         int first_d_i {domains.front()->m_d};
         int last_d_i {domains.back()->m_d};
-        if (domain->m_c == m_origami_system.c_scaffold or
-                (endpoint_d_i >= first_d_i and endpoint_d_i <= last_d_i) or
+        if (domain->m_c == m_origami_system.c_scaffold) {
+            // MESSY
+            int steps;
+            if (m_origami_system.m_cyclic) {
+                int dir {domains.back()->m_d - domain->m_d};
+                if (dir == 1 and endpoint_d_i < domain->m_d) {
+                    steps = m_origami_system.num_domains() + endpoint_d_i - domain->m_d;
+                }
+                else if (dir == -1 and endpoint_d_i > domain->m_d) {
+                    steps = domain->m_d + m_origami_system.num_domains() - endpoint_d_i;
+                }
+                else if (dir == 0 or endpoint_d_i == domain->m_d) {
+                    steps = 0;
+                }
+                else {
+                    steps = abs(endpoint_d_i - domain->m_d);
+                }
+            }
+            else {
+                steps = abs(endpoint_d_i - domain->m_d);
+            }
+            steps += step_offset;
+            VectorThree endpoint_p {endpoint.second};
+            prod_num_walks *= m_ideal_random_walks.num_walks(pos, endpoint_p,
+                    steps);
+        }
+        else if ((endpoint_d_i >= first_d_i and endpoint_d_i <= last_d_i) or
                 (endpoint_d_i >= last_d_i and endpoint_d_i <= first_d_i)) {
             int steps {abs(endpoint_d_i - domain->m_d) + step_offset};
             VectorThree endpoint_p {endpoint.second};
@@ -1246,25 +1271,22 @@ vector<Domain*> CTCBScaffoldRegrowthMCMovetype::select_scaffold_indices() {
         end_domain = scaffold[m_random_gens.uniform_int(0, scaffold.size() - 1)];
     }
     
-    // Find direction of regrowth
-    int dir;
-    if (end_domain->m_d > start_domain->m_d) {
-        dir = 1;
-    }
-    else {
-        dir = -1;
-    }
-    Domain* endpoint_domain {(*end_domain) + dir};
-
     vector<Domain*> domains {};
 
     // Cyclic domains
     if (m_origami_system.m_cyclic) {
+
+        // Select direction of regrowth MESSY
+        int dir {m_random_gens.uniform_int(0, 1)};
+        if (dir == 0) {
+            dir = -1;
+        }
+        Domain* endpoint_domain {(*end_domain) + dir};
         int d_i {start_domain->m_d};
         Domain* cur_domain {start_domain};
         while (d_i != end_domain->m_d) {
             domains.push_back(cur_domain);
-            cur_domain = cur_domain + 1;
+            cur_domain = (*cur_domain) + dir;
             d_i = cur_domain->m_d;
         }
         domains.push_back(end_domain);
@@ -1273,6 +1295,16 @@ vector<Domain*> CTCBScaffoldRegrowthMCMovetype::select_scaffold_indices() {
 
     // Linear domains
     else {
+
+        // Find direction of regrowth
+        int dir;
+        if (end_domain->m_d > start_domain->m_d) {
+            dir = 1;
+        }
+        else {
+            dir = -1;
+        }
+        Domain* endpoint_domain {(*end_domain) + dir};
         for (int d_i {start_domain->m_d}; d_i != end_domain->m_d + dir; d_i += dir) {
             Domain* cur_domain {scaffold[d_i]};
             domains.push_back(cur_domain);
@@ -1327,12 +1359,14 @@ void CTCBScaffoldRegrowthMCMovetype::grow_staple_and_update_endpoints(
 }
 
 vector<double> CTCBScaffoldRegrowthMCMovetype::calc_bias(
-        vector<double> weights,
+        vector<double> bfactors,
         Domain* domain,
         vector<pair<VectorThree, VectorThree>>& configs,
         VectorThree p_prev,
         vector<Domain*> domains) {
 
+
+    vector<long double> weights(bfactors.begin(), bfactors.end());
     for (size_t i {0}; i != configs.size(); i++) {
         VectorThree cur_pos {configs[i].first};
 
@@ -1353,30 +1387,32 @@ vector<double> CTCBScaffoldRegrowthMCMovetype::calc_bias(
     }
 
     // Calculate number of walks for previous position
-    double prod_num_walks {m_constraintpoints.calc_num_walks_prod(domain,
+    long double prod_num_walks {m_constraintpoints.calc_num_walks_prod(domain,
             p_prev, domains, 1)};
 
     // Modified Rosenbluth
-    double weights_sum {0};
+    long double weights_sum {0};
     for (auto weight: weights) {
         weights_sum += weight;
     }
 
     // Check for deadend
+    vector<double> norm_weights {};
     if (weights_sum == 0) {
         m_rejected = true;
     }
     else {
-        double bias {weights_sum / prod_num_walks};
+        long double bias {weights_sum / prod_num_walks};
         m_bias *= bias;
 
         // Normalize
         for (size_t i {0}; i != weights.size(); i++) {
-            weights[i] /= weights_sum;
+            double norm_weight = static_cast<double>(weights[i] / weights_sum);
+            norm_weights.push_back(norm_weight);
         }
     }
 
-    return weights;
+    return norm_weights;
 }
 
 template<typename T>

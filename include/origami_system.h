@@ -48,7 +48,8 @@ namespace Origami{
                     double lattice_site_volume,
                     double cation_M,
                     double staple_M,
-                    bool cyclic);
+                    bool cyclic,
+                    string energy_filebase="");
             ~OrigamiSystem();
 
             // THESE NEED TO BE IMPLEMENTED TO DEAL WITH THE DOMAIN POINTER VECTOR
@@ -163,6 +164,7 @@ namespace Origami{
             // Energy tables index by chain/domain identity pair
             unordered_map<pair<int, int>, double> m_hybridization_energies {};
             unordered_map<pair<int, int>, double> m_stacking_energies {};
+            string m_energy_filebase;
 
             // Energies tables indexed by temperature
             unordered_map<double, unordered_map<pair<int, int>, double>> 
@@ -190,6 +192,7 @@ namespace Origami{
             void update_occupancies(
                     Domain& cd_i,
                     VectorThree position);
+            void read_energies_from_file(double temp);
             void update_energy();
     
             // Constraint checkers

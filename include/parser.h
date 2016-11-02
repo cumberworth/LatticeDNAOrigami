@@ -43,6 +43,7 @@ namespace Parser {
             // L
             double m_lattice_site_volume {1};
             bool m_cyclic {false};
+            string m_energy_filebase {""};
 
             // General simulation parameters
             string m_simulation_type {"constant_temp"};
@@ -51,6 +52,7 @@ namespace Parser {
             int m_centering_freq {0};
             vector<MovetypeConstructor> m_movetype_constructors {};
             vector<double> m_movetype_probs {};
+            string m_num_walks_filename {""};
 
             // Annealing simulation parameters
             double m_max_temp {};

@@ -34,7 +34,8 @@ int main(int argc, char* argv[]) {
             params.m_staple_M,
             params.m_cation_M,
             params.m_lattice_site_volume,
-            params.m_cyclic};
+            params.m_cyclic,
+            params.m_energy_filebase};
 
     // Setup simulation
 

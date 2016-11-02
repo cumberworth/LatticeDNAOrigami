@@ -5,8 +5,9 @@ staple_M=1e-4
 cation_M=1
 lattice_site_volume=4e-28
 cyclic=false
+energy_filebase=tests/four2_domain_loop
 
-# General simulation parameterse
+# General simulation parameters
 simulation_type=parallel_tempering
 steps=1000000
 logging_freq=10000
@@ -15,6 +16,7 @@ orientation_rotation=1/4
 met_staple_exchange=1/4
 cb_staple_regrowth=1/4
 ctcb_scaffold_regrowth=1/4
+num_walks_filename=tests/num_walks.arch
 
 # Parallel tempering options
 temps=330 390

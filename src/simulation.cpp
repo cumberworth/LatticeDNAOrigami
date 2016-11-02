@@ -37,6 +37,12 @@ GCMCSimulation::GCMCSimulation(OrigamiSystem& origami_system,
         cum_prob += params.m_movetype_probs[i];
         m_cumulative_probs.push_back(cum_prob);
     }
+
+    if (params.m_num_walks_filename.size() != 0) {
+        std::ifstream num_walks_file {params.m_num_walks_filename};
+        boost::archive::binary_iarchive num_walks_arch {num_walks_file};
+        num_walks_arch >> m_ideal_random_walks;
+    }
 }
 
 GCMCSimulation::~GCMCSimulation() {

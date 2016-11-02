@@ -2,7 +2,13 @@
 
 #include <algorithm>
 #include <cmath>
-#include<iostream>
+#include <iostream>
+#include <fstream>
+
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/serialization/unordered_map.hpp>
+#include <boost/serialization/utility.hpp>
 
 #include "origami_system.h"
 #include "utility.h"
@@ -39,7 +45,8 @@ OrigamiSystem::OrigamiSystem(
         double lattice_site_volume,
         double cation_M,
         double staple_M,
-        bool cyclic) :
+        bool cyclic,
+        string energy_filebase) :
 
         m_identities {identities},
         m_sequences {sequences},
@@ -47,7 +54,8 @@ OrigamiSystem::OrigamiSystem(
         m_cation_M {cation_M},
         m_staple_M {staple_M},
     	m_volume {molarity_to_lattice_volume(m_staple_M, lattice_site_volume)},
-        m_cyclic {cyclic} {
+        m_cyclic {cyclic},
+        m_energy_filebase {energy_filebase} {
 
     initialize_complementary_associations();
     initialize_config(chains);
@@ -172,7 +180,12 @@ void OrigamiSystem::centre() {
 void OrigamiSystem::update_temp(double temp) {
     m_temp = temp;
     if (m_hybridization_energy_tables.count(temp) == 0) {
-        calculate_energies();
+        if (m_energy_filebase.size() != 0) {
+            read_energies_from_file(temp);
+        }
+        else {
+            calculate_energies();
+        }
         m_hybridization_energy_tables[temp] = m_hybridization_energies;
         m_stacking_energy_tables[temp] = m_stacking_energies;
     }
@@ -182,6 +195,29 @@ void OrigamiSystem::update_temp(double temp) {
         m_stacking_energies = m_stacking_energy_tables[temp];
     }
     update_energy();
+}
+
+void OrigamiSystem::read_energies_from_file(double temp) {
+    string temp_string {"_" + std::to_string(static_cast<int>(temp))};
+    string henergy_filename {m_energy_filebase + temp_string + ".hene"};
+    string senergy_filename {m_energy_filebase + temp_string + ".sene"};
+    std::ifstream henergy_file {henergy_filename};
+    std::ifstream senergy_file {senergy_filename};
+    if (henergy_file and senergy_file) {
+        boost::archive::text_iarchive h_arch {henergy_file};
+        h_arch >> m_hybridization_energies;
+        boost::archive::text_iarchive s_arch {senergy_file};
+        s_arch >> m_stacking_energies;
+    }
+    else {
+        calculate_energies();
+        std::ofstream henergy_file {henergy_filename};
+        boost::archive::text_oarchive h_arch {henergy_file};
+        h_arch << m_hybridization_energies;
+        std::ofstream senergy_file {senergy_filename};
+        boost::archive::text_oarchive s_arch {senergy_file};
+        s_arch << m_stacking_energies;
+    }
 }
 
 bool OrigamiSystem::check_domains_complementary(Domain& cd_i, Domain& cd_j) {
@@ -279,7 +315,8 @@ int OrigamiSystem::add_chain(int c_i_ident, int c_i) {
     for (int d_i {0}; d_i != chain_length; d_i++) {
         int d_i_ident {m_identities[c_i_ident][d_i]};
         Domain* domain;
-        if (m_sequences[c_i_ident][d_i].size() == 16) {
+        size_t domain_size {m_sequences[c_i_ident][d_i].size()};
+        if (domain_size == 16 or domain_size == 15) {
             domain = new SixteenDomain {c_i, c_i_ident, d_i, d_i_ident, chain_length};
         }
         else {
@@ -382,7 +419,6 @@ void OrigamiSystem::initialize_config(Chains chains) {
 }
 
 void OrigamiSystem::calculate_energies() {
-    // Calculate and store all energies
     for (size_t c_i {0}; c_i != m_sequences.size(); c_i++) {
         for (size_t c_j {0}; c_j != m_sequences.size(); c_j++) {
             size_t c_i_length {m_sequences[c_i].size()};

@@ -9,6 +9,9 @@
 #include <unordered_map>
 #include <memory>
 
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+
 using std::vector;
 using std::array;
 using std::bind;
@@ -61,6 +64,11 @@ namespace Utility {
 
         private:
             array<int, 3> m_container;
+		    friend class boost::serialization::access;
+            template<typename Archive>
+            void serialize(Archive& arch, const unsigned int) {
+                arch& m_container;
+        	}
     };
 
     // Hash needs this, ambiguous to also have method

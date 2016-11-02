@@ -1,22 +1,24 @@
 # System input and parameters
-origami_input_filename=tests/four2_domain_loop.json
+origami_input_filename=tests/tile_unbound.json
 temp=330
-staple_M=1e-4
+staple_M=1e-5
 cation_M=1
 lattice_site_volume=4e-28
-cyclic=false
+cyclic=true
+energy_filebase=tests/tile
 
 # General simulation parameterse
 simulation_type=constant_temp
-steps=10000000
-logging_freq=10000
+steps=1000
+logging_freq=1
 centering_freq=10000
 orientation_rotation=1/4
 met_staple_exchange=1/4
 cb_staple_regrowth=1/4
 ctcb_scaffold_regrowth=1/4
+num_walks_filename=tests/num_walks.arch
 
 # Output options
-output_filebase=test_ptmc
-configs_output_freq=10000
-counts_output_freq=10000
+output_filebase=tests/test_ptmc
+configs_output_freq=0
+counts_output_freq=0
