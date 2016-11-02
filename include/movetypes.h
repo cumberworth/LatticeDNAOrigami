@@ -91,7 +91,7 @@ namespace Movetypes {
 
             string m_label() {return "RegrowthMCMovetype";};
         protected:
-            double set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old);
+            virtual double set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old);
             void grow_staple(int d_i_index, vector<Domain*> selected_chain);
             virtual void grow_chain(vector<Domain*> domains) = 0;
             pair<Domain*, Domain*> select_new_growthpoint(vector<Domain*> selected_chain);
@@ -165,6 +165,7 @@ namespace Movetypes {
                     vector<double> weights,
                     vector<pair<VectorThree, VectorThree>> configs);
             void select_and_set_old_config(Domain& domain);
+            double set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old);
             double set_old_growth_point(Domain& growth_domain_new, Domain& growth_domain_old);
             bool test_cb_acceptance();
             void unassign_domains(vector<Domain*>);

@@ -1,16 +1,16 @@
 # System input and parameters
-origami_input_filename=tests/tile_unbound.json
+origami_input_filename=tests/snodin_assembled.json
 temp=330
-staple_M=1e-5
+staple_M=1e-4
 cation_M=1
 lattice_site_volume=4e-28
-cyclic=true
-energy_filebase=tests/tile
+cyclic=false
+energy_filebase=tests/snodin
 
 # General simulation parameterse
 simulation_type=constant_temp
-steps=1000
-logging_freq=1
+steps=100000
+logging_freq=10000
 centering_freq=10000
 orientation_rotation=1/4
 met_staple_exchange=1/4

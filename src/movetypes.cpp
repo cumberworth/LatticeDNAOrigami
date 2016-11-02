@@ -347,9 +347,13 @@ bool MetStapleExchangeMCMovetype::insert_staple() {
     int c_i_ident {select_random_staple_identity()};
 
     //DEBUG
+    if (m_origami_system.num_staples() == 2) {
+        return false;
+    }
+    //DEBUG
     //if (m_origami_system.num_staples_of_ident(c_i_ident) == 2) {
     //    return false;
-    // }
+    //}
 
     int c_i {m_origami_system.add_chain(c_i_ident)};
     m_added_chains.push_back(c_i);
@@ -562,12 +566,50 @@ void CBMCMovetype::select_and_set_old_config(Domain& domain) {
     m_origami_system.set_checked_domain_config(domain, p_old, o_old);
 }
 
+double CBMCMovetype::set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old) {
+    bool domains_complementary {m_origami_system.check_domains_complementary(
+            growth_domain_new, growth_domain_old)};
+    VectorThree o_new;
+    double bias {1};
+    if (domains_complementary) {
+        o_new = -growth_domain_old.m_ore;
+    }
+    else {
+        o_new = select_random_orientation();
+        bias *= 6;
+    }
+    double delta_e {0};
+    delta_e += m_origami_system.set_domain_config(growth_domain_new,
+            growth_domain_old.m_pos, o_new);
+    if (m_origami_system.m_constraints_violated) {
+        m_rejected = true;
+    }
+    else {
+        bias *= exp(-delta_e);
+        m_bias *= bias;
+        pair<int, int> key {growth_domain_new.m_c, growth_domain_new.m_d};
+        m_assigned_domains.push_back(key);
+    }
+
+    return delta_e;
+}
+
 double CBMCMovetype::set_old_growth_point(Domain& growth_domain_new, Domain& growth_domain_old) {
     pair<int, int> key {growth_domain_new.m_c, growth_domain_new.m_d};
     VectorThree o_old {m_old_ore[key]};
+    double bias {1};
     double delta_e {0};
     delta_e += m_origami_system.set_checked_domain_config(growth_domain_new,
             growth_domain_old.m_pos, o_old);
+    bool domains_complementary {m_origami_system.check_domains_complementary(
+            growth_domain_new, growth_domain_old)};
+    if (domains_complementary) {
+        bias *= exp(-delta_e);
+    }
+    else {
+        bias *= 6;
+    }
+    m_bias *= bias;
     m_assigned_domains.push_back(key);
 
     return delta_e;
