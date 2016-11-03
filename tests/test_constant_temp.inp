@@ -4,7 +4,6 @@ temp=330
 staple_M=1e-4
 cation_M=1
 lattice_site_volume=4e-28
-cyclic=true
 energy_filebase=tests/tile
 
 # General simulation parameterse

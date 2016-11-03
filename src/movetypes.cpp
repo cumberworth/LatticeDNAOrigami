@@ -347,13 +347,13 @@ bool MetStapleExchangeMCMovetype::insert_staple() {
     int c_i_ident {select_random_staple_identity()};
 
     //DEBUG
-    if (m_origami_system.num_staples() == 2) {
-        return false;
-    }
-    //DEBUG
-    //if (m_origami_system.num_staples_of_ident(c_i_ident) == 2) {
+    //if (m_origami_system.num_staples() == 2) {
     //    return false;
     //}
+    //DEBUG
+    if (m_origami_system.num_staples_of_ident(c_i_ident) == 2) {
+        return false;
+    }
 
     int c_i {m_origami_system.add_chain(c_i_ident)};
     m_added_chains.push_back(c_i);
@@ -921,15 +921,13 @@ bool CBStapleRegrowthMCMovetype::attempt_move() {
 void CBStapleRegrowthMCMovetype::set_growthpoint_and_grow_staple(
         pair<Domain*, Domain*> growthpoint, vector<Domain*> selected_chain) {
 
-    double delta_e {0};
     if (m_regrow_old) {
-        delta_e = set_old_growth_point(*growthpoint.first, *growthpoint.second);
+        set_old_growth_point(*growthpoint.first, *growthpoint.second);
     }
     else {
-        delta_e = set_growth_point(*growthpoint.first, *growthpoint.second);
+        set_growth_point(*growthpoint.first, *growthpoint.second);
     }
     if (not m_rejected) {
-        m_bias *= exp(-delta_e);
         grow_staple(growthpoint.first->m_d, selected_chain);
     }
 }
@@ -1383,16 +1381,14 @@ void CTCBScaffoldRegrowthMCMovetype::grow_staple_and_update_endpoints(
 
     Domain* growth_d_new {m_constraintpoints.get_domain_to_grow(growth_d_old)};
     int c_i {growth_d_new->m_c};
-    double delta_e;
     if (m_regrow_old) {
-        delta_e = set_old_growth_point(*growth_d_new, *growth_d_old);
+        set_old_growth_point(*growth_d_new, *growth_d_old);
     }
     else {
-        delta_e = set_growth_point(*growth_d_new, *growth_d_old);
+        set_growth_point(*growth_d_new, *growth_d_old);
     }
     if (not m_rejected) {
         m_constraintpoints.update_endpoints(growth_d_new);
-        m_bias *= exp(-delta_e);
         vector<Domain*> staple {m_origami_system.get_chain(c_i)};
         grow_staple(growth_d_new->m_d, staple);
     }

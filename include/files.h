@@ -25,6 +25,7 @@ namespace Files {
             vector<vector<int>> m_identities;
             vector<vector<string>> m_sequences;
             vector<Chain> m_chains;
+            bool m_cyclic;
     };
 
     class OrigamiOutputFile {

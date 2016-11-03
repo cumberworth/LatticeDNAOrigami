@@ -26,6 +26,7 @@ int main(int argc, char* argv[]) {
     vector<vector<int>> identities {origami_input.m_identities};
     vector<vector<string>> sequences {origami_input.m_sequences};
     vector<Chain> configs {origami_input.m_chains};
+    bool cyclic {origami_input.m_cyclic};
     OrigamiSystem origami {
             identities,
             sequences,
@@ -34,7 +35,7 @@ int main(int argc, char* argv[]) {
             params.m_staple_M,
             params.m_cation_M,
             params.m_lattice_site_volume,
-            params.m_cyclic,
+            cyclic,
             params.m_energy_filebase};
 
     // Setup simulation

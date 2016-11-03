@@ -60,6 +60,10 @@ OrigamiInputFile::OrigamiInputFile(string filename) {
         Chain chain {index, identity, positions, orientations};
         m_chains.push_back(chain);
     }
+
+    // Extract cyclic flag
+    Json::Value jsoncyclic {jsonroot["origami"]["cyclic"]};
+    m_cyclic = jsoncyclic.asBool();
 }
 
 OrigamiOutputFile::OrigamiOutputFile(
