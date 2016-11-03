@@ -597,18 +597,16 @@ double CBMCMovetype::set_growth_point(Domain& growth_domain_new, Domain& growth_
 double CBMCMovetype::set_old_growth_point(Domain& growth_domain_new, Domain& growth_domain_old) {
     pair<int, int> key {growth_domain_new.m_c, growth_domain_new.m_d};
     VectorThree o_old {m_old_ore[key]};
-    double bias {1};
     double delta_e {0};
     delta_e += m_origami_system.set_checked_domain_config(growth_domain_new,
             growth_domain_old.m_pos, o_old);
     bool domains_complementary {m_origami_system.check_domains_complementary(
             growth_domain_new, growth_domain_old)};
-    if (domains_complementary) {
-        bias *= exp(-delta_e);
-    }
-    else {
+    double bias {1};
+    if (not domains_complementary) {
         bias *= 6;
     }
+    bias *= exp(-delta_e);
     m_bias *= bias;
     m_assigned_domains.push_back(key);
 
