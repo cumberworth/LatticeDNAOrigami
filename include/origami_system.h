@@ -101,6 +101,7 @@ namespace Origami{
                     Domain& cd_i,
                     VectorThree pos,
                     VectorThree ore);
+            void check_distance_constraints();
     
             // Configuration modifiers
             double unassign_domain(Domain& cd_i);

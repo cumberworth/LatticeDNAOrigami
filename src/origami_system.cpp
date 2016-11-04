@@ -664,8 +664,10 @@ void OrigamiSystem::check_all_constraints() {
             }
         }
     }
+    check_distance_constraints();
+}
 
-    // Check distance constraints
+void OrigamiSystem::check_distance_constraints() {
     for (auto chain: m_domains) {
         for (auto domain: chain) {
             Domain* next_domain {*domain + 1};
@@ -682,6 +684,7 @@ void OrigamiSystem::check_all_constraints() {
         }
     }
 }
+
 
 double OrigamiSystem::check_stacking(Domain& cd_new, Domain& cd_old) {
     // Check both sides

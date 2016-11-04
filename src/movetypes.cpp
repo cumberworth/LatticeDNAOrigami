@@ -1141,8 +1141,11 @@ void Constraintpoints::find_staples_growthpoints_endpoints(
         }
     }
 
-    // Remove endpoints on first scaffold domain
-    remove_active_endpoint(scaffold_domains[0]);
+    // MESSY Remove endpoints on first scaffold domain
+    if (not m_origami_system.m_cyclic and scaffold_domains.size() !=
+            m_origami_system.get_chain(0).size()) {
+        remove_active_endpoint(scaffold_domains[0]);
+    }
 }
 
 bool Constraintpoints::staple_already_checked(
