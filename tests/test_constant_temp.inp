@@ -1,14 +1,14 @@
 # System input and parameters
-origami_input_filename=tests/four2_domain_loop.json
+origami_input_filename=tests/tile_unbound.json
 temp=330
 staple_M=1e-5
 cation_M=1
 lattice_site_volume=4e-28
-energy_filebase=tests/four2
+energy_filebase=tests/tile
 
 # General simulation parameterse
 simulation_type=constant_temp
-steps=10000000
+steps=1000000
 logging_freq=10000
 centering_freq=10000
 orientation_rotation=1/6

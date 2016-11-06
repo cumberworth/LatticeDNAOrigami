@@ -244,7 +244,7 @@ namespace Movetypes {
             Domain* get_domain_to_grow(Domain* domain);
             bool endpoint_reached(Domain* domain, VectorThree pos);
             long double calc_num_walks_prod(Domain* domain, VectorThree pos,
-                    vector<Domain*> domains, int step_offset=0);
+                    vector<Domain*> domains, int dir, int step_offset=0);
 
             // For debugging
             inline vector<pair<int, VectorThree>> get_active_endpoints(int c_i) {
@@ -304,6 +304,7 @@ namespace Movetypes {
             string m_label() {return "CTCBScaffoldRegrowthMCMovetype";};
         private:
             Constraintpoints m_constraintpoints {m_origami_system, m_ideal_random_walks};
+            int m_dir;
             vector<Domain*> select_scaffold_indices();
             void grow_chain(vector<Domain*> domains);
             void grow_staple_and_update_endpoints(Domain* growth_domain_old);

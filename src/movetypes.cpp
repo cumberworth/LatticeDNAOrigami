@@ -1045,6 +1045,7 @@ long double Constraintpoints::calc_num_walks_prod(
         Domain* domain,
         VectorThree pos,
         vector<Domain*> domains,
+        int dir,
         // For calculating previous position endpoints
         int step_offset) {
 
@@ -1061,12 +1062,11 @@ long double Constraintpoints::calc_num_walks_prod(
             // MESSY
             int steps;
             if (m_origami_system.m_cyclic) {
-                int dir {domains.back()->m_d - domain->m_d};
-                if (dir == 1 and endpoint_d_i < domain->m_d) {
-                    steps = m_origami_system.num_domains() + endpoint_d_i - domain->m_d;
+                if (dir > 0 and endpoint_d_i < domain->m_d) {
+                    steps = m_origami_system.get_chain(0).size() + endpoint_d_i - domain->m_d;
                 }
-                else if (dir == -1 and endpoint_d_i > domain->m_d) {
-                    steps = domain->m_d + m_origami_system.num_domains() - endpoint_d_i;
+                else if (dir < 0 and endpoint_d_i > domain->m_d) {
+                    steps = domain->m_d + m_origami_system.get_chain(0).size() - endpoint_d_i;
                 }
                 else if (dir == 0 or endpoint_d_i == domain->m_d) {
                     steps = 0;
@@ -1318,16 +1318,16 @@ vector<Domain*> CTCBScaffoldRegrowthMCMovetype::select_scaffold_indices() {
     if (m_origami_system.m_cyclic) {
 
         // Select direction of regrowth MESSY
-        int dir {m_random_gens.uniform_int(0, 1)};
-        if (dir == 0) {
-            dir = -1;
+        m_dir = m_random_gens.uniform_int(0, 1);
+        if (m_dir == 0) {
+            m_dir = -1;
         }
-        Domain* endpoint_domain {(*end_domain) + dir};
+        Domain* endpoint_domain {(*end_domain) + m_dir};
         int d_i {start_domain->m_d};
         Domain* cur_domain {start_domain};
         while (d_i != end_domain->m_d) {
             domains.push_back(cur_domain);
-            cur_domain = (*cur_domain) + dir;
+            cur_domain = (*cur_domain) + m_dir;
             d_i = cur_domain->m_d;
         }
         domains.push_back(end_domain);
@@ -1338,15 +1338,14 @@ vector<Domain*> CTCBScaffoldRegrowthMCMovetype::select_scaffold_indices() {
     else {
 
         // Find direction of regrowth
-        int dir;
         if (end_domain->m_d > start_domain->m_d) {
-            dir = 1;
+            m_dir = 1;
         }
         else {
-            dir = -1;
+            m_dir = -1;
         }
-        Domain* endpoint_domain {(*end_domain) + dir};
-        for (int d_i {start_domain->m_d}; d_i != end_domain->m_d + dir; d_i += dir) {
+        Domain* endpoint_domain {(*end_domain) + m_dir};
+        for (int d_i {start_domain->m_d}; d_i != end_domain->m_d + m_dir; d_i += m_dir) {
             Domain* cur_domain {scaffold[d_i]};
             domains.push_back(cur_domain);
         }
@@ -1422,12 +1421,12 @@ vector<double> CTCBScaffoldRegrowthMCMovetype::calc_bias(
 
         // Bias weights with number of walks
         weights[i] *= m_constraintpoints.calc_num_walks_prod(domain, cur_pos,
-                domains);
+                domains, m_dir);
     }
 
     // Calculate number of walks for previous position
     long double prod_num_walks {m_constraintpoints.calc_num_walks_prod(domain,
-            p_prev, domains, 1)};
+            p_prev, domains, m_dir, 1)};
 
     // Modified Rosenbluth
     long double weights_sum {0};
