@@ -47,7 +47,7 @@ namespace Parser {
 
             // General simulation parameters
             string m_simulation_type {"constant_temp"};
-            int m_steps {0};
+            long int m_steps {0};
             int m_logging_freq {0};
             int m_centering_freq {0};
             vector<MovetypeConstructor> m_movetype_constructors {};

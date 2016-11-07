@@ -1,23 +1,23 @@
 # System input and parameters
 origami_input_filename=tests/tile_unbound.json
 temp=330
-staple_M=1e-5
+staple_M=1e-6
 cation_M=1
 lattice_site_volume=4e-28
 energy_filebase=tests/tile
 
-# General simulation parameterse
+# General simulation parameters
 simulation_type=constant_temp
 steps=1000000
-logging_freq=10000
+logging_freq=100000
 centering_freq=10000
-orientation_rotation=1/6
-met_staple_exchange=1/2
-cb_staple_regrowth=1/6
-ctcb_scaffold_regrowth=1/6
+orientation_rotation=1/100
+met_staple_exchange=97/100
+cb_staple_regrowth=1/100
+ctcb_scaffold_regrowth=1/100
 num_walks_filename=tests/num_walks.arch
 
 # Output options
-output_filebase=tests/test_ptmc
-configs_output_freq=0
-counts_output_freq=0
+output_filebase=tests/test_constant_temp
+configs_output_freq=100000
+counts_output_freq=100000

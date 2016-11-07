@@ -80,7 +80,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
 
         // General simulation parameters
         ("simulation_type", po::value<string>(), "constant_temp, annealing, or parallel_tempering")
-        ("steps", po::value<int>(), "Number of MC steps")
+        ("steps", po::value<long int>(), "Number of MC steps")
         ("logging_freq", po::value<int>(), "Logging frequency")
         ("centering_freq", po::value<int>(), "Centering frequency")
         ("orientation_rotation", po::value<string>(), "Orientational rotation movetype probability")
@@ -151,7 +151,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     }
 
     if (vm.count("steps")) {
-        m_steps = vm["steps"].as<int>();
+        m_steps = vm["steps"].as<long int>();
     }
 
     if (vm.count("logging_freq")) {

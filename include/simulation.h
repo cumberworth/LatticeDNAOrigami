@@ -57,7 +57,7 @@ namespace Simulation {
             IdealRandomWalks m_ideal_random_walks {};
 
             // Shared methods
-            void simulate(int steps, int start_step=0);
+            void simulate(long int steps, int start_step=0);
             unique_ptr<MCMovetype> select_movetype();
             void write_log_entry(
                     int step,
@@ -72,7 +72,7 @@ namespace Simulation {
                     InputParameters params);
             void run() {simulate(m_steps);}
         private:
-            int m_steps;
+            long int m_steps;
     };
 
     class AnnealingGCMCSimulation: public GCMCSimulation {
