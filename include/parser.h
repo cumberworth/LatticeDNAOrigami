@@ -44,6 +44,8 @@ namespace Parser {
             double m_lattice_site_volume {1};
             bool m_cyclic {false};
             string m_energy_filebase {""};
+            string m_restart_traj_file {""};
+            int m_restart_step;
 
             // General simulation parameters
             string m_simulation_type {"constant_temp"};

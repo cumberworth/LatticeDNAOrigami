@@ -77,6 +77,8 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("lattice_site_volume", po::value<double>(), "Volume per lattice site (L)")
         ("cyclic", po::value<bool>(), "Cyclic scaffold")
         ("energy_filebase", po::value<string>(), "Filebase for read/write of energies")
+        ("restart_traj_file", po::value<string>(), "Trajectory file to restart from")
+        ("restart_step", po::value<int>(), "Step to restart from")
 
         // General simulation parameters
         ("simulation_type", po::value<string>(), "constant_temp, annealing, or parallel_tempering")
@@ -114,134 +116,125 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     po::notify(vm);
 
     // Extract variables from variables map
+
+    // System input and parameters
     if (vm.count("origami_input_filename")) {
         m_origami_input_filename = vm["origami_input_filename"].as<string>();
     }
-
-    if (vm.count("configs_output_freq")) {
-        m_configs_output_freq = vm["configs_output_freq"].as<int>();
-    }
-
-    if (vm.count("counts_output_freq")) {
-        m_counts_output_freq = vm["counts_output_freq"].as<int>();
-    }
-
     if (vm.count("temp")) {
         m_temp = vm["temp"].as<double>();
     }
-
     if (vm.count("staple_M")) {
         m_staple_M = vm["staple_M"].as<double>();
     }
-
     if (vm.count("cation_M")) {
         m_cation_M = vm["cation_M"].as<double>();
     }
-
     if (vm.count("lattice_site_volume")) {
         m_lattice_site_volume = vm["lattice_site_volume"].as<double>();
     }
-
     if (vm.count("cyclic")) {
         m_cyclic = vm["cyclic"].as<bool>();
     }
-
     if (vm.count("energy_filebase")) {
         m_energy_filebase = vm["energy_filebase"].as<string>();
     }
+    if (vm.count("restart_traj_file")) {
+        m_restart_traj_file = vm["restart_traj_file"].as<string>();
+    }
+    if (vm.count("restart_step")) {
+        m_restart_step = vm["restart_step"].as<int>();
+    }
 
+    // General simulation parameters
+    if (vm.count("simulation_type")) {
+        m_simulation_type = vm["simulation_type"].as<string>();
+    }
     if (vm.count("steps")) {
         m_steps = vm["steps"].as<long int>();
     }
-
     if (vm.count("logging_freq")) {
         m_logging_freq = vm["logging_freq"].as<int>();
     }
-
     if (vm.count("centering_freq")) {
         m_centering_freq = vm["centering_freq"].as<int>();
     }
-
     if (vm.count("orientation_rotation")) {
         string unparsed_fraction {vm["orientation_rotation"].as<string>()};
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
         m_movetype_constructors.push_back(movetype[1]);
     }
-
     if (vm.count("met_staple_exchange")) {
         string unparsed_fraction {vm["met_staple_exchange"].as<string>()};
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
         m_movetype_constructors.push_back(movetype[2]);
     }
-
     if (vm.count("met_staple_regrowth")) {
         string unparsed_fraction {vm["met_staple_regrowth"].as<string>()};
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
         m_movetype_constructors.push_back(movetype[3]);
     }
-
     if (vm.count("cb_staple_exchange")) {
         string unparsed_fraction {vm["cb_staple_exchange"].as<string>()};
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
         m_movetype_constructors.push_back(movetype[4]);
     }
-
     if (vm.count("cb_staple_regrowth")) {
         string unparsed_fraction {vm["cb_staple_regrowth"].as<string>()};
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
         m_movetype_constructors.push_back(movetype[5]);
     }
-
     if (vm.count("ctcb_scaffold_regrowth")) {
         string unparsed_fraction {vm["ctcb_scaffold_regrowth"].as<string>()};
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
         m_movetype_constructors.push_back(movetype[6]);
     }
-
     if (vm.count("num_walks_filename")) {
         m_num_walks_filename = vm["num_walks_filename"].as<string>();
     }
 
-    if (vm.count("simulation_type")) {
-        m_simulation_type = vm["simulation_type"].as<string>();
-    }
-
+    // Annealing simulation parameters
     if (vm.count("max_temp")) {
         m_max_temp = vm["max_temp"].as<double>();
     }
-
     if (vm.count("min_temp")) {
         m_min_temp = vm["min_temp"].as<double>();
     }
-
     if (vm.count("temp_interval")) {
         m_temp_interval = vm["temp_interval"].as<double>();
     }
-
     if (vm.count("steps_per_temp")) {
         m_steps_per_temp = vm["steps_per_temp"].as<int>();
     }
 
+    // Parallel tempering options 
     if (vm.count("temps")) {
         string temps_s = vm["temps"].as<string>();
         m_temps = string_to_double_vector(temps_s);
     }
-
     if (vm.count("num_reps")) {
         m_num_reps = vm["num_reps"].as<int>();
     }
-
     if (vm.count("exchange_interval")) {
         m_exchange_interval = vm["exchange_interval"].as<int>();
     }
 
+    // Output options
     if (vm.count("output_filebase")) {
         m_output_filebase = vm["output_filebase"].as<string>();
     }
+    if (vm.count("configs_output_freq")) {
+        m_configs_output_freq = vm["configs_output_freq"].as<int>();
+    }
+    if (vm.count("counts_output_freq")) {
+        m_counts_output_freq = vm["counts_output_freq"].as<int>();
+    }
+
+
 }

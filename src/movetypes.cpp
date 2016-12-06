@@ -173,9 +173,11 @@ bool MCMovetype::scan_for_scaffold_domain(
 }
 
 double RegrowthMCMovetype::set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old) {
-    // Set growth point with new orientation
-    VectorThree o_new = select_random_orientation();
+    //// Set growth point with new orientation
+    //VectorThree o_new {select_random_orientation()};
+    // Set growth point with complementary orientation
     double delta_e {0};
+    VectorThree o_new {-growth_domain_old.m_ore};
     delta_e += m_origami_system.set_domain_config(growth_domain_new,
             growth_domain_old.m_pos, o_new);
     if (m_origami_system.m_constraints_violated) {
@@ -262,7 +264,6 @@ bool OrientationRotationMCMovetype::attempt_move() {
         accept = true;
     }
 
-
     return accept;
 }
 
@@ -318,8 +319,10 @@ bool MetStapleExchangeMCMovetype::staple_insertion_accepted(int c_i_ident) {
     double extra_states {pow(6, extra_df)};
     double ratio {extra_states / Ni_new * boltz_factor};
 
+    // TEST
     // Correct for insertion into subset of volume
-    m_modifier *= m_insertion_sites / m_origami_system.m_volume;
+    //m_modifier *= m_insertion_sites / m_origami_system.m_volume;
+    m_modifier /= 10000;
 
     // Correct for considering only 1 of staple length ways insertion could occur
     m_modifier *= staple_length;
@@ -336,6 +339,10 @@ bool MetStapleExchangeMCMovetype::staple_deletion_accepted(int c_i_ident) {
     double extra_df {2 * static_cast<double>(staple_length) - 1 - preconstrained_df};
     double extra_states {pow(6, extra_df)};
     double ratio {Ni / extra_states * boltz_factor};
+
+    // TEST
+    //m_modifier *= m_origami_system.m_volume;
+    ratio *= m_origami_system.m_volume / 10000;
 
     return test_acceptance(ratio);
 }
@@ -473,18 +480,20 @@ void CBMCMovetype::calc_biases(
                 continue;
             case Occupancy::unbound: {
                 Domain* unbound_domain {m_origami_system.unbound_domain_at(p_new)};
-                bool domains_complementary {m_origami_system.check_domains_complementary(
-                        domain, *unbound_domain)};
+                //bool domains_complementary {m_origami_system.check_domains_complementary(
+                //        domain, *unbound_domain)};
                 VectorThree o_new;
-                double bfactor;
-                if (domains_complementary) {
-                    o_new = -unbound_domain->m_ore;
-                    bfactor = 1;
-                }
-                else {
-                    o_new = {0, 0, 0};
-                    bfactor = 6;
-                }
+                //double bfactor;
+                //if (domains_complementary) {
+                //    o_new = -unbound_domain->m_ore;
+                //    bfactor = 1;
+                //}
+                //else {
+                //    o_new = {0, 0, 0};
+                //    bfactor = 6;
+                //}
+                double bfactor {1};
+                o_new = -unbound_domain->m_ore;
                 double delta_e {m_origami_system.check_domain_constraints(
                         domain, p_new, o_new)};
                 if (not m_origami_system.m_constraints_violated) {
@@ -566,33 +575,33 @@ void CBMCMovetype::select_and_set_old_config(Domain& domain) {
     m_origami_system.set_checked_domain_config(domain, p_old, o_old);
 }
 
-double CBMCMovetype::set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old) {
-    bool domains_complementary {m_origami_system.check_domains_complementary(
-            growth_domain_new, growth_domain_old)};
-    VectorThree o_new;
-    double bias {1};
-    if (domains_complementary) {
-        o_new = -growth_domain_old.m_ore;
-    }
-    else {
-        o_new = select_random_orientation();
-        bias *= 6;
-    }
-    double delta_e {0};
-    delta_e += m_origami_system.set_domain_config(growth_domain_new,
-            growth_domain_old.m_pos, o_new);
-    if (m_origami_system.m_constraints_violated) {
-        m_rejected = true;
-    }
-    else {
-        bias *= exp(-delta_e);
-        m_bias *= bias;
-        pair<int, int> key {growth_domain_new.m_c, growth_domain_new.m_d};
-        m_assigned_domains.push_back(key);
-    }
-
-    return delta_e;
-}
+//double CBMCMovetype::set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old) {
+//    bool domains_complementary {m_origami_system.check_domains_complementary(
+//            growth_domain_new, growth_domain_old)};
+//    VectorThree o_new;
+//    double bias {1};
+//    if (domains_complementary) {
+//        o_new = -growth_domain_old.m_ore;
+//    }
+//    else {
+//        o_new = select_random_orientation();
+//        bias *= 6;
+//    }
+//    double delta_e {0};
+//    delta_e += m_origami_system.set_domain_config(growth_domain_new,
+//            growth_domain_old.m_pos, o_new);
+//    if (m_origami_system.m_constraints_violated) {
+//        m_rejected = true;
+//    }
+//    else {
+//        bias *= exp(-delta_e);
+//        m_bias *= bias;
+//        pair<int, int> key {growth_domain_new.m_c, growth_domain_new.m_d};
+//        m_assigned_domains.push_back(key);
+//    }
+//
+//    return delta_e;
+//}
 
 double CBMCMovetype::set_old_growth_point(Domain& growth_domain_new, Domain& growth_domain_old) {
     pair<int, int> key {growth_domain_new.m_c, growth_domain_new.m_d};
@@ -1023,7 +1032,6 @@ void Constraintpoints::update_endpoints(Domain* domain) {
     }
 }
 
-
 Domain* Constraintpoints::get_domain_to_grow(Domain* domain) {
     return m_growthpoints[domain];
 }
@@ -1045,6 +1053,7 @@ long double Constraintpoints::calc_num_walks_prod(
         Domain* domain,
         VectorThree pos,
         vector<Domain*> domains,
+        // Direction of growth (1 for forward, -1 for backward)
         int dir,
         // For calculating previous position endpoints
         int step_offset) {
@@ -1058,40 +1067,43 @@ long double Constraintpoints::calc_num_walks_prod(
         int endpoint_d_i {endpoint.first};
         int first_d_i {domains.front()->m_d};
         int last_d_i {domains.back()->m_d};
-        if (domain->m_c == m_origami_system.c_scaffold) {
-            // MESSY
-            int steps;
-            if (m_origami_system.m_cyclic) {
-                if (dir > 0 and endpoint_d_i < domain->m_d) {
-                    steps = m_origami_system.get_chain(0).size() + endpoint_d_i - domain->m_d;
-                }
-                else if (dir < 0 and endpoint_d_i > domain->m_d) {
-                    steps = domain->m_d + m_origami_system.get_chain(0).size() - endpoint_d_i;
-                }
-                else if (dir == 0 or endpoint_d_i == domain->m_d) {
-                    steps = 0;
-                }
-                else {
-                    steps = abs(endpoint_d_i - domain->m_d);
-                }
-            }
-            else {
-                steps = abs(endpoint_d_i - domain->m_d);
-            }
-            steps += step_offset;
+        if (not ((endpoint_d_i >= first_d_i and endpoint_d_i <= last_d_i) or
+                (endpoint_d_i >= last_d_i and endpoint_d_i <= first_d_i))) {
+            int steps {calc_remaining_steps(endpoint_d_i, domain, dir,
+                    step_offset)};
             VectorThree endpoint_p {endpoint.second};
             prod_num_walks *= m_ideal_random_walks.num_walks(pos, endpoint_p,
                     steps);
         }
-        else if ((endpoint_d_i >= first_d_i and endpoint_d_i <= last_d_i) or
-                (endpoint_d_i >= last_d_i and endpoint_d_i <= first_d_i)) {
-            int steps {abs(endpoint_d_i - domain->m_d) + step_offset};
-            VectorThree endpoint_p {endpoint.second};
-            prod_num_walks *= m_ideal_random_walks.num_walks(pos, endpoint_p,
-                    steps);
+        else {
         }
     }
     return prod_num_walks;
+}
+
+int Constraintpoints::calc_remaining_steps(int endpoint_d_i, Domain* domain,
+        int dir, int step_offset) {
+    int steps;
+    if (m_origami_system.m_cyclic and domain->m_c == m_origami_system.c_scaffold) {
+        if (dir > 0 and endpoint_d_i < domain->m_d) {
+            steps = m_origami_system.get_chain(0).size() + endpoint_d_i - domain->m_d;
+        }
+        else if (dir < 0 and endpoint_d_i > domain->m_d) {
+            steps = domain->m_d + m_origami_system.get_chain(0).size() - endpoint_d_i;
+        }
+        else if (dir == 0 or endpoint_d_i == domain->m_d) {
+            steps = 0;
+        }
+        else {
+            steps = abs(endpoint_d_i - domain->m_d);
+        }
+    }
+    else {
+        steps = abs(endpoint_d_i - domain->m_d);
+    }
+    steps += step_offset;
+
+    return steps;
 }
 
 void Constraintpoints::find_staples_growthpoints_endpoints(
@@ -1141,7 +1153,7 @@ void Constraintpoints::find_staples_growthpoints_endpoints(
         }
     }
 
-    // MESSY Remove endpoints on first scaffold domain
+    // Remove endpoints on first scaffold domain unless cyclic and regrowing whole thing
     if (not m_origami_system.m_cyclic and scaffold_domains.size() !=
             m_origami_system.get_chain(0).size()) {
         remove_active_endpoint(scaffold_domains[0]);

@@ -71,29 +71,51 @@ namespace Origami{
             // Configuration properties
             bool m_constraints_violated {false};
             vector<Domain*> get_chain(int c_i);
-            inline vector<vector<Domain*>> get_chains() {return m_domains;}
-            vector<Domain*> get_last_chain() {return m_domains.back();}
+            inline vector<vector<Domain*>> get_chains() {
+                return m_domains;
+            }
+            vector<Domain*> get_last_chain() {
+                return m_domains.back();
+            }
             Domain* get_domain(int c_i, int d_i);
-            inline int num_staples() const {return m_domains.size() - 1;}
+            inline int num_staples() const {
+                return m_domains.size() - 1;
+            }
             int num_unique_staples() const;
-            inline int num_domains() {return m_num_domains;};
-
-            inline int num_bound_domain_pairs() const {return m_num_bound_domain_pairs;}
-            inline int num_fully_bound_domain_pairs() const {return m_num_fully_bound_domain_pairs;}
-            inline int num_self_bound_domain_pairs() const {return m_num_self_bound_domain_pairs;}
+            inline int num_domains() {
+                return m_num_domains;
+            }
+            inline int num_bound_domain_pairs() const {
+                return m_num_bound_domain_pairs;
+            }
+            inline int num_fully_bound_domain_pairs() const {
+                return m_num_fully_bound_domain_pairs;
+            }
+            inline int num_self_bound_domain_pairs() const {
+                return m_num_self_bound_domain_pairs;
+            }
             inline int num_misbound_domain_pairs() const {
-                    return num_bound_domain_pairs() - num_fully_bound_domain_pairs();}
-            inline int num_staples_of_ident(int staple_ident) const {return
-                    m_identity_to_index[staple_ident].size();}
-            inline vector<int> staples_of_ident(int c_ident) {return m_identity_to_index[c_ident];}
+                return num_bound_domain_pairs() - num_fully_bound_domain_pairs();
+            }
+            inline int num_staples_of_ident(int staple_ident) const {
+                return m_identity_to_index[staple_ident].size();
+            }
+            inline vector<int> staples_of_ident(int c_ident) {
+                return m_identity_to_index[c_ident];
+            }
             inline vector<int> complimentary_scaffold_domains(int staple_ident)
-                    const {return m_staple_ident_to_scaffold_ds[staple_ident];}
+                    const {
+                return m_staple_ident_to_scaffold_ds[staple_ident];
+            }
             Chains chains() const;
             Occupancy position_occupancy(VectorThree pos) const;
-            inline Domain* unbound_domain_at(VectorThree pos) const {return
-                    m_pos_to_unbound_d.at(pos);};
+            inline Domain* unbound_domain_at(VectorThree pos) const {
+                return m_pos_to_unbound_d.at(pos);
+            }
             bool check_domains_complementary(Domain& cd_i, Domain& cd_j);
-            inline double energy() const {return m_energy;}
+            inline double energy() const {
+                return m_energy;
+            }
     
             // Constraint checkers
             void check_all_constraints();
@@ -181,7 +203,8 @@ namespace Origami{
             void calculate_energies();
             void initialize_config(Chains chains);
 
-            // Accessors
+            // Energy calculation
+            double check_stacking(Domain& cd_new, Domain& cd_old);
             double hybridization_energy(const Domain& cd_i, const Domain& cd_j) const;
             double stacking_energy(const Domain& cd_i, const Domain& cd_j) const;
     
@@ -195,25 +218,30 @@ namespace Origami{
                     VectorThree position);
             void read_energies_from_file(double temp);
             void update_energy();
-    
+
             // Constraint checkers
             double bind_domain(Domain& cd_i);
             double bind_complementary_domains(Domain& cd_i, Domain& cd_j);
-            double check_stacking(Domain& cd_new, Domain& cd_old);
             bool check_domain_pair_constraints(Domain& cd_i);
             bool check_helical_constraints(Domain& cd_1, Domain& cd_2);
-            bool check_linear_helix_rear(Domain& cd_3);
+
+            // Orientation checks
+            bool check_domain_orientations_opposing(Domain& cd_i, Domain& cd_j);
+
+            // Linear helix checks
             bool check_linear_helix(VectorThree ndr_1, Domain& cd_2);
-            bool check_junction_front(Domain& cd_1);
-            bool check_junction_rear(Domain& cd_4);
-            bool doubly_contiguous_junction(Domain& cd_1, Domain& cd_2);
+            bool check_linear_helix_rear(Domain& cd_3);
+
+            // Junction checks
             bool check_doubly_contiguous_junction(Domain& cd_2, Domain& cd_3);
+            bool doubly_contiguous_junction(Domain& cd_1, Domain& cd_2);
             bool check_doubly_contiguous_junction(
                     Domain& cd_1,
                     Domain& cd_2,
                     Domain& cd_3,
                     Domain& cd_4);
-            bool check_domain_orientations_opposing(Domain& cd_i, Domain& cd_j);
+            bool check_junction_front(Domain& cd_1);
+            bool check_junction_rear(Domain& cd_4);
     };
 
     class OrigamiSystemWithoutMisbinding: public OrigamiSystem {

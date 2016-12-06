@@ -118,7 +118,7 @@ namespace Movetypes {
         protected:
 
             // These can be overidden for a derived class the excludes misbinding
-            int preconstrained_df {0};
+            int preconstrained_df {1};
 
             // I select by domains not by sites, so this is consistent
             int m_insertion_sites {m_origami_system.num_domains()};
@@ -165,7 +165,7 @@ namespace Movetypes {
                     vector<double> weights,
                     vector<pair<VectorThree, VectorThree>> configs);
             void select_and_set_old_config(Domain& domain);
-            double set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old);
+            //double set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old);
             double set_old_growth_point(Domain& growth_domain_new, Domain& growth_domain_old);
             bool test_cb_acceptance();
             void unassign_domains(vector<Domain*>);
@@ -193,7 +193,7 @@ namespace Movetypes {
         protected:
 
             // These can be overidden for a derived class the excludes misbinding
-            int preconstrained_df {0};
+            int preconstrained_df {1};
 
             // I select by domains not by sites, so this is consistent
             int m_insertion_sites {m_origami_system.num_domains()};
@@ -266,6 +266,8 @@ namespace Movetypes {
                     vector<pair<Domain*, Domain*>>& participating_chains,
                     vector<Domain*>& scaffold_domains,
                     bool& externally_bound);
+            int calc_remaining_steps(int endpoint_d_i, Domain* domain, int dir,
+                    int step_offset);
 
             OrigamiSystem& m_origami_system;
             IdealRandomWalks& m_ideal_random_walks;

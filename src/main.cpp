@@ -25,7 +25,13 @@ int main(int argc, char* argv[]) {
     OrigamiInputFile origami_input {params.m_origami_input_filename};
     vector<vector<int>> identities {origami_input.m_identities};
     vector<vector<string>> sequences {origami_input.m_sequences};
-    vector<Chain> configs {origami_input.m_chains};
+    vector<Chain> configs;
+    if (params.m_restart_traj_file == "") {
+        configs = origami_input.m_chains;
+    }
+    else {
+        //OrigamiInputFile origami_input {params.m_origami_input_filename};
+    }
     bool cyclic {origami_input.m_cyclic};
     OrigamiSystem origami {
             identities,
