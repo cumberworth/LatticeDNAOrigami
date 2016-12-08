@@ -1062,8 +1062,8 @@ SCENARIO("Example moves work as expected") {
             origami.set_domain_config(scaffold_d_4, {0, 1, 0}, {0, 1, 0});
             origami.set_domain_config(staple2_d_1, {1, 1, 0}, {0, 0, 1});
             origami.set_domain_config(staple2_d_2, {2, 1, 0}, {1, 0, 0});
-            origami.set_domain_config(staple1_d_1, {2, 1, 0}, {1, 0, 0});
-            origami.set_domain_config(staple1_d_2, {1, 0, 0}, {1, 0, 0});
+            origami.set_domain_config(staple1_d_1, {2, 1, 0}, {-1, 0, 0});
+            origami.set_domain_config(staple1_d_2, {2, 0, 0}, {1, 0, 0});
 
             // Setup movetype
             CBStapleRegrowthMCMovetype movetype {origami, random_gens, ideal_random_walks};
@@ -1072,7 +1072,7 @@ SCENARIO("Example moves work as expected") {
             // Set growthpoint
             vector<Domain*> staple {&staple1_d_1, &staple1_d_2};
             movetype.unassign_domains(staple);
-            double delta_e {origami.set_domain_config(staple1_d_2, {0, 0, 0}, {0, -1, 0})};
+            double delta_e {origami.set_domain_config(staple1_d_2, {0, 0, 0}, {0, 0, -1})};
             double expected_new_bias {exp(-delta_e)};
             movetype.m_bias *= exp(-delta_e);
 
@@ -1082,10 +1082,10 @@ SCENARIO("Example moves work as expected") {
             VectorThree p_prev {0, 0, 0};
             movetype.calc_biases(staple1_d_1, p_prev, configs, bfactors);
             movetype.calc_bias(bfactors, &staple1_d_1, configs, p_prev, staple);
-            delta_e = origami.set_domain_config(staple1_d_1, {0, 1, 0}, {-1, 0, 0});
+            delta_e = origami.set_domain_config(staple1_d_1, {0, 1, 0}, {0, -1, 0});
             double delta_e_alt = origami.hybridization_energy(staple1_d_1, scaffold_d_2);
-            expected_new_bias *= 6*exp(-delta_e) + 6*exp(-delta_e_alt) + 4*6;
-            REQUIRE(expected_new_bias == movetype.m_bias);
+            expected_new_bias *= exp(-delta_e) + exp(-delta_e_alt) + 4*6;
+            REQUIRE(Approx(expected_new_bias) == movetype.m_bias);
 
             // Regrow old
             movetype.setup_for_regrow_old();
@@ -1093,8 +1093,8 @@ SCENARIO("Example moves work as expected") {
             movetype.unassign_domains(staple);
             movetype.set_growthpoint_and_grow_staple(growthpoint, staple);
             delta_e = origami.hybridization_energy(staple1_d_1, staple2_d_2);
-            double expected_old_bias {exp(-delta_e) * 5*6};
-            REQUIRE(expected_old_bias == movetype.m_bias);
+            double expected_old_bias {exp(-delta_e) * (5*6)};
+            REQUIRE(Approx(expected_old_bias) == movetype.m_bias);
         }
         WHEN("CTCB scaffold regrowth move attempted") {
 
@@ -1155,9 +1155,9 @@ SCENARIO("Example moves work as expected") {
             double delta_e_sd2s2d2 {origami.hybridization_energy(scaffold_d_2, staple2_d_2)};
             double delta_e_sd3s2d1 {origami.hybridization_energy(scaffold_d_3, staple2_d_1)};
             double delta_e_sd4s1d2 {origami.hybridization_energy(scaffold_d_4, staple1_d_2)};
-            double expected_new_bias {exp(-delta_e_sd2s2d2) * 5*6 * exp(-delta_e_sd3s2d1)/2 *
+            long double expected_new_bias {exp(-delta_e_sd2s2d2) * 5*6 * exp(-delta_e_sd3s2d1)/2 *
                     exp(-delta_e_sd4s1d2)};
-            REQUIRE(expected_new_bias == movetype.m_bias);
+            REQUIRE(Approx(expected_new_bias) == movetype.m_bias);
 
             // Regrow old
             movetype.setup_for_regrow_old();
@@ -1168,7 +1168,7 @@ SCENARIO("Example moves work as expected") {
             }
             movetype.grow_staple_and_update_endpoints(scaffold_domains[0]);
             movetype.grow_chain(scaffold_domains);
-            REQUIRE(expected_new_bias == movetype.m_bias);
+            REQUIRE(Approx(expected_new_bias) == movetype.m_bias);
         }
     }
 }
@@ -1244,30 +1244,30 @@ SCENARIO("Connector staples are correctly identified") {
             REQUIRE(movetype.staple_is_connector(staple11) == false);
         }
         WHEN("Case 2") {
-            origami.set_domain_config(staple11_d_1, {1, 1, 0}, {0, 1, 0});
+            origami.set_domain_config(staple11_d_1, {1, 1, 0}, {0, -1, 0});
             origami.set_domain_config(staple11_d_2, {2, 1, 0}, {0, 1, 0});
-            origami.set_domain_config(staple12_d_1, {2, 1, 0}, {0, 1, 0});
+            origami.set_domain_config(staple12_d_1, {2, 1, 0}, {0, -1, 0});
             origami.set_domain_config(staple12_d_2, {3, 1, 0}, {0, 1, 0});
 
             REQUIRE(movetype.staple_is_connector(staple11) == true);
         }
         WHEN("Case 3") {
-            origami.set_domain_config(staple11_d_1, {1, 1, 0}, {0, 1, 0});
+            origami.set_domain_config(staple11_d_1, {1, 1, 0}, {0, -1, 0});
             origami.set_domain_config(staple11_d_2, {2, 1, 0}, {0, 1, 0});
-            origami.set_domain_config(staple12_d_1, {2, 1, 0}, {0, 1, 0});
+            origami.set_domain_config(staple12_d_1, {2, 1, 0}, {0, -1, 0});
             origami.set_domain_config(staple12_d_2, {3, 1, 0}, {0, 1, 0});
-            origami.set_domain_config(staple13_d_1, {3, 1, 0}, {0, 1, 0});
+            origami.set_domain_config(staple13_d_1, {3, 1, 0}, {0, -1, 0});
             origami.set_domain_config(staple13_d_2, {4, 1, 0}, {0, 1, 0});
 
             REQUIRE(movetype.staple_is_connector(staple12) == true);
         }
         WHEN("Case 4") {
-            origami.set_domain_config(staple11_d_1, {1, 1, 0}, {0, 1, 0});
+            origami.set_domain_config(staple11_d_1, {1, 1, 0}, {0, -1, 0});
             origami.set_domain_config(staple11_d_2, {2, 1, 0}, {0, 1, 0});
-            origami.set_domain_config(staple12_d_1, {2, 1, 0}, {0, 1, 0});
+            origami.set_domain_config(staple12_d_1, {2, 1, 0}, {0, -1, 0});
             origami.set_domain_config(staple12_d_2, {2, 0, 0}, {0, 1, 0});
-            origami.set_domain_config(staple13_d_1, {2, 0, 0}, {0, 1, 0});
-            origami.set_domain_config(staple13_d_2, {1, 0, 0}, {0, 1, 0});
+            origami.set_domain_config(staple13_d_1, {2, 0, 0}, {0, -1, 0});
+            origami.set_domain_config(staple13_d_2, {1, 0, 0}, {0, -1, 0});
 
             REQUIRE(movetype.staple_is_connector(staple12) == false);
         }
@@ -1326,14 +1326,14 @@ SCENARIO("Origami system can reset after move") {
         origami.set_domain_config(scaffold_d_2, {1, 0, 0}, {0, 1, 0});
         origami.set_domain_config(scaffold_d_3, {1, 1, 0}, {0, 1, 0});
         origami.set_domain_config(scaffold_d_4, {0, 1, 0}, {0, -1, 0});
-        origami.set_domain_config(staple1_d_1, {0, 1, 0}, {0, -1, 0});
+        origami.set_domain_config(staple1_d_1, {0, 1, 0}, {0, 1, 0});
         origami.set_domain_config(staple1_d_2, {0, 0, 0}, {0, 1, 0});
         origami.set_domain_config(staple2_d_1, {1, 0, 0}, {0, -1, 0});
-        origami.set_domain_config(staple2_d_2, {1, 1, 0}, {0, 1, 0});
+        origami.set_domain_config(staple2_d_2, {1, 1, 0}, {0, -1, 0});
 
-        WHEN("CB staple exchanges are carried out") {
+        WHEN("Met staple exchanges are carried out") {
             for (int i {0}; i != 10; i++) {
-                CBStapleExchangeMCMovetype movetype {origami, random_gens, ideal_random_walks};
+                MetStapleExchangeMCMovetype movetype {origami, random_gens, ideal_random_walks};
                 Chains original_chains {origami.chains()};
                 double original_energy {origami.energy()};
                 bool accepted {movetype.attempt_move()};

@@ -609,14 +609,14 @@ double CBMCMovetype::set_old_growth_point(Domain& growth_domain_new, Domain& gro
     double delta_e {0};
     delta_e += m_origami_system.set_checked_domain_config(growth_domain_new,
             growth_domain_old.m_pos, o_old);
-    bool domains_complementary {m_origami_system.check_domains_complementary(
-            growth_domain_new, growth_domain_old)};
-    double bias {1};
-    if (not domains_complementary) {
-        bias *= 6;
-    }
-    bias *= exp(-delta_e);
-    m_bias *= bias;
+    //bool domains_complementary {m_origami_system.check_domains_complementary(
+    //        growth_domain_new, growth_domain_old)};
+    //double bias {1};
+    //if (not domains_complementary) {
+    //    bias *= 6;
+    //}
+    //bias *= exp(-delta_e);
+    m_bias *= exp(-delta_e);
     m_assigned_domains.push_back(key);
 
     return delta_e;
@@ -1067,8 +1067,9 @@ long double Constraintpoints::calc_num_walks_prod(
         int endpoint_d_i {endpoint.first};
         int first_d_i {domains.front()->m_d};
         int last_d_i {domains.back()->m_d};
-        if (not ((endpoint_d_i >= first_d_i and endpoint_d_i <= last_d_i) or
-                (endpoint_d_i >= last_d_i and endpoint_d_i <= first_d_i))) {
+        if (domain->m_c == m_origami_system.c_scaffold or not (
+                    (endpoint_d_i >= first_d_i and endpoint_d_i <= last_d_i) or
+                    (endpoint_d_i >= last_d_i and endpoint_d_i <= first_d_i))) {
             int steps {calc_remaining_steps(endpoint_d_i, domain, dir,
                     step_offset)};
             VectorThree endpoint_p {endpoint.second};
