@@ -242,7 +242,7 @@ bool OrientationRotationMCMovetype::attempt_move() {
     Domain* domain {select_random_domain()};
     VectorThree o_new {select_random_orientation()};
 
-    if (domain->m_state == Occupancy::bound) {
+    if (domain->m_state == Occupancy::bound or domain->m_state == Occupancy::misbound) {
         VectorThree o_old {domain->m_ore};
         Domain* bound_domain {domain->m_bound_domain};
         m_origami_system.unassign_domain(*bound_domain);
@@ -322,7 +322,7 @@ bool MetStapleExchangeMCMovetype::staple_insertion_accepted(int c_i_ident) {
     // TEST
     // Correct for insertion into subset of volume
     //m_modifier *= m_insertion_sites / m_origami_system.m_volume;
-    m_modifier /= 10000;
+    m_modifier /= 100;
 
     // Correct for considering only 1 of staple length ways insertion could occur
     m_modifier *= staple_length;
@@ -342,7 +342,7 @@ bool MetStapleExchangeMCMovetype::staple_deletion_accepted(int c_i_ident) {
 
     // TEST
     //m_modifier *= m_origami_system.m_volume;
-    ratio *= m_origami_system.m_volume / 10000;
+    ratio *= m_origami_system.m_volume / 100;
 
     return test_acceptance(ratio);
 }
