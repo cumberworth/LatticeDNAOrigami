@@ -597,7 +597,7 @@ SCENARIO("Implemented helical constraints consistent with intended") {
         origami.unassign_domain(staple2_d_1);
         origami.unassign_domain(staple2_d_2);
 
-        WHEN("The second staple is bound to it's domains in the same helix") {
+        WHEN("The second staple is bound to its domains in the same helix") {
             origami.set_domain_config(scaffold_d_2, {0, 0, 0}, {1, 0, 0});
             origami.set_domain_config(scaffold_d_3, {0, 1, 0}, {-1, 0, 0});
             origami.set_domain_config(staple2_d_1, {0, 1, 0}, {1, 0, 0});
@@ -639,6 +639,19 @@ SCENARIO("Implemented helical constraints consistent with intended") {
                     origami.set_domain_config(staple2_d_2, {0, 1, 0}, {0, 0, -1});
                     origami.set_domain_config(staple1_d_1, {0, 0, 0}, {0, 0, 1});
                     origami.set_domain_config(staple12_d_2, {0, 0, 1}, {0, 0, -1});
+                    origami.set_domain_config(scaffold_d_1, {0, 0, 0}, {0, 0, -1});
+                    THEN("The configuration is allowed") {
+                        REQUIRE(origami.m_constraints_violated == false);
+                    }
+                }
+                WHEN("Alt correctly") {
+                    origami.set_domain_config(scaffold_d_2, {0, 1, 0}, {0, 0, 1});
+                    origami.set_domain_config(scaffold_d_3, {0, 1, 1}, {0, 0, 1});
+                    origami.set_domain_config(scaffold_d_4, {1, 1, 1}, {0, 0, -1});
+                    origami.set_domain_config(staple2_d_1, {0, 1, 1}, {0, 0, -1});
+                    origami.set_domain_config(staple2_d_2, {0, 1, 0}, {0, 0, -1});
+                    origami.set_domain_config(staple1_d_1, {0, 0, 0}, {0, 0, 1});
+                    origami.set_domain_config(staple12_d_2, {1, 1, 1}, {0, 0, -1});
                     origami.set_domain_config(scaffold_d_1, {0, 0, 0}, {0, 0, -1});
                     THEN("The configuration is allowed") {
                         REQUIRE(origami.m_constraints_violated == false);

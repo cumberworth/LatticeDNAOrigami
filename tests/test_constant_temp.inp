@@ -1,5 +1,5 @@
 # System input and parameters
-origami_input_filename=tests/four_domain_loop.json
+origami_input_filename=tests/four2_domain_loop-two_staples.json
 temp=330
 staple_M=1e-6
 cation_M=1
@@ -10,11 +10,11 @@ energy_filebase=tests/four
 simulation_type=constant_temp
 steps=100000000
 logging_freq=1
-centering_freq=1
-orientation_rotation=1/4
-met_staple_exchange=1/4
-cb_staple_regrowth=1/4
-ctcb_scaffold_regrowth=1/4
+centering_freq=100000
+orientation_rotation=1/3
+met_staple_exchange=0
+cb_staple_regrowth=1/3
+ctcb_scaffold_regrowth=1/3
 num_walks_filename=tests/num_walks.arch
 
 # Output options
