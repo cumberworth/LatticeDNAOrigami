@@ -934,7 +934,8 @@ void CBStapleRegrowthMCMovetype::set_growthpoint_and_grow_staple(
         set_old_growth_point(*growthpoint.first, *growthpoint.second);
     }
     else {
-        set_growth_point(*growthpoint.first, *growthpoint.second);
+        double delta_e {set_growth_point(*growthpoint.first, *growthpoint.second)};
+        m_bias *= exp(-delta_e);
     }
     if (not m_rejected) {
         grow_staple(growthpoint.first->m_d, selected_chain);
@@ -1400,7 +1401,8 @@ void CTCBScaffoldRegrowthMCMovetype::grow_staple_and_update_endpoints(
         set_old_growth_point(*growth_d_new, *growth_d_old);
     }
     else {
-        set_growth_point(*growth_d_new, *growth_d_old);
+        double delta_e {set_growth_point(*growth_d_new, *growth_d_old)};
+        m_bias *= exp(-delta_e);
     }
     if (not m_rejected) {
         m_constraintpoints.update_endpoints(growth_d_new);

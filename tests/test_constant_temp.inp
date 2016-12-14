@@ -9,7 +9,7 @@ energy_filebase=tests/four
 # General simulation parameters
 simulation_type=constant_temp
 steps=100000000
-logging_freq=1
+logging_freq=100000
 centering_freq=100000
 orientation_rotation=1/3
 met_staple_exchange=0
@@ -19,5 +19,5 @@ num_walks_filename=tests/num_walks.arch
 
 # Output options
 output_filebase=tests/test_constant_temp
-configs_output_freq=0
-counts_output_freq=0
+configs_output_freq=100000
+counts_output_freq=100000
