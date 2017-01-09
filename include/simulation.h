@@ -33,7 +33,7 @@ using namespace IdealRandomWalk;
 namespace Simulation {
 
     vector<OrigamiOutputFile*> setup_output_files(
-            InputParameters params,
+            InputParameters& params,
             string output_filebase,
             OrigamiSystem& origami);
 
@@ -41,7 +41,7 @@ namespace Simulation {
         public:
             GCMCSimulation(
                     OrigamiSystem& origami_system,
-                    InputParameters params);
+                    InputParameters& params);
             virtual ~GCMCSimulation();
             virtual void run() = 0;
 
@@ -50,6 +50,7 @@ namespace Simulation {
             ostream* m_logging_stream;
             int m_logging_freq;
             int m_centering_freq;
+            InputParameters& m_params;
             vector <OrigamiOutputFile*> m_output_files;
             vector<MovetypeConstructor> m_movetype_constructors;
             vector<double> m_cumulative_probs;
@@ -69,7 +70,7 @@ namespace Simulation {
         public:
             ConstantTGCMCSimulation(
                     OrigamiSystem& origami_system,
-                    InputParameters params);
+                    InputParameters& params);
             void run() {simulate(m_steps);}
         private:
             long int m_steps;
@@ -79,7 +80,7 @@ namespace Simulation {
         public:
             AnnealingGCMCSimulation(
                     OrigamiSystem& origami_system,
-                    InputParameters params);
+                    InputParameters& params);
             void run();
         private:
             double m_max_temp;
@@ -92,7 +93,7 @@ namespace Simulation {
         public:
             PTGCMCSimulation(
                     OrigamiSystem& origami_system,
-                    InputParameters params);
+                    InputParameters& params);
             ~PTGCMCSimulation() {delete m_logging_stream;}
             void run();
 

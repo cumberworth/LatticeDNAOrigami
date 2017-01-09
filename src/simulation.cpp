@@ -24,12 +24,17 @@ using namespace Utility;
 using namespace RandomGen;
 
 GCMCSimulation::GCMCSimulation(OrigamiSystem& origami_system,
-        InputParameters params) :
-        m_origami_system {origami_system} {
+        InputParameters& params) :
+        m_origami_system {origami_system},
+        m_params {params} {
 
     m_logging_freq = params.m_logging_freq;
     m_centering_freq = params.m_centering_freq;
-    m_movetype_constructors = params.m_movetype_constructors;
+
+    // Create movetype constructors
+    for (auto movetype_i: params.m_movetypes) {
+        m_movetype_constructors.push_back(movetype[movetype_i]);
+    }
 
     // Create cumulative probability array
     double cum_prob {0};
@@ -87,7 +92,7 @@ unique_ptr<MCMovetype> GCMCSimulation::select_movetype() {
     for (size_t i {0}; i != m_cumulative_probs.size(); i++) {
         if (prob < m_cumulative_probs[i]) {
             movetype = m_movetype_constructors[i](m_origami_system,
-                    m_random_gens, m_ideal_random_walks);
+                    m_random_gens, m_ideal_random_walks, m_params);
             break;
         }
     }
@@ -107,7 +112,7 @@ void GCMCSimulation::write_log_entry(int step, MCMovetype& movetype,
 }
 
 ConstantTGCMCSimulation::ConstantTGCMCSimulation(OrigamiSystem& origami_system,
-        InputParameters params) :
+        InputParameters& params) :
         GCMCSimulation(origami_system, params),
         m_steps {params.m_steps} {
 
@@ -117,7 +122,7 @@ ConstantTGCMCSimulation::ConstantTGCMCSimulation(OrigamiSystem& origami_system,
 }
 
 AnnealingGCMCSimulation::AnnealingGCMCSimulation(OrigamiSystem& origami_system,
-        InputParameters params) :
+        InputParameters& params) :
         GCMCSimulation(origami_system, params),
         m_max_temp {params.m_max_temp},
         m_min_temp {params.m_min_temp},
@@ -144,7 +149,7 @@ void AnnealingGCMCSimulation::run() {
 }
 
 PTGCMCSimulation::PTGCMCSimulation(OrigamiSystem& origami_system,
-        InputParameters params) :
+        InputParameters& params) :
         GCMCSimulation(origami_system, params),
         m_num_reps {params.m_num_reps},
         m_exchange_interval {params.m_exchange_interval} {
@@ -304,7 +309,7 @@ void PTGCMCSimulation::write_acceptance_freqs(vector<int> attempt_count,
 }
 
 vector<OrigamiOutputFile*> Simulation::setup_output_files(
-        InputParameters params, string output_filebase,
+        InputParameters& params, string output_filebase,
         OrigamiSystem& origami) {
 
     vector<OrigamiOutputFile*> outs {};

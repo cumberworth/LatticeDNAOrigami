@@ -1,15 +1,13 @@
-// parse.h
+// parser.h
 
 #ifndef PARSER_H
 #define PARSER_H
 
 #include <string>
-
-#include "movetypes.h"
+#include <vector>
 
 using std::string;
-
-using namespace Movetypes;
+using std::vector;
 
 namespace Parser {
     vector<double> string_to_double_vector(string string_v);
@@ -52,9 +50,10 @@ namespace Parser {
             long int m_steps {0};
             int m_logging_freq {0};
             int m_centering_freq {0};
-            vector<MovetypeConstructor> m_movetype_constructors {};
+            vector<int> m_movetypes {};
             vector<double> m_movetype_probs {};
             string m_num_walks_filename {""};
+            int m_exchange_mult {1};
 
             // Annealing simulation parameters
             double m_max_temp {};

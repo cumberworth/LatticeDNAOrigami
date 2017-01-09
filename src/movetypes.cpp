@@ -4,6 +4,7 @@
 #include <random>
 #include <set>
 
+#include "parser.h"
 #include "utility.h"
 #include "random_gens.h"
 #include "movetypes.h"
@@ -17,6 +18,7 @@ using namespace Movetypes;
 using namespace Utility;
 using namespace RandomGen;
 using namespace IdealRandomWalk;
+using namespace Parser;
 
 void MCMovetype::reset_origami() {
     
@@ -319,13 +321,14 @@ bool MetStapleExchangeMCMovetype::staple_insertion_accepted(int c_i_ident) {
     double extra_states {pow(6, extra_df)};
     double ratio {extra_states / Ni_new * boltz_factor};
 
-    // TEST
     // Correct for insertion into subset of volume
-    //m_modifier *= m_insertion_sites / m_origami_system.m_volume;
-    m_modifier /= 100;
+    m_modifier *= m_insertion_sites / m_origami_system.m_volume;
 
     // Correct for considering only 1 of staple length ways insertion could occur
     m_modifier *= staple_length;
+
+    // Exchange probability multiplier
+    m_modifier *= m_params.m_exchange_mult;
 
     return test_acceptance(ratio);
 }
@@ -340,9 +343,8 @@ bool MetStapleExchangeMCMovetype::staple_deletion_accepted(int c_i_ident) {
     double extra_states {pow(6, extra_df)};
     double ratio {Ni / extra_states * boltz_factor};
 
-    // TEST
-    //m_modifier *= m_origami_system.m_volume;
-    ratio *= m_origami_system.m_volume / 100;
+    // Exchange probability multiplier
+    m_modifier *= m_params.m_exchange_mult;
 
     return test_acceptance(ratio);
 }
@@ -1469,6 +1471,11 @@ vector<double> CTCBScaffoldRegrowthMCMovetype::calc_bias(
 }
 
 template<typename T>
-unique_ptr<MCMovetype> Movetypes::movetype_constructor(OrigamiSystem& origami_system, RandomGens& random_gens, IdealRandomWalks& ideal_random_walks) {
-    return unique_ptr<MCMovetype> {new T {origami_system, random_gens, ideal_random_walks}};
+unique_ptr<MCMovetype> Movetypes::movetype_constructor(
+        OrigamiSystem& origami_system,
+        RandomGens& random_gens,
+        IdealRandomWalks& ideal_random_walks,
+        InputParameters& params) {
+    return unique_ptr<MCMovetype> {new T {origami_system, random_gens,
+            ideal_random_walks, params}};
 }

@@ -5,7 +5,6 @@
 #include <boost/program_options.hpp>
 
 #include "parser.h"
-#include "movetypes.h"
 
 namespace po = boost::program_options;
 
@@ -13,7 +12,6 @@ using std::ifstream;
 using std::cout;
 
 using namespace Parser;
-using namespace Movetypes;
 
 vector<double> Parser::string_to_double_vector(string string_v) {
     string delim {" "};
@@ -92,6 +90,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("cb_staple_regrowth", po::value<string>(), "CB staple regrowth movetype probability")
         ("ctcb_scaffold_regrowth", po::value<string>(), "CTCB scaffold regrowth movetype probability")
         ("num_walks_filename", po::value<string>(), "Precalculated number of ideal random walks archive")
+        ("exchange_mult", po::value<double>(), "Exchange acceptance probability multiplier")
 
         // Annealing simulation parameters
         ("max_temp", po::value<double>(), "Maximum temperature for annealing")
@@ -163,40 +162,44 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         string unparsed_fraction {vm["orientation_rotation"].as<string>()};
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
-        m_movetype_constructors.push_back(movetype[1]);
+        m_movetypes.push_back(1);
     }
     if (vm.count("met_staple_exchange")) {
         string unparsed_fraction {vm["met_staple_exchange"].as<string>()};
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
-        m_movetype_constructors.push_back(movetype[2]);
+        m_movetypes.push_back(2);
     }
     if (vm.count("met_staple_regrowth")) {
         string unparsed_fraction {vm["met_staple_regrowth"].as<string>()};
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
-        m_movetype_constructors.push_back(movetype[3]);
+        m_movetypes.push_back(3);
     }
     if (vm.count("cb_staple_exchange")) {
         string unparsed_fraction {vm["cb_staple_exchange"].as<string>()};
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
-        m_movetype_constructors.push_back(movetype[4]);
+        m_movetypes.push_back(4);
     }
     if (vm.count("cb_staple_regrowth")) {
         string unparsed_fraction {vm["cb_staple_regrowth"].as<string>()};
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
-        m_movetype_constructors.push_back(movetype[5]);
+        m_movetypes.push_back(5);
     }
     if (vm.count("ctcb_scaffold_regrowth")) {
         string unparsed_fraction {vm["ctcb_scaffold_regrowth"].as<string>()};
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
-        m_movetype_constructors.push_back(movetype[6]);
+        m_movetypes.push_back(6);
     }
     if (vm.count("num_walks_filename")) {
         m_num_walks_filename = vm["num_walks_filename"].as<string>();
+    }
+
+    if (vm.count("exchange_mult")) {
+        m_exchange_mult = vm["exchange_mult"].as<double>();
     }
 
     // Annealing simulation parameters

@@ -16,6 +16,7 @@ met_staple_exchange=97/100
 cb_staple_regrowth=1/100
 ctcb_scaffold_regrowth=1/100
 num_walks_filename=tests/num_walks.arch
+exchange_mult=1000
 
 # Parallel tempering options
 temps=330 335 340 345 350 355 360

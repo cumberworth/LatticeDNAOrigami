@@ -8,6 +8,7 @@
 
 #include <memory>
 
+#include "parser.h"
 #include "random_gens.h"
 #include "origami_system.h"
 #include "ideal_random_walk.h"
@@ -16,6 +17,7 @@ using std::cout;
 using std::unique_ptr;
 using std::set;
 
+using namespace Parser;
 using namespace Origami;
 using namespace RandomGen;
 using namespace IdealRandomWalk;
@@ -29,10 +31,12 @@ namespace Movetypes {
             MCMovetype(
                     OrigamiSystem& origami_system,
                     RandomGens& random_gens,
-                    IdealRandomWalks& ideal_random_walks) :
+                    IdealRandomWalks& ideal_random_walks,
+                    InputParameters& params) :
                     m_origami_system {origami_system},
                     m_random_gens {random_gens},
-                    m_ideal_random_walks {ideal_random_walks} {};
+                    m_ideal_random_walks {ideal_random_walks},
+                    m_params {params} {}
             virtual ~MCMovetype() {};
 
             virtual bool attempt_move() = 0;
@@ -44,6 +48,7 @@ namespace Movetypes {
             OrigamiSystem& m_origami_system;
             RandomGens& m_random_gens;
             IdealRandomWalks& m_ideal_random_walks;
+            InputParameters& m_params;
             bool m_rejected {false};
 
             // Lists of modified domains for move reversal
@@ -182,11 +187,13 @@ namespace Movetypes {
             CBStapleExchangeMCMovetype(
                     OrigamiSystem& origami_system,
                     RandomGens& random_gens,
-                    IdealRandomWalks& ideal_random_walks) :
+                    IdealRandomWalks& ideal_random_walks,
+                    InputParameters& params) :
                     CBMCMovetype(
                             origami_system,
                             random_gens,
-                            ideal_random_walks) {}
+                            ideal_random_walks,
+                            params) {}
             bool attempt_move();
 
             string m_label() {return "CBStapleExchangeMCMovetype";};
@@ -296,11 +303,13 @@ namespace Movetypes {
             CTCBScaffoldRegrowthMCMovetype(
                     OrigamiSystem& origami_system,
                     RandomGens& random_gens,
-                    IdealRandomWalks& ideal_random_walks) :
+                    IdealRandomWalks& ideal_random_walks,
+                    InputParameters& params) :
                     CBMCMovetype(
                             origami_system,
                             random_gens,
-                            ideal_random_walks) {};
+                            ideal_random_walks,
+                            params) {};
             bool attempt_move();
 
             string m_label() {return "CTCBScaffoldRegrowthMCMovetype";};
@@ -321,11 +330,17 @@ namespace Movetypes {
     // Movetype construction
 
     template<typename T>
-    unique_ptr<MCMovetype> movetype_constructor(OrigamiSystem& origami_system,
-            RandomGens& random_gens, IdealRandomWalks& ideal_random_walks);
+    unique_ptr<MCMovetype> movetype_constructor(
+            OrigamiSystem& origami_system,
+            RandomGens& random_gens,
+            IdealRandomWalks& ideal_random_walks,
+            InputParameters& params);
 
-    using MovetypeConstructor = unique_ptr<MCMovetype> (*)(OrigamiSystem&
-            origami_system, RandomGens& random_gens, IdealRandomWalks& ideal_random_walks);
+    using MovetypeConstructor = unique_ptr<MCMovetype> (*)(
+            OrigamiSystem& origami_system,
+            RandomGens& random_gens,
+            IdealRandomWalks& ideal_random_walks,
+            InputParameters& params);
 
     struct Movetype {
         MovetypeConstructor identity {movetype_constructor<IdentityMCMovetype>};
