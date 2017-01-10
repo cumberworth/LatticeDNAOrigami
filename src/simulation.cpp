@@ -58,7 +58,7 @@ GCMCSimulation::~GCMCSimulation() {
 
 void GCMCSimulation::simulate(long int steps, int start_step) {
 
-    for (int step {start_step + 1}; step != (steps + start_step + 1); step ++) {
+    for (long int step {start_step + 1}; step != (steps + start_step + 1); step ++) {
         unique_ptr<MCMovetype> movetype {select_movetype()};
         bool accepted;
         accepted = movetype->attempt_move();
