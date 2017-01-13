@@ -37,7 +37,7 @@ namespace Files {
                     OrigamiSystem& origami_system);
             virtual ~OrigamiOutputFile() {};
 
-            virtual void write(int step) = 0;
+            virtual void write(long int step) = 0;
 
             const string m_filename;
             const int m_write_freq;
@@ -51,13 +51,13 @@ namespace Files {
         // Trajectory output file for simulation configurations
         public:
             using OrigamiOutputFile::OrigamiOutputFile;
-            void write(int step);
+            void write(long int step);
     };
 
     class OrigamiCountsOutputFile: public OrigamiOutputFile {
         public:
             using OrigamiOutputFile::OrigamiOutputFile;
-            void write(int step);
+            void write(long int step);
     };
 
 }
