@@ -58,11 +58,10 @@ GCMCSimulation::~GCMCSimulation() {
 
 void GCMCSimulation::simulate(long int steps, int start_step) {
 
-    for (long int step {start_step + 1000}; step != (steps + start_step + 1000); step ++) {
+    for (long int step {start_step + 1}; step != (steps + start_step + 1); step ++) {
         unique_ptr<MCMovetype> movetype {select_movetype()};
         bool accepted;
-        //accepted = movetype->attempt_move();
-        accepted = false;
+        accepted = movetype->attempt_move();
 
         if (not accepted) {
             movetype->reset_origami();
@@ -169,12 +168,17 @@ PTGCMCSimulation::PTGCMCSimulation(OrigamiSystem& origami_system,
             m_tempi_to_repi.push_back(i);
 
             // Calculate chemical potential of each replica if constant [staple]
-            double staple_u {m_origami_system.m_staple_u};
+            double staple_u;
             if (m_params.m_constant_staple_M) {
-                staple_u = molarity_to_chempot(m_params.m_staple_M, m_temp,
+                staple_u = molarity_to_chempot(m_params.m_staple_M, m_temps[i],
                         params.m_lattice_site_volume);
             }
-            m_staple_us.push_back(m_staple_u);
+            else {
+                staple_u = molarity_to_chempot(m_params.m_staple_M,
+                        params.m_temp_for_staple_u,
+                params.m_lattice_site_volume);
+            }
+            m_staple_us.push_back(staple_u);
         }
     }
 
@@ -187,10 +191,11 @@ PTGCMCSimulation::PTGCMCSimulation(OrigamiSystem& origami_system,
             if (m_params.m_constant_staple_M) {
                 m_staple_u = molarity_to_chempot(m_params.m_staple_M, m_temp,
                         params.m_lattice_site_volume);
-                m_origami_system.update_staple_u(m_staple_u);
             }
             else {
-                m_staple_u = m_origami_system.m_staple_u;
+                m_staple_u = molarity_to_chempot(m_params.m_staple_M,
+                        params.m_temp_for_staple_u,
+                        params.m_lattice_site_volume);
             }
         }
     }

@@ -397,10 +397,16 @@ void OrigamiSystem::update_temp(double temp) {
 
     // Recalculate system energy
     update_energy();
+
+    // Update volume such that it cancels fugacity
+    m_volume = exp(-m_staple_u / temp);
 }
 
 void OrigamiSystem::update_staple_u(double u) {
     m_staple_u = u;
+
+    // Update volume such that it cancels fugacity
+    m_volume = exp(-u / m_temp);
 }
 
 // Protected methods

@@ -39,7 +39,7 @@ namespace Parser {
             double m_cation_M {1};
 
             // Kelvin
-            double m_temp_for_staple_u {m_temp};
+            double m_temp_for_staple_u;
 
             // L
             double m_lattice_site_volume {1};

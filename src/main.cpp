@@ -41,9 +41,9 @@ int main(int argc, char* argv[]) {
             sequences,
             configs,
             params.m_temp,
-            staple_u,
-            params.m_cation_M,
             volume,
+            params.m_cation_M,
+            staple_u,
             cyclic,
             params.m_energy_filebase};
 
