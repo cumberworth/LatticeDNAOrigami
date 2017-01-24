@@ -38,6 +38,9 @@ namespace Parser {
             // mol/L
             double m_cation_M {1};
 
+            // Kelvin
+            double m_temp_for_staple_u {m_temp};
+
             // L
             double m_lattice_site_volume {1};
             bool m_cyclic {false};
@@ -65,6 +68,7 @@ namespace Parser {
             vector<double> m_temps {};
             int m_num_reps {};
             int m_exchange_interval {};
+            bool m_constant_staple_M {true};
 
             // Output options
             string m_output_filebase;

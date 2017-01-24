@@ -42,18 +42,18 @@ OrigamiSystem::OrigamiSystem(
         const vector<vector<string>>& sequences,
         const Chains& chains,
         double temp,
-        double lattice_site_volume,
+        double volume,
         double cation_M,
-        double staple_M,
+        double staple_u,
         bool cyclic,
         string energy_filebase) :
 
         m_identities {identities},
         m_sequences {sequences},
         m_temp {temp},
+        m_volume {volume},
         m_cation_M {cation_M},
-        m_staple_M {staple_M},
-    	m_volume {molarity_to_lattice_volume(m_staple_M, lattice_site_volume)},
+        m_staple_u {staple_u},
         m_cyclic {cyclic},
         m_energy_filebase {energy_filebase} {
 
@@ -377,6 +377,8 @@ void OrigamiSystem::centre() {
 
 void OrigamiSystem::update_temp(double temp) {
     m_temp = temp;
+
+    // Update hybridization and stacking energy tables
     if (m_hybridization_energy_tables.count(temp) == 0) {
         if (m_energy_filebase.size() != 0) {
             read_energies_from_file(temp);
@@ -392,7 +394,13 @@ void OrigamiSystem::update_temp(double temp) {
         m_hybridization_energies = m_hybridization_energy_tables[temp];
         m_stacking_energies = m_stacking_energy_tables[temp];
     }
+
+    // Recalculate system energy
     update_energy();
+}
+
+void OrigamiSystem::update_staple_u(double u) {
+    m_staple_u = u;
 }
 
 // Protected methods
@@ -999,9 +1007,20 @@ double Origami::molarity_to_lattice_volume(double molarity, double lattice_site_
     double sites_per_litre {1e-3 / lattice_site_volume};
 
     // u = KB*T*ln(p), where p is the number of particles per lattice site
-    // g = exp(1/(-KB*T)*u) = exp(ln(p)) = p
+    // z = exp(1/(KB*T)*u) = exp(ln(p)) = p
     // V * p = 1, V = 1 / p
     // So just convert molarity to number of particles per lattice site
     double V {1 / (molarity * Utility::NA / sites_per_litre)};
     return V;
+}
+
+double Origami::molarity_to_chempot(double molarity, double temp,
+        double lattice_site_volume) {
+    double sites_per_litre {1e-3 / lattice_site_volume};
+    double chempot {temp * log(molarity * Utility::NA / sites_per_litre)};
+    return chempot;
+}
+
+double Origami::chempot_to_volume(double chempot, double temp) {
+    return exp(-chempot / temp);
 }

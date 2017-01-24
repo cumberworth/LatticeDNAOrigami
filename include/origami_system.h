@@ -47,7 +47,7 @@ namespace Origami{
                     double temp,
                     double lattice_site_volume,
                     double cation_M,
-                    double staple_M,
+                    double staple_u,
                     bool cyclic,
                     string energy_filebase="");
             ~OrigamiSystem();
@@ -62,9 +62,9 @@ namespace Origami{
             const vector<vector<int>> m_identities;
             const vector<vector<string>> m_sequences;
             double m_temp;
+            double m_volume;
             const double m_cation_M;
-            const double m_staple_M;
-            const double m_volume;
+            double m_staple_u;
             const bool m_cyclic;
             const int c_scaffold {0};
     
@@ -143,6 +143,7 @@ namespace Origami{
 
             // System state modifiers
             void update_temp(double temp);
+            void update_staple_u(double u);
 
             // The index that should be assigned to the next added chain
             int m_current_c_i {};
@@ -253,6 +254,13 @@ namespace Origami{
     };
 
     double molarity_to_lattice_volume(double molarity, double lattice_site_volume);
+
+    // Convert concentration to reduced (u/kb) chemical potential
+    double molarity_to_chempot(
+            double molarity,
+            double temp,
+            double lattice_site_volume);
+    double chempot_to_volume(double chempot, double temp);
 }
 
 #endif // ORIGAMI_H

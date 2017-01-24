@@ -72,6 +72,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("temp", po::value<double>(), "System temperature (K)")
         ("staple_M", po::value<double>(), "Staple concentration (mol/L)")
         ("cation_M", po::value<double>(), "Cation concentration (mol/L)")
+        ("temp_for_staple_u", po::value<double>(), "Temperature to calculate chemical potential with")
         ("lattice_site_volume", po::value<double>(), "Volume per lattice site (L)")
         ("cyclic", po::value<bool>(), "Cyclic scaffold")
         ("energy_filebase", po::value<string>(), "Filebase for read/write of energies")
@@ -102,6 +103,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("temps", po::value<string>(), "Temperature list")
         ("num_reps", po::value<int>(), "Number of replicas")
         ("exchange_interval", po::value<int>(), "Steps between exchange attempts")
+        ("constant_staple_M", po::value<bool>(), "Hold staple concentration constant instead of chemical potential")
 
 
         // Output options
@@ -128,6 +130,9 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     }
     if (vm.count("cation_M")) {
         m_cation_M = vm["cation_M"].as<double>();
+    }
+    if (vm.count("temp_for_staple_u")) {
+        m_temp_for_staple_u = vm["temp_for_staple_u"].as<double>();
     }
     if (vm.count("lattice_site_volume")) {
         m_lattice_site_volume = vm["lattice_site_volume"].as<double>();
@@ -227,6 +232,9 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     if (vm.count("exchange_interval")) {
         m_exchange_interval = vm["exchange_interval"].as<int>();
     }
+    if (vm.count("constant_staple_M")) {
+        m_constant_staple_M = vm["constant_staple_M"].as<bool>();
+    }
 
     // Output options
     if (vm.count("output_filebase")) {
@@ -238,6 +246,5 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     if (vm.count("counts_output_freq")) {
         m_counts_output_freq = vm["counts_output_freq"].as<int>();
     }
-
 
 }

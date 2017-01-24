@@ -3,6 +3,7 @@ origami_input_filename=tests/snodin_unbound.json
 temp=320
 staple_M=1e-6
 cation_M=1
+temp_for_staple_u=330
 lattice_site_volume=4e-28
 energy_filebase=tests/snodin
 
@@ -11,19 +12,20 @@ simulation_type=parallel_tempering
 steps=100000000
 logging_freq=100000
 centering_freq=100000
-orientation_rotation=1/100
-met_staple_exchange=97/100
-cb_staple_regrowth=1/100
-ctcb_scaffold_regrowth=1/100
+orientation_rotation=1/4
+met_staple_exchange=1/4
+cb_staple_regrowth=1/4
+ctcb_scaffold_regrowth=1/4
 num_walks_filename=tests/num_walks.arch
-exchange_mult=1000
+exchange_mult=1
 
 # Parallel tempering options
-temps=330 335 340 345 350 355 360
-num_reps=7
-exchange_interval=10000000
+temps=330 340
+num_reps=2
+exchange_interval=100000
+constant_staple_M=false
 
 # Output options
-output_filebase=test_ptmc
+output_filebase=tests/test_ptmc
 configs_output_freq=100000
 counts_output_freq=100000

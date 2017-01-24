@@ -77,7 +77,7 @@ OrigamiOutputFile::OrigamiOutputFile(
     m_file.open(m_filename);
 }
 
-void OrigamiTrajOutputFile::write(int step) {
+void OrigamiTrajOutputFile::write(long int step) {
     m_file << step << "\n";
     for (auto chain: m_origami_system.get_chains()) {
         m_file << chain[0]->m_c << " " << chain[0]->m_c_ident << "\n";
@@ -97,7 +97,7 @@ void OrigamiTrajOutputFile::write(int step) {
     m_file << "\n";
 }
 
-void OrigamiCountsOutputFile::write(int step) {
+void OrigamiCountsOutputFile::write(long int step) {
     m_file << step << " ";
     m_file << m_origami_system.num_staples() << " ";
     m_file << m_origami_system.num_unique_staples() << " ";

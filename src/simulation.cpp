@@ -58,10 +58,11 @@ GCMCSimulation::~GCMCSimulation() {
 
 void GCMCSimulation::simulate(long int steps, int start_step) {
 
-    for (long int step {start_step + 1}; step != (steps + start_step + 1); step ++) {
+    for (long int step {start_step + 1000}; step != (steps + start_step + 1000); step ++) {
         unique_ptr<MCMovetype> movetype {select_movetype()};
         bool accepted;
-        accepted = movetype->attempt_move();
+        //accepted = movetype->attempt_move();
+        accepted = false;
 
         if (not accepted) {
             movetype->reset_origami();
@@ -161,20 +162,39 @@ PTGCMCSimulation::PTGCMCSimulation(OrigamiSystem& origami_system,
             m_origami_system);
     m_logging_stream = new ofstream {output_filebase + ".out"};
 
-    // Initialize temp of each replica
-    for (int i {0}; i != m_num_reps; i++) {
-        if (m_rank == i) {
-            m_temp = params.m_temps[i];
-        }
-    }
-
-    // Initialize temperature and temperature index to replica index vectors
+    // Initialize temp, u, and temperature index to replica index vectors
     if (m_rank == m_master_rep) {
         m_temps = params.m_temps;
         for (int i {0}; i != m_num_reps; i++) {
             m_tempi_to_repi.push_back(i);
+
+            // Calculate chemical potential of each replica if constant [staple]
+            double staple_u {m_origami_system.m_staple_u};
+            if (m_params.m_constant_staple_M) {
+                staple_u = molarity_to_chempot(m_params.m_staple_M, m_temp,
+                        params.m_lattice_site_volume);
+            }
+            m_staple_us.push_back(m_staple_u);
         }
     }
+
+    // Initialize temp and u of each replica
+    for (int i {0}; i != m_num_reps; i++) {
+        if (m_rank == i) {
+            m_temp = params.m_temps[i];
+
+            // Update chemical potential of each replica if constant [staple]
+            if (m_params.m_constant_staple_M) {
+                m_staple_u = molarity_to_chempot(m_params.m_staple_M, m_temp,
+                        params.m_lattice_site_volume);
+                m_origami_system.update_staple_u(m_staple_u);
+            }
+            else {
+                m_staple_u = m_origami_system.m_staple_u;
+            }
+        }
+    }
+
 
     // Initalize swap file
     if (m_rank == m_master_rep) {
@@ -193,6 +213,7 @@ void PTGCMCSimulation::run() {
     vector<int> swap_count(m_num_reps - 1, 0);
     for (int swap_i {1}; swap_i != m_swaps + 1; swap_i++) {
         m_origami_system.update_temp(m_temp);
+        m_origami_system.update_staple_u(m_staple_u);
         simulate(m_exchange_interval, step);
         step += m_exchange_interval;
         if (m_rank != m_master_rep) {
@@ -212,8 +233,11 @@ void PTGCMCSimulation::run() {
 void PTGCMCSimulation::send_and_recieve_exchange_info(int swap_i) {
 
     double energy {m_origami_system.energy()};
+    int N {m_origami_system.num_staples()};
     m_world.send(m_master_rep, swap_i, energy);
+    m_world.send(m_master_rep, swap_i, N);
     m_world.recv(m_master_rep, swap_i, m_temp);
+    m_world.recv(m_master_rep, swap_i, m_staple_u);
 }
 
 void PTGCMCSimulation::attempt_exchange(int swap_i,
@@ -221,10 +245,14 @@ void PTGCMCSimulation::attempt_exchange(int swap_i,
 
     // Collect results and add own
     vector<double> energies {m_origami_system.energy()};
+    vector<int> staples {m_origami_system.num_staples()};
     for (int rep_i {1}; rep_i != m_num_reps; rep_i++) {
         double energy;
+        int N;
         m_world.recv(rep_i, swap_i, energy);
+        m_world.recv(rep_i, swap_i, N);
         energies.push_back(energy);
+        staples.push_back(N);
     }
 
     // Iterate through pairs in current set and attempt swap
@@ -235,13 +263,18 @@ void PTGCMCSimulation::attempt_exchange(int swap_i,
         // Collect values
         double temp1 {m_temps[i]};
         double temp2 {m_temps[i + 1]};
+        double staple_u1 {m_staple_us[i]};
+        double staple_u2 {m_staple_us[i + 1]};
         int repi1 {m_tempi_to_repi[i]};
         int repi2 {m_tempi_to_repi[i + 1]};
 
         // Energies are actually E/B, so multiply by T
         double energy1 {energies[i] * temp1};
         double energy2 {energies[i + 1] * temp2};
-        bool accept {test_acceptance(temp1, temp2, energy1, energy2)};
+        int N1 {staples[i]};
+        int N2 {staples[i + 1]};
+        bool accept {test_acceptance(temp1, temp2, staple_u1, staple_u2,
+                energy1, energy2, N1, N2)};
         if (accept) {
             swap_count[i]++;
             int repi1_old {repi1};
@@ -252,24 +285,29 @@ void PTGCMCSimulation::attempt_exchange(int swap_i,
         }
     }
 
-    // Send temps
+    // Send temps and us
     for (int temp_i {0}; temp_i != m_num_reps; temp_i++) {
         int rep_i {m_tempi_to_repi[temp_i]};
         if (rep_i == m_master_rep) {
             m_temp = m_temps[temp_i];
+            m_staple_u = m_staple_us[temp_i];
         }
         else {
             m_world.send(rep_i, swap_i, m_temps[temp_i]);
+            m_world.send(rep_i, swap_i, m_staple_us[temp_i]);
         }
     }
 }
 
-bool PTGCMCSimulation::test_acceptance(double temp1, double temp2, double energy1,
-        double energy2) {
+bool PTGCMCSimulation::test_acceptance(double temp1, double temp2,
+        double staple_u1, double staple_u2, double energy1, double energy2,
+        int N1, int N2) {
 
     double DB {1/temp2 - 1/temp1};
     double DE {energy2 - energy1};
-    double p_accept {min({1.0, exp(-DB*DE)})};
+    int DN {N2 - N1};
+    double DBU {staple_u2 / temp2 - staple_u1 / temp1};
+    double p_accept {min({1.0, exp(DB*DE - DBU * DN)})};
     bool accept;
     if (p_accept == 1) {
         accept = true;

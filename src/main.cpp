@@ -33,14 +33,17 @@ int main(int argc, char* argv[]) {
         //OrigamiInputFile origami_input {params.m_origami_input_filename};
     }
     bool cyclic {origami_input.m_cyclic};
+    double staple_u {molarity_to_chempot(params.m_staple_M,
+            params.m_temp_for_staple_u, params.m_lattice_site_volume)};
+    double volume {chempot_to_volume(staple_u, params.m_temp)};
     OrigamiSystem origami {
             identities,
             sequences,
             configs,
             params.m_temp,
-            params.m_staple_M,
+            staple_u,
             params.m_cation_M,
-            params.m_lattice_site_volume,
+            volume,
             cyclic,
             params.m_energy_filebase};
 

@@ -97,12 +97,14 @@ namespace Simulation {
             ~PTGCMCSimulation() {delete m_logging_stream;}
             void run();
 
-        private:
+        protected:
             mpi::environment m_env;
             mpi::communicator m_world;
             int m_rank {m_world.rank()};
             int m_master_rep {0};
             double m_temp;
+            double m_staple_u;
+            double m_volume;
             int m_swaps;
             int m_num_reps;
             int m_exchange_interval;
@@ -110,6 +112,7 @@ namespace Simulation {
             // Data only filled in master
             ofstream m_swapfile;
             vector<double> m_temps;
+            vector<double> m_staple_us;
             vector<int> m_tempi_to_repi;
 
             void send_and_recieve_exchange_info(int swap_I);
@@ -120,8 +123,12 @@ namespace Simulation {
             bool test_acceptance(
                     double temp1,
                     double temp2,
+                    double staple_u1,
+                    double staple_u2,
                     double energy1,
-                    double energy2);
+                    double energy2,
+                    int N1,
+                    int N2);
             void write_swap_entry();
             void write_acceptance_freqs(
                     vector<int> attempt_count,
@@ -130,4 +137,3 @@ namespace Simulation {
 }
 
 #endif // SIMULATION_H
-
