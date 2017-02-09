@@ -115,7 +115,12 @@ namespace Simulation {
             vector<double> m_staple_us;
             vector<int> m_tempi_to_repi;
 
-            void send_and_recieve_exchange_info(int swap_I);
+            void slave_send_and_recieve(int swap_i);
+            void master_receive(
+                        int swap_i,
+                        vector<double>& energies,
+                        vector<int>& staples);
+            void master_send(int swap_i);
             void attempt_exchange(
                     int swap_i,
                     vector<int>& attempt_count,

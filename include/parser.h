@@ -26,6 +26,9 @@ namespace Parser {
         public:
             InputParameters(int argc, char* argv[]);
 
+            // This constructor is for testing purposes
+            InputParameters() {};
+
             // System input parameters
             string m_origami_input_filename;
 
@@ -38,7 +41,7 @@ namespace Parser {
             // mol/L
             double m_cation_M {1};
 
-            // Kelvin
+            // Kelvin, default set to m_temp in initialization
             double m_temp_for_staple_u;
 
             // L

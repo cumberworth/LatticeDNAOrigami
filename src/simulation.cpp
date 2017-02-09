@@ -213,52 +213,94 @@ PTGCMCSimulation::PTGCMCSimulation(OrigamiSystem& origami_system,
 }
 
 void PTGCMCSimulation::run() {
+    // Run temperature/chemical potential parallel tempering grand cannonical monte carlo
     int step {0};
+
+    // Keep track of number of attempted and succesful swaps
     vector<int> attempt_count(m_num_reps - 1, 0);
     vector<int> swap_count(m_num_reps - 1, 0);
     for (int swap_i {1}; swap_i != m_swaps + 1; swap_i++) {
+
+        // Update origami system with current replica's temp. and chem. pot.
         m_origami_system.update_temp(m_temp);
         m_origami_system.update_staple_u(m_staple_u);
+
+        // Run the simulation
         simulate(m_exchange_interval, step);
         step += m_exchange_interval;
+
+        // Send information from slave nodes to master nodes
         if (m_rank != m_master_rep) {
-            send_and_recieve_exchange_info(swap_i);
+            slave_send_and_recieve(swap_i);
         }
+
+        // Attempt exchanges between replicas
         else {
             attempt_exchange(swap_i, attempt_count, swap_count);
             write_swap_entry();
         }
     }
+
+    // Write end-of-simulation data
     if (m_rank == m_master_rep) {
         write_acceptance_freqs(attempt_count, swap_count);
         m_swapfile.close();
     }
 }
 
-void PTGCMCSimulation::send_and_recieve_exchange_info(int swap_i) {
+void PTGCMCSimulation::slave_send_and_recieve(int swap_i) {
+    // Send energy and num staples to master and receive updated temp and u
 
     double energy {m_origami_system.energy()};
     int N {m_origami_system.num_staples()};
+
+    // Send energy and number of particles to master rep
     m_world.send(m_master_rep, swap_i, energy);
     m_world.send(m_master_rep, swap_i, N);
+
+    // Receive temperature and chemical potential from master rep
     m_world.recv(m_master_rep, swap_i, m_temp);
     m_world.recv(m_master_rep, swap_i, m_staple_u);
 }
 
-void PTGCMCSimulation::attempt_exchange(int swap_i,
-        vector<int>& attempt_count, vector<int>& swap_count) {
-
-    // Collect results and add own
-    vector<double> energies {m_origami_system.energy()};
-    vector<int> staples {m_origami_system.num_staples()};
+void PTGCMCSimulation::master_receive(int swap_i, vector<double>& energies,
+        vector<int>& staples) {
+    // Receive energies and number of staples from slaves
     for (int rep_i {1}; rep_i != m_num_reps; rep_i++) {
         double energy;
         int N;
         m_world.recv(rep_i, swap_i, energy);
         m_world.recv(rep_i, swap_i, N);
+
+        // Add master values
         energies.push_back(energy);
         staples.push_back(N);
     }
+}
+
+void PTGCMCSimulation::master_send(int swap_i) {
+    // Send temperatures and chemical potentials to slaves
+    for (int temp_i {0}; temp_i != m_num_reps; temp_i++) {
+        int rep_i {m_tempi_to_repi[temp_i]};
+        if (rep_i == m_master_rep) {
+            m_temp = m_temps[temp_i];
+            m_staple_u = m_staple_us[temp_i];
+        }
+        else {
+            m_world.send(rep_i, swap_i, m_temps[temp_i]);
+            m_world.send(rep_i, swap_i, m_staple_us[temp_i]);
+        }
+    }
+}
+
+void PTGCMCSimulation::attempt_exchange(int swap_i,
+        vector<int>& attempt_count, vector<int>& swap_count) {
+    // Alternates between two sets of pairs, allows for changes in T, u, and N
+
+    // Collect results from slaves
+    vector<double> energies {m_origami_system.energy()};
+    vector<int> staples {m_origami_system.num_staples()};
+    master_receive(swap_i, energies, staples);
 
     // Iterate through pairs in current set and attempt swap
     int swap_set {swap_i % 2};
@@ -274,12 +316,14 @@ void PTGCMCSimulation::attempt_exchange(int swap_i,
         int repi2 {m_tempi_to_repi[i + 1]};
 
         // Energies are actually E/B, so multiply by T
-        double energy1 {energies[i] * temp1};
-        double energy2 {energies[i + 1] * temp2};
-        int N1 {staples[i]};
-        int N2 {staples[i + 1]};
+        double energy1 {energies[repi1] * temp1};
+        double energy2 {energies[repi2] * temp2};
+        int N1 {staples[repi1]};
+        int N2 {staples[repi2]};
         bool accept {test_acceptance(temp1, temp2, staple_u1, staple_u2,
                 energy1, energy2, N1, N2)};
+
+        // If accepted swap temperatures and chem. pot.s
         if (accept) {
             swap_count[i]++;
             int repi1_old {repi1};
@@ -290,18 +334,8 @@ void PTGCMCSimulation::attempt_exchange(int swap_i,
         }
     }
 
-    // Send temps and us
-    for (int temp_i {0}; temp_i != m_num_reps; temp_i++) {
-        int rep_i {m_tempi_to_repi[temp_i]};
-        if (rep_i == m_master_rep) {
-            m_temp = m_temps[temp_i];
-            m_staple_u = m_staple_us[temp_i];
-        }
-        else {
-            m_world.send(rep_i, swap_i, m_temps[temp_i]);
-            m_world.send(rep_i, swap_i, m_staple_us[temp_i]);
-        }
-    }
+    // Send updated temperatures and chem. pots to slaves
+    master_send(swap_i);
 }
 
 bool PTGCMCSimulation::test_acceptance(double temp1, double temp2,
@@ -312,7 +346,7 @@ bool PTGCMCSimulation::test_acceptance(double temp1, double temp2,
     double DE {energy2 - energy1};
     int DN {N2 - N1};
     double DBU {staple_u2 / temp2 - staple_u1 / temp1};
-    double p_accept {min({1.0, exp(DB*DE - DBU * DN)})};
+    double p_accept {min({1.0, exp(-DB*DE - DBU*DN)})};
     bool accept;
     if (p_accept == 1) {
         accept = true;
@@ -354,6 +388,7 @@ void PTGCMCSimulation::write_acceptance_freqs(vector<int> attempt_count,
 vector<OrigamiOutputFile*> Simulation::setup_output_files(
         InputParameters& params, string output_filebase,
         OrigamiSystem& origami) {
+    // Setup trajectory and staple/domain count file
 
     vector<OrigamiOutputFile*> outs {};
     if (params.m_configs_output_freq != 0) {

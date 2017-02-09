@@ -929,6 +929,7 @@ SCENARIO("Example moves work as expected") {
     bool cyclic {false};
     RandomGens random_gens {};
     IdealRandomWalks ideal_random_walks {};
+    InputParameters params {};
 
     // Coordination number of lattice
     double k {6};
@@ -1079,7 +1080,8 @@ SCENARIO("Example moves work as expected") {
             origami.set_domain_config(staple1_d_2, {2, 0, 0}, {1, 0, 0});
 
             // Setup movetype
-            CBStapleRegrowthMCMovetype movetype {origami, random_gens, ideal_random_walks};
+            CBStapleRegrowthMCMovetype movetype {origami, random_gens,
+                    ideal_random_walks, params};
 
             // Grow staple
             // Set growthpoint
@@ -1122,7 +1124,8 @@ SCENARIO("Example moves work as expected") {
             origami.set_domain_config(staple2_d_2, {1, 0, 0}, {0, -1, 0});
 
             // Setup movetype
-            CTCBScaffoldRegrowthMCMovetype movetype {origami, random_gens, ideal_random_walks};
+            CTCBScaffoldRegrowthMCMovetype movetype {origami, random_gens,
+                    ideal_random_walks, params};
             vector<Domain*> scaffold_domains {&scaffold_d_2, &scaffold_d_3, &scaffold_d_4};
             movetype.m_constraintpoints.calculate_constraintpoints(scaffold_domains);
             set<int> staples {movetype.m_constraintpoints.staples_to_be_regrown()};
@@ -1194,6 +1197,7 @@ SCENARIO("Connector staples are correctly identified") {
     bool cyclic {false};
     RandomGens random_gens {};
     IdealRandomWalks ideal_random_walks {};
+    InputParameters params {};
     GIVEN("Four domain loop system") {
         // Scaffold: 1 2 3 4, staple 1: 1 4, staple 2: 3 2
 
@@ -1249,7 +1253,8 @@ SCENARIO("Connector staples are correctly identified") {
         origami.unassign_domain(staple13_d_1);
         origami.unassign_domain(staple13_d_2);
 
-        IdentityMCMovetype movetype {origami, random_gens, ideal_random_walks};
+        IdentityMCMovetype movetype {origami, random_gens, ideal_random_walks,
+                params};
 
         WHEN("Case 1") {
             origami.set_domain_config(staple11_d_1, {0, 1, 0}, {0, 1, 0});
@@ -1295,6 +1300,7 @@ SCENARIO("Origami system can reset after move") {
     bool cyclic {false};
     RandomGens random_gens {};
     IdealRandomWalks ideal_random_walks {};
+    InputParameters params {};
 
     GIVEN("Four domain loop system") {
         // Scaffold: 1 2 3 4, staple 1: 1 4, staple 2: 3 2
@@ -1346,7 +1352,8 @@ SCENARIO("Origami system can reset after move") {
 
         WHEN("Met staple exchanges are carried out") {
             for (int i {0}; i != 10; i++) {
-                MetStapleExchangeMCMovetype movetype {origami, random_gens, ideal_random_walks};
+                MetStapleExchangeMCMovetype movetype {origami, random_gens, ideal_random_walks,
+                        params};
                 Chains original_chains {origami.chains()};
                 double original_energy {origami.energy()};
                 bool accepted {movetype.attempt_move()};
@@ -1363,7 +1370,8 @@ SCENARIO("Origami system can reset after move") {
         }
         WHEN("CB staple regrowths are carried out") {
             for (int i {0}; i != 10; i++) {
-                CBStapleRegrowthMCMovetype movetype {origami, random_gens, ideal_random_walks};
+                CBStapleRegrowthMCMovetype movetype {origami, random_gens, ideal_random_walks,
+                        params};
                 Chains original_chains {origami.chains()};
                 double original_energy {origami.energy()};
                 bool accepted {movetype.attempt_move()};
@@ -1380,7 +1388,8 @@ SCENARIO("Origami system can reset after move") {
         }
         WHEN("CTCB scaffold regrowths are carried out") {
             for (int i {0}; i != 10; i++) {
-                CTCBScaffoldRegrowthMCMovetype movetype {origami, random_gens, ideal_random_walks};
+                CTCBScaffoldRegrowthMCMovetype movetype {origami, random_gens,
+                        ideal_random_walks, params};
                 Chains original_chains {origami.chains()};
                 double original_energy {origami.energy()};
                 bool accepted {movetype.attempt_move()};
@@ -1398,6 +1407,20 @@ SCENARIO("Origami system can reset after move") {
     }
 }
 
+SCENARIO("Simulation methods are run") {
+    //setup shared objects
+    GIVEN("Constant T simulation is run") {
+        //very simple tests that it runs
+    }
+    GIVEN("T annealing simulation is run") {
+        //check that t actually increments correctly
+        //check start and end points
+    }
+    GIVEN("PTMC simulation is run") {
+        //check that exchange probability calculated matches expected with set t, u, n, and e diff
+    }
+}
+
 SCENARIO("Methods with random elements give correct distribution") {
     double eps {0.01};
     double temp {300};
@@ -1407,6 +1430,7 @@ SCENARIO("Methods with random elements give correct distribution") {
     bool cyclic {false};
     RandomGens random_gens {};
     IdealRandomWalks ideal_random_walks {};
+    InputParameters params {};
 
     GIVEN("Two domain one staple origami") {
         string system_filename {"tests/two_domain.json"};
@@ -1432,7 +1456,8 @@ SCENARIO("Methods with random elements give correct distribution") {
         Domain& staple_d_1 {*origami.get_domain(1, 0)};
         Domain& staple_d_2 {*origami.get_domain(1, 1)};
 
-        IdentityMCMovetype movetype {origami, random_gens, ideal_random_walks};
+        IdentityMCMovetype movetype {origami, random_gens, ideal_random_walks,
+                params};
 
         GIVEN("Uniform distribution for two domain one staple system domain selection.") {
             unordered_map<pair<int, int>, double> exp_dist {{{0, 0}, 0.25}, {{0, 1}, 0.25}, 
@@ -1492,7 +1517,8 @@ SCENARIO("Methods with random elements give correct distribution") {
             unordered_map<VectorThree, double> calc_dist {};
             int accepted_moves {0};
             for (int i {0}; i != 100000; i++) {
-                CTCBScaffoldRegrowthMCMovetype ct_movetype {origami, random_gens, ideal_random_walks};
+                CTCBScaffoldRegrowthMCMovetype ct_movetype {origami, random_gens,
+                        ideal_random_walks, params};
                 bool accepted {ct_movetype.attempt_move()};
                 if (not accepted) {
                     ct_movetype.reset_origami();
