@@ -58,8 +58,9 @@ OrigamiSystem::OrigamiSystem(
         m_energy_filebase {energy_filebase} {
 
     initialize_complementary_associations();
-    initialize_config(chains);
-    update_temp(m_temp);
+    initialize_domains(chains);
+    get_energies();
+    set_all_domains();
 }
 
 OrigamiSystem::~OrigamiSystem() {
@@ -131,6 +132,28 @@ bool OrigamiSystem::check_domains_complementary(Domain& cd_i, Domain& cd_j) {
     return comp;
 }
 
+ThermoOfHybrid OrigamiSystem::enthalpy_and_entropy() {
+    ThermoOfHybrid DH_DS_total {0, 0};
+    set<Domain*> accounted_domains; // Domains whose energy is already counted
+    for (auto chain: m_domains) {
+        for (auto domain: chain) {
+            Occupancy state {domain->m_state};
+            if (state == Occupancy::bound or state == Occupancy::misbound) {
+                if (find(accounted_domains.begin(), accounted_domains.end(),
+                            domain) != accounted_domains.end()) {
+                    Domain& bound_domain {*domain->m_bound_domain};
+                    DH_DS_total.enthalpy += hybridization_enthalpy(*domain,
+                            bound_domain);
+                    DH_DS_total.entropy += hybridization_entropy(*domain,
+                            bound_domain);
+                    accounted_domains.insert(domain->m_bound_domain);
+                }
+            }
+        }
+    }
+    return DH_DS_total;
+}
+
 void OrigamiSystem::check_all_constraints() {
 
     // Unassign everything (and check nothing was already unassigned)
@@ -150,6 +173,7 @@ void OrigamiSystem::check_all_constraints() {
     double eps {0.000001};
     if (m_energy < -eps or m_energy > eps) {
         cout << "Inconsistency in system energy\n";
+        cout << m_energy << "\n";
         throw OrigamiMisuse {};
     }
     else {
@@ -159,17 +183,7 @@ void OrigamiSystem::check_all_constraints() {
     }
 
     // Reset configuration
-    for (auto chain: m_domains) {
-        for (auto domain: chain) {
-            set_domain_config(*domain, domain->m_pos, domain->m_ore);
-            if (m_constraints_violated) {
-                cout << "b\n";
-                set_domain_config(*domain, domain->m_pos, domain->m_ore);
-                throw OrigamiMisuse {};
-            }
-        }
-    }
-    check_distance_constraints();
+    set_all_domains();
 }
 
 double OrigamiSystem::check_domain_constraints(
@@ -375,18 +389,30 @@ void OrigamiSystem::centre() {
     m_position_occupancies = position_occupancies;
 }
 
+void OrigamiSystem::set_all_domains() {
+    // Set all domains and check all constraints
+    for (auto chain: m_domains) {
+        for (auto domain: chain) {
+            set_domain_config(*domain, domain->m_pos, domain->m_ore);
+            if (m_constraints_violated) {
+                cout << "b\n";
+                set_domain_config(*domain, domain->m_pos, domain->m_ore);
+                throw OrigamiMisuse {};
+            }
+        }
+    }
+    check_distance_constraints();
+}
+
 void OrigamiSystem::update_temp(double temp) {
     m_temp = temp;
 
     // Update hybridization and stacking energy tables
     if (m_hybridization_energy_tables.count(temp) == 0) {
-        if (m_energy_filebase.size() != 0) {
-            read_energies_from_file(temp);
-        }
-        else {
-            calculate_energies();
-        }
+        get_energies();
         m_hybridization_energy_tables[temp] = m_hybridization_energies;
+        m_hybridization_enthalpy_tables[temp] = m_hybridization_enthalpies;
+        m_hybridization_entropy_tables[temp] = m_hybridization_entropies;
         m_stacking_energy_tables[temp] = m_stacking_energies;
     }
     else {
@@ -443,7 +469,22 @@ void OrigamiSystem::initialize_complementary_associations() {
     }
 }
 
-void OrigamiSystem::calculate_energies() {
+void OrigamiSystem::get_energies() {
+    // Get S, H, and G for all possible interactions and store
+    if (m_energy_filebase.size() != 0) {
+        if (not read_energies_from_file()) {
+            calc_energies();
+        }
+    }
+    else {
+        calc_energies();
+    }
+}
+
+void OrigamiSystem::calc_energies() {
+    // Calculate S, H, and G for all possible interactions and store
+
+    // Loop through all pairs of sequences
     for (size_t c_i {0}; c_i != m_sequences.size(); c_i++) {
         for (size_t c_j {0}; c_j != m_sequences.size(); c_j++) {
             size_t c_i_length {m_sequences[c_i].size()};
@@ -454,40 +495,54 @@ void OrigamiSystem::calculate_energies() {
                     int d_j_ident {m_identities[c_j][d_j]};
                     string seq_i {m_sequences[c_i][d_i]};
                     string seq_j {m_sequences[c_j][d_j]};
-                    
                     pair<int, int> key {d_i_ident, d_j_ident};
-
-                    // Hybridization energies
-                    vector<string> comp_seqs {find_longest_contig_complement(
-                            seq_i, seq_j)};
-                    double energy {0};
-                    int N {0};
-                    if (comp_seqs.size() == 0) {
-                        energy = 0;
-                    }
-                    else {
-                        for (auto comp_seq: comp_seqs) {
-                            energy += calc_hybridization_energy(
-                                   comp_seq, m_temp, m_cation_M);
-                            N++;
-                        }
-                        energy /= N;
-                    }
-                    m_hybridization_energies[key] = energy;
-
-                    // Stacking energies
-                    double s_energy {0};
-                    s_energy += calc_stacking_energy(seq_i, seq_j, m_temp,
-                            m_cation_M);
-                    m_stacking_energies[key] = s_energy;
+                    calc_energy(seq_i, seq_j, key);
                 }
             }
         }
     }
 }
 
-void OrigamiSystem::initialize_config(Chains chains) {
-    // Must still run check_all_constraints
+void OrigamiSystem::calc_energy(string seq_i, string seq_j,
+        pair<int, int> key) {
+    // Calculate S, H, and G for pair of sequences and store
+
+    // Hybridization values
+    vector<string> comp_seqs {find_longest_contig_complement(seq_i, seq_j)};
+    double H_hyb {0};
+    double S_hyb {0};
+    int N {0};
+    
+    // No interaction if no complementary sequence
+    if (comp_seqs.size() == 0) {
+        H_hyb = 0;
+        S_hyb = 0;
+    }
+
+    // Take average value of H and S of all equal length comp seqs
+    else {
+        for (auto comp_seq: comp_seqs) {
+            ThermoOfHybrid DH_DS {calc_unitless_hybridization_thermo(comp_seq,
+                    m_temp, m_cation_M)};
+            H_hyb += DH_DS.enthalpy;
+            S_hyb += DH_DS.entropy;
+            N++;
+        }
+        H_hyb /= N;
+        S_hyb /= N;
+    }
+    m_hybridization_enthalpies[key] = H_hyb;
+    m_hybridization_entropies[key] = S_hyb;
+    m_hybridization_energies[key] = H_hyb + S_hyb;
+
+    // Stacking energies
+    double s_energy {0};
+    s_energy += calc_stacking_energy(seq_i, seq_j, m_temp, m_cation_M);
+    m_stacking_energies[key] = s_energy;
+}
+
+void OrigamiSystem::initialize_domains(Chains chains) {
+    // Set domain vectors (but no constraint check/state setting)
 
     // Create domain objects
     for (size_t i {0}; i != chains.size(); i++) {
@@ -505,7 +560,7 @@ void OrigamiSystem::initialize_config(Chains chains) {
         }
     }
 
-    // Set configuration of domains
+    // Set position and orientation of domains
     for (size_t i {0}; i != chains.size(); i++) {
         Chain chain {chains[i]};
         int c_i {chain.index};
@@ -520,6 +575,7 @@ void OrigamiSystem::initialize_config(Chains chains) {
         }
     }
 
+    // Current unique chain index
     m_current_c_i = *max_element(m_chain_identities.begin(),
             m_chain_identities.end());
 }
@@ -557,6 +613,18 @@ double OrigamiSystem::hybridization_energy(const Domain& cd_i,
         const Domain& cd_j) const {
     pair<int, int> key {cd_i.m_d_ident, cd_j.m_d_ident};
     return m_hybridization_energies.at(key);
+}
+
+double OrigamiSystem::hybridization_enthalpy(const Domain& cd_i,
+        const Domain& cd_j) const {
+    pair<int, int> key {cd_i.m_d_ident, cd_j.m_d_ident};
+    return m_hybridization_enthalpies.at(key);
+}
+
+double OrigamiSystem::hybridization_entropy(const Domain& cd_i,
+        const Domain& cd_j) const {
+    pair<int, int> key {cd_i.m_d_ident, cd_j.m_d_ident};
+    return m_hybridization_entropies.at(key);
 }
 
 double OrigamiSystem::stacking_energy(const Domain& cd_i, const Domain& cd_j) const {
@@ -636,43 +704,60 @@ void OrigamiSystem::update_occupancies(Domain& cd_i, VectorThree pos) {
     }
 }
 
-void OrigamiSystem::read_energies_from_file(double temp) {
-    string temp_string {"_" + std::to_string(static_cast<int>(temp))};
+bool OrigamiSystem::read_energies_from_file() {
+    // Read energies from file, return false if not present
+    string temp_string {"_" + std::to_string(static_cast<int>(m_temp))};
+
+    // Hybridization energies
     string henergy_filename {m_energy_filebase + temp_string + ".hene"};
+
+    // Stacking energies
     string senergy_filename {m_energy_filebase + temp_string + ".sene"};
     std::ifstream henergy_file {henergy_filename};
     std::ifstream senergy_file {senergy_filename};
-    if (henergy_file and senergy_file) {
+    bool files_present {henergy_file and senergy_file};
+    if (files_present) {
         boost::archive::text_iarchive h_arch {henergy_file};
         h_arch >> m_hybridization_energies;
         boost::archive::text_iarchive s_arch {senergy_file};
         s_arch >> m_stacking_energies;
     }
-    else {
-        calculate_energies();
-        std::ofstream henergy_file {henergy_filename};
-        boost::archive::text_oarchive h_arch {henergy_file};
-        h_arch << m_hybridization_energies;
-        std::ofstream senergy_file {senergy_filename};
-        boost::archive::text_oarchive s_arch {senergy_file};
-        s_arch << m_stacking_energies;
-    }
+
+    return files_present;
+}
+
+void OrigamiSystem::write_energies_to_file() {
+    string temp_string {"_" + std::to_string(static_cast<int>(m_temp))};
+
+    // Hybridization energies
+    string henergy_filename {m_energy_filebase + temp_string + ".hene"};
+
+    // Stacking energies
+    string senergy_filename {m_energy_filebase + temp_string + ".sene"};
+    std::ofstream henergy_file {henergy_filename};
+    boost::archive::text_oarchive h_arch {henergy_file};
+    h_arch << m_hybridization_energies;
+    std::ofstream senergy_file {senergy_filename};
+    boost::archive::text_oarchive s_arch {senergy_file};
+    s_arch << m_stacking_energies;
 }
 
 void OrigamiSystem::update_energy() {
-
-    // Unassign everything (and check nothing was already unassigned)
-    for (auto chain: m_domains) {
-        for (auto domain: chain) {
-            unassign_domain(*domain);
-        }
-    }
+    // Recalculate total system energy with new energy tables
+    // WARNING: Does not account for stacking energy
     m_energy = 0;
-
-    // Reset configuration
+    set<Domain*> accounted_domains; // Domains whose energy is already counted
     for (auto chain: m_domains) {
         for (auto domain: chain) {
-            set_domain_config(*domain, domain->m_pos, domain->m_ore);
+            Occupancy state {domain->m_state};
+            if (state == Occupancy::bound or state == Occupancy::misbound) {
+                if (find(accounted_domains.begin(), accounted_domains.end(),
+                            domain) == accounted_domains.end()) {
+                    Domain& bound_domain {*domain->m_bound_domain};
+                    m_energy += hybridization_energy(*domain, bound_domain);
+                    accounted_domains.insert(domain->m_bound_domain);
+                }
+            }
         }
     }
 }

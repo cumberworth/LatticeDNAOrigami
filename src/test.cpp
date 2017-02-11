@@ -82,7 +82,7 @@ SCENARIO("Longest contiguous complementary sequence extracted") {
                 double ene1 {0};
                 int N {0};
                 for (auto seq: comp_seqs1) {
-                    ene1 += calc_hybridization_energy(seq, temp, cation_M);
+                    ene1 += calc_unitless_hybridization_energy(seq, temp, cation_M);
                     N++;
                 }
                 ene1 /= N;
@@ -90,7 +90,7 @@ SCENARIO("Longest contiguous complementary sequence extracted") {
                 double ene2 {0};
                 N = 0;
                 for (auto seq: comp_seqs2) {
-                    ene2 += calc_hybridization_energy(seq, temp, cation_M);
+                    ene2 += calc_unitless_hybridization_energy(seq, temp, cation_M);
                     N++;
                 }
                 ene2 /= N;
@@ -308,7 +308,7 @@ SCENARIO("Computed energies match hand calculated values") {
                 -43.193024598743925};
 
         for (size_t i {0}; i != seqs.size(); i++) {
-            double hybrid_e {calc_hybridization_energy(seqs[i], temp, cation_M)};
+            double hybrid_e {calc_unitless_hybridization_energy(seqs[i], temp, cation_M)};
             REQUIRE(Approx(hybrid_e) == energies[i]);
         }
     }
@@ -317,7 +317,7 @@ SCENARIO("Computed energies match hand calculated values") {
         string seq {"AT"};
         // (((0.2) + (-7.2) + (2 * 2.2)) - 300 * ((-0.0057) + (-0.0014) + (-0.0204) + (2 * 0.0069) + 0.368 * 1 * math.log(0.5) / 1000)) * 4.184 * 1000 / 8.3144598 / 300
         double energy {2.6612328678696606};
-        double hybrid_e {calc_hybridization_energy(seq, temp, cation_M)};
+        double hybrid_e {calc_unitless_hybridization_energy(seq, temp, cation_M)};
         REQUIRE(Approx(hybrid_e) == energy);
     }
     GIVEN("An origami system with 2 scaffold domains and one 2 domain staple") {
@@ -360,9 +360,9 @@ SCENARIO("Computed energies match hand calculated values") {
         string staple_seq_2 {"TATTAGTGTATGGCAG"};
 
         // Complementary energies
-        double scaffold_staple_1_ene {calc_hybridization_energy(scaffold_seq_1,
+        double scaffold_staple_1_ene {calc_unitless_hybridization_energy(scaffold_seq_1,
                 temp, cation_M)};
-        double scaffold_staple_2_ene {calc_hybridization_energy(scaffold_seq_2,
+        double scaffold_staple_2_ene {calc_unitless_hybridization_energy(scaffold_seq_2,
                 temp, cation_M)};
 
         // Scaffold misbound energy
@@ -370,7 +370,7 @@ SCENARIO("Computed energies match hand calculated values") {
                 scaffold_seq_1, scaffold_seq_2)};
         double ene_sum {0};
         for (auto seq: scaffold_1_2_seqs) {
-            ene_sum += calc_hybridization_energy(seq, temp, cation_M);
+            ene_sum += calc_unitless_hybridization_energy(seq, temp, cation_M);
         }
         double scaffold_1_2_ene {ene_sum / scaffold_1_2_seqs.size()};
 
@@ -379,7 +379,7 @@ SCENARIO("Computed energies match hand calculated values") {
                 staple_seq_1, staple_seq_1)};
         ene_sum = 0;
         for (auto seq: staple_1_1_seqs) {
-            ene_sum += calc_hybridization_energy(seq, temp, cation_M);
+            ene_sum += calc_unitless_hybridization_energy(seq, temp, cation_M);
         }
         double staple_1_1_ene {ene_sum / staple_1_1_seqs.size()};
 
@@ -387,7 +387,7 @@ SCENARIO("Computed energies match hand calculated values") {
                 staple_seq_2, staple_seq_2)};
         ene_sum = 0;
         for (auto seq: staple_2_2_seqs) {
-            ene_sum += calc_hybridization_energy(seq, temp, cation_M);
+            ene_sum += calc_unitless_hybridization_energy(seq, temp, cation_M);
         }
         double staple_2_2_ene {ene_sum / staple_2_2_seqs.size()};
 
@@ -395,7 +395,7 @@ SCENARIO("Computed energies match hand calculated values") {
                 staple_seq_1, staple_seq_2)};
         ene_sum = 0;
         for (auto seq: staple_1_2_seqs) {
-            ene_sum += calc_hybridization_energy(seq, temp, cation_M);
+            ene_sum += calc_unitless_hybridization_energy(seq, temp, cation_M);
         }
         double staple_1_2_ene {ene_sum / staple_1_2_seqs.size()};
 

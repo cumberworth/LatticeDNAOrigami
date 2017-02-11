@@ -4,6 +4,7 @@
 #define ORIGAMI_SYSTEM_H
 
 #include <vector>
+#include <set>
 #include <map>
 #include <unordered_map>
 #include <utility>
@@ -16,6 +17,7 @@
 #include "domain.h"
 
 using std::vector;
+using std::set;
 using std::pair;
 using std::unordered_map;
 using std::string;
@@ -23,6 +25,7 @@ using std::valarray;
 
 using namespace Utility;
 using namespace DomainContainer;
+using namespace NearestNeighbour;
 
 namespace Origami{
 
@@ -116,6 +119,7 @@ namespace Origami{
             inline double energy() const {
                 return m_energy;
             }
+            ThermoOfHybrid enthalpy_and_entropy();
     
             // Constraint checkers
             void check_all_constraints();
@@ -140,6 +144,7 @@ namespace Origami{
                     VectorThree orientation);
             void set_domain_orientation(Domain& cd_i, VectorThree ore);
             void centre();
+            void set_all_domains();
 
             // System state modifiers
             void update_temp(double temp);
@@ -187,12 +192,18 @@ namespace Origami{
 
             // Energy tables index by chain/domain identity pair
             unordered_map<pair<int, int>, double> m_hybridization_energies {};
+            unordered_map<pair<int, int>, double> m_hybridization_enthalpies {};
+            unordered_map<pair<int, int>, double> m_hybridization_entropies {};
             unordered_map<pair<int, int>, double> m_stacking_energies {};
             string m_energy_filebase;
 
             // Energies tables indexed by temperature
             unordered_map<double, unordered_map<pair<int, int>, double>> 
                     m_hybridization_energy_tables {};
+            unordered_map<double, unordered_map<pair<int, int>, double>> 
+                    m_hybridization_enthalpy_tables {};
+            unordered_map<double, unordered_map<pair<int, int>, double>> 
+                    m_hybridization_entropy_tables {};
             unordered_map<double, unordered_map<pair<int, int>, double>> 
                     m_stacking_energy_tables {};
 
@@ -201,12 +212,16 @@ namespace Origami{
     
             // Intializers
             void initialize_complementary_associations();
-            void calculate_energies();
-            void initialize_config(Chains chains);
+            void get_energies();
+            void calc_energies();
+            void calc_energy(string seq_i, string seq_j, pair<int, int> key);
+            void initialize_domains(Chains chains);
 
             // Energy calculation
             double check_stacking(Domain& cd_new, Domain& cd_old);
             double hybridization_energy(const Domain& cd_i, const Domain& cd_j) const;
+            double hybridization_enthalpy(const Domain& cd_i, const Domain& cd_j) const;
+            double hybridization_entropy(const Domain& cd_i, const Domain& cd_j) const;
             double stacking_energy(const Domain& cd_i, const Domain& cd_j) const;
     
             // States updates
@@ -217,7 +232,8 @@ namespace Origami{
             void update_occupancies(
                     Domain& cd_i,
                     VectorThree position);
-            void read_energies_from_file(double temp);
+            bool read_energies_from_file();
+            void write_energies_to_file();
             void update_energy();
 
             // Constraint checkers

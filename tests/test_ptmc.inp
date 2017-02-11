@@ -20,8 +20,8 @@ num_walks_filename=tests/num_walks.arch
 exchange_mult=1000
 
 # Parallel tempering options
-temps=330 335
-num_reps=2
+temps=330 335 340
+num_reps=3
 exchange_interval=1000000
 constant_staple_M=true
 

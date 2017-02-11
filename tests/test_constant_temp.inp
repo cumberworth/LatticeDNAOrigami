@@ -10,9 +10,9 @@ energy_filebase=tests/snodin
 
 # General simulation parameters
 simulation_type=constant_temp
-steps=10000000
-logging_freq=1000000
-centering_freq=1000000
+steps=1000000
+logging_freq=1
+centering_freq=1
 orientation_rotation=0
 met_staple_exchange=1
 cb_staple_regrowth=0

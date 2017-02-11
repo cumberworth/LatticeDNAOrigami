@@ -24,6 +24,12 @@ namespace NearestNeighbour {
     // J/cal
     const double J_Per_Cal {4.184};
 
+    // Thermodynamic hybridization quantities
+    struct ThermoOfHybrid {
+        double enthalpy;
+        double entropy;
+    };
+
     // santalucia2004; kcal/mol
     const unordered_map<string, double> NN_Enthalpy {
             {"AA/TT", -7.6},
@@ -71,9 +77,10 @@ namespace NearestNeighbour {
     const map<char, char> Complementary_Base_Pairs {
     		{'A', 'T'}, {'T', 'A'}, {'G', 'C'}, {'C', 'G'}};
 
-	double calc_hybridization_energy(string seq, double temp, double cation_M);
 	double calc_stacking_energy(string seq_i, string seq_j, double temp, double cation_M);
-    tuple<double, double> calc_hybridization_H_and_S(string seq, double cation_M);
+	ThermoOfHybrid calc_unitless_hybridization_thermo(string seq, double temp, double cation_M);
+	double calc_unitless_hybridization_energy(string seq, double temp, double cation_M);
+    ThermoOfHybrid calc_hybridization_H_and_S(string seq, double cation_M);
 	vector<string> find_longest_contig_complement(string seq_i, string seq_j);
     string calc_comp_seq(string seq);
     bool seq_is_palindromic(string seq);

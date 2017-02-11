@@ -249,13 +249,13 @@ void PTGCMCSimulation::run() {
 }
 
 void PTGCMCSimulation::slave_send_and_recieve(int swap_i) {
-    // Send energy and num staples to master and receive updated temp and u
+    // Send enthalpy, num staples to master and receive updated temp and u
 
-    double energy {m_origami_system.energy()};
+    ThermoOfHybrid DH_DS {m_origami_system.enthalpy_and_entropy()};
     int N {m_origami_system.num_staples()};
 
     // Send energy and number of particles to master rep
-    m_world.send(m_master_rep, swap_i, energy);
+    m_world.send(m_master_rep, swap_i, DH_DS.enthalpy);
     m_world.send(m_master_rep, swap_i, N);
 
     // Receive temperature and chemical potential from master rep
@@ -263,17 +263,17 @@ void PTGCMCSimulation::slave_send_and_recieve(int swap_i) {
     m_world.recv(m_master_rep, swap_i, m_staple_u);
 }
 
-void PTGCMCSimulation::master_receive(int swap_i, vector<double>& energies,
+void PTGCMCSimulation::master_receive(int swap_i, vector<double>& enthalpies,
         vector<int>& staples) {
     // Receive energies and number of staples from slaves
     for (int rep_i {1}; rep_i != m_num_reps; rep_i++) {
-        double energy;
+        double DH;
         int N;
-        m_world.recv(rep_i, swap_i, energy);
+        m_world.recv(rep_i, swap_i, DH);
         m_world.recv(rep_i, swap_i, N);
 
         // Add master values
-        energies.push_back(energy);
+        enthalpies.push_back(DH);
         staples.push_back(N);
     }
 }
@@ -298,9 +298,10 @@ void PTGCMCSimulation::attempt_exchange(int swap_i,
     // Alternates between two sets of pairs, allows for changes in T, u, and N
 
     // Collect results from slaves
-    vector<double> energies {m_origami_system.energy()};
+    ThermoOfHybrid DH_DS {m_origami_system.enthalpy_and_entropy()};
+    vector<double> enthalpies {DH_DS.enthalpy};
     vector<int> staples {m_origami_system.num_staples()};
-    master_receive(swap_i, energies, staples);
+    master_receive(swap_i, enthalpies, staples);
 
     // Iterate through pairs in current set and attempt swap
     int swap_set {swap_i % 2};
@@ -316,12 +317,12 @@ void PTGCMCSimulation::attempt_exchange(int swap_i,
         int repi2 {m_tempi_to_repi[i + 1]};
 
         // Energies are actually E/B, so multiply by T
-        double energy1 {energies[repi1] * temp1};
-        double energy2 {energies[repi2] * temp2};
+        double enthalpy1 {enthalpies[repi1] * temp1};
+        double enthalpy2 {enthalpies[repi2] * temp2};
         int N1 {staples[repi1]};
         int N2 {staples[repi2]};
         bool accept {test_acceptance(temp1, temp2, staple_u1, staple_u2,
-                energy1, energy2, N1, N2)};
+                enthalpy1, enthalpy2, N1, N2)};
 
         // If accepted swap temperatures and chem. pot.s
         if (accept) {
@@ -339,14 +340,14 @@ void PTGCMCSimulation::attempt_exchange(int swap_i,
 }
 
 bool PTGCMCSimulation::test_acceptance(double temp1, double temp2,
-        double staple_u1, double staple_u2, double energy1, double energy2,
+        double staple_u1, double staple_u2, double enthalpy1, double enthalpy2,
         int N1, int N2) {
 
     double DB {1/temp2 - 1/temp1};
-    double DE {energy2 - energy1};
+    double DH {enthalpy2 - enthalpy1};
     int DN {N2 - N1};
     double DBU {staple_u2 / temp2 - staple_u1 / temp1};
-    double p_accept {min({1.0, exp(-DB*DE - DBU*DN)})};
+    double p_accept {min({1.0, exp(DB*DH - DBU*DN)})};
     bool accept;
     if (p_accept == 1) {
         accept = true;

@@ -19,23 +19,6 @@ using std::reverse;
 
 using namespace NearestNeighbour;
 
-double NearestNeighbour::calc_hybridization_energy(
-        string seq,
-        double temp,
-        double cation_M) {
-    double DH;
-    double DS;
-    tuple<double, double> tied_result {calc_hybridization_H_and_S(seq, cation_M)};
-    DH = std::get<0>(tied_result);
-    DS = std::get<1>(tied_result);
-    double DG {DH - temp * DS};
-    
-    // Convert from kcal/mol to unitless dimension
-    DG = DG * J_Per_Cal * 1000 / R / temp;
-
-    return DG;
-}
-
 double NearestNeighbour::calc_stacking_energy(
         string seq_i,
         string seq_j,
@@ -46,7 +29,29 @@ double NearestNeighbour::calc_stacking_energy(
     return 0;
 }
 
-tuple<double, double> NearestNeighbour::calc_hybridization_H_and_S(string seq, double cation_M) {
+ThermoOfHybrid NearestNeighbour::calc_unitless_hybridization_thermo(
+        string seq,
+        double temp,
+        double cation_M) {
+    ThermoOfHybrid DH_DS {calc_hybridization_H_and_S(seq, cation_M)};
+
+    // Convert from kcal/mol to unitless dimension
+    DH_DS.enthalpy = DH_DS.enthalpy * J_Per_Cal * 1000 / R / temp;
+    DH_DS.entropy = DH_DS.entropy * J_Per_Cal * 1000 / R;
+
+    return DH_DS;
+}
+
+double NearestNeighbour::calc_unitless_hybridization_energy(
+        string seq,
+        double temp,
+        double cation_M) {
+    ThermoOfHybrid DH_DS {calc_unitless_hybridization_thermo(seq, temp, cation_M)};
+
+    return DH_DS.enthalpy + DH_DS.entropy;
+}
+
+ThermoOfHybrid NearestNeighbour::calc_hybridization_H_and_S(string seq, double cation_M) {
     string comp_seq {calc_comp_seq(seq)};
 
     // Initiation free energy
@@ -92,8 +97,8 @@ tuple<double, double> NearestNeighbour::calc_hybridization_H_and_S(string seq, d
     // Consider specifying num phosphates to account for sequences with terminal residues
     DS_hybrid += 0.368 * (seq.size() / 2) * log(cation_M) / 1000;
 
-    tuple<double, double> tied_result {tie(DH_hybrid, DS_hybrid)};
-    return tied_result;
+    ThermoOfHybrid DH_DS {DH_hybrid, DS_hybrid};
+    return DH_DS;
 }
 
 vector<string> NearestNeighbour::find_longest_contig_complement(

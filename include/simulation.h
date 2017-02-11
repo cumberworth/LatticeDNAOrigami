@@ -118,7 +118,7 @@ namespace Simulation {
             void slave_send_and_recieve(int swap_i);
             void master_receive(
                         int swap_i,
-                        vector<double>& energies,
+                        vector<double>& enthalpies,
                         vector<int>& staples);
             void master_send(int swap_i);
             void attempt_exchange(
@@ -130,8 +130,8 @@ namespace Simulation {
                     double temp2,
                     double staple_u1,
                     double staple_u2,
-                    double energy1,
-                    double energy2,
+                    double enthalpy1,
+                    double enthalpy2,
                     int N1,
                     int N2);
             void write_swap_entry();
