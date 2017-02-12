@@ -48,7 +48,7 @@ double NearestNeighbour::calc_unitless_hybridization_energy(
         double cation_M) {
     ThermoOfHybrid DH_DS {calc_unitless_hybridization_thermo(seq, temp, cation_M)};
 
-    return DH_DS.enthalpy + DH_DS.entropy;
+    return DH_DS.enthalpy - DH_DS.entropy;
 }
 
 ThermoOfHybrid NearestNeighbour::calc_hybridization_H_and_S(string seq, double cation_M) {

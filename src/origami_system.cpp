@@ -533,7 +533,7 @@ void OrigamiSystem::calc_energy(string seq_i, string seq_j,
     }
     m_hybridization_enthalpies[key] = H_hyb;
     m_hybridization_entropies[key] = S_hyb;
-    m_hybridization_energies[key] = H_hyb + S_hyb;
+    m_hybridization_energies[key] = H_hyb - S_hyb;
 
     // Stacking energies
     double s_energy {0};
