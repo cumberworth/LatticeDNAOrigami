@@ -172,18 +172,18 @@ PTGCMCSimulation::PTGCMCSimulation(OrigamiSystem& origami_system,
             if (m_params.m_constant_staple_M) {
                 staple_u = molarity_to_chempot(m_params.m_staple_M, m_temps[i],
                         params.m_lattice_site_volume);
-                staple_u *= m_params.m_chem_pot_mults[i];
             }
             else {
                 staple_u = molarity_to_chempot(m_params.m_staple_M,
                         params.m_temp_for_staple_u,
                 params.m_lattice_site_volume);
+                staple_u *= m_params.m_chem_pot_mults[i];
             }
             m_staple_us.push_back(staple_u);
         }
     }
 
-    // Initialize temp and u of each replica
+    // Initialize temp and u of each replica (updating on origami happens in run)
     for (int i {0}; i != m_num_reps; i++) {
         if (m_rank == i) {
             m_temp = params.m_temps[i];
