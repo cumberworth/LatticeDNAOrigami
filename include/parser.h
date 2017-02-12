@@ -72,6 +72,7 @@ namespace Parser {
             int m_num_reps {};
             int m_exchange_interval {};
             bool m_constant_staple_M {true};
+            vector<double> m_chem_pot_mults {};
 
             // Output options
             string m_output_filebase;

@@ -104,6 +104,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("num_reps", po::value<int>(), "Number of replicas")
         ("exchange_interval", po::value<int>(), "Steps between exchange attempts")
         ("constant_staple_M", po::value<bool>(), "Hold staple concentration constant instead of chemical potential")
+        ("chem_pot_mults", po::value<string>(), "Factor to multiply base chem pot for each rep.")
 
 
         // Output options
@@ -234,6 +235,10 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     }
     if (vm.count("constant_staple_M")) {
         m_constant_staple_M = vm["constant_staple_M"].as<bool>();
+    }
+    if (vm.count("chem_pot_mults")) {
+        string temps_s = vm["chem_pot_mults"].as<string>();
+        m_chem_pot_mults = string_to_double_vector(temps_s);
     }
 
     // Output options

@@ -172,6 +172,7 @@ PTGCMCSimulation::PTGCMCSimulation(OrigamiSystem& origami_system,
             if (m_params.m_constant_staple_M) {
                 staple_u = molarity_to_chempot(m_params.m_staple_M, m_temps[i],
                         params.m_lattice_site_volume);
+                staple_u *= m_params.m_chem_pot_mults[i];
             }
             else {
                 staple_u = molarity_to_chempot(m_params.m_staple_M,
@@ -188,6 +189,7 @@ PTGCMCSimulation::PTGCMCSimulation(OrigamiSystem& origami_system,
             m_temp = params.m_temps[i];
 
             // Update chemical potential of each replica if constant [staple]
+            // Recalculating for each node rathr than sending from master
             if (m_params.m_constant_staple_M) {
                 m_staple_u = molarity_to_chempot(m_params.m_staple_M, m_temp,
                         params.m_lattice_site_volume);
@@ -196,6 +198,7 @@ PTGCMCSimulation::PTGCMCSimulation(OrigamiSystem& origami_system,
                 m_staple_u = molarity_to_chempot(m_params.m_staple_M,
                         params.m_temp_for_staple_u,
                         params.m_lattice_site_volume);
+                m_staple_u *= m_params.m_chem_pot_mults[i];
             }
         }
     }
