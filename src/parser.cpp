@@ -73,6 +73,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("staple_M", po::value<double>(), "Staple concentration (mol/L)")
         ("cation_M", po::value<double>(), "Cation concentration (mol/L)")
         ("temp_for_staple_u", po::value<double>(), "Temperature to calculate chemical potential with")
+        ("staple_u_mult", po::value<double>(), "Multiplier for staple u")
         ("lattice_site_volume", po::value<double>(), "Volume per lattice site (L)")
         ("cyclic", po::value<bool>(), "Cyclic scaffold")
         ("energy_filebase", po::value<string>(), "Filebase for read/write of energies")
@@ -134,6 +135,9 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     }
     if (vm.count("temp_for_staple_u")) {
         m_temp_for_staple_u = vm["temp_for_staple_u"].as<double>();
+    }
+    if (vm.count("staple_u_mult")) {
+        m_staple_u_mult = vm["staple_u_mult"].as<double>();
     }
     if (vm.count("lattice_site_volume")) {
         m_lattice_site_volume = vm["lattice_site_volume"].as<double>();

@@ -32,17 +32,11 @@ namespace Parser {
             // System input parameters
             string m_origami_input_filename;
 
-            // Kelvin
-            double m_temp {300};
-
-            // mol/L
-            double m_staple_M {1};
-
-            // mol/L
-            double m_cation_M {1};
-
-            // Kelvin, default set to m_temp in initialization
-            double m_temp_for_staple_u;
+            double m_temp {300}; // K
+            double m_staple_M {1}; // mol/L
+            double m_cation_M {1}; // mol/L
+            double m_temp_for_staple_u; // K, default set in constructor
+            double m_staple_u_mult {1};
 
             // L
             double m_lattice_site_volume {1};
