@@ -1,30 +1,38 @@
 # System input and parameters
-origami_input_filename=tests/snodin_unbound.json
+origami_input_filename=tests/four2_domain_loop.json
 temp=330
 staple_M=1e-6
 cation_M=1
 temp_for_staple_u=330
 lattice_site_volume=4e-28
-energy_filebase=tests/snodin
+energy_filebase=tests/four
+
+# Order parameters and biases
+restraint_pairs=0 3
+min_dist=1
+max_dist=4
+max_bias=10
+bias_mult=1
 
 # General simulation parameters
 simulation_type=parallel_tempering
-steps=100000000
+steps=1000000
 logging_freq=100000
 centering_freq=100000
-orientation_rotation=0
-met_staple_exchange=1
-cb_staple_regrowth=0
-ctcb_scaffold_regrowth=0
+orientation_rotation=1/100
+met_staple_exchange=97/100
+cb_staple_regrowth=1/100
+ctcb_scaffold_regrowth=1/100
 num_walks_filename=tests/num_walks.arch
 exchange_mult=1000
 
 # Parallel tempering options
 temps=330 335 340
 num_reps=3
-exchange_interval=1000000
+exchange_interval=100000
 constant_staple_M=true
-chem_pot_mults=1 2 3
+chem_pot_mults=1 1 1
+bias_mults=0 0.5 1
 
 # Output options
 output_filebase=tests/test_ptmc

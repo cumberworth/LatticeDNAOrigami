@@ -13,6 +13,22 @@ using std::cout;
 
 using namespace Parser;
 
+// Couldn't easily template cause function changes (stoi vs stod)
+vector<int> Parser::string_to_int_vector(string string_v) {
+    string delim {" "};
+    size_t start_pos {0};
+    size_t delim_pos {string_v.find(delim)};
+    vector<int> v {};
+    while (delim_pos != string::npos) {
+        v.push_back(stoi(string_v.substr(start_pos, delim_pos)));
+        start_pos = delim_pos + 1;
+        delim_pos = string_v.find(delim, start_pos);
+    }
+    v.push_back(stod(string_v.substr(start_pos, string_v.size())));
+
+    return v;
+}
+
 vector<double> Parser::string_to_double_vector(string string_v) {
     string delim {" "};
     size_t start_pos {0};
@@ -80,6 +96,13 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("restart_traj_file", po::value<string>(), "Trajectory file to restart from")
         ("restart_step", po::value<int>(), "Step to restart from")
 
+        // Order parameters and biases
+        ("restraint_pairs", po::value<string>(), "Scaffold domains to restrain")
+        ("min_dist", po::value<int>(), "Distance at which bias switched off")
+        ("max_dist", po::value<int>(), "Distance at which bias switched on")
+        ("max_bias", po::value<double>(), "Value of bias at dist >= max_dist")
+        ("bias_mult", po::value<double>(), "Total bias multiplier")
+
         // General simulation parameters
         ("simulation_type", po::value<string>(), "constant_temp, annealing, or parallel_tempering")
         ("steps", po::value<long int>(), "Number of MC steps")
@@ -104,8 +127,9 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("temps", po::value<string>(), "Temperature list")
         ("num_reps", po::value<int>(), "Number of replicas")
         ("exchange_interval", po::value<int>(), "Steps between exchange attempts")
-        ("constant_staple_M", po::value<bool>(), "Hold staple concentration constant instead of chemical potential")
-        ("chem_pot_mults", po::value<string>(), "Factor to multiply base chem pot for each rep.")
+        ("constant_staple_M", po::value<bool>(), "Hold staple concentration constant")
+        ("chem_pot_mults", po::value<string>(), "Factor to multiply base chem pot for each rep")
+        ("bias_mults", po::value<string>(), "Multiplier for system bias")
 
 
         // Output options
@@ -153,6 +177,20 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     }
     if (vm.count("restart_step")) {
         m_restart_step = vm["restart_step"].as<int>();
+    }
+
+    // Order parameters and biases
+    if (vm.count("bias_mult")) {
+        m_bias_mult = vm["bias_mult"].as<double>();
+    }
+    if (vm.count("min_dist")) {
+        m_min_dist = vm["min_dist"].as<int>();
+    }
+    if (vm.count("max_dist")) {
+        m_max_dist = vm["max_dist"].as<int>();
+    }
+    if (vm.count("max_bias")) {
+        m_max_bias = vm["max_bias"].as<double>();
     }
 
     // General simulation parameters
@@ -241,8 +279,16 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         m_constant_staple_M = vm["constant_staple_M"].as<bool>();
     }
     if (vm.count("chem_pot_mults")) {
-        string temps_s = vm["chem_pot_mults"].as<string>();
-        m_chem_pot_mults = string_to_double_vector(temps_s);
+        string chem_pot_mults_s = vm["chem_pot_mults"].as<string>();
+        m_chem_pot_mults = string_to_double_vector(chem_pot_mults_s);
+    }
+    if (vm.count("restraint_pairs")) {
+        string restraint_pairs_s= vm["restraint_pairs"].as<string>();
+        m_restraint_pairs = string_to_int_vector(restraint_pairs_s);
+    }
+    if (vm.count("bias_mults")) {
+        string bias_mults_s= vm["bias_mults"].as<string>();
+        m_bias_mults = string_to_double_vector(bias_mults_s);
     }
 
     // Output options

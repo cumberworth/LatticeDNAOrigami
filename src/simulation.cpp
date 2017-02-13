@@ -24,8 +24,9 @@ using namespace Utility;
 using namespace RandomGen;
 
 GCMCSimulation::GCMCSimulation(OrigamiSystem& origami_system,
-        InputParameters& params) :
+        SystemBias& system_bias, InputParameters& params) :
         m_origami_system {origami_system},
+        m_system_bias {system_bias},
         m_params {params} {
 
     m_logging_freq = params.m_logging_freq;
@@ -92,7 +93,7 @@ unique_ptr<MCMovetype> GCMCSimulation::select_movetype() {
     for (size_t i {0}; i != m_cumulative_probs.size(); i++) {
         if (prob < m_cumulative_probs[i]) {
             movetype = m_movetype_constructors[i](m_origami_system,
-                    m_random_gens, m_ideal_random_walks, m_params);
+                    m_system_bias, m_random_gens, m_ideal_random_walks, m_params);
             break;
         }
     }
@@ -108,12 +109,13 @@ void GCMCSimulation::write_log_entry(int step, MCMovetype& movetype,
     *m_logging_stream << "Accepted: " << accepted << " ";
     *m_logging_stream << "Temp: " << m_origami_system.m_temp << " ";
     *m_logging_stream << "Energy: " << m_origami_system.energy() << " ";
+    *m_logging_stream << "Bias: " << m_system_bias.calc_bias() << " ";
     *m_logging_stream << "\n";
 }
 
 ConstantTGCMCSimulation::ConstantTGCMCSimulation(OrigamiSystem& origami_system,
-        InputParameters& params) :
-        GCMCSimulation(origami_system, params),
+        SystemBias& system_bias, InputParameters& params) :
+        GCMCSimulation(origami_system, system_bias, params),
         m_steps {params.m_steps} {
 
     m_logging_stream = &cout;
@@ -122,8 +124,8 @@ ConstantTGCMCSimulation::ConstantTGCMCSimulation(OrigamiSystem& origami_system,
 }
 
 AnnealingGCMCSimulation::AnnealingGCMCSimulation(OrigamiSystem& origami_system,
-        InputParameters& params) :
-        GCMCSimulation(origami_system, params),
+        SystemBias& system_bias, InputParameters& params) :
+        GCMCSimulation(origami_system, system_bias, params),
         m_max_temp {params.m_max_temp},
         m_min_temp {params.m_min_temp},
         m_temp_interval {params.m_temp_interval},
@@ -149,8 +151,8 @@ void AnnealingGCMCSimulation::run() {
 }
 
 PTGCMCSimulation::PTGCMCSimulation(OrigamiSystem& origami_system,
-        InputParameters& params) :
-        GCMCSimulation(origami_system, params),
+        SystemBias& system_bias, InputParameters& params) :
+        GCMCSimulation(origami_system, system_bias, params),
         m_num_reps {params.m_num_reps},
         m_exchange_interval {params.m_exchange_interval} {
 
@@ -161,9 +163,10 @@ PTGCMCSimulation::PTGCMCSimulation(OrigamiSystem& origami_system,
             m_origami_system);
     m_logging_stream = new ofstream {output_filebase + ".out"};
 
-    // Initialize temp, u, and temperature index to replica index vectors
+    // Initialize temp, u, bias mult, and temperature index to replica index vectors
     if (m_rank == m_master_rep) {
         m_temps = params.m_temps;
+        m_bias_mults = params.m_bias_mults;
         for (int i {0}; i != m_num_reps; i++) {
             m_tempi_to_repi.push_back(i);
 
@@ -183,10 +186,11 @@ PTGCMCSimulation::PTGCMCSimulation(OrigamiSystem& origami_system,
         }
     }
 
-    // Initialize temp and u of each replica (updating on origami happens in run)
+    // Initialize temp, u, and bias mult of each replica (updating on origami happens in run)
     for (int i {0}; i != m_num_reps; i++) {
         if (m_rank == i) {
             m_temp = params.m_temps[i];
+            m_bias_mult = params.m_bias_mults[i];
 
             // Update chemical potential of each replica if constant [staple]
             // Recalculating for each node rathr than sending from master
@@ -228,6 +232,9 @@ void PTGCMCSimulation::run() {
         m_origami_system.update_temp(m_temp);
         m_origami_system.update_staple_u(m_staple_u);
 
+        // Update system bias with current replica's bias multiplier
+        m_system_bias.update_bias_mult(m_bias_mult);
+
         // Run the simulation
         simulate(m_exchange_interval, step);
         step += m_exchange_interval;
@@ -252,31 +259,37 @@ void PTGCMCSimulation::run() {
 }
 
 void PTGCMCSimulation::slave_send_and_recieve(int swap_i) {
-    // Send enthalpy, num staples to master and receive updated temp and u
+    // Send enthalpy, bias, num staples to master and receive updated temp and u
 
     ThermoOfHybrid DH_DS {m_origami_system.enthalpy_and_entropy()};
+    double bias {m_system_bias.calc_bias()};
     int N {m_origami_system.num_staples()};
 
-    // Send energy and number of particles to master rep
+    // Send enthalpy, bias, and number of particles to master rep
     m_world.send(m_master_rep, swap_i, DH_DS.enthalpy);
+    m_world.send(m_master_rep, swap_i, bias);
     m_world.send(m_master_rep, swap_i, N);
 
     // Receive temperature and chemical potential from master rep
     m_world.recv(m_master_rep, swap_i, m_temp);
+    m_world.recv(m_master_rep, swap_i, m_bias_mult);
     m_world.recv(m_master_rep, swap_i, m_staple_u);
 }
 
 void PTGCMCSimulation::master_receive(int swap_i, vector<double>& enthalpies,
-        vector<int>& staples) {
-    // Receive energies and number of staples from slaves
+        vector<double>& biases, vector<int>& staples) {
+    // Receive enthalpies, bias, and number of staples from slaves
     for (int rep_i {1}; rep_i != m_num_reps; rep_i++) {
         double DH;
+        double bias;
         int N;
         m_world.recv(rep_i, swap_i, DH);
+        m_world.recv(rep_i, swap_i, bias);
         m_world.recv(rep_i, swap_i, N);
 
         // Add master values
         enthalpies.push_back(DH);
+        biases.push_back(bias);
         staples.push_back(N);
     }
 }
@@ -287,10 +300,12 @@ void PTGCMCSimulation::master_send(int swap_i) {
         int rep_i {m_tempi_to_repi[temp_i]};
         if (rep_i == m_master_rep) {
             m_temp = m_temps[temp_i];
+            m_bias_mult = m_bias_mults[temp_i];
             m_staple_u = m_staple_us[temp_i];
         }
         else {
             m_world.send(rep_i, swap_i, m_temps[temp_i]);
+            m_world.send(rep_i, swap_i, m_bias_mults[temp_i]);
             m_world.send(rep_i, swap_i, m_staple_us[temp_i]);
         }
     }
@@ -303,8 +318,9 @@ void PTGCMCSimulation::attempt_exchange(int swap_i,
     // Collect results from slaves
     ThermoOfHybrid DH_DS {m_origami_system.enthalpy_and_entropy()};
     vector<double> enthalpies {DH_DS.enthalpy};
+    vector<double> biases {m_system_bias.calc_bias()};
     vector<int> staples {m_origami_system.num_staples()};
-    master_receive(swap_i, enthalpies, staples);
+    master_receive(swap_i, enthalpies, biases, staples);
 
     // Iterate through pairs in current set and attempt swap
     int swap_set {swap_i % 2};
@@ -322,10 +338,12 @@ void PTGCMCSimulation::attempt_exchange(int swap_i,
         // Energies are actually E/B, so multiply by T
         double enthalpy1 {enthalpies[repi1] * temp1};
         double enthalpy2 {enthalpies[repi2] * temp2};
+        double bias1 {enthalpies[repi1] * temp1};
+        double bias2 {enthalpies[repi2] * temp2};
         int N1 {staples[repi1]};
         int N2 {staples[repi2]};
         bool accept {test_acceptance(temp1, temp2, staple_u1, staple_u2,
-                enthalpy1, enthalpy2, N1, N2)};
+                enthalpy1, enthalpy2, bias1, bias2, N1, N2)};
 
         // If accepted swap temperatures and chem. pot.s
         if (accept) {
@@ -344,13 +362,14 @@ void PTGCMCSimulation::attempt_exchange(int swap_i,
 
 bool PTGCMCSimulation::test_acceptance(double temp1, double temp2,
         double staple_u1, double staple_u2, double enthalpy1, double enthalpy2,
-        int N1, int N2) {
+        double bias1, double bias2, int N1, int N2) {
 
     double DB {1/temp2 - 1/temp1};
     double DH {enthalpy2 - enthalpy1};
+    double DBias {bias2 - bias1};
     int DN {N2 - N1};
     double DBU {staple_u2 / temp2 - staple_u1 / temp1};
-    double p_accept {min({1.0, exp(DB*DH - DBU*DN)})};
+    double p_accept {min({1.0, exp(DB*(DH + DBias) - DBU*DN)})};
     bool accept;
     if (p_accept == 1) {
         accept = true;

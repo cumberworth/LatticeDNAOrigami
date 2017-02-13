@@ -312,7 +312,10 @@ bool MetStapleExchangeMCMovetype::attempt_move() {
 }
 
 bool MetStapleExchangeMCMovetype::staple_insertion_accepted(int c_i_ident) {
-    double boltz_factor {exp(-m_delta_e)};
+
+    // Calculate boltz factor with system biases
+    double boltz_factor {exp(-(m_delta_e + m_system_bias.calc_bias()))};
+
     int Ni_new {m_origami_system.num_staples_of_ident(c_i_ident)};
 
     // Correct for extra states from additional staple domains
@@ -334,7 +337,10 @@ bool MetStapleExchangeMCMovetype::staple_insertion_accepted(int c_i_ident) {
 }
 
 bool MetStapleExchangeMCMovetype::staple_deletion_accepted(int c_i_ident) {
-    double boltz_factor {exp(-m_delta_e)};
+
+    // Calculate boltz factor with system biases
+    double boltz_factor {exp(-(m_delta_e + m_system_bias.calc_bias()))};
+
     int Ni {m_origami_system.num_staples_of_ident(c_i_ident)};
 
     // Correct for extra states from additional staple domains
@@ -453,7 +459,9 @@ bool MetStapleRegrowthMCMovetype::attempt_move() {
         return accepted;
     }
 
-    double boltz_factor {exp(-m_delta_e)};
+    // Calculate boltz factor with system biases
+    double boltz_factor {exp(-(m_delta_e + m_system_bias.calc_bias()))};
+
     accepted = test_acceptance(boltz_factor);
     return accepted;
 }
@@ -911,6 +919,9 @@ bool CBStapleRegrowthMCMovetype::attempt_move() {
         return accepted;
     }
 
+    // Add system biases
+    m_bias *= exp(-m_system_bias.calc_bias());
+
     // Regrow staple in old conformation
     setup_for_regrow_old();
 
@@ -922,6 +933,9 @@ bool CBStapleRegrowthMCMovetype::attempt_move() {
 
     // Grow staple
     set_growthpoint_and_grow_staple(growthpoint, selected_chain);
+
+    // Add system biases
+    m_bias *= exp(-m_system_bias.calc_bias());
 
     // Revert modifier and test acceptance
     m_modifier = m_new_modifier;
@@ -1295,6 +1309,9 @@ bool CTCBScaffoldRegrowthMCMovetype::attempt_move() {
         return accepted;
     }
 
+    // Add system biases
+    m_bias *= exp(-m_system_bias.calc_bias());
+
     // Regrow in old conformation
     setup_for_regrow_old();
     m_constraintpoints.reset_active_endpoints();
@@ -1311,6 +1328,9 @@ bool CTCBScaffoldRegrowthMCMovetype::attempt_move() {
     }
 
     grow_chain(scaffold_domains);
+
+    // Add system biases
+    m_bias *= exp(-m_system_bias.calc_bias());
 
     // Reset modifier and test acceptance
     m_modifier = 1;
@@ -1473,9 +1493,10 @@ vector<double> CTCBScaffoldRegrowthMCMovetype::calc_bias(
 template<typename T>
 unique_ptr<MCMovetype> Movetypes::movetype_constructor(
         OrigamiSystem& origami_system,
+        SystemBias& system_bias,
         RandomGens& random_gens,
         IdealRandomWalks& ideal_random_walks,
         InputParameters& params) {
-    return unique_ptr<MCMovetype> {new T {origami_system, random_gens,
-            ideal_random_walks, params}};
+    return unique_ptr<MCMovetype> {new T {origami_system, system_bias,
+            random_gens, ideal_random_walks, params}};
 }

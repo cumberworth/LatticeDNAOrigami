@@ -10,6 +10,7 @@ using std::string;
 using std::vector;
 
 namespace Parser {
+    vector<int> string_to_int_vector(string string_v);
     vector<double> string_to_double_vector(string string_v);
 
     class Fraction {
@@ -31,19 +32,23 @@ namespace Parser {
 
             // System input parameters
             string m_origami_input_filename;
-
             double m_temp {300}; // K
             double m_staple_M {1}; // mol/L
             double m_cation_M {1}; // mol/L
             double m_temp_for_staple_u; // K, default set in constructor
             double m_staple_u_mult {1};
-
-            // L
-            double m_lattice_site_volume {1};
+            double m_lattice_site_volume {1}; // L
             bool m_cyclic {false};
             string m_energy_filebase {""};
             string m_restart_traj_file {""};
             int m_restart_step;
+
+            // Order parameters and biases
+            vector<int> m_restraint_pairs {};
+            int m_min_dist;
+            int m_max_dist;
+            double m_max_bias;
+            double m_bias_mult {1};
 
             // General simulation parameters
             string m_simulation_type {"constant_temp"};
@@ -67,12 +72,12 @@ namespace Parser {
             int m_exchange_interval {};
             bool m_constant_staple_M {true};
             vector<double> m_chem_pot_mults {};
+            vector<double> m_bias_mults {};
 
             // Output options
             string m_output_filebase;
             int m_configs_output_freq {0};
             int m_counts_output_freq {0};
-
     };
 }
 

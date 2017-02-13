@@ -18,10 +18,10 @@ all: $(TARGET)
 
 testing: $(TESTTARGET)
 
-$(TARGET): $(BUILD)main.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o $(BUILD)domain.o $(BUILD)simulation.o $(BUILD)movetypes.o $(BUILD)random_gens.o $(BUILD)ideal_random_walk.o $(BUILD)parser.o
+$(TARGET): $(BUILD)main.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o $(BUILD)domain.o $(BUILD)simulation.o $(BUILD)movetypes.o $(BUILD)random_gens.o $(BUILD)ideal_random_walk.o $(BUILD)parser.o $(BUILD)order_params.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-$(TESTTARGET): $(BUILD)test.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o $(BUILD)domain.o $(BUILD)simulation.o $(BUILD)movetypes.o $(BUILD)random_gens.o $(BUILD)ideal_random_walk.o $(BUILD)parser.o
+$(TESTTARGET): $(BUILD)test.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o $(BUILD)domain.o $(BUILD)simulation.o $(BUILD)movetypes.o $(BUILD)random_gens.o $(BUILD)ideal_random_walk.o $(BUILD)parser.o $(BUID)order_params.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 	$(TESTTARGET)
 
@@ -59,6 +59,9 @@ $(BUILD)ideal_random_walk.o: ideal_random_walk.cpp ideal_random_walk.h
 	$(CC) -o $@ -c $(CPPFLAGS) $<
 
 $(BUILD)parser.o: parser.cpp parser.h
+	$(CC) -o $@ -c $(CPPFLAGS) $<
+
+$(BUILD)order_params.o: order_params.cpp order_params.h
 	$(CC) -o $@ -c $(CPPFLAGS) $<
 
 $(BUILD)test.o: test.cpp

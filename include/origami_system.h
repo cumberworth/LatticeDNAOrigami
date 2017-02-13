@@ -27,7 +27,7 @@ using namespace Utility;
 using namespace DomainContainer;
 using namespace NearestNeighbour;
 
-namespace Origami{
+namespace Origami {
 
     // For passing information between file objects and origami system
     struct Chain {

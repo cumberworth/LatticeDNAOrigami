@@ -16,6 +16,7 @@
 #include "movetypes.h"
 #include "files.h"
 #include "ideal_random_walk.h"
+#include "order_params.h"
 
 using std::vector;
 using std::unique_ptr;
@@ -29,6 +30,7 @@ using namespace Origami;
 using namespace Movetypes;
 using namespace Files;
 using namespace IdealRandomWalk;
+using namespace OrderParams;
 
 namespace Simulation {
 
@@ -41,12 +43,14 @@ namespace Simulation {
         public:
             GCMCSimulation(
                     OrigamiSystem& origami_system,
+                    SystemBias& system_bias,
                     InputParameters& params);
             virtual ~GCMCSimulation();
             virtual void run() = 0;
 
         protected:
             OrigamiSystem& m_origami_system;
+            SystemBias& m_system_bias;
             ostream* m_logging_stream;
             int m_logging_freq;
             int m_centering_freq;
@@ -70,6 +74,7 @@ namespace Simulation {
         public:
             ConstantTGCMCSimulation(
                     OrigamiSystem& origami_system,
+                    SystemBias& system_bias,
                     InputParameters& params);
             void run() {simulate(m_steps);}
         private:
@@ -80,6 +85,7 @@ namespace Simulation {
         public:
             AnnealingGCMCSimulation(
                     OrigamiSystem& origami_system,
+                    SystemBias& system_bias,
                     InputParameters& params);
             void run();
         private:
@@ -93,6 +99,7 @@ namespace Simulation {
         public:
             PTGCMCSimulation(
                     OrigamiSystem& origami_system,
+                    SystemBias& system_bias,
                     InputParameters& params);
             ~PTGCMCSimulation() {delete m_logging_stream;}
             void run();
@@ -103,6 +110,7 @@ namespace Simulation {
             int m_rank {m_world.rank()};
             int m_master_rep {0};
             double m_temp;
+            double m_bias_mult;
             double m_staple_u;
             double m_volume;
             int m_swaps;
@@ -112,6 +120,7 @@ namespace Simulation {
             // Data only filled in master
             ofstream m_swapfile;
             vector<double> m_temps;
+            vector<double> m_bias_mults;
             vector<double> m_staple_us;
             vector<int> m_tempi_to_repi;
 
@@ -119,6 +128,7 @@ namespace Simulation {
             void master_receive(
                         int swap_i,
                         vector<double>& enthalpies,
+                        vector<double>& biases,
                         vector<int>& staples);
             void master_send(int swap_i);
             void attempt_exchange(
@@ -132,6 +142,8 @@ namespace Simulation {
                     double staple_u2,
                     double enthalpy1,
                     double enthalpy2,
+                    double bias1,
+                    double bias2,
                     int N1,
                     int N2);
             void write_swap_entry();

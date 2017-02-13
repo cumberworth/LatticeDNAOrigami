@@ -7,6 +7,7 @@
 #include "domain.h"
 #include "files.h"
 #include "simulation.h"
+#include "order_params.h"
 
 using std::cout;
 
@@ -17,6 +18,7 @@ using namespace Origami;
 using namespace DomainContainer;
 using namespace Simulation;
 using namespace Movetypes;
+using namespace OrderParams;
 
 int main(int argc, char* argv[]) {
     InputParameters params {argc, argv};
@@ -47,18 +49,19 @@ int main(int argc, char* argv[]) {
             staple_u,
             cyclic,
             params.m_energy_filebase};
+    SystemBias system_bias {params, origami};
 
     // Setup simulation
 
     GCMCSimulation* sim;
     if (params.m_simulation_type == "constant_temp") {
-        sim = new ConstantTGCMCSimulation {origami, params};
+        sim = new ConstantTGCMCSimulation {origami, system_bias, params};
     }
     else if (params.m_simulation_type == "annealing") {
-        sim = new AnnealingGCMCSimulation {origami, params};
+        sim = new AnnealingGCMCSimulation {origami, system_bias, params};
     }
     else if (params.m_simulation_type == "parallel_tempering") {
-        sim = new PTGCMCSimulation {origami, params};
+        sim = new PTGCMCSimulation {origami, system_bias,params};
     }
     else {
         cout << "No such simulation type.\n";
