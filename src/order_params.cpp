@@ -37,7 +37,7 @@ double LinearStepBiasFunction::calc_bias() {
         bias = 0;
     }
     else if (param > m_min_param and param <= m_max_param) {
-        bias = m_slope * param;
+        bias = m_slope * (param - m_min_param);
     }
     else {
         bias = m_max_bias;
