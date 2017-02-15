@@ -314,7 +314,9 @@ bool MetStapleExchangeMCMovetype::attempt_move() {
 bool MetStapleExchangeMCMovetype::staple_insertion_accepted(int c_i_ident) {
 
     // Calculate boltz factor with system biases
-    double boltz_factor {exp(-(m_delta_e + m_system_bias.calc_bias()))};
+    double new_bias {m_system_bias.calc_bias()};
+    double bias_diff {new_bias - m_old_bias};
+    double boltz_factor {exp(-(m_delta_e + bias_diff))};
 
     int Ni_new {m_origami_system.num_staples_of_ident(c_i_ident)};
 
@@ -339,7 +341,9 @@ bool MetStapleExchangeMCMovetype::staple_insertion_accepted(int c_i_ident) {
 bool MetStapleExchangeMCMovetype::staple_deletion_accepted(int c_i_ident) {
 
     // Calculate boltz factor with system biases
-    double boltz_factor {exp(-(m_delta_e + m_system_bias.calc_bias()))};
+    double new_bias {m_system_bias.calc_bias()};
+    double bias_diff {new_bias - m_old_bias};
+    double boltz_factor {exp(-(m_delta_e + bias_diff))};
 
     int Ni {m_origami_system.num_staples_of_ident(c_i_ident)};
 
@@ -460,7 +464,9 @@ bool MetStapleRegrowthMCMovetype::attempt_move() {
     }
 
     // Calculate boltz factor with system biases
-    double boltz_factor {exp(-(m_delta_e + m_system_bias.calc_bias()))};
+    double new_bias {m_system_bias.calc_bias()};
+    double bias_diff {new_bias - m_old_bias};
+    double boltz_factor {exp(-(m_delta_e + bias_diff))};
 
     accepted = test_acceptance(boltz_factor);
     return accepted;
@@ -920,7 +926,10 @@ bool CBStapleRegrowthMCMovetype::attempt_move() {
     }
 
     // Add system biases
-    m_bias *= exp(-m_system_bias.calc_bias());
+    double new_bias {m_system_bias.calc_bias()};
+    double bias_diff {new_bias - m_old_bias};
+    m_bias *= exp(-bias_diff);
+    m_old_bias = new_bias;
 
     // Regrow staple in old conformation
     setup_for_regrow_old();
@@ -935,7 +944,9 @@ bool CBStapleRegrowthMCMovetype::attempt_move() {
     set_growthpoint_and_grow_staple(growthpoint, selected_chain);
 
     // Add system biases
-    m_bias *= exp(-m_system_bias.calc_bias());
+    new_bias = m_system_bias.calc_bias();
+    bias_diff = new_bias - m_old_bias;
+    m_bias *= exp(-bias_diff);
 
     // Revert modifier and test acceptance
     m_modifier = m_new_modifier;
@@ -1310,7 +1321,10 @@ bool CTCBScaffoldRegrowthMCMovetype::attempt_move() {
     }
 
     // Add system biases
-    m_bias *= exp(-m_system_bias.calc_bias());
+    double new_bias {m_system_bias.calc_bias()};
+    double bias_diff {new_bias - m_old_bias};
+    m_bias *= exp(-bias_diff);
+    m_old_bias = new_bias;
 
     // Regrow in old conformation
     setup_for_regrow_old();
@@ -1330,7 +1344,9 @@ bool CTCBScaffoldRegrowthMCMovetype::attempt_move() {
     grow_chain(scaffold_domains);
 
     // Add system biases
-    m_bias *= exp(-m_system_bias.calc_bias());
+    new_bias = m_system_bias.calc_bias();
+    bias_diff = new_bias - m_old_bias;
+    m_bias *= exp(-bias_diff);
 
     // Reset modifier and test acceptance
     m_modifier = 1;

@@ -501,6 +501,7 @@ void OrigamiSystem::calc_energies() {
             }
         }
     }
+    write_energies_to_file();
 }
 
 void OrigamiSystem::calc_energy(string seq_i, string seq_j,

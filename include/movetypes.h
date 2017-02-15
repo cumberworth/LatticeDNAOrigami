@@ -40,7 +40,11 @@ namespace Movetypes {
                     m_system_bias {system_bias},
                     m_random_gens {random_gens},
                     m_ideal_random_walks {ideal_random_walks},
-                    m_params {params} {}
+                    m_params {params} {
+
+                // Lazy way to calculte old bias
+                m_old_bias = m_system_bias.calc_bias();}
+
             virtual ~MCMovetype() {};
 
             virtual bool attempt_move() = 0;
@@ -55,6 +59,9 @@ namespace Movetypes {
             IdealRandomWalks& m_ideal_random_walks;
             InputParameters& m_params;
             bool m_rejected {false};
+
+            // Lazy way to calculte bias diff
+            double m_old_bias {0};
 
             // Lists of modified domains for move reversal
             vector<pair<int, int>> m_modified_domains {};
