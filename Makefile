@@ -1,22 +1,19 @@
 #CC = g++
 CC = mpicxx
-#CPPFLAGS = -I include -g
+CPPFLAGS = -I include -g
 #LDFLAGS = -lboost_program_options -g
-#LDFLAGS = -lboost_program_options -lboost_mpi -lboost_serialization -g
-CPPFLAGS = -I include -O3
+LDFLAGS = -lboost_program_options -lboost_mpi -lboost_serialization -g
+#CPPFLAGS = -I include -O3
 #LDFLAGS = -lboost_program_options -O3
-LDFLAGS = -lboost_program_options -lboost_mpi -lboost_serialization -O3
+#LDFLAGS = -lboost_program_options -lboost_mpi -lboost_serialization -O3
 BUILD = build/
 vpath %.h include
 vpath %.cpp src
 
 INSTALL_LOC = ../../bin/latticeDNAOrigami
 TARGET = bin/latticeDNAOrigami
-TESTTARGET = tests/testLatticeDNAOrigami
 
 all: $(TARGET)
-
-testing: $(TESTTARGET)
 
 $(TARGET): $(BUILD)main.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o $(BUILD)domain.o $(BUILD)simulation.o $(BUILD)movetypes.o $(BUILD)random_gens.o $(BUILD)ideal_random_walk.o $(BUILD)parser.o $(BUILD)order_params.o
 	$(CC) -o $@ $^ $(LDFLAGS)
@@ -62,9 +59,6 @@ $(BUILD)parser.o: parser.cpp parser.h
 	$(CC) -o $@ -c $(CPPFLAGS) $<
 
 $(BUILD)order_params.o: order_params.cpp order_params.h
-	$(CC) -o $@ -c $(CPPFLAGS) $<
-
-$(BUILD)test.o: test.cpp
 	$(CC) -o $@ -c $(CPPFLAGS) $<
 
 .PHONY: clean install

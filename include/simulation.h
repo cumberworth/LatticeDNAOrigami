@@ -151,6 +151,9 @@ namespace Simulation {
                     vector<int> attempt_count,
                     vector<int> swap_count);
     };
+
+    class UmbrellaSamplingSimulation: public GCMCSimulation {
+    };
 }
 
 #endif // SIMULATION_H

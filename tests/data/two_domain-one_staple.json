@@ -1,0 +1,35 @@
+{
+    "origami": {
+        "cyclic": false,
+        "identities": [
+            [-1, -2],
+            [1, 2]
+        ],
+        "sequences": [[
+            "AATTGGCAGTTTCACA",
+            "CTGCCATACACTAATA"
+        ], [
+            "TGTGAAACTGCCAATT",
+            "TATTAGTGTATGGCAG"
+        ]],
+        "configurations": [
+            {
+                "step": 0,
+                "chains": [
+                    {
+                        "index": 0,
+                        "identity": 0,
+                        "positions": [[0, 0, 0], [1, 0, 0]],
+                        "orientations": [[0, 0, 1], [0, 0, 1]]
+                    },
+                    {
+                        "index": 1,
+                        "identity": 1,
+                        "positions": [[0, 0, 0], [0, 1, 0]],
+                        "orientations": [[0, 0, -1], [0, 0, 1]]
+                    }
+                ]
+            }
+        ]
+    }
+}
