@@ -418,6 +418,8 @@ void OrigamiSystem::update_temp(double temp) {
     else {
         unordered_map<pair<int, int>, double> m_hybrid_old {m_hybridization_energies};
         m_hybridization_energies = m_hybridization_energy_tables[temp];
+        m_hybridization_enthalpies = m_hybridization_enthalpy_tables[temp];
+        m_hybridization_entropies = m_hybridization_entropy_tables[temp];
         m_stacking_energies = m_stacking_energy_tables[temp];
     }
 
@@ -709,17 +711,28 @@ bool OrigamiSystem::read_energies_from_file() {
     // Read energies from file, return false if not present
     string temp_string {"_" + std::to_string(static_cast<int>(m_temp))};
 
-    // Hybridization energies
+    // Hybridization free energies, enthalpies, entropies
     string henergy_filename {m_energy_filebase + temp_string + ".hene"};
+    string hhenergy_filename {m_energy_filebase + temp_string + ".hhene"};
+    string hsenergy_filename {m_energy_filebase + temp_string + ".hsene"};
 
     // Stacking energies
     string senergy_filename {m_energy_filebase + temp_string + ".sene"};
+
     std::ifstream henergy_file {henergy_filename};
+    std::ifstream hhenergy_file {henergy_filename};
+    std::ifstream hsenergy_file {henergy_filename};
     std::ifstream senergy_file {senergy_filename};
-    bool files_present {henergy_file and senergy_file};
+
+    bool files_present {henergy_file and hhenergy_file and hsenergy_file and
+            senergy_file};
     if (files_present) {
         boost::archive::text_iarchive h_arch {henergy_file};
         h_arch >> m_hybridization_energies;
+        boost::archive::text_iarchive hh_arch {hhenergy_file};
+        hh_arch >> m_hybridization_enthalpies;
+        boost::archive::text_iarchive hs_arch {hsenergy_file};
+        hs_arch >> m_hybridization_entropies;
         boost::archive::text_iarchive s_arch {senergy_file};
         s_arch >> m_stacking_energies;
     }
@@ -730,14 +743,23 @@ bool OrigamiSystem::read_energies_from_file() {
 void OrigamiSystem::write_energies_to_file() {
     string temp_string {"_" + std::to_string(static_cast<int>(m_temp))};
 
-    // Hybridization energies
+    // Hybridization energies, enthalpies, entropies
     string henergy_filename {m_energy_filebase + temp_string + ".hene"};
+    string hhenergy_filename {m_energy_filebase + temp_string + ".hhene"};
+    string hsenergy_filename {m_energy_filebase + temp_string + ".hsene"};
 
     // Stacking energies
     string senergy_filename {m_energy_filebase + temp_string + ".sene"};
+
     std::ofstream henergy_file {henergy_filename};
     boost::archive::text_oarchive h_arch {henergy_file};
     h_arch << m_hybridization_energies;
+    std::ofstream hhenergy_file {hhenergy_filename};
+    boost::archive::text_oarchive hh_arch {hhenergy_file};
+    hh_arch << m_hybridization_enthalpies;
+    std::ofstream hsenergy_file {hsenergy_filename};
+    boost::archive::text_oarchive hs_arch {hsenergy_file};
+    hs_arch << m_hybridization_entropies;
     std::ofstream senergy_file {senergy_filename};
     boost::archive::text_oarchive s_arch {senergy_file};
     s_arch << m_stacking_energies;
