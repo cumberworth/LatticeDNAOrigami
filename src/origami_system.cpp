@@ -140,7 +140,7 @@ ThermoOfHybrid OrigamiSystem::enthalpy_and_entropy() {
             Occupancy state {domain->m_state};
             if (state == Occupancy::bound or state == Occupancy::misbound) {
                 if (find(accounted_domains.begin(), accounted_domains.end(),
-                            domain) != accounted_domains.end()) {
+                            domain) == accounted_domains.end()) {
                     Domain& bound_domain {*domain->m_bound_domain};
                     DH_DS_total.enthalpy += hybridization_enthalpy(*domain,
                             bound_domain);

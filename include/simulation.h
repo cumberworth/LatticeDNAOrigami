@@ -101,7 +101,7 @@ namespace Simulation {
                     OrigamiSystem& origami_system,
                     SystemBias& system_bias,
                     InputParameters& params);
-            ~PTGCMCSimulation() {delete m_logging_stream;}
+            ~PTGCMCSimulation();
             void run();
 
         protected:
@@ -135,7 +135,8 @@ namespace Simulation {
                     int swap_i,
                     vector<int>& attempt_count,
                     vector<int>& swap_count);
-            bool test_acceptance(
+            bool test_acceptance(double acceptance_p);
+            double calc_acceptance_p(
                     double temp1,
                     double temp2,
                     double staple_u1,

@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
         sim = new AnnealingGCMCSimulation {origami, system_bias, params};
     }
     else if (params.m_simulation_type == "parallel_tempering") {
-        sim = new PTGCMCSimulation {origami, system_bias,params};
+        sim = new PTGCMCSimulation {origami, system_bias, params};
     }
     else {
         cout << "No such simulation type.\n";

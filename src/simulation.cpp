@@ -44,6 +44,7 @@ GCMCSimulation::GCMCSimulation(OrigamiSystem& origami_system,
         m_cumulative_probs.push_back(cum_prob);
     }
 
+    // Load precalculated ideal random walk count data
     if (params.m_num_walks_filename.size() != 0) {
         std::ifstream num_walks_file {params.m_num_walks_filename};
         boost::archive::binary_iarchive num_walks_arch {num_walks_file};
@@ -150,6 +151,7 @@ void AnnealingGCMCSimulation::run() {
     }
 }
 
+// This has become too long for one method
 PTGCMCSimulation::PTGCMCSimulation(OrigamiSystem& origami_system,
         SystemBias& system_bias, InputParameters& params) :
         GCMCSimulation(origami_system, system_bias, params),
@@ -217,6 +219,10 @@ PTGCMCSimulation::PTGCMCSimulation(OrigamiSystem& origami_system,
         m_swapfile << "\n";
         write_swap_entry();
     }
+}
+
+PTGCMCSimulation::~PTGCMCSimulation() {
+    delete m_logging_stream;
 }
 
 void PTGCMCSimulation::run() {
@@ -287,7 +293,6 @@ void PTGCMCSimulation::master_receive(int swap_i, vector<double>& enthalpies,
         m_world.recv(rep_i, swap_i, bias);
         m_world.recv(rep_i, swap_i, N);
 
-        // Add master values
         enthalpies.push_back(DH);
         biases.push_back(bias);
         staples.push_back(N);
@@ -315,7 +320,7 @@ void PTGCMCSimulation::attempt_exchange(int swap_i,
         vector<int>& attempt_count, vector<int>& swap_count) {
     // Alternates between two sets of pairs, allows for changes in T, u, and N
 
-    // Collect results from slaves
+    // Collect results from all replicas
     ThermoOfHybrid DH_DS {m_origami_system.enthalpy_and_entropy()};
     vector<double> enthalpies {DH_DS.enthalpy};
     vector<double> biases {m_system_bias.calc_bias()};
@@ -342,8 +347,9 @@ void PTGCMCSimulation::attempt_exchange(int swap_i,
         double bias2 {enthalpies[repi2] * temp2};
         int N1 {staples[repi1]};
         int N2 {staples[repi2]};
-        bool accept {test_acceptance(temp1, temp2, staple_u1, staple_u2,
+        double p_accept {calc_acceptance_p(temp1, temp2, staple_u1, staple_u2,
                 enthalpy1, enthalpy2, bias1, bias2, N1, N2)};
+        bool accept {test_acceptance(p_accept)};
 
         // If accepted swap temperatures and chem. pot.s
         if (accept) {
@@ -360,16 +366,7 @@ void PTGCMCSimulation::attempt_exchange(int swap_i,
     master_send(swap_i);
 }
 
-bool PTGCMCSimulation::test_acceptance(double temp1, double temp2,
-        double staple_u1, double staple_u2, double enthalpy1, double enthalpy2,
-        double bias1, double bias2, int N1, int N2) {
-
-    double DB {1/temp2 - 1/temp1};
-    double DH {enthalpy2 - enthalpy1};
-    double DBias {bias2 - bias1};
-    int DN {N2 - N1};
-    double DBU {staple_u2 / temp2 - staple_u1 / temp1};
-    double p_accept {min({1.0, exp(DB*(DH + DBias) - DBU*DN)})};
+bool PTGCMCSimulation::test_acceptance(double p_accept) {
     bool accept;
     if (p_accept == 1) {
         accept = true;
@@ -385,6 +382,20 @@ bool PTGCMCSimulation::test_acceptance(double temp1, double temp2,
     }
 
     return accept;
+}
+
+double PTGCMCSimulation::calc_acceptance_p(double temp1, double temp2,
+        double staple_u1, double staple_u2, double enthalpy1, double enthalpy2,
+        double bias1, double bias2, int N1, int N2) {
+
+    double DB {1/temp2 - 1/temp1};
+    double DH {enthalpy2 - enthalpy1};
+    double DBias {bias2 - bias1};
+    int DN {N2 - N1};
+    double DBU {staple_u2 / temp2 - staple_u1 / temp1};
+    double p_accept {min({1.0, exp(DB*(DH + DBias) - DBU*DN)})};
+
+    return p_accept;
 }
 
 void PTGCMCSimulation::write_swap_entry() {
