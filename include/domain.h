@@ -9,40 +9,43 @@ using namespace Utility;
 
 namespace DomainContainer{
 
-    // Container for chain domain indices
     class Domain {
+        // DNA origami binding domain
         public:
 
-            // Constant attributes
-            const int m_c;
-            const int m_c_ident;
-            const int m_d;
-            const int m_d_ident;
-            const int m_c_length;
-            // Modifiable attributes
-            VectorThree m_pos {};
-            VectorThree m_ore {};
-            Occupancy m_state {Occupancy::unassigned};
-            Domain* m_bound_domain {nullptr};
-
+            // Standard methods
             Domain(int c, int c_ident, int d, int d_ident, int c_length): m_c {c},
                     m_c_ident {c_ident}, m_d {d}, m_d_ident {d_ident},
                     m_c_length {c_length} {};
             virtual ~Domain() = default;
 
+            // Immutable attributes
+            const int m_c; // Unique index of the associated chain
+            const int m_c_ident; // Identity of the chain the associated chain
+            const int m_d; // Domain index
+            const int m_d_ident; // Domain identity
+            const int m_c_length; // Associated chain length
+            Domain* m_forward_domain {nullptr}; // Domain in ?' direction
+            Domain* m_backward_domain {nullptr}; // Domain in ?' direction
+
+            // State attributes
+            VectorThree m_pos {}; // Position vector
+            VectorThree m_ore {}; // Orientation vector
+            Occupancy m_state {Occupancy::unassigned}; // Binding state
+            Domain* m_bound_domain {nullptr}; // Pointer to bound domain
+
+            // Get next domain in chain
             Domain* operator+(int increment);
 
+            // Constraint checkers
             virtual bool check_twist_constraint(VectorThree ndr, Domain& cd_j) = 0;
-
-            Domain* m_forward_domain {nullptr};
-            Domain* m_backward_domain {nullptr};
     };
 
     class SixteenDomain: public Domain {
         using Domain::Domain;
         public:
-//            SixteenDomain(int c, int c_ident, int d, int d_ident, int c_length):
-//                Domain {c, c_ident, d, d_ident, c_length} {};
+
+            // Constraint checkers
             bool check_twist_constraint(VectorThree ndr, Domain& cd_j);
     };
 

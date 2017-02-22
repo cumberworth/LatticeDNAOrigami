@@ -97,6 +97,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("restart_step", po::value<int>(), "Step to restart from")
 
         // Order parameters and biases
+        ("distance_bias", po::value<bool>(), "Include domain pair distance bias")
         ("restraint_pairs", po::value<string>(), "Scaffold domains to restrain")
         ("min_dist", po::value<int>(), "Distance at which bias switched off")
         ("max_dist", po::value<int>(), "Distance at which bias switched on")
@@ -180,6 +181,9 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     }
 
     // Order parameters and biases
+    if (vm.count("distance_bias")) {
+        m_distance_bias = vm["distance_bias"].as<bool>();
+    }
     if (vm.count("bias_mult")) {
         m_bias_mult = vm["bias_mult"].as<double>();
     }

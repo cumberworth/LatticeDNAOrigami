@@ -71,6 +71,59 @@ OrigamiSystem::~OrigamiSystem() {
     }
 }
 
+vector<vector<Domain*>> OrigamiSystem::get_chains() {
+    return m_domains;
+}
+
+vector<Domain*> OrigamiSystem::get_last_chain() {
+    return m_domains.back();
+}
+
+int OrigamiSystem::num_staples() const {
+    return m_domains.size() - 1;
+}
+
+int OrigamiSystem::num_domains() {
+    return m_num_domains;
+}
+
+int OrigamiSystem::num_bound_domain_pairs() const {
+    return m_num_bound_domain_pairs;
+}
+
+int OrigamiSystem::num_fully_bound_domain_pairs() const {
+    return m_num_fully_bound_domain_pairs;
+}
+
+int OrigamiSystem::num_self_bound_domain_pairs() const {
+    return m_num_self_bound_domain_pairs;
+}
+
+int OrigamiSystem::num_misbound_domain_pairs() const {
+    return num_bound_domain_pairs() - num_fully_bound_domain_pairs();
+}
+
+int OrigamiSystem::num_staples_of_ident(int staple_ident) const {
+    return m_identity_to_index[staple_ident].size();
+}
+
+vector<int> OrigamiSystem::staples_of_ident(int c_ident) {
+    return m_identity_to_index[c_ident];
+}
+
+vector<int> OrigamiSystem::complementary_scaffold_domains(int staple_ident)
+        const {
+    return m_staple_ident_to_scaffold_ds[staple_ident];
+}
+
+Domain* OrigamiSystem::unbound_domain_at(VectorThree pos) const {
+    return m_pos_to_unbound_d.at(pos);
+}
+
+double OrigamiSystem::energy() const {
+    return m_energy;
+}
+
 vector<Domain*> OrigamiSystem::get_chain(int c_i) {
     int c_i_index {index(m_chain_indices, c_i)};
     return m_domains[c_i_index];

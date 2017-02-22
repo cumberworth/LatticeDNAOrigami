@@ -44,6 +44,7 @@ namespace Parser {
             int m_restart_step;
 
             // Order parameters and biases
+            bool m_distance_bias {false};
             vector<int> m_restraint_pairs {};
             int m_min_dist;
             int m_max_dist;

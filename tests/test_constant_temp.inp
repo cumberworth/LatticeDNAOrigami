@@ -9,6 +9,7 @@ lattice_site_volume=4e-28
 energy_filebase=data/four
 
 # Order parameters and biases
+distance_bias=true
 restraint_pairs=0 3
 min_dist=1
 max_dist=4

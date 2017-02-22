@@ -1,4 +1,4 @@
-//origami_system.h
+// origami_system.h
 
 #ifndef ORIGAMI_SYSTEM_H
 #define ORIGAMI_SYSTEM_H
@@ -42,7 +42,8 @@ namespace Origami {
     class OrigamiSystem {
         // Cubic lattice domain-level resolution model of DNA origami
         public:
-    
+
+            // Standard methods
             OrigamiSystem(
                     const vector<vector<int>>& identities,
                     const vector<vector<string>>& sequences,
@@ -62,63 +63,35 @@ namespace Origami {
             OrigamiSystem& operator=(OrigamiSystem&&) = default;
     
             // Configuration independent system properties
-            const vector<vector<int>> m_identities;
-            const vector<vector<string>> m_sequences;
-            double m_temp;
-            double m_volume;
-            const double m_cation_M;
-            double m_staple_u;
-            const bool m_cyclic;
-            const int c_scaffold {0};
+            const vector<vector<int>> m_identities; // Domain identities
+            const vector<vector<string>> m_sequences; // Domain sequences
+            double m_temp; // System temperature (K)
+            double m_volume; // System volume (num lattice sites)
+            const double m_cation_M; // Cation concentration (mol/V)
+            double m_staple_u; // Staple chemical potential (K)
+            const bool m_cyclic; // Cyclic scaffold
+            const int c_scaffold {0}; // Unique chain index of scaffold
     
-            // Configuration properties
-            bool m_constraints_violated {false};
+            // Configuration properties CONTAIN SOME AS ORDER PARAMS?
             vector<Domain*> get_chain(int c_i);
-            inline vector<vector<Domain*>> get_chains() {
-                return m_domains;
-            }
-            vector<Domain*> get_last_chain() {
-                return m_domains.back();
-            }
+            vector<vector<Domain*>> get_chains();
+            vector<Domain*> get_last_chain();
             Domain* get_domain(int c_i, int d_i);
-            inline int num_staples() const {
-                return m_domains.size() - 1;
-            }
+            int num_staples() const;
             int num_unique_staples() const;
-            inline int num_domains() {
-                return m_num_domains;
-            }
-            inline int num_bound_domain_pairs() const {
-                return m_num_bound_domain_pairs;
-            }
-            inline int num_fully_bound_domain_pairs() const {
-                return m_num_fully_bound_domain_pairs;
-            }
-            inline int num_self_bound_domain_pairs() const {
-                return m_num_self_bound_domain_pairs;
-            }
-            inline int num_misbound_domain_pairs() const {
-                return num_bound_domain_pairs() - num_fully_bound_domain_pairs();
-            }
-            inline int num_staples_of_ident(int staple_ident) const {
-                return m_identity_to_index[staple_ident].size();
-            }
-            inline vector<int> staples_of_ident(int c_ident) {
-                return m_identity_to_index[c_ident];
-            }
-            inline vector<int> complimentary_scaffold_domains(int staple_ident)
-                    const {
-                return m_staple_ident_to_scaffold_ds[staple_ident];
-            }
+            int num_domains();
+            int num_bound_domain_pairs() const;
+            int num_fully_bound_domain_pairs() const;
+            int num_self_bound_domain_pairs() const;
+            int num_misbound_domain_pairs() const;
+            int num_staples_of_ident(int staple_ident) const;
+            vector<int> staples_of_ident(int c_ident);
+            vector<int> complementary_scaffold_domains(int staple_ident) const;
             Chains chains() const;
             Occupancy position_occupancy(VectorThree pos) const;
-            inline Domain* unbound_domain_at(VectorThree pos) const {
-                return m_pos_to_unbound_d.at(pos);
-            }
+            Domain* unbound_domain_at(VectorThree pos) const;
             bool check_domains_complementary(Domain& cd_i, Domain& cd_j);
-            inline double energy() const {
-                return m_energy;
-            }
+            double energy() const;
             ThermoOfHybrid enthalpy_and_entropy();
     
             // Constraint checkers
@@ -150,6 +123,9 @@ namespace Origami {
             void update_temp(double temp);
             void update_staple_u(double u);
 
+            // Constraints state
+            bool m_constraints_violated {false};
+
             // The index that should be assigned to the next added chain
             int m_current_c_i {};
 
@@ -157,39 +133,21 @@ namespace Origami {
             virtual double bind_noncomplementary_domains(Domain& cd_i, Domain& cd_j);
 
         private:
-            // Data
-            vector<vector<Domain*>> m_domains {};
-            int m_num_domains {0};
+            // Bookeeping stuff, could probably organize better
+            vector<vector<Domain*>> m_domains {}; // Domains grouped by chain
+            int m_num_domains {0}; // Total domains in system
+            vector<vector<int>> m_staple_ident_to_scaffold_ds {}; // Staple ID to comp scaffold domain i
+            vector<int> m_chain_indices {}; // Working to unique index
+            vector<int> m_chain_identities {}; // Working index to id
+            vector<vector<int>> m_identity_to_index {}; // ID to unique indices
+            unordered_map<VectorThree, Domain*> m_pos_to_unbound_d {}; // Position to unbound domain
+            unordered_map<VectorThree, Occupancy> m_position_occupancies {}; // State of positions
+            int m_num_bound_domain_pairs {0}; // Num bound domains pairs
+            int m_num_fully_bound_domain_pairs {0}; // Num bound fully complementary domain pairs
+            int m_num_self_bound_domain_pairs {0}; // Num self-misbound domain pairs
 
-            // Keeps track of all scaffold domains complementary to a domain on
-            // a given staple. Only tracks staple identity to the scaffold domain
-            // indices
-            vector<vector<int>> m_staple_ident_to_scaffold_ds {};
-
-            // Position in domains array to chain index
-            vector<int> m_chain_indices {};
-            
-            // Identity to list of all chains of that type
-            vector<vector<int>> m_identity_to_index {};
-
-            // May need to access the chain type by index in m_domains only
-            vector<int> m_chain_identities {};
-
-            // Keeps track of unbound domains but indexed by position
-            unordered_map<VectorThree, Domain*> m_pos_to_unbound_d {};
-            
-            // The state of all positiions occupied by a domain index by position
-            unordered_map<VectorThree, Occupancy> m_position_occupancies {};
-
-            // Number of bound domain pairs
-            int m_num_bound_domain_pairs {0};
-
-            // Number of fully complimentary domains bound
-            int m_num_fully_bound_domain_pairs {0};
-
-            // Number of self-misbound domains
-            int m_num_self_bound_domain_pairs {0};
-
+            // CONSIDER CONTAINING ENERGY STUFF IN ANOTHER CLASS
+            // ALSO CONSIDER DEFINING TYPE FOR THESE TABLES
             // Energy tables index by chain/domain identity pair
             unordered_map<pair<int, int>, double> m_hybridization_energies {};
             unordered_map<pair<int, int>, double> m_hybridization_enthalpies {};
@@ -207,8 +165,7 @@ namespace Origami {
             unordered_map<double, unordered_map<pair<int, int>, double>> 
                     m_stacking_energy_tables {};
 
-            // Current total energy of system
-            double m_energy {0};
+            double m_energy {0}; // Current total energy of system
     
             // Intializers
             void initialize_complementary_associations();
@@ -279,4 +236,4 @@ namespace Origami {
     double chempot_to_volume(double chempot, double temp);
 }
 
-#endif // ORIGAMI_H
+#endif // ORIGAMI_SYSTEM_H

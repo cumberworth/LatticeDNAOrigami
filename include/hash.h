@@ -5,10 +5,12 @@
 #include <iostream>
 
 #include "utility.h"
+#include "domain.h"
 
 using std::cout;
 
 using Utility::VectorThree;
+using namespace DomainContainer;
 
 /* Copied from a stack exchange question (which is copied from the BOOST
    library) for allowing pairs to be hashed.
@@ -50,7 +52,6 @@ namespace std {
             return seed;
         }
     };
-
 }
 
 #endif // HASH_H
