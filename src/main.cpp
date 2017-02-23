@@ -49,19 +49,18 @@ int main(int argc, char* argv[]) {
             staple_u,
             cyclic,
             params.m_energy_filebase};
-    SystemBias system_bias {params, origami};
 
     // Setup simulation
 
     GCMCSimulation* sim;
     if (params.m_simulation_type == "constant_temp") {
-        sim = new ConstantTGCMCSimulation {origami, system_bias, params};
+        sim = new ConstantTGCMCSimulation {origami, params};
     }
     else if (params.m_simulation_type == "annealing") {
-        sim = new AnnealingGCMCSimulation {origami, system_bias, params};
+        sim = new AnnealingGCMCSimulation {origami, params};
     }
     else if (params.m_simulation_type == "parallel_tempering") {
-        sim = new PTGCMCSimulation {origami, system_bias, params};
+        sim = new PTGCMCSimulation {origami, params};
     }
     else {
         cout << "No such simulation type.\n";

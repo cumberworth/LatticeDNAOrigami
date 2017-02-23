@@ -32,19 +32,13 @@ namespace Movetypes {
         public:
             MCMovetype(
                     OrigamiSystem& origami_system,
-                    SystemBias& system_bias,
                     RandomGens& random_gens,
                     IdealRandomWalks& ideal_random_walks,
                     InputParameters& params) :
                     m_origami_system {origami_system},
-                    m_system_bias {system_bias},
                     m_random_gens {random_gens},
                     m_ideal_random_walks {ideal_random_walks},
-                    m_params {params} {
-
-                // Lazy way to calculte old bias
-                m_old_bias = m_system_bias.calc_bias();}
-
+                    m_params {params} {}
             virtual ~MCMovetype() {};
 
             virtual bool attempt_move() = 0;
@@ -54,7 +48,6 @@ namespace Movetypes {
 
         protected:
             OrigamiSystem& m_origami_system;
-            SystemBias& m_system_bias;
             RandomGens& m_random_gens;
             IdealRandomWalks& m_ideal_random_walks;
             InputParameters& m_params;
@@ -198,13 +191,11 @@ namespace Movetypes {
             using CBMCMovetype::CBMCMovetype;
             CBStapleExchangeMCMovetype(
                     OrigamiSystem& origami_system,
-                    SystemBias& system_bias,
                     RandomGens& random_gens,
                     IdealRandomWalks& ideal_random_walks,
                     InputParameters& params) :
                     CBMCMovetype(
                             origami_system,
-                            system_bias,
                             random_gens,
                             ideal_random_walks,
                             params) {}
@@ -316,13 +307,11 @@ namespace Movetypes {
             using CBMCMovetype::CBMCMovetype;
             CTCBScaffoldRegrowthMCMovetype(
                     OrigamiSystem& origami_system,
-                    SystemBias& system_bias,
                     RandomGens& random_gens,
                     IdealRandomWalks& ideal_random_walks,
                     InputParameters& params) :
                     CBMCMovetype(
                             origami_system,
-                            system_bias,
                             random_gens,
                             ideal_random_walks,
                             params) {};
@@ -348,14 +337,12 @@ namespace Movetypes {
     template<typename T>
     unique_ptr<MCMovetype> movetype_constructor(
             OrigamiSystem& origami_system,
-            SystemBias& system_bias,
             RandomGens& random_gens,
             IdealRandomWalks& ideal_random_walks,
             InputParameters& params);
 
     using MovetypeConstructor = unique_ptr<MCMovetype> (*)(
             OrigamiSystem& origami_system,
-            SystemBias& system_bias,
             RandomGens& random_gens,
             IdealRandomWalks& ideal_random_walks,
             InputParameters& params);

@@ -43,14 +43,12 @@ namespace Simulation {
         public:
             GCMCSimulation(
                     OrigamiSystem& origami_system,
-                    SystemBias& system_bias,
                     InputParameters& params);
             virtual ~GCMCSimulation();
             virtual void run() = 0;
 
         protected:
             OrigamiSystem& m_origami_system;
-            SystemBias& m_system_bias;
             ostream* m_logging_stream;
             int m_logging_freq;
             int m_centering_freq;
@@ -74,7 +72,6 @@ namespace Simulation {
         public:
             ConstantTGCMCSimulation(
                     OrigamiSystem& origami_system,
-                    SystemBias& system_bias,
                     InputParameters& params);
             void run() {simulate(m_steps);}
         private:
@@ -85,7 +82,6 @@ namespace Simulation {
         public:
             AnnealingGCMCSimulation(
                     OrigamiSystem& origami_system,
-                    SystemBias& system_bias,
                     InputParameters& params);
             void run();
         private:
@@ -99,7 +95,6 @@ namespace Simulation {
         public:
             PTGCMCSimulation(
                     OrigamiSystem& origami_system,
-                    SystemBias& system_bias,
                     InputParameters& params);
             ~PTGCMCSimulation();
             void run();
