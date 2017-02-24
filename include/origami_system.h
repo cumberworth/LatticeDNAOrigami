@@ -15,6 +15,7 @@
 #include "nearest_neighbour.h"
 #include "hash.h"
 #include "domain.h"
+#include "parser.h"
 
 using std::vector;
 using std::set;
@@ -26,6 +27,14 @@ using std::valarray;
 using namespace Utility;
 using namespace DomainContainer;
 using namespace NearestNeighbour;
+using namespace Parser;
+
+// Forward declaration
+
+namespace OrderParams {
+    class SystemOrderParams;
+    class SystemBiases;
+}
 
 namespace Origami {
 
@@ -54,7 +63,7 @@ namespace Origami {
                     double staple_u,
                     bool cyclic,
                     string energy_filebase="");
-            ~OrigamiSystem();
+            virtual ~OrigamiSystem();
 
             // THESE NEED TO BE IMPLEMENTED TO DEAL WITH THE DOMAIN POINTER VECTOR
             OrigamiSystem(const OrigamiSystem&) = default;
@@ -96,26 +105,26 @@ namespace Origami {
     
             // Constraint checkers
             void check_all_constraints();
-            double check_domain_constraints(
+            virtual double check_domain_constraints(
                     Domain& cd_i,
                     VectorThree pos,
                     VectorThree ore);
             void check_distance_constraints();
     
             // Configuration modifiers
-            double unassign_domain(Domain& cd_i);
+            virtual double unassign_domain(Domain& cd_i);
             int add_chain(int c_i_ident);
             int add_chain(int c_i_ident, int uc_i);
-            void delete_chain(int c_i);
-            double set_checked_domain_config(
+            virtual void delete_chain(int c_i);
+            virtual double set_checked_domain_config(
                     Domain& cd_i,
                     VectorThree pos,
                     VectorThree ore);
-            double set_domain_config(
+            virtual double set_domain_config(
                     Domain& cd_i,
                     VectorThree position,
                     VectorThree orientation);
-            void set_domain_orientation(Domain& cd_i, VectorThree ore);
+            virtual void set_domain_orientation(Domain& cd_i, VectorThree ore);
             void centre();
             void set_all_domains();
 
@@ -182,7 +191,7 @@ namespace Origami {
             double stacking_energy(const Domain& cd_i, const Domain& cd_j) const;
     
             // States updates
-            void internal_unassign_domain(Domain& cd_i);
+            double internal_unassign_domain(Domain& cd_i);
             double unassign_bound_domain(Domain& cd_i);
             void unassign_unbound_domain(Domain& cd_i);
             void update_domain(Domain& cd_i, VectorThree pos, VectorThree ore);
@@ -194,6 +203,10 @@ namespace Origami {
             void update_energy();
 
             // Constraint checkers
+            double internal_check_domain_constraints(
+                    Domain& cd_i,
+                    VectorThree pos,
+                    VectorThree ore);
             double bind_domain(Domain& cd_i);
             double bind_complementary_domains(Domain& cd_i, Domain& cd_j);
             bool check_domain_pair_constraints(Domain& cd_i);
@@ -224,6 +237,48 @@ namespace Origami {
 
         protected:
             double bind_noncomplementary_domains(Domain& cd_i, Domain& cd_j);
+    };
+
+    class OrigamiSystemWithBias: public OrigamiSystem {
+        public:
+            OrigamiSystemWithBias(
+                    const vector<vector<int>>& identities,
+                    const vector<vector<string>>& sequences,
+                    const Chains& chains,
+                    double temp,
+                    double lattice_site_volume,
+                    double cation_M,
+                    double staple_u,
+                    bool cyclic,
+                    InputParameters& params,
+                    string energy_filebase="");
+
+            // Constraint checkers
+            virtual double check_domain_constraints(
+                    Domain& cd_i,
+                    VectorThree pos,
+                    VectorThree ore);
+    
+            // Configuration modifiers
+            double unassign_domain(Domain& cd_i);
+            // Need to make the base one virtual still
+            //int add_chain(int c_i_ident);
+            //int add_chain(int c_i_ident, int uc_i);
+            //virtual void delete_chain(int c_i);
+            double set_checked_domain_config(
+                    Domain& cd_i,
+                    VectorThree pos,
+                    VectorThree ore);
+            double set_domain_config(
+                    Domain& cd_i,
+                    VectorThree position,
+                    VectorThree orientation);
+            //void set_domain_orientation(Domain& cd_i, VectorThree ore);
+
+        private:
+            OrderParams::SystemOrderParams* m_system_order_params;
+            OrderParams::SystemBiases* m_system_biases;
+//            internal_check_domain_constraints(Domain& cd_i, VectorThree
     };
 
     double molarity_to_lattice_volume(double molarity, double lattice_site_volume);

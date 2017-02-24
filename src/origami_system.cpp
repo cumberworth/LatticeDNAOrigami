@@ -13,6 +13,7 @@
 #include "origami_system.h"
 #include "utility.h"
 #include "nearest_neighbour.h"
+#include "order_params.h"
 
 using std::abs;
 using std::max_element;
@@ -21,6 +22,7 @@ using std::cout;
 using namespace NearestNeighbour;
 using namespace Utility;
 using namespace Origami;
+using namespace OrderParams;
 
 // Public methods
 
@@ -217,7 +219,7 @@ void OrigamiSystem::check_all_constraints() {
                 throw OrigamiMisuse {};
             }
             else {
-                unassign_domain(*domain);
+                m_energy += internal_unassign_domain(*domain);
             }
         }
     }
@@ -243,27 +245,8 @@ double OrigamiSystem::check_domain_constraints(
         Domain& cd_i,
         VectorThree pos,
         VectorThree ore) {
-    // Updates positions and orientations and returns without reverting if no 
-    // constraint violation. But states left unassigned.
-    Occupancy occupancy {position_occupancy(pos)};
-    double delta_e {0};
+    double delta_e {internal_check_domain_constraints(cd_i, pos, ore)};
 
-    switch (occupancy) {
-        case Occupancy::bound:
-            m_constraints_violated = true;
-            break;
-        case Occupancy::misbound:
-            m_constraints_violated = true;
-            break;
-        case Occupancy::unbound:
-            update_domain(cd_i, pos, ore);
-            update_occupancies(cd_i, pos);
-            delta_e += bind_domain(cd_i);
-            internal_unassign_domain(cd_i);
-            break;
-        case Occupancy::unassigned:
-            update_domain(cd_i, pos, ore);
-    }
     return delta_e;
 }
 
@@ -286,30 +269,9 @@ void OrigamiSystem::check_distance_constraints() {
 }
 
 double OrigamiSystem::unassign_domain(Domain& cd_i) {
-    // Deletes positions, orientations, and removes/unassigns occupancies.
-    Occupancy occupancy {cd_i.m_state};
-    double delta_e {0};
-    switch (occupancy) {
-        case Occupancy::bound:
-            m_num_fully_bound_domain_pairs -= 1;
-            m_num_bound_domain_pairs -= 1;
-            delta_e += check_stacking(cd_i, *cd_i.m_bound_domain);
-            delta_e += unassign_bound_domain(cd_i);
-            break;
-        case Occupancy::misbound:
-            m_num_bound_domain_pairs -= 1;
-            if (cd_i.m_bound_domain->m_c == cd_i.m_c) {
-                m_num_self_bound_domain_pairs -= 1;
-            }
-            delta_e += unassign_bound_domain(cd_i);
-            break;
-        case Occupancy::unbound:
-            unassign_unbound_domain(cd_i);
-            break;
-        case Occupancy::unassigned:
-            break;
-    }
+    double delta_e {internal_unassign_domain(cd_i)};
     m_energy += delta_e;
+
     return delta_e;
 }
 
@@ -405,7 +367,7 @@ double OrigamiSystem::set_domain_config(
     }
 
     // Check constraints and update if obeyed, otherwise throw
-    double delta_e {check_domain_constraints(cd_i, pos, ore)};
+    double delta_e {internal_check_domain_constraints(cd_i, pos, ore)};
     if (not m_constraints_violated) {
         update_occupancies(cd_i, pos);
         m_energy += delta_e;
@@ -688,9 +650,33 @@ double OrigamiSystem::stacking_energy(const Domain& cd_i, const Domain& cd_j) co
     return m_stacking_energies.at(key);
 }
 
-void OrigamiSystem::internal_unassign_domain(Domain& cd_i) {
-    m_energy -= unassign_domain(cd_i);
+double OrigamiSystem::internal_unassign_domain(Domain& cd_i) {
+    // Deletes positions, orientations, and removes/unassigns occupancies.
+    Occupancy occupancy {cd_i.m_state};
+    double delta_e {0};
+    switch (occupancy) {
+        case Occupancy::bound:
+            m_num_fully_bound_domain_pairs -= 1;
+            m_num_bound_domain_pairs -= 1;
+            delta_e += check_stacking(cd_i, *cd_i.m_bound_domain);
+            delta_e += unassign_bound_domain(cd_i);
+            break;
+        case Occupancy::misbound:
+            m_num_bound_domain_pairs -= 1;
+            if (cd_i.m_bound_domain->m_c == cd_i.m_c) {
+                m_num_self_bound_domain_pairs -= 1;
+            }
+            delta_e += unassign_bound_domain(cd_i);
+            break;
+        case Occupancy::unbound:
+            unassign_unbound_domain(cd_i);
+            break;
+        case Occupancy::unassigned:
+            break;
+    }
+    return delta_e;
 }
+
 
 double OrigamiSystem::unassign_bound_domain(Domain& cd_i) {
     Domain& cd_j {*cd_i.m_bound_domain};
@@ -836,6 +822,34 @@ void OrigamiSystem::update_energy() {
             }
         }
     }
+}
+
+double OrigamiSystem::internal_check_domain_constraints(
+        Domain& cd_i,
+        VectorThree pos,
+        VectorThree ore) {
+    // Updates positions and orientations and returns without reverting if no 
+    // constraint violation. But states left unassigned.
+    Occupancy occupancy {position_occupancy(pos)};
+    double delta_e {0};
+
+    switch (occupancy) {
+        case Occupancy::bound:
+            m_constraints_violated = true;
+            break;
+        case Occupancy::misbound:
+            m_constraints_violated = true;
+            break;
+        case Occupancy::unbound:
+            update_domain(cd_i, pos, ore);
+            update_occupancies(cd_i, pos);
+            delta_e += bind_domain(cd_i);
+            internal_unassign_domain(cd_i);
+            break;
+        case Occupancy::unassigned:
+            update_domain(cd_i, pos, ore);
+    }
+    return delta_e;
 }
 
 double OrigamiSystem::bind_domain(Domain& cd_i) {
@@ -1165,6 +1179,87 @@ double OrigamiSystemWithoutMisbinding::bind_noncomplementary_domains(
     m_constraints_violated = true;
     return 0;
 }
+
+OrigamiSystemWithBias::OrigamiSystemWithBias(
+        const vector<vector<int>>& identities,
+        const vector<vector<string>>& sequences,
+        const Chains& chains,
+        double temp,
+        double volume,
+        double cation_M,
+        double staple_u,
+        bool cyclic,
+        InputParameters& params,
+        string energy_filebase) :
+        OrigamiSystem(
+                identities,
+                sequences,
+                chains,
+                temp,
+                volume,
+                cation_M,
+                staple_u,
+                cyclic,
+                energy_filebase) {
+    m_system_order_params = new SystemOrderParams {params, *this};
+    m_system_biases = new SystemBiases {*this, *m_system_order_params, params};
+}
+
+double OrigamiSystemWithBias::check_domain_constraints(Domain& cd_i,
+        VectorThree pos, VectorThree ore) {
+    double delta_e {OrigamiSystem::check_domain_constraints(cd_i, pos, ore)};
+    Occupancy state;
+    Occupancy pos_state {position_occupancy(pos)};
+    if (pos_state == Occupancy::unassigned) {
+        state = Occupancy::unbound;
+    }
+    else if (pos_state == Occupancy::unbound) {
+        if (check_domains_complementary(*unbound_domain_at(pos), cd_i)) {
+            state = Occupancy::bound;
+        }
+        else {
+            state = Occupancy::misbound;
+        }
+    }
+    else {
+        state = Occupancy::unassigned;
+    }
+    delta_e += m_system_biases->check_one_domain(cd_i, pos, ore, state);
+
+    return delta_e;
+}
+
+double OrigamiSystemWithBias::unassign_domain(Domain& cd_i) {
+    double delta_e {OrigamiSystem::unassign_domain(cd_i)};
+    m_system_order_params->update_one_domain(cd_i);
+    delta_e += m_system_biases->calc_one_domain(cd_i);
+
+    return delta_e;
+}
+
+double OrigamiSystemWithBias::set_checked_domain_config(Domain& cd_i,
+        VectorThree pos, VectorThree ore) {
+    double delta_e {OrigamiSystem::set_checked_domain_config(cd_i, pos, ore)};
+    m_system_order_params->update_one_domain(cd_i);
+    delta_e += m_system_biases->calc_one_domain(cd_i);
+
+    return delta_e;
+}
+
+double OrigamiSystemWithBias::set_domain_config(Domain& cd_i, VectorThree pos,
+        VectorThree ore) {
+    double delta_e {OrigamiSystem::set_domain_config(cd_i, pos, ore)};
+    m_system_order_params->update_one_domain(cd_i);
+    delta_e += m_system_biases->calc_one_domain(cd_i);
+
+    return delta_e;
+}
+
+//void set_domain_orientation(Domain& cd_i, VectorThree ore) {
+//    delta_e {OrigamiSystem::set_domain_config(cd_i, pos, ore)};
+//    m_system_order_params->update_one_domain(cd_i);
+//    delta_e += m_system_biases->calc_one_domain(cd_i);
+//}
 
 double Origami::molarity_to_lattice_volume(double molarity, double lattice_site_volume) {
     // Given a molarity, calculate the volume that cancels the fugacity.

@@ -18,7 +18,6 @@ using namespace Origami;
 using namespace DomainContainer;
 using namespace Simulation;
 using namespace Movetypes;
-using namespace OrderParams;
 
 int main(int argc, char* argv[]) {
     InputParameters params {argc, argv};
