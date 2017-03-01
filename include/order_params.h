@@ -65,6 +65,67 @@ namespace OrderParams {
             bool m_defined;
     };
 
+    class DistSumOrderParam: public OrderParam {
+        public:
+            DistSumOrderParam(
+                    vector<OrderParam*> dist_params);
+            ~DistSumOrderParam() {}
+
+            int calc_param();
+            int check_param(
+                    Domain& domain,
+                    VectorThree new_pos,
+                    VectorThree,
+                    Occupancy);
+            int get_param();
+            bool dependent_on(Domain& domain);
+            vector<Domain*> get_depending_domains();
+            // Consider having seperate check for checking the order param only
+            bool defined();
+
+        private:
+            int m_param;
+            vector<OrderParam*> m_dist_params {};
+    };
+
+    class NumStaplesOrderParam: public OrderParam {
+        public:
+            NumStaplesOrderParam(OrigamiSystem& origami);
+            int calc_param();
+            int check_param(
+                    Domain& domain,
+                    VectorThree new_pos,
+                    VectorThree,
+                    Occupancy);
+            int get_param();
+            bool dependent_on(Domain& domain);
+            vector<Domain*> get_depending_domains();
+            // Consider having seperate check for checking the order param only
+            bool defined();
+
+        private:
+            OrigamiSystem& m_origami;
+    };
+
+    class NumBoundDomainPairsOrderParam: public OrderParam {
+        public:
+            NumBoundDomainPairsOrderParam(OrigamiSystem& origami);
+            int calc_param();
+            int check_param(
+                    Domain& domain,
+                    VectorThree new_pos,
+                    VectorThree,
+                    Occupancy);
+            int get_param();
+            bool dependent_on(Domain& domain);
+            vector<Domain*> get_depending_domains();
+            // Consider having seperate check for checking the order param only
+            bool defined();
+
+        private:
+            OrigamiSystem& m_origami;
+    };
+
     class SystemOrderParams {
         public:
             SystemOrderParams(InputParameters& params, OrigamiSystem& origami);
@@ -79,7 +140,7 @@ namespace OrderParams {
             unordered_map<pair<int, int>, vector<OrderParam*>> m_domain_to_order_params {};
             void setup_distance_param(InputParameters& params);
             vector<OrderParam*> get_dependent_order_params(Domain& domain);
-            void add_order_param_dependency(Domain& domain, OrderParam* order_param);
+            void add_param_dependency(Domain& domain, OrderParam* order_param);
 };
 
     class BiasFunction {
@@ -124,6 +185,29 @@ namespace OrderParams {
             double m_bias;
     };
 
+    class BinBiasFunction: public BiasFunction {
+        public:
+            BinBiasFunction(
+                    OrderParam& order_param,
+                    unordered_map<int, double> bins_to_biases);
+            ~BinBiasFunction();
+            double calc_bias(int param);
+            double update_bias();
+            double check_bias(
+                    Domain&,
+                    VectorThree new_pos,
+                    VectorThree new_ore,
+                    Occupancy state);
+            bool dependent_on(OrderParam& order_param);
+            double get_bias();
+
+            void update_bins_and_biases();
+        private:
+            double m_bias;
+            OrderParam& m_order_param;
+            unordered_map<int, double> m_bins_to_biases {};
+    };
+
     class SystemBiases {
         // All bias functions for the system
         public:
@@ -135,6 +219,7 @@ namespace OrderParams {
 
             // Recalculate everything
             double calc_bias();
+            double get_bias();
 
             // Bias can be tuned with a multiplier
             void update_bias_mult(double bias_mult);

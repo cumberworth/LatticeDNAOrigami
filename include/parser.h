@@ -13,6 +13,11 @@ namespace Parser {
     vector<int> string_to_int_vector(string string_v);
     vector<double> string_to_double_vector(string string_v);
 
+    // These are from a stackexchange answer
+    template<typename Out>
+    void split(const string& s, char delim, Out result);
+    vector<string> split(const string& s, char delim);
+
     class Fraction {
         public:
             Fraction(string unparsed_fraction);
@@ -43,9 +48,14 @@ namespace Parser {
             string m_restart_traj_file {""};
             int m_restart_step;
 
-            // Order parameters and biases
+            // Order parameters
+            bool m_distance_sum {false};
+            vector<int> m_distance_pairs {};
+            bool m_grid_bias {false};
+
+            // Bias functions
+            bool m_biases_present {false};
             bool m_distance_bias {false};
-            vector<int> m_restraint_pairs {};
             int m_min_dist;
             int m_max_dist;
             double m_max_bias;
@@ -75,10 +85,17 @@ namespace Parser {
             vector<double> m_chem_pot_mults {};
             vector<double> m_bias_mults {};
 
+            // Umbrella sampling simulation parameters
+            vector<string> m_order_params {};
+            int m_num_iters {0};
+
             // Output options
             string m_output_filebase;
             int m_configs_output_freq {0};
             int m_counts_output_freq {0};
+
+        private:
+            void set_default_sim_options();
     };
 }
 

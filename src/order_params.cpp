@@ -71,6 +71,116 @@ bool DistOrderParam::defined() {
     return m_defined;
 }
 
+DistSumOrderParam::DistSumOrderParam(vector<OrderParam*> dist_params) :
+        m_dist_params {dist_params} {
+    calc_param();
+}
+
+int DistSumOrderParam::calc_param() {
+    int dist_sum {0};
+    for (auto param: m_dist_params) {
+        dist_sum += param->get_param();
+    }
+    m_param = dist_sum;
+
+    return m_param;
+}
+
+int DistSumOrderParam::get_param() {
+    return m_param;
+}
+
+bool DistSumOrderParam::dependent_on(Domain& domain) {
+    bool dependent {false};
+    for (auto dist_param: m_dist_params) {
+        dependent = dist_param->dependent_on(domain);
+        if (dependent == true) {
+            break;
+        }
+    }
+    
+    return dependent;
+}
+
+vector<Domain*> DistSumOrderParam::get_depending_domains() {
+//    vector<Domain&> domains {};
+//    for (auto dist_param: m_dist_params) {
+//        dependent = dist_param.dependent_on(domain);
+//        if (dependent == true) {
+//            break;
+//        }
+    return {};
+}
+
+bool DistSumOrderParam::defined() {
+    return true;
+}
+
+NumStaplesOrderParam::NumStaplesOrderParam(OrigamiSystem& origami) :
+        m_origami {origami} {
+}
+
+int NumStaplesOrderParam::calc_param() {
+    return m_origami.num_staples();
+}
+
+int NumStaplesOrderParam::get_param() {
+    return m_origami.num_staples();
+}
+
+bool NumStaplesOrderParam::dependent_on(Domain& domain) {
+    bool dependent;
+    if (domain.m_c > 0) {
+        dependent = true;
+    }
+    else {
+        dependent = false;
+    }
+
+    return dependent;
+}
+
+vector<Domain*> NumStaplesOrderParam::get_depending_domains() {
+    return {};
+}
+
+bool NumStaplesOrderParam::defined() {
+    return true;
+}
+
+NumBoundDomainPairsOrderParam::NumBoundDomainPairsOrderParam(
+        OrigamiSystem& origami) :
+        m_origami {origami} {
+}
+
+int NumBoundDomainPairsOrderParam::calc_param() {
+    return m_origami.num_staples();
+}
+
+int NumBoundDomainPairsOrderParam::get_param() {
+    return m_origami.num_bound_domain_pairs();
+}
+
+bool NumBoundDomainPairsOrderParam::dependent_on(Domain& domain) {
+    bool dependent;
+    if (domain.m_c == 0) {
+        dependent = true;
+    }
+    else {
+        dependent = false;
+    }
+
+    return dependent;
+}
+
+vector<Domain*> NumBoundDomainPairsOrderParam::get_depending_domains() {
+    return {};
+}
+
+bool NumBoundDomainPairsOrderParam::defined() {
+    return true;
+}
+
 SystemOrderParams::SystemOrderParams(InputParameters& params,
         OrigamiSystem& origami) :
         m_origami {origami} {
@@ -84,25 +194,30 @@ SystemOrderParams::SystemOrderParams(InputParameters& params,
     }
 
     // Setup each type of order parameter and bias function
-    if (params.m_distance_bias) {
+    if (params.m_distance_pairs.size() != 0) {
         setup_distance_param(params);
+    }
+    if (params.m_distance_sum) {
+        DistSumOrderParam* dist_sum;
+        dist_sum = new DistSumOrderParam {get_distance_params()};
+        m_order_params.push_back(dist_sum);
     }
 }
 
 vector<OrderParam*> SystemOrderParams::get_distance_params() {
     // For now only distance order params, but will need to change eventually
-    return m_order_params;
+    return m_dist_order_params;
 }
 
 void SystemOrderParams::setup_distance_param(InputParameters& params) {
 
     // Extract domain ids and store domain pairs
     vector<pair<Domain&, Domain&>> domain_pairs {};
-    size_t num_restrained_domains {params.m_restraint_pairs.size()};
+    size_t num_restrained_domains {params.m_distance_pairs.size()};
     for (size_t pair_i {0}; pair_i != num_restrained_domains; pair_i += 2) {
-        int domain_1_i {params.m_restraint_pairs[pair_i]};
+        int domain_1_i {params.m_distance_pairs[pair_i]};
         Domain& domain_1 {*m_origami.get_domain(0, domain_1_i)}; 
-        int domain_2_i {params.m_restraint_pairs[pair_i + 1]};
+        int domain_2_i {params.m_distance_pairs[pair_i + 1]};
         Domain& domain_2 {*m_origami.get_domain(0, domain_2_i)};
         domain_pairs.push_back({domain_1, domain_2});
     }
@@ -112,13 +227,13 @@ void SystemOrderParams::setup_distance_param(InputParameters& params) {
         Domain& domain_2 {domain_pairs[pair_i].second};
         OrderParam* order_param;
         order_param = new DistOrderParam {domain_1, domain_2};
-        m_order_params.push_back(order_param);
-        add_order_param_dependency(domain_1, order_param);
-        add_order_param_dependency(domain_2, order_param);
+        m_simple_order_params.push_back(order_param);
+        add_param_dependency(domain_1, order_param);
+        add_param_dependency(domain_2, order_param);
     }
 }
 
-void SystemOrderParams::add_order_param_dependency(Domain& domain, OrderParam* order_param) {
+void SystemOrderParams::add_param_dependency(Domain& domain, OrderParam* order_param) {
     int c_i {domain.m_c};
     int d_i {domain.m_d};
     pair<int, int> key {c_i, d_i};
@@ -203,6 +318,41 @@ bool LinearStepBiasFunction::dependent_on(OrderParam& order_param) {
 }
 
 double LinearStepBiasFunction::get_bias() {
+    return m_bias;
+}
+
+BinBiasFunction::BinBiasFunction(OrderParam& order_param,
+        unordered_map<int, double> bins_to_biases) :
+        m_order_param {order_param},
+        m_bins_to_biases {bins_to_biases} {
+    update_bias();
+}
+
+double BinBiasFunction::calc_bias(int param) {
+    return m_bins_to_biases[param];
+}
+
+double BinBiasFunction::update_bias() {
+    int param {m_order_param.get_param()};
+    double bias {calc_bias(param)};
+    m_bias = bias;
+
+    return bias;
+}
+
+bool BinBiasFunction::dependent_on(OrderParam& order_param) {
+    bool dependent;
+    if (&order_param == &m_order_param) {
+        dependent = true;
+    }
+    else {
+        dependent = false;
+    }
+
+    return dependent;
+}
+
+double BinBiasFunction::get_bias() {
     return m_bias;
 }
 

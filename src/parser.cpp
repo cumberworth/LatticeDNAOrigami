@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <boost/program_options.hpp>
+#include <sstream>
 
 #include "parser.h"
 
@@ -42,6 +43,22 @@ vector<double> Parser::string_to_double_vector(string string_v) {
     v.push_back(stod(string_v.substr(start_pos, string_v.size())));
 
     return v;
+}
+
+template<typename Out>
+void split(const string &s, char delim, Out result) {
+    std::stringstream ss;
+    ss.str(s);
+    string item;
+    while (std::getline(ss, item, delim)) {
+        *(result++) = item;
+    }
+}
+
+vector<string> split(const string &s, char delim) {
+    vector<string> elems;
+    Parser::split(s, delim, std::back_inserter(elems));
+    return elems;
 }
 
 Fraction::Fraction(string unparsed_fraction) {
@@ -96,13 +113,18 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("restart_traj_file", po::value<string>(), "Trajectory file to restart from")
         ("restart_step", po::value<int>(), "Step to restart from")
 
-        // Order parameters and biases
+        // Order parameters
+        ("distance_pairs", po::value<string>(), "Scaffold domains to restrain")
+        ("distance_sum", po::value<bool>(), "Sum of distance pairs")
+
+        // Bias functions
         ("distance_bias", po::value<bool>(), "Include domain pair distance bias")
-        ("restraint_pairs", po::value<string>(), "Scaffold domains to restrain")
         ("min_dist", po::value<int>(), "Distance at which bias switched off")
         ("max_dist", po::value<int>(), "Distance at which bias switched on")
         ("max_bias", po::value<double>(), "Value of bias at dist >= max_dist")
         ("bias_mult", po::value<double>(), "Total bias multiplier")
+        ("grid_bias", po::value<bool>(), "Include a grid bias")
+
 
         // General simulation parameters
         ("simulation_type", po::value<string>(), "constant_temp, annealing, or parallel_tempering")
@@ -132,6 +154,9 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("chem_pot_mults", po::value<string>(), "Factor to multiply base chem pot for each rep")
         ("bias_mults", po::value<string>(), "Multiplier for system bias")
 
+        // Umbrella sampling options
+        ("order_params", po::value<string>(), "List of order parameters to apply to")
+        ("num_iters", po::value<int>(), "Number of iterations")
 
         // Output options
         ("output_filebase", po::value<string>(), "Base name for output files")
@@ -180,9 +205,19 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         m_restart_step = vm["restart_step"].as<int>();
     }
 
-    // Order parameters and biases
+    // Order parameters
+    if (vm.count("restraint_pairs")) {
+        string distance_pairs_s= vm["distance_pairs"].as<string>();
+        m_distance_pairs = string_to_int_vector(distance_pairs_s);
+    }
+    if (vm.count("distance_sum")) {
+        m_distance_sum = vm["distance_sum"].as<bool>();
+    }
+
+    // Bias functions
     if (vm.count("distance_bias")) {
         m_distance_bias = vm["distance_bias"].as<bool>();
+        m_biases_present = true;
     }
     if (vm.count("bias_mult")) {
         m_bias_mult = vm["bias_mult"].as<double>();
@@ -195,11 +230,16 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     }
     if (vm.count("max_bias")) {
         m_max_bias = vm["max_bias"].as<double>();
+        m_biases_present = true;
+    }
+    if (vm.count("grid_bias")) {
+        m_grid_bias = vm["grid_bias"].as<bool>();
     }
 
     // General simulation parameters
     if (vm.count("simulation_type")) {
         m_simulation_type = vm["simulation_type"].as<string>();
+        set_default_sim_options();
     }
     if (vm.count("steps")) {
         m_steps = vm["steps"].as<long int>();
@@ -286,13 +326,18 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         string chem_pot_mults_s = vm["chem_pot_mults"].as<string>();
         m_chem_pot_mults = string_to_double_vector(chem_pot_mults_s);
     }
-    if (vm.count("restraint_pairs")) {
-        string restraint_pairs_s= vm["restraint_pairs"].as<string>();
-        m_restraint_pairs = string_to_int_vector(restraint_pairs_s);
-    }
     if (vm.count("bias_mults")) {
-        string bias_mults_s= vm["bias_mults"].as<string>();
+        string bias_mults_s {vm["bias_mults"].as<string>()};
         m_bias_mults = string_to_double_vector(bias_mults_s);
+    }
+
+    // Umbrella sampling options
+    if (vm.count("order_params")) {
+        string order_params_s {vm["order_parsm"].as<string>()};
+        m_order_params = split(order_params_s, ' ');
+    }
+    if (vm.count("num_iters")) {
+        m_num_iters = vm["num_iters"].as<int>();
     }
 
     // Output options
@@ -305,5 +350,11 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     if (vm.count("counts_output_freq")) {
         m_counts_output_freq = vm["counts_output_freq"].as<int>();
     }
+}
 
+void InputParameters::set_default_sim_options() {
+    if (m_simulation_type == "umbrella_sampling") {
+        m_biases_present = true;
+        m_grid_bias = true;
+    }
 }

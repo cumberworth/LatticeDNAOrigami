@@ -126,6 +126,10 @@ double OrigamiSystem::energy() const {
     return m_energy;
 }
 
+double OrigamiSystem::bias() const {
+    return 0;
+}
+
 vector<Domain*> OrigamiSystem::get_chain(int c_i) {
     int c_i_index {index(m_chain_indices, c_i)};
     return m_domains[c_i_index];
@@ -1208,6 +1212,8 @@ OrigamiSystemWithBias::OrigamiSystemWithBias(
 double OrigamiSystemWithBias::check_domain_constraints(Domain& cd_i,
         VectorThree pos, VectorThree ore) {
     double delta_e {OrigamiSystem::check_domain_constraints(cd_i, pos, ore)};
+
+    // Determine what state would be if bound
     Occupancy state;
     Occupancy pos_state {position_occupancy(pos)};
     if (pos_state == Occupancy::unassigned) {
@@ -1224,6 +1230,7 @@ double OrigamiSystemWithBias::check_domain_constraints(Domain& cd_i,
     else {
         state = Occupancy::unassigned;
     }
+
     delta_e += m_system_biases->check_one_domain(cd_i, pos, ore, state);
 
     return delta_e;
@@ -1231,7 +1238,6 @@ double OrigamiSystemWithBias::check_domain_constraints(Domain& cd_i,
 
 double OrigamiSystemWithBias::unassign_domain(Domain& cd_i) {
     double delta_e {OrigamiSystem::unassign_domain(cd_i)};
-    m_system_order_params->update_one_domain(cd_i);
     delta_e += m_system_biases->calc_one_domain(cd_i);
 
     return delta_e;
@@ -1240,7 +1246,6 @@ double OrigamiSystemWithBias::unassign_domain(Domain& cd_i) {
 double OrigamiSystemWithBias::set_checked_domain_config(Domain& cd_i,
         VectorThree pos, VectorThree ore) {
     double delta_e {OrigamiSystem::set_checked_domain_config(cd_i, pos, ore)};
-    m_system_order_params->update_one_domain(cd_i);
     delta_e += m_system_biases->calc_one_domain(cd_i);
 
     return delta_e;
@@ -1249,7 +1254,6 @@ double OrigamiSystemWithBias::set_checked_domain_config(Domain& cd_i,
 double OrigamiSystemWithBias::set_domain_config(Domain& cd_i, VectorThree pos,
         VectorThree ore) {
     double delta_e {OrigamiSystem::set_domain_config(cd_i, pos, ore)};
-    m_system_order_params->update_one_domain(cd_i);
     delta_e += m_system_biases->calc_one_domain(cd_i);
 
     return delta_e;
@@ -1260,6 +1264,14 @@ double OrigamiSystemWithBias::set_domain_config(Domain& cd_i, VectorThree pos,
 //    m_system_order_params->update_one_domain(cd_i);
 //    delta_e += m_system_biases->calc_one_domain(cd_i);
 //}
+
+SystemBiases* OrigamiSystemWithBias::get_system_biases() {
+    return m_system_biases;
+}
+
+double OrigamiSystemWithBias::bias() const {
+    return m_system_biases->get_bias();
+}
 
 double Origami::molarity_to_lattice_volume(double molarity, double lattice_site_volume) {
     // Given a molarity, calculate the volume that cancels the fugacity.

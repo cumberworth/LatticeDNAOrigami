@@ -101,6 +101,7 @@ namespace Origami {
             Domain* unbound_domain_at(VectorThree pos) const;
             bool check_domains_complementary(Domain& cd_i, Domain& cd_j);
             double energy() const;
+            virtual double bias() const;
             ThermoOfHybrid enthalpy_and_entropy();
     
             // Constraint checkers
@@ -274,6 +275,8 @@ namespace Origami {
                     VectorThree position,
                     VectorThree orientation);
             //void set_domain_orientation(Domain& cd_i, VectorThree ore);
+            OrderParams::SystemBiases* get_system_biases();
+            double bias() const;
 
         private:
             OrderParams::SystemOrderParams* m_system_order_params;
