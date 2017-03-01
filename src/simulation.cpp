@@ -201,11 +201,12 @@ PTGCMCSimulation::PTGCMCSimulation(OrigamiSystem& origami_system,
 
     // Initialize quantity index to replica index vectors
     if (m_rank == m_master_rep) {
-        m_bias_mults = params.m_bias_mults;
         for (int i {0}; i != m_num_reps; i++) {
             m_q_to_repi.push_back(i);
         }
     }
+
+    initialize_control_qs(params);
 
     // Initalize swap file
     if (m_rank == m_master_rep) {
@@ -226,9 +227,12 @@ PTGCMCSimulation::PTGCMCSimulation(OrigamiSystem& origami_system,
     }
 }
 
-UTPTGCMCSimulation::UTPTGCMCSimulation(OrigamiSystem& origami_system,
-        InputParameters& params) :
-        PTGCMCSimulation(origami_system, params) {
+PTGCMCSimulation::~PTGCMCSimulation() {
+    delete m_logging_stream;
+}
+
+// Could probably break this into two methods
+void PTGCMCSimulation::initialize_control_qs(InputParameters& params) {
     if (m_rank == m_master_rep) {
         m_control_qs.push_back(params.m_temps);
         for (int i {0}; i != m_num_reps; i++) {
@@ -247,32 +251,31 @@ UTPTGCMCSimulation::UTPTGCMCSimulation(OrigamiSystem& origami_system,
             }
             m_control_qs[m_staple_u_i].push_back(staple_u);
         }
+        m_control_qs.push_back(params.m_bias_mults);
     }
 
     // Initialize quantities of each replica (updating on origami happens in run)
     for (int i {0}; i != m_num_reps; i++) {
         if (m_rank == i) {
-            m_temp = params.m_temps[i];
+            m_replica_control_qs[m_temp_i] = params.m_temps[i];
+            m_replica_control_qs[m_bias_i] = params.m_bias_mults[i];
+
             // Update chemical potential of each replica if constant [staple]
             // Recalculating for each node rathr than sending from master
             if (m_params.m_constant_staple_M) {
-                m_staple_u = molarity_to_chempot(m_params.m_staple_M, m_temp,
+                m_replica_control_qs[m_staple_u_i] = molarity_to_chempot(
+                        m_params.m_staple_M, m_replica_control_qs[m_temp_i],
                         params.m_lattice_site_volume);
             }
             else {
-                m_staple_u = molarity_to_chempot(m_params.m_staple_M,
+                double staple_u {molarity_to_chempot(m_params.m_staple_M,
                         params.m_temp_for_staple_u,
-                        params.m_lattice_site_volume);
-                m_staple_u *= m_params.m_chem_pot_mults[i];
+                        params.m_lattice_site_volume)};
+                staple_u *= m_params.m_chem_pot_mults[i];
+                m_replica_control_qs[m_staple_u_i] = staple_u;
             }
         }
     }
-}
-
-//            m_bias_mult = params.m_bias_mults[i];
-
-PTGCMCSimulation::~PTGCMCSimulation() {
-    delete m_logging_stream;
 }
 
 void PTGCMCSimulation::run() {
@@ -311,54 +314,34 @@ void PTGCMCSimulation::run() {
     }
 }
 
-void TPTGCMCSimulation::update_control_qs() {
-        m_origami_system.update_temp(m_temp);
+void PTGCMCSimulation::update_dependent_qs() {
+    double DH {m_origami_system.enthalpy_and_entropy().enthalpy};
+    double N {static_cast<double>(m_origami_system.num_staples())};
+    double bias_e {m_origami_system.bias()};
+
+    m_replica_dependent_qs[m_enthalpy_i] = DH;
+    m_replica_dependent_qs[m_staples_i] = N;
+    m_replica_dependent_qs[m_bias_i] = bias_e;
 }
 
-void UTPTGCMCSimulation::update_control_qs() {
-        m_origami_system.update_temp(m_temp);
-        m_origami_system.update_staple_u(m_staple_u);
-}
-        //m_system_bias.update_bias_mult(m_bias_mult);
-
-void TPTGCMCSimulation::slave_send(int swap_i) {
+void PTGCMCSimulation::slave_send(int swap_i) {
     // Send quantities to master
-    ThermoOfHybrid DH_DS {m_origami_system.enthalpy_and_entropy()};
-    m_world.send(m_master_rep, swap_i, DH_DS.enthalpy);
+    for (size_t q_i {0}; q_i != m_replica_dependent_qs.size(); q_i++) {
+        double q {m_replica_dependent_qs[q_i]};
+        m_world.send(m_master_rep, swap_i, q);
+    }
 }
 
-
-void TPTGCMCSimulation::slave_recieve(int swap_i) {
-    // Receive quantities to master
-    m_world.recv(m_master_rep, swap_i, m_temp);
+void PTGCMCSimulation::slave_recieve(int swap_i) {
+    // Receive quantities from master
+    for (auto i: m_exchange_q_is) {
+        m_world.recv(m_master_rep, swap_i, m_replica_dependent_qs[i]);
+    }
 }
-
-void UTPTGCMCSimulation::slave_send(int swap_i) {
-    // Send quantities to master
-    ThermoOfHybrid DH_DS {m_origami_system.enthalpy_and_entropy()};
-    int N {m_origami_system.num_staples()};
-
-    // Note the order this is sent is important, consider making this part of
-    // the code by iterating through something that both slave send and master
-    // receieve have
-    m_world.send(m_master_rep, swap_i, DH_DS.enthalpy);
-    m_world.send(m_master_rep, swap_i, N);
-}
-
-void UTPTGCMCSimulation::slave_recieve(int swap_i) {
-    // Receive quantities to master
-    m_world.recv(m_master_rep, swap_i, m_temp);
-    m_world.recv(m_master_rep, swap_i, m_staple_u);
-}
-
-    //double bias {m_system_bias.calc_bias()};
-    //m_world.send(m_master_rep, swap_i, bias);
-    //m_world.recv(m_master_rep, swap_i, m_bias_mult);
 
 void PTGCMCSimulation::master_receive(int swap_i,
         vector<vector<double>>& dependent_qs) {
     master_get_dependent_qs(dependent_qs);
-    // Receive dependent quantities from slaves
     for (int rep_i {1}; rep_i != m_num_reps; rep_i++) {
         for (auto dependent_q: dependent_qs) {
             double q;
@@ -373,36 +356,27 @@ void PTGCMCSimulation::master_send(int swap_i) {
     for (int q_i {0}; q_i != m_num_reps; q_i++) {
         int rep_i {m_q_to_repi[q_i]};
         if (rep_i == m_master_rep) {
-                master_set_control_qs();
+            for (auto i: m_exchange_q_is) {
+                m_replica_control_qs[i] = m_control_qs[i][rep_i];
+            }
         }
         else {
-            for (auto control_q: m_control_qs) {
-                m_world.send(rep_i, swap_i, control_q[q_i]);
+            for (auto i: m_exchange_q_is) {
+                m_world.send(rep_i, swap_i, m_control_qs[i][q_i]);
             }
         }
     }
 }
 
-void TPTGCMCSimulation::master_set_control_qs() {
-    // I could eliminate this by having the replica variables also replaced with a single vector
-    m_temp = m_control_qs[m_temp_i][m_master_rep];
-}
-
-void UTPTGCMCSimulation::master_set_control_qs() {
-    // I could eliminate this by having the replica variables also replaced with a single vector
-    m_temp = m_control_qs[m_temp_i][m_master_rep];
-    m_staple_u = m_control_qs[m_staple_u_i][m_master_rep];
-}
-
 void PTGCMCSimulation::master_get_dependent_qs(
         vector<vector<double>>& dependent_qs) {
-    ThermoOfHybrid DH_DS {m_origami_system.enthalpy_and_entropy()};
+    double DH {m_origami_system.enthalpy_and_entropy().enthalpy};
     double staples {static_cast<double>(m_origami_system.num_staples())};
-    dependent_qs[0].push_back(DH_DS.enthalpy);
-    dependent_qs[1].push_back(staples);
+    double bias {m_origami_system.bias()};
+    dependent_qs[m_enthalpy_i].push_back(DH);
+    dependent_qs[m_staples_i].push_back(staples);
+    dependent_qs[m_bias_i].push_back(bias);
 }
-
-    //vector<double> biases {m_system_bias.calc_bias()};
 
 void PTGCMCSimulation::attempt_exchange(int swap_i,
         vector<int>& attempt_count, vector<int>& swap_count) {
@@ -470,7 +444,7 @@ bool PTGCMCSimulation::test_acceptance(double p_accept) {
     return accept;
 }
 
-double UTPTGCMCSimulation::calc_acceptance_p(
+double PTGCMCSimulation::calc_acceptance_p(
         vector<pair<double, double>> control_q_pairs,
         vector<pair<double, double>> dependent_q_pairs) {
 
@@ -478,22 +452,24 @@ double UTPTGCMCSimulation::calc_acceptance_p(
     double temp2 {control_q_pairs[m_temp_i].second};
     double staple_u1 {control_q_pairs[m_temp_i].first};
     double staple_u2 {control_q_pairs[m_temp_i].second};
+
     double enthalpy1 {dependent_q_pairs[m_enthalpy_i].first};
     double enthalpy2 {dependent_q_pairs[m_enthalpy_i].second};
     double N1 {dependent_q_pairs[m_staples_i].first};
     double N2 {dependent_q_pairs[m_staples_i].second};
+    double bias1 {dependent_q_pairs[m_bias_i].first};
+    double bias2 {dependent_q_pairs[m_bias_i].second};
 
     // Energies are actually E/B, so multiply by T
     double DB {1/temp2 - 1/temp1};
-    double DH {enthalpy2 - enthalpy1};
+    double DH {enthalpy2*temp2 - enthalpy1*temp1};
+    double DBias {bias2*temp2 - bias1*temp1};
     double DN {N2 - N1};
     double DBU {staple_u2 / temp2 - staple_u1 / temp1};
-    double p_accept {min({1.0, exp(DB*(DH) - DBU*DN)})};
+    double p_accept {min({1.0, exp(DB*(DH +DBias) - DBU*DN)})};
 
     return p_accept;
 }
-
-    //double DBias {bias2 - bias1};
 
 void PTGCMCSimulation::write_swap_entry() {
     for (auto repi: m_q_to_repi) {
@@ -506,14 +482,56 @@ void PTGCMCSimulation::write_acceptance_freqs(vector<int> attempt_count,
         vector<int> swap_count) {
 
     for (size_t i {0}; i != attempt_count.size(); i++) {
-        cout << m_temps[i] << " ";
-        cout << m_temps[i + 1] << " ";
+        cout << m_control_qs[m_temp_i][i] << " ";
+        cout << m_control_qs[m_temp_i][i + 1] << " ";
         cout << swap_count[i] << " ";
         cout << attempt_count[i] << " ";
         cout << (static_cast<double>(swap_count[i]) / attempt_count[i]) << " ";
         cout << "\n";
     }
     cout << "\n";
+}
+
+TPTGCMCSimulation::TPTGCMCSimulation(OrigamiSystem& origami_system,
+        InputParameters& params) :
+        PTGCMCSimulation(origami_system, params) {
+    m_exchange_q_is.push_back(m_temp_i);
+}
+
+UTPTGCMCSimulation::UTPTGCMCSimulation(OrigamiSystem& origami_system,
+        InputParameters& params) :
+        PTGCMCSimulation(origami_system, params) {
+    m_exchange_q_is.push_back(m_temp_i);
+    m_exchange_q_is.push_back(m_staple_u_i);
+}
+
+HUTPTGCMCSimulation::HUTPTGCMCSimulation(OrigamiSystem& origami_system,
+        InputParameters& params) :
+        PTGCMCSimulation(origami_system, params) {
+    m_exchange_q_is.push_back(m_temp_i);
+    m_exchange_q_is.push_back(m_staple_u_i);
+    m_exchange_q_is.push_back(m_bias_mult_i);
+}
+
+void TPTGCMCSimulation::update_control_qs() {
+    double temp {m_replica_control_qs[m_temp_i]};
+    m_origami_system.update_temp(temp);
+}
+
+void UTPTGCMCSimulation::update_control_qs() {
+    double temp {m_replica_control_qs[m_temp_i]};
+    m_origami_system.update_temp(temp);
+    double staple_u {m_replica_control_qs[m_staple_u_i]};
+    m_origami_system.update_staple_u(staple_u);
+}
+
+void HUTPTGCMCSimulation::update_control_qs() {
+    double temp {m_replica_control_qs[m_temp_i]};
+    m_origami_system.update_temp(temp);
+    double staple_u {m_replica_control_qs[m_staple_u_i]};
+    m_origami_system.update_staple_u(staple_u);
+    double bias_mult {m_replica_control_qs[m_bias_mult_i]};
+    m_origami_system.update_bias_mult(bias_mult);
 }
 
 UmbrellaSamplingSimulation::UmbrellaSamplingSimulation(OrigamiSystem& origami,

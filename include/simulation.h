@@ -101,6 +101,8 @@ namespace Simulation {
     };
 
     class PTGCMCSimulation: public GCMCSimulation {
+        // Base method for parallel tempering in GC ensemble
+        // Exchange in only 1D, but can exchange any number of quantities
         public:
             PTGCMCSimulation(
                     OrigamiSystem& origami_system,
@@ -109,95 +111,109 @@ namespace Simulation {
             void run();
 
         protected:
+
+            // MPI variables
             mpi::environment m_env;
             mpi::communicator m_world;
+
+            // General PTMC parameters
             int m_rank {m_world.rank()};
             int m_master_rep {0};
             int m_swaps;
             int m_num_reps;
             int m_exchange_interval;
+
+            ofstream m_swapfile; // Only used by master
+
+            // Could be safer to have only one vector instead of seperating 
+            // control and dependent. Then no chance of using index on wrong vector
+            // Vectors of current replica quantities
+            vector<double> m_replica_control_qs;
+            vector<double> m_replica_dependent_qs;
+
+            // Vectors of quantities accross all replicas (only filled by master)
             vector<vector<double>> m_control_qs;
-            vector<vector<double>> m_dependent_qs;
 
-            void update_internal() {};
+            // Index into the control qs to replica with those qs
+            vector<int> m_q_to_repi;
 
-            // Data only filled in master
-            ofstream m_swapfile;
-            vector<int> m_q_to_repi; // Index in quantity to swap to replica number with that value
+            // Indices into control quantities vector for type
+            int m_temp_i {0};
+            int m_staple_u_i {1};
+            int m_bias_mult_i {2};
 
+            // Indices into dependent quantities vector for type
+            int m_enthalpy_i {0};
+            int m_staples_i {1};
+            int m_bias_i {2};
+
+            // Indices of quantities that will be exchanged
+            vector<int> m_exchange_q_is;
+
+            // Initialization methods
+            void initialize_control_qs(InputParameters& params);
+
+            // Communication methods
             virtual void slave_send(int swap_i) = 0;
             virtual void slave_recieve(int swap_i) = 0;
             void master_receive(int swap_i, vector<vector<double>>& quantities);
             void master_send(int swap_i);
-            virtual void master_set_control_qs() = 0;
             virtual void master_get_dependent_qs(vector<vector<double>>&) = 0;
+            virtual void update_control_qs() = 0;
+            void update_dependent_qs();
+
+            // Exchange methods
             void attempt_exchange(
                     int swap_i,
                     vector<int>& attempt_count,
                     vector<int>& swap_count);
-            virtual void update_control_qs() = 0;
             bool test_acceptance(double acceptance_p);
-            virtual double calc_acceptance_p(
+            double calc_acceptance_p(
                     vector<pair<double, double>> control_q_pairs,
-                    vector<pair<double, double>> dependent_q_pairs) = 0; // rep1 and rep2 values
+                    vector<pair<double, double>> dependent_q_pairs); // rep1 and rep2 values
+
+            // Output methods
             void write_swap_entry();
             void write_acceptance_freqs(
                     vector<int> attempt_count,
                     vector<int> swap_count);
+
+            void update_internal() {};
     };
 
     class TPTGCMCSimulation: public PTGCMCSimulation {
+        // Exchange temperatures
         public:
             TPTGCMCSimulation(
                     OrigamiSystem& origami_system,
                     InputParameters& params);
 
         private:
-            double m_temp;
-
-            // Indices into quantities vector for type
-            int m_temp_i {0};
-
-            // Indices into dependent quantities vector for type
-            int m_enthalpy_i {0};
-
-            void slave_send(int swap_i);
-            void master_set_control_qs();
             void update_control_qs();
-            double calc_acceptance_p(
-                    vector<pair<double, double>> control_q_pairs,
-                    vector<pair<double, double>> dependent_q_pairs);
     };
 
     class UTPTGCMCSimulation: public PTGCMCSimulation {
+        // Exchange temperatures and staple chemical potentials
         public:
             UTPTGCMCSimulation(
                     OrigamiSystem& origami_system,
                     InputParameters& params);
 
         private:
-            double m_temp;
-            double m_staple_u;
-
-            // Indices into control quantities vector for type
-            int m_temp_i {0};
-            int m_staple_u_i {1};
-
-            // Indices into dependent quantities vector for type
-            int m_enthalpy_i {0};
-            int m_staples_i {1};
-
-            void slave_send(int swap_i);
-            void master_set_control_qs();
             void update_control_qs();
-            double calc_acceptance_p(
-                    vector<pair<double, double>> control_q_pairs,
-                    vector<pair<double, double>> dependent_q_pairs);
     };
-            vector<double> m_bias_mults;
-            double m_volume;
-            double m_bias_mult;
-            double m_staple_u;
+
+    class HUTPTGCMCSimulation: public PTGCMCSimulation {
+        // Exchange temperatures, staple chemical potentials, and bias multpliers
+        public:
+            HUTPTGCMCSimulation(
+                    OrigamiSystem& origami_system,
+                    InputParameters& params);
+
+        private:
+            void initialize_exchange_vector();
+            void update_control_qs();
+    };
 
     using GridPoint = vector<int>;
     using SetOfGridPoints = set<GridPoint>;

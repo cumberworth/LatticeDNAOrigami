@@ -43,7 +43,7 @@ SCENARIO("PTGCMC methods are run", "[!hide][mpi]") {
 
     OrigamiSystem origami {setup_two_domain_scaffold_origami(temp, cation_M)};
     origami.add_chain(1);
-    SystemBias system_bias {params, origami};
+    SystemBiases system_bias {params, origami};
 
     PTGCMCSimulation sim {origami, system_bias, params};
 

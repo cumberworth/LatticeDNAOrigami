@@ -213,6 +213,10 @@ ThermoOfHybrid OrigamiSystem::enthalpy_and_entropy() {
     return DH_DS_total;
 }
 
+double get_bias() {
+    return 0;
+}
+
 void OrigamiSystem::check_all_constraints() {
 
     // Unassign everything (and check nothing was already unassigned)

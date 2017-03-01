@@ -103,6 +103,7 @@ namespace Origami {
             double energy() const;
             virtual double bias() const;
             ThermoOfHybrid enthalpy_and_entropy();
+            virtual double get_bias();
     
             // Constraint checkers
             void check_all_constraints();
@@ -132,6 +133,7 @@ namespace Origami {
             // System state modifiers
             void update_temp(double temp);
             void update_staple_u(double u);
+            virtual void update_bias_mult(double) {};
 
             // Constraints state
             bool m_constraints_violated {false};
@@ -140,9 +142,7 @@ namespace Origami {
             int m_current_c_i {};
 
         protected:
-            virtual double bind_noncomplementary_domains(Domain& cd_i, Domain& cd_j);
 
-        private:
             // Bookeeping stuff, could probably organize better
             vector<vector<Domain*>> m_domains {}; // Domains grouped by chain
             int m_num_domains {0}; // Total domains in system
@@ -210,6 +210,7 @@ namespace Origami {
                     VectorThree ore);
             double bind_domain(Domain& cd_i);
             double bind_complementary_domains(Domain& cd_i, Domain& cd_j);
+            virtual double bind_noncomplementary_domains(Domain& cd_i, Domain& cd_j);
             bool check_domain_pair_constraints(Domain& cd_i);
             bool check_helical_constraints(Domain& cd_1, Domain& cd_2);
 
@@ -281,7 +282,6 @@ namespace Origami {
         private:
             OrderParams::SystemOrderParams* m_system_order_params;
             OrderParams::SystemBiases* m_system_biases;
-//            internal_check_domain_constraints(Domain& cd_i, VectorThree
     };
 
     double molarity_to_lattice_volume(double molarity, double lattice_site_volume);
