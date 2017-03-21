@@ -8,9 +8,12 @@ staple_u_mult=1
 lattice_site_volume=4e-28
 energy_filebase=data/four
 
-# Order parameters and biases
+# Order parameters
+distance_pairs=0 3
+distance_sum=true
+
+# Bias functions
 distance_bias=true
-restraint_pairs=0 3
 min_dist=1
 max_dist=4
 max_bias=10
@@ -19,7 +22,7 @@ bias_mult=1
 # General simulation parameters
 simulation_type=constant_temp
 steps=1000000
-logging_freq=100000
+logging_freq=1
 centering_freq=1
 orientation_rotation=1/100
 met_staple_exchange=97/100

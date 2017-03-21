@@ -19,6 +19,7 @@ using namespace DomainContainer;
 using namespace Simulation;
 using namespace Movetypes;
 
+// This is getting a bit long
 int main(int argc, char* argv[]) {
     InputParameters params {argc, argv};
 
@@ -27,15 +28,7 @@ int main(int argc, char* argv[]) {
     vector<vector<int>> identities {origami_input.m_identities};
     vector<vector<string>> sequences {origami_input.m_sequences};
     bool cyclic {origami_input.m_cyclic};
-    vector<Chain> configs;
-
-    // Load config from a trajectory file if specified
-    if (params.m_restart_traj_file == "") {
-        configs = origami_input.m_chains;
-    }
-    else {
-        //OrigamiInputFile origami_input {params.m_origami_input_filename};
-    }
+    vector<Chain> configs = origami_input.m_chains;
 
     // Calculate chemical potential from specified staple concentration
     double staple_u {molarity_to_chempot(params.m_staple_M,
@@ -63,10 +56,16 @@ int main(int argc, char* argv[]) {
     else if (params.m_simulation_type == "annealing") {
         sim = new AnnealingGCMCSimulation {*origami, params};
     }
-    else if (params.m_simulation_type == "parallel_tempering") {
-        sim = new PTGCMCSimulation {*origami, params};
+    else if (params.m_simulation_type == "t_parallel_tempering") {
+        sim = new TPTGCMCSimulation {*origami, params};
     }
-    else if (params.m_simulation_type == "umbrella_samping") {
+    else if (params.m_simulation_type == "ut_parallel_tempering") {
+        sim = new UTPTGCMCSimulation {*origami, params};
+    }
+    else if (params.m_simulation_type == "hut_parallel_tempering") {
+        sim = new HUTPTGCMCSimulation {*origami, params};
+    }
+    else if (params.m_simulation_type == "umbrella_sampling") {
         sim = new UmbrellaSamplingSimulation {*origami, params};
     }
     else {

@@ -7,16 +7,19 @@ temp_for_staple_u=330
 lattice_site_volume=4e-28
 energy_filebase=data/four
 
-# Order parameters and biases
+# Order parameters
+distance_pairs=0 3
+distance_sum=true
+
+# Bias functions
 distance_bias=true
-restraint_pairs=0 3
 min_dist=1
 max_dist=4
 max_bias=10
 bias_mult=1
 
 # General simulation parameters
-simulation_type=parallel_tempering
+simulation_type=t_parallel_tempering
 steps=1000000
 logging_freq=100000
 centering_freq=100000

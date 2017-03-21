@@ -46,7 +46,7 @@ vector<double> Parser::string_to_double_vector(string string_v) {
 }
 
 template<typename Out>
-void split(const string &s, char delim, Out result) {
+void Parser::split(const string &s, char delim, Out result) {
     std::stringstream ss;
     ss.str(s);
     string item;
@@ -55,7 +55,7 @@ void split(const string &s, char delim, Out result) {
     }
 }
 
-vector<string> split(const string &s, char delim) {
+vector<string> Parser::split(const string &s, char delim) {
     vector<string> elems;
     Parser::split(s, delim, std::back_inserter(elems));
     return elems;
@@ -111,6 +111,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("cyclic", po::value<bool>(), "Cyclic scaffold")
         ("energy_filebase", po::value<string>(), "Filebase for read/write of energies")
         ("restart_traj_file", po::value<string>(), "Trajectory file to restart from")
+        //("restart_traj_files", po::value<string>(), "Trajectory file to restart from")
         ("restart_step", po::value<int>(), "Step to restart from")
 
         // Order parameters
@@ -124,7 +125,6 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("max_bias", po::value<double>(), "Value of bias at dist >= max_dist")
         ("bias_mult", po::value<double>(), "Total bias multiplier")
         ("grid_bias", po::value<bool>(), "Include a grid bias")
-
 
         // General simulation parameters
         ("simulation_type", po::value<string>(), "constant_temp, annealing, or parallel_tempering")
@@ -206,7 +206,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     }
 
     // Order parameters
-    if (vm.count("restraint_pairs")) {
+    if (vm.count("distance_pairs")) {
         string distance_pairs_s= vm["distance_pairs"].as<string>();
         m_distance_pairs = string_to_int_vector(distance_pairs_s);
     }
@@ -333,7 +333,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
 
     // Umbrella sampling options
     if (vm.count("order_params")) {
-        string order_params_s {vm["order_parsm"].as<string>()};
+        string order_params_s {vm["order_params"].as<string>()};
         m_order_params = split(order_params_s, ' ');
     }
     if (vm.count("num_iters")) {

@@ -64,7 +64,7 @@ namespace Simulation {
             IdealRandomWalks m_ideal_random_walks {};
 
             // Shared interface
-            virtual void update_internal();
+            virtual void update_internal() = 0;
 
             // Shared methods
             void simulate(long int steps, int start_step=0);
@@ -154,11 +154,11 @@ namespace Simulation {
             void initialize_control_qs(InputParameters& params);
 
             // Communication methods
-            virtual void slave_send(int swap_i) = 0;
-            virtual void slave_recieve(int swap_i) = 0;
+            void slave_send(int swap_i);
+            void slave_recieve(int swap_i);
             void master_receive(int swap_i, vector<vector<double>>& quantities);
             void master_send(int swap_i);
-            virtual void master_get_dependent_qs(vector<vector<double>>&) = 0;
+            void master_get_dependent_qs(vector<vector<double>>&);
             virtual void update_control_qs() = 0;
             void update_dependent_qs();
 
@@ -217,14 +217,14 @@ namespace Simulation {
 
     using GridPoint = vector<int>;
     using SetOfGridPoints = set<GridPoint>;
+    using ArrayOfSets = vector<SetOfGridPoints>;
     using GridInts = unordered_map<GridPoint, int>;
     using GridFloats = unordered_map<GridPoint, double>;
     using GridOfIntArrays = unordered_map<GridPoint, vector<int>>;
     using GridOfFloatArrays = unordered_map<GridPoint, vector<double>>;
-    using ArrayOfSets = vector<SetOfGridPoints>;
 
     class UmbrellaSamplingSimulation: public GCMCSimulation {
-        // For 2D order parameters only at this point
+        // For 2D order parameters only
         public:
             UmbrellaSamplingSimulation(
                     OrigamiSystem& origami_system,
@@ -233,39 +233,65 @@ namespace Simulation {
             void run();
 
         private:
-            SystemOrderParams m_system_order_params;
-            SystemBiases m_system_biases;
+            InputParameters& m_params;
+            int m_num_iters;
+            long int m_steps;
+            SystemOrderParams* m_system_order_params;
+            vector<OrderParam*> m_grid_params {};
+            GridBiasFunction* m_grid_bias;
+            vector<int> m_equil_dif;
 
             ofstream m_solver_file;
             
             // Variable names set to be consistent with mezei1987
-            SetOfGridPoints m_S_n {}; // grid points visited in complete interations
-            ArrayOfSets m_s_n {}; // grid points visisted at iteration n
+            SetOfGridPoints m_SE_n {}; // all grid points visited up to iteration n with discarded
+            SetOfGridPoints m_S_n {}; // all grid points visited up to iteration n
+            ArrayOfSets m_s_n {}; // grid points visited at iteration n
+            SetOfGridPoints m_s_i {}; // grid points visited at current iteration
             GridOfIntArrays m_f_n {}; // number of visits at each grid point at each iteration
-            GridInts m_F_n {}; // total visits at each grid point over all iterations
-            vector<double> m_N {}; // normalization of each grid point, for each iteration
-            GridOfFloatArrays m_r_n {}; // relative contribution of grid points across itertions
+            GridInts m_f_i {}; // number of visits at each grid point at current iteration
+            GridOfIntArrays m_F_n {}; // total visits at each grid point over all iterations
+            GridOfFloatArrays m_r_n {}; // relative contribution of grid points across iterations
             GridOfFloatArrays m_w_n {}; // relative contribution of grid points for each iteration
-            GridOfFloatArrays m_p_n {}; // unnormalized weight of grid point for each iteration
-            GridInts m_P_n {}; // unnormalized weight of grid point for all iterations
-            GridOfFloatArrays m_E_w {}; // biases at each each iteration
 
-            void update_internal() {};
-            void estimate_current_weights();
-            bool iteration_equilibrium_step();
+            GridOfFloatArrays m_p_n {}; // unnormalized weight of grid point for each iteration
+            GridFloats m_P_n {}; // unnormalized weight of grid point for all iterations
+            vector<double> m_N {}; // normalization of each each iteration
+            GridFloats m_E_w {}; // biases at each each iteration
+
+            void update_internal();
+            void estimate_current_weights(
+                    int n,
+                    vector<GridPoint> new_points,
+                    vector<GridPoint> old_only_points);
+            bool iteration_equilibrium_step(vector<GridPoint> new_points);
             void estimate_normalizations(int n);
             double estimate_initial_normalization(int n);
             void estimate_final_normalizations();
+            void update_grids(
+                    int n,
+                    vector<GridPoint> new_points,
+                    vector<GridPoint> old_points,
+                    vector<GridPoint> old_only_points);
+            void fill_grid_sets(
+                    vector<GridPoint>& new_points,
+                    vector<GridPoint>& old_points,
+                    vector<GridPoint>& old_only_points);
+            void update_bias();
     };
 
     struct RDevSquareSum {
+        // For solving the relative deviation square sum with ceres
         template <typename T> 
         bool operator() (
-                T const* const* parameters,
+                T const* const* params,
                 T* residual) const;
     };
 
-    int find_closest_point(set<GridPoint> search_set, int dim);
+    GridPoint find_closest_point(
+            set<GridPoint> search_set,
+            GridPoint target_point,
+            int dim);
 }
 
 #endif // SIMULATION_H

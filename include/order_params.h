@@ -29,6 +29,7 @@ namespace OrderParams {
                     VectorThree new_ore,
                     Occupancy new_state) = 0;
             virtual int get_param() = 0;
+            virtual int get_checked_param() = 0;
             //virtual void update_param() = 0;
             //virtual int get_param() = 0;
 
@@ -53,6 +54,7 @@ namespace OrderParams {
                     VectorThree,
                     Occupancy);
             int get_param();
+            int get_checked_param();
             bool dependent_on(Domain& domain);
             vector<Domain*> get_depending_domains();
             // Consider having seperate check for checking the order param only
@@ -61,31 +63,34 @@ namespace OrderParams {
         private:
             Domain& m_domain_1;
             Domain& m_domain_2;
-            int m_param;
+            int m_param {0};
+            int m_checked_param;
             bool m_defined;
     };
 
     class DistSumOrderParam: public OrderParam {
         public:
             DistSumOrderParam(
-                    vector<OrderParam*> dist_params);
+                    vector<DistOrderParam*> dist_params);
             ~DistSumOrderParam() {}
 
             int calc_param();
             int check_param(
-                    Domain& domain,
-                    VectorThree new_pos,
+                    Domain&,
+                    VectorThree,
                     VectorThree,
                     Occupancy);
             int get_param();
+            int get_checked_param();
             bool dependent_on(Domain& domain);
             vector<Domain*> get_depending_domains();
             // Consider having seperate check for checking the order param only
             bool defined();
 
         private:
-            int m_param;
-            vector<OrderParam*> m_dist_params {};
+            int m_param {0};
+            int m_checked_param;
+            vector<DistOrderParam*> m_dist_params {};
     };
 
     class NumStaplesOrderParam: public OrderParam {
@@ -98,6 +103,7 @@ namespace OrderParams {
                     VectorThree,
                     Occupancy);
             int get_param();
+            int get_checked_param();
             bool dependent_on(Domain& domain);
             vector<Domain*> get_depending_domains();
             // Consider having seperate check for checking the order param only
@@ -105,6 +111,8 @@ namespace OrderParams {
 
         private:
             OrigamiSystem& m_origami;
+            int m_param {0};
+            int m_checked_param {0};
     };
 
     class NumBoundDomainPairsOrderParam: public OrderParam {
@@ -117,6 +125,7 @@ namespace OrderParams {
                     VectorThree,
                     Occupancy);
             int get_param();
+            int get_checked_param();
             bool dependent_on(Domain& domain);
             vector<Domain*> get_depending_domains();
             // Consider having seperate check for checking the order param only
@@ -124,6 +133,8 @@ namespace OrderParams {
 
         private:
             OrigamiSystem& m_origami;
+            int m_param {0};
+            int m_checked_param {0};
     };
 
     class SystemOrderParams {
@@ -131,15 +142,31 @@ namespace OrderParams {
             SystemOrderParams(InputParameters& params, OrigamiSystem& origami);
             ~SystemOrderParams();
 
-            vector<OrderParam*> get_distance_params();
+            vector<DistOrderParam*> get_distance_params();
+            vector<DistSumOrderParam*> get_dist_sums();
+            NumBoundDomainPairsOrderParam& get_num_bound_domains();
             void update_one_domain(Domain& domain);
+            void check_one_domain(
+                    Domain& domain,
+                    VectorThree pos,
+                    VectorThree ore,
+                    Occupancy state);
 
         private:
             OrigamiSystem& m_origami;
-            vector<OrderParam*> m_order_params;
+
+            // Vectors of each type of order param
+            // Will leave as a 
+            vector<DistOrderParam*> m_dists {};
+            vector<DistSumOrderParam*> m_dist_sums {};
+            NumStaplesOrderParam m_num_staples;
+            NumBoundDomainPairsOrderParam m_num_bound_domains;
+
+            // Store distance order parameters that are dependent on given domain
             unordered_map<pair<int, int>, vector<OrderParam*>> m_domain_to_order_params {};
+
             void setup_distance_param(InputParameters& params);
-            vector<OrderParam*> get_dependent_order_params(Domain& domain);
+            vector<OrderParam*> get_dependent_dists(Domain& domain);
             void add_param_dependency(Domain& domain, OrderParam* order_param);
 };
 
@@ -147,13 +174,8 @@ namespace OrderParams {
         // Functions of order parameters that calculate an energy bias
         public:
             virtual ~BiasFunction() {};
-            virtual double calc_bias(int param) = 0;
             virtual double update_bias() = 0;
-            virtual double check_bias(
-                    Domain&,
-                    VectorThree new_pos,
-                    VectorThree new_ore,
-                    Occupancy state) = 0;
+            virtual double check_bias() = 0;
             virtual bool dependent_on(OrderParam& order_param) = 0;
             virtual double get_bias() = 0;
     };
@@ -166,14 +188,9 @@ namespace OrderParams {
                     int min_param,
                     int max_param,
                     double max_bias);
-            ~LinearStepBiasFunction();
-            double calc_bias(int param);
+            ~LinearStepBiasFunction() {};
             double update_bias();
-            double check_bias(
-                    Domain&,
-                    VectorThree new_pos,
-                    VectorThree new_ore,
-                    Occupancy state);
+            double check_bias();
             bool dependent_on(OrderParam& order_param);
             double get_bias();
         private:
@@ -183,29 +200,29 @@ namespace OrderParams {
             double m_max_bias;
             double m_slope;
             double m_bias;
+
+            double calc_bias(int param);
     };
 
-    class BinBiasFunction: public BiasFunction {
+    using GridPoint = vector<int>;
+    class GridBiasFunction: public BiasFunction {
         public:
-            BinBiasFunction(
-                    OrderParam& order_param,
-                    unordered_map<int, double> bins_to_biases);
-            ~BinBiasFunction();
-            double calc_bias(int param);
+            GridBiasFunction();
+            ~GridBiasFunction() {};
+
+            void set_order_params(vector<OrderParam*> order_params);
+            void replace_biases(unordered_map<GridPoint, double> bias_grid);
+
             double update_bias();
-            double check_bias(
-                    Domain&,
-                    VectorThree new_pos,
-                    VectorThree new_ore,
-                    Occupancy state);
+            double check_bias();
             bool dependent_on(OrderParam& order_param);
             double get_bias();
-
-            void update_bins_and_biases();
+            double calc_bias(vector<int> params);
         private:
             double m_bias;
-            OrderParam& m_order_param;
-            unordered_map<int, double> m_bins_to_biases {};
+            vector<OrderParam*> m_order_params {};
+            unordered_map<vector<int>, double> m_bias_grid {};
+            double m_off_grid_bias {0};
     };
 
     class SystemBiases {
@@ -243,19 +260,28 @@ namespace OrderParams {
                     VectorThree new_pos,
                     VectorThree new_ore,
                     Occupancy new_state);
+
+            GridBiasFunction* get_grid_bias();
+
         private:
             OrigamiSystem& m_origami;
             SystemOrderParams& m_system_order_params;
             double m_bias_mult {1};
+
             vector<BiasFunction*> m_bias_fs {};
+            vector<LinearStepBiasFunction*> m_dist_bias_fs {};
+            GridBiasFunction m_grid_bias_f {};
+
             unordered_map<pair<int, int>, vector<BiasFunction*>> m_domain_to_bias_fs{};
+
+            double m_total_bias {0};
 
             void setup_distance_bias(InputParameters& params);
             void add_bias_f_dependency(Domain& domain, BiasFunction* bias_f);
             void remove_domain_dependencies(Domain& domain);
             void add_chain(vector<Domain*> chain);
             void remove_chain(vector<Domain*> chain);
-            vector<BiasFunction*> get_dependent_bias_fs(Domain& domain);
+            vector<BiasFunction*> get_dependent_dist_restraints(Domain& domain);
     };
 }
 

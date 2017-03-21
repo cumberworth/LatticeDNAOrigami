@@ -103,7 +103,6 @@ namespace Origami {
             double energy() const;
             virtual double bias() const;
             ThermoOfHybrid enthalpy_and_entropy();
-            virtual double get_bias();
     
             // Constraint checkers
             void check_all_constraints();
@@ -276,6 +275,7 @@ namespace Origami {
                     VectorThree position,
                     VectorThree orientation);
             //void set_domain_orientation(Domain& cd_i, VectorThree ore);
+            OrderParams::SystemOrderParams* get_system_order_params();
             OrderParams::SystemBiases* get_system_biases();
             double bias() const;
 

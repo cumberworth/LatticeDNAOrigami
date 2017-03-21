@@ -4,6 +4,7 @@
 #include <iostream>
 #include <set>
 #include <algorithm>
+#include <numeric>
 
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
@@ -534,14 +535,29 @@ void HUTPTGCMCSimulation::update_control_qs() {
     m_origami_system.update_bias_mult(bias_mult);
 }
 
-UmbrellaSamplingSimulation::UmbrellaSamplingSimulation(OrigamiSystem& origami,
+UmbrellaSamplingSimulation::UmbrellaSamplingSimulation(
+        OrigamiSystem& origami,
         InputParameters& params) :
         GCMCSimulation(origami, params),
-        m_system_order_params {params, origami},
-        m_system_biases {origami, m_system_order_params, params} {
+        m_params {params},
+        m_num_iters {params.m_num_iters},
+        m_steps {params.m_steps},
+        // This is awfull
+        m_system_order_params {dynamic_cast<OrigamiSystemWithBias*>(&origami)->get_system_order_params()},
+        m_grid_bias {dynamic_cast<OrigamiSystemWithBias*>(&origami)->get_system_biases()->get_grid_bias()} {
 
-    // Initalize ceres solver file
+    // Initalize log file
     m_solver_file.open(params.m_output_filebase + ".solver");
+
+    // Setup grid bias
+    OrderParam* dist_sum {m_system_order_params->get_dist_sums()[0]};
+    OrderParam* num_bound_domains {&m_system_order_params->get_num_bound_domains()};
+    m_grid_params = {dist_sum, num_bound_domains};
+    m_grid_bias->set_order_params(m_grid_params);
+
+    // Set maximum allowed difference for determining if iteration is to be discarded
+    m_equil_dif.push_back(5);
+    m_equil_dif.push_back(2);
 }
 
 UmbrellaSamplingSimulation::~UmbrellaSamplingSimulation() {
@@ -549,67 +565,200 @@ UmbrellaSamplingSimulation::~UmbrellaSamplingSimulation() {
 
 void UmbrellaSamplingSimulation::run() {
     int n {0};
+
+    // Production
     while (n != m_num_iters) {
-        simulate(m_steps_per_iter);
-        estimate_current_weights();
-        if (iteration_equilibrium_step()) {
-            // what do with internal variables?
+
+        // Write each iteration's output to a seperate file
+        string prefix {"-" + std::to_string(n)};
+        string output_filebase {m_params.m_output_filebase + prefix};
+        setup_output_files(m_params, output_filebase, m_origami_system);
+        m_logging_stream = new ofstream {output_filebase + ".out"};
+
+        simulate(m_steps);
+        vector<GridPoint> new_points(m_s_i.size());
+        vector<GridPoint> old_points(m_s_i.size());
+        vector<GridPoint> old_only_points(m_S_n.size());
+        fill_grid_sets(new_points, old_points, old_only_points);
+        bool step_is_equil {iteration_equilibrium_step(new_points)};
+        m_SE_n.insert(m_s_i.begin(), m_s_i.end());
+        if (step_is_equil) {
+            m_s_i.clear();
+            m_f_i.clear();
             continue;
         }
+        m_S_n.insert(m_s_i.begin(), m_s_i.end());
+        update_grids(n, new_points, old_points, old_only_points);
+        estimate_current_weights(n, new_points, old_only_points);
         estimate_normalizations(n);
-        update_biases();
+        update_bias();
         n++;
+        m_output_files.clear();
+        delete m_logging_stream;
+        // write summary information
     }
+    // write run summary information
+}
+
+void UmbrellaSamplingSimulation::update_grids(int n,
+        vector<GridPoint> new_points, vector<GridPoint> old_points,
+        vector<GridPoint> old_only_points) {
+    // Update tracking stuff
+    m_s_n.push_back(m_s_i);
+
+    for (auto point: new_points) {
+        vector<int> f_k_n(n);
+        f_k_n.push_back(m_f_i[point]);
+        m_f_n[point] = f_k_n;
+
+        m_F_n[point] = f_k_n;
+
+        vector<double> r_k_n(n);
+        r_k_n.push_back(1);
+        m_r_n[point] = r_k_n;
+
+        vector<double> w_k_n(n);
+        w_k_n.push_back(static_cast<double>(m_f_i[point]) / m_steps);
+        m_w_n[point] = w_k_n;
+    }
+    for (auto point: old_points) {
+        m_f_n[point].push_back(m_f_i[point]);
+
+        int F_k_n {std::accumulate(m_f_n[point].begin(), m_f_n[point].end(), 0)};
+        m_F_n[point].push_back(F_k_n);
+
+        m_r_n[point].push_back(0);
+        for (size_t i {0}; i != m_f_i.size(); i++) {
+            m_r_n[point][i] = static_cast<double>(m_f_n[point][i]) / F_k_n;
+        }
+
+        m_w_n[point].push_back(static_cast<double>(m_f_i[point]) / m_steps);
+    }
+
+    for (auto point: old_only_points) {
+        m_f_n[point].push_back(0);
+        m_F_n[point].push_back(m_F_n[point].back());
+        m_r_n[point].push_back(0);
+        m_w_n[point].push_back(0);
+    }
+
+    m_s_i.clear();
+    m_f_i.clear();
 }
 
 void UmbrellaSamplingSimulation::update_internal() {
-    GridPoint point {something with the order params};
-    // do i want to put it into an isolated first?
-    m_s_n.back().insert(point);
-    m_f_n[point].back() ++;
+    GridPoint point {};
+    for (auto grid_param: m_grid_params) {
+        point.push_back(grid_param->get_param());
+    }
+    m_s_i.insert(point);
+    m_f_i[point] ++;
 }
 
-void UmbrellaSamplingSimulation::estimate_current_weights() {
+void UmbrellaSamplingSimulation::estimate_current_weights(int n,
+        vector<GridPoint> new_points, vector<GridPoint> old_only_points) {
     // Average bias weights of iteration
-    double sum_of_biases {0};
+    double ave_bias_weight {0};
     for (auto point: m_s_n.back()) {
-        sum_of_biases += ?;
+        double point_bias {m_grid_bias->calc_bias(point)};
+        ave_bias_weight += m_f_n[point].back() * std::exp(point_bias);
     }
+
+    // Setup vectors for new points
+    for (auto point: new_points) {
+        vector<double> p_k_n(n);
+        m_p_n[point] = p_k_n;
+    }
+    // Calculate for all visited points
     for (auto point: m_s_n.back()) {
-        double p_n_k {m_f_n[point].back() * ? / sum_of_biases};
+        double point_bias {m_grid_bias->calc_bias(point)};
+        double p_n_k {m_f_n[point].back() * std::exp(point_bias) /
+            ave_bias_weight};
         m_p_n[point].push_back(p_n_k);
     }
+
+    // Update vector for unvisted points
+    for (auto point: old_only_points) {
+        m_p_n[point].push_back(0);
+    }
 }
 
-bool UmbrellaSamplingSimulation::iteration_equilibrium_step() {
+bool UmbrellaSamplingSimulation::iteration_equilibrium_step(
+        vector<GridPoint> new_points) {
     // Check if any visited gridpoint in current iteration further than x from
     // any previously visited gridpoints
     // Other mode advanced checks possible
     bool equilibrium_step {false};
+    
+    // This is a pretty ugly way of dealing with the first iteration step
+    if (m_SE_n.size() == 0) {
+        equilibrium_step = true;
+        return equilibrium_step;
+    }
 
-    // First find intersection of previously and currently visited states
-    vector<GridPoint> it {};
-    std::set_intersection(m_s_n.back().begin(), m_s_n.back().end(),
-            m_S_n.begin(), m_S_n.end(), it.front());
-
-    // Now find newly sampled points
-    vector<GridPoint> dif {};
-    std::set_difference(it.begin(), it.end(), m_s_n.back().begin(),
-            m_s_n.back().end(), dif.front());
-
-    for (int d {0}; d != dif.size(); d++) {
-        int closet_point {find_closest_point(m_S_n, d)};
-        if (abs(dif[d] - closest_point[d]) > m_equil_dif[d]) {
-            equilibrium_step = true;
-            break;
+    // Check distance between new points and closest previously sampled points
+    for (auto new_point: new_points) {
+        // Does it matter what order I move through the dimensions?
+        for (size_t dim {0}; dim != new_point.size(); dim++) {
+            GridPoint closest_point {find_closest_point(m_SE_n, new_point, dim)};
+            if (abs(new_point[dim] - closest_point[dim]) > m_equil_dif[dim]) {
+                equilibrium_step = true;
+                break;
+            }
         }
+    }
 
     return equilibrium_step;
 }
 
+void UmbrellaSamplingSimulation::fill_grid_sets(vector<GridPoint>& new_points,
+        vector<GridPoint>& old_points, vector<GridPoint>& old_only_points) {
+
+    // First find states that were visited before and now
+    vector<GridPoint>::iterator it;
+    it = std::set_intersection(m_s_i.begin(), m_s_i.end(),
+            m_S_n.begin(), m_S_n.end(), old_points.begin());
+    old_points.resize(it - old_points.begin());
+
+    // Now find newly sampled points
+    it = std::set_difference(m_s_i.begin(), m_s_i.end(), old_points.begin(),
+            old_points.end(), new_points.begin());
+    new_points.resize(it - new_points.begin());
+
+    // Now find points sampled before not in current
+    it = std::set_difference(m_S_n.begin(), m_S_n.end(), old_points.begin(),
+            old_points.end(), old_only_points.begin());
+    old_only_points.resize(it - old_only_points.begin());
+
+    return;
+}
+
+void UmbrellaSamplingSimulation::update_bias() {
+    for (auto point: m_S_n) {
+        // No T to be consistent with biases here
+        m_E_w[point] = std::log(m_P_n[point]);
+    }
+    m_grid_bias->replace_biases(m_E_w);
+}
+
 void UmbrellaSamplingSimulation::estimate_normalizations(int n) {
-    estimate_initial_normalization(int n);
-    estimate_final_normalizations();
+    // Ugly special case
+    if (n == 0) {
+        m_N.push_back(1);
+    }
+    else {
+        m_N.push_back(estimate_initial_normalization(n));
+        estimate_final_normalizations();
+    }
+
+    // Update probabilities
+    for (auto point: m_S_n) {
+        int P_k_n {0};
+        for (int i {0}; i != n + 1; i++) {
+            P_k_n += m_r_n[point][i] * m_N[i] * m_p_n[point][n];
+        }
+        m_P_n[point] = P_k_n;
+    }
 }
 
 double UmbrellaSamplingSimulation::estimate_initial_normalization(int n) {
@@ -620,15 +769,12 @@ double UmbrellaSamplingSimulation::estimate_initial_normalization(int n) {
 
     // Calculate grid of c
     GridFloats c_grid {};
-    int F_prev_sum {0};
-    for (auto point: m_S_n) {
-        F_prev_sum += m_F_n[point];
-    }
+    long int F_prev_sum {n * m_steps};
 
     for (auto point: m_S_n) {
         double w_n_k {m_w_n[point][n]};
         double r_n_k {m_r_n[point][n]};
-        c_grid[point] = m_F_n[point] / pow(F_prev_sum*r_n_k, 2) +
+        c_grid[point] = pow(r_n_k, 2) * m_F_n[point][n - 1] / F_prev_sum +
                 w_n_k*pow((1 - r_n_k), 2);
     }
 
@@ -652,7 +798,12 @@ void UmbrellaSamplingSimulation::estimate_final_normalizations() {
     int num_iters {static_cast<int>(m_N.size())};
     double num_iters_as_double {static_cast<double>(m_N.size())};
     Problem problem;
+    int num_residuals {0};
     for (int n {0}; n != num_iters; n++) {
+        num_residuals += m_s_n[n].size();
+    }
+    for (int n {0}; n != num_iters; n++) {
+        double n_as_double {static_cast<double>(n)};
         for (auto point: m_s_n[n]) {
             DynamicAutoDiffCostFunction<RDevSquareSum, 4>* cost_function =
                     new DynamicAutoDiffCostFunction<RDevSquareSum, 4> {
@@ -662,17 +813,19 @@ void UmbrellaSamplingSimulation::estimate_final_normalizations() {
             cost_function->AddParameterBlock(num_iters);
             cost_function->AddParameterBlock(num_iters);
             cost_function->AddParameterBlock(1);
+            cost_function->AddParameterBlock(1);
+
+            cost_function->SetNumResiduals(num_residuals);
 
             LossFunction* loss_function = new ScaledLoss {NULL, m_w_n[point][n],
                     ceres::TAKE_OWNERSHIP};
+            // I am passing the core arrays that are held in vectors (&nvariable[0])
             problem.AddResidualBlock(cost_function, loss_function, &m_N[0],
-                    &m_r_n[point][0], &m_p_n[point][0], &m_N[n], &m_p_n[point][n],
-                    &num_iters_as_double);
-            problem.SetParameterBlockConstant(&m_N[0]);
+                    &m_r_n[point][0], &m_p_n[point][0], &n_as_double, &num_iters_as_double);
+            // I am not sure whether I should hold 
             problem.SetParameterBlockConstant(&m_r_n[point][0]);
             problem.SetParameterBlockConstant(&m_p_n[point][0]);
-            problem.SetParameterBlockConstant(&m_N[n]);
-            problem.SetParameterBlockConstant(&m_p_n[point][n]);
+            problem.SetParameterBlockConstant(&n_as_double);
             problem.SetParameterBlockConstant(&num_iters_as_double);
         }
     }
@@ -690,25 +843,36 @@ void UmbrellaSamplingSimulation::estimate_final_normalizations() {
 
 template <typename T>
 bool RDevSquareSum::operator() (
-        T const* const* parameters, // 0, N_n; 1, r_n_k; 2 p_n_k; 3, N_i; 4, p_i_k; 5, num_iters
+        T const* const* params, // 0, N_n; 1, r_n_k; 2 p_n_k; 3, i; 4 num_iters
         T* residual) const {
-    residual[0] = parameters[1][0] * parameters[0][0] * parameters[2][0];
-    for (double j {1}; j != parameters[5][0]; j += 1) {
+    residual[0] = params[1][0] * params[0][0] * params[2][0];
+    for (double j {1}; j != params[4][0]; j += 1) {
         int j_int {static_cast<int>(j)};
-        residual[0] += parameters[1][j_int] * parameters[0][j_int] * parameters[2][j_int];
+        residual[0] += params[1][j_int] * params[0][j_int] * params[2][j_int];
     }
-    residual[0] = parameters[4][0] * parameters[5][0] - residual[0];
+    
+    // Hack way of getting an index from the passed parameter
+    double i;
+    for (i = 0; i != params[3][0]; i++) {}
+    int i_int = static_cast<int>(i);
+    residual[0] = (params[1][i_int] * params[2][i_int] - residual[0]) / residual[0];
 
     return true;
-    GridOfInts a {};
 }
 
-Simulation::find_closest_point(set<GridPoint> search_set,
+GridPoint Simulation::find_closest_point(set<GridPoint> search_set,
         GridPoint target_point, int dim) {
-    GridPoint closest_point {search_set.front()};
-    int closest_dist {abs(target_point[d] - closest_point[d])};
+
+    // I need a point from the search set to initialize things, but set has no
+    // front method, so this is a hacky solution
+    GridPoint closest_point;
     for (auto point: search_set) {
-        int cur_dist {abs(target_point[d] - point[d])};
+        closest_point = point;
+        break;
+    }
+    int closest_dist {abs(target_point[dim] - closest_point[dim])};
+    for (auto point: search_set) {
+        int cur_dist {abs(target_point[dim] - point[dim])};
         if (cur_dist < closest_dist) {
             closest_point = point;
             closest_dist = cur_dist;

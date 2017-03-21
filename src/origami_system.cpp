@@ -1269,6 +1269,10 @@ double OrigamiSystemWithBias::set_domain_config(Domain& cd_i, VectorThree pos,
 //    delta_e += m_system_biases->calc_one_domain(cd_i);
 //}
 
+SystemOrderParams* OrigamiSystemWithBias::get_system_order_params() {
+    return m_system_order_params;
+}
+
 SystemBiases* OrigamiSystemWithBias::get_system_biases() {
     return m_system_biases;
 }
