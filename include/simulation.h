@@ -242,7 +242,7 @@ namespace Simulation {
             vector<OrderParam*> m_grid_params {};
             GridBiasFunction* m_grid_bias;
             vector<int> m_equil_dif;
-            double m_max_D_bias {5};
+            double m_max_D_bias;
 
             ofstream m_solver_file;
             

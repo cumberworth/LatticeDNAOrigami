@@ -88,6 +88,7 @@ namespace Parser {
             // Umbrella sampling simulation parameters
             vector<string> m_order_params {};
             int m_num_iters {0};
+            double m_max_D_bias {0};
 
             // Output options
             string m_output_filebase;

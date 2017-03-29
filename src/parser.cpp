@@ -157,6 +157,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         // Umbrella sampling options
         ("order_params", po::value<string>(), "List of order parameters to apply to")
         ("num_iters", po::value<int>(), "Number of iterations")
+        ("max_D_bias", po::value<double>(), "Max change in bias per iteration")
 
         // Output options
         ("output_filebase", po::value<string>(), "Base name for output files")
@@ -332,6 +333,9 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     }
     if (vm.count("num_iters")) {
         m_num_iters = vm["num_iters"].as<int>();
+    }
+    if (vm.count("max_D_bias")){
+        m_max_D_bias = vm["max_D_bias"].as<double>();
     }
 
     // Output options

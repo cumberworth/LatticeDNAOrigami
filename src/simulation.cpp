@@ -550,6 +550,7 @@ UmbrellaSamplingSimulation::UmbrellaSamplingSimulation(
         GCMCSimulation(origami, params),
         m_params {params},
         m_num_iters {params.m_num_iters},
+        m_max_D_bias {params.m_max_D_bias},
         m_steps {params.m_steps},
         // This is awfull
         m_system_order_params {dynamic_cast<OrigamiSystemWithBias*>(&origami)->
