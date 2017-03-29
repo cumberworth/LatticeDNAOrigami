@@ -1,9 +1,9 @@
 #CC = g++
 CC = mpicxx
-CPPFLAGS = -I include -I /usr/include/eigen3 -g
-LDFLAGS = -lblas -llapack -lcholmod -lcxsparse -lgomp -lceres -lglog -lboost_program_options -lboost_mpi -lboost_serialization -g
-#CPPFLAGS = -I include -I /usr/include/eigen3 -O3
-#LDFLAGS = -lblas -llapack -lcholmod -lcxsparse -lgomp -lglog -lboost_program_options -lboost_mpi -lboost_serialization -O3
+#CPPFLAGS = -I include -I /usr/include/eigen3 -g
+#LDFLAGS = -lblas -llapack -lcholmod -lcxsparse -lgomp -lceres -lglog -lboost_program_options -lboost_mpi -lboost_serialization -g
+CPPFLAGS = -I include -I /usr/include/eigen3 -O3
+LDFLAGS = -lblas -llapack -lcholmod -lcxsparse -lgomp -lceres -lglog -lboost_program_options -lboost_mpi -lboost_serialization -O3
 BUILD = build/
 vpath %.h include
 vpath %.cpp src
@@ -13,7 +13,7 @@ TARGET = bin/latticeDNAOrigami
 
 all: $(TARGET)
 
-$(TARGET): $(BUILD)main.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o $(BUILD)domain.o $(BUILD)simulation.o $(BUILD)movetypes.o $(BUILD)random_gens.o $(BUILD)ideal_random_walk.o $(BUILD)parser.o $(BUILD)order_params.o
+$(TARGET): $(BUILD)main.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o $(BUILD)domain.o $(BUILD)simulation.o $(BUILD)movetypes.o $(BUILD)random_gens.o $(BUILD)ideal_random_walk.o $(BUILD)parser.o $(BUILD)order_params.o $(BUILD)enumerate.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(TESTTARGET): $(BUILD)test.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o $(BUILD)domain.o $(BUILD)simulation.o $(BUILD)movetypes.o $(BUILD)random_gens.o $(BUILD)ideal_random_walk.o $(BUILD)parser.o $(BUID)order_params.o
@@ -57,6 +57,9 @@ $(BUILD)parser.o: parser.cpp parser.h
 	$(CC) -o $@ -c $(CPPFLAGS) $<
 
 $(BUILD)order_params.o: order_params.cpp order_params.h
+	$(CC) -o $@ -c $(CPPFLAGS) $<
+
+$(BUILD)enumerate.o: enumerate.cpp enumerate.h
 	$(CC) -o $@ -c $(CPPFLAGS) $<
 
 .PHONY: clean install

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <random>
 #include <set>
+#include <cmath>
 
 #include "parser.h"
 #include "utility.h"
@@ -13,6 +14,7 @@
 using std::fmin;
 using std::set;
 using std::find;
+using std::pow;
 
 using namespace Movetypes;
 using namespace Utility;
@@ -409,6 +411,7 @@ bool MetStapleExchangeMCMovetype::delete_staple() {
 
     // Unassign domains and test acceptance
     unassign_domains(staple);
+    m_delta_e += m_origami_system.check_delete_chain(c_i);
     accepted = staple_deletion_accepted(c_i_ident);
     if (accepted) {
         m_origami_system.delete_chain(c_i);
@@ -691,192 +694,6 @@ pair<Domain*, Domain*> CBMCMovetype::select_old_growthpoint(
     Domain* growth_domain_new {bound_domains[bound_domain_index].first};
     Domain* growth_domain_old {bound_domains[bound_domain_index].second};
     return {growth_domain_new, growth_domain_old};
-}
-
-bool CBStapleExchangeMCMovetype::attempt_move() {
-    // Select inertion or deletion with equal frequency
-    bool accept;
-    if (m_random_gens.uniform_real() < 0.5) {
-        accept = insert_staple();
-    }
-    else {
-        accept = delete_staple();
-    }
-    
-    return accept;
-}
-
-double CBStapleExchangeMCMovetype::calc_staple_insertion_acc_ratio(int c_i_ident) {
-    int Ni_new {m_origami_system.num_staples_of_ident(c_i_ident)};
-
-    // Normalize rosenbluth weight
-    size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
-    m_bias /= pow(6, staple_length);
-
-    // Correct for extra states from additional staple domains
-    double extra_df {2 * static_cast<double>(staple_length) - 1 - preconstrained_df};
-    double extra_states {pow(6, extra_df)};
-    long double ratio {extra_states / Ni_new * m_bias};
-
-    // Correct for insertion into subset of volume
-    m_modifier *= m_insertion_sites / m_origami_system.m_volume;
-
-    // Correct for considering only 1 of staple length ways insertion could occur
-    m_modifier *= staple_length;
-
-    return ratio;
-}
-
-double CBStapleExchangeMCMovetype::calc_staple_deletion_acc_ratio(int c_i_ident) {
-    int Ni {m_origami_system.num_staples_of_ident(c_i_ident)};
-
-    // Normalize rosenbluth weight
-    size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
-    m_bias /= pow(6, staple_length);
-
-    // Correct for extra states from additional staple domains
-    double extra_df {2 * static_cast<double>(staple_length) - 1 - preconstrained_df};
-    double extra_states {pow(6, extra_df)};
-
-    long double ratio {Ni / extra_states / m_bias};
-
-    return ratio;
-}
-
-vector<double> CBStapleExchangeMCMovetype::calc_bias(vector<double> weights,
-        Domain*, vector<pair<VectorThree, VectorThree>>&, VectorThree,
-        vector<Domain*>) {
-    // Calculate rosenbluth weight
-    double rosenbluth_i {0};
-    for (auto weight: weights) {
-        rosenbluth_i += weight;
-    }
-    if (rosenbluth_i == 0) {
-        
-        // Deadend
-        m_rejected = true;
-    }
-    else {
-        m_bias *= rosenbluth_i;
-        for (size_t i {0}; i != weights.size(); i++) {
-            weights[i] /= rosenbluth_i;
-        }
-    }
-
-    return weights;
-}
-
-bool CBStapleExchangeMCMovetype::insert_staple() {
-    bool accepted;
-
-    // Select and add chain of random identity
-    int c_i_ident {select_random_staple_identity()};
-
-    //DEBUG
-    if (m_origami_system.num_staples_of_ident(c_i_ident) == 2) {
-        return false;
-    }
-
-    int c_i {m_origami_system.add_chain(c_i_ident)};
-    m_added_chains.push_back(c_i);
-
-    // Assume that add_chain always adds to end of m_domains
-    vector<Domain*> selected_chain {m_origami_system.get_last_chain()};
-
-    // Select and set growth point on current system
-    pair<Domain*, Domain*> growthpoint {select_new_growthpoint(selected_chain)};
-    double delta_e {set_growth_point(*growthpoint.first, *growthpoint.second)};
-    m_bias *= 6 * exp(-delta_e);
-    if (m_rejected) {
-        accepted = false;
-        return accepted;
-    }
-
-    grow_staple(growthpoint.first->m_d, selected_chain);
-    if (m_rejected) {
-        accepted = false;
-        return accepted;
-    }
-
-    long double ratio {calc_staple_insertion_acc_ratio(c_i_ident)};
-    accepted = test_acceptance(ratio);
-    return accepted;
-}
-
-bool CBStapleExchangeMCMovetype::delete_staple() {
-    bool accepted;
-
-    // Select random identity and staple of that type
-    int c_i_ident {select_random_staple_identity()};
-    int c_i {select_random_staple_of_identity(c_i_ident)};
-    if (m_rejected) {
-        accepted = false;
-        return accepted;
-    }
-
-    // Reject if staple is connector
-    vector<Domain*> staple {m_origami_system.get_chain(c_i)};
-    if (staple_is_connector(staple)) {
-        accepted = false;
-        return accepted;
-    }
-
-    // Select growth point
-    auto bound_domains {find_bound_domains(staple)};
-    auto growthpoint {select_old_growthpoint(bound_domains)};
-    
-    // Add stuff to reversions lists and unassign domains
-    unassign_for_regrowth(staple);
-
-    // Regrow chain to calculate Rosenbluth weight
-    m_regrow_old = true;
-    double delta_e {set_old_growth_point(*growthpoint.first, *growthpoint.second)};
-    m_bias *= 6 * exp(-delta_e);
-    grow_staple(growthpoint.first->m_d, staple);
-
-    // Remove overcounting correction
-    m_modifier = 1;
-    long double ratio {calc_staple_deletion_acc_ratio(c_i_ident)};
-    accepted = test_acceptance(ratio);
-
-    if (accepted) {
-        unassign_and_delete_staple(c_i, staple);
-    }
-
-    // No need for reseting with this movetype
-    m_assigned_domains.clear();
-
-    return accepted;
-}
-
-void CBStapleExchangeMCMovetype::unassign_and_delete_staple(
-        int c_i,
-        vector<Domain*> staple) {
-    for (auto domain: staple) {
-        m_origami_system.unassign_domain(*domain);
-    }
-    m_origami_system.delete_chain(c_i);
-}
-
-void CBStapleExchangeMCMovetype::unassign_for_regrowth(vector<Domain*> domains) {
-    // No need for reversion list
-    for (auto domain: domains) {
-        pair<int, int> key {domain->m_c, domain->m_d};
-        m_old_pos[key] = domain->m_pos;
-        m_old_ore[key] = domain->m_ore;
-
-        // Would be double counting to include delta_e in bias
-        m_origami_system.unassign_domain(*domain);
-    }
-}
-
-void CBStapleExchangeMCMovetype::grow_chain(vector<Domain*> domains) {
-    for (size_t i {1}; i != domains.size(); i++) {
-        select_and_set_config(domains, i);
-        if (m_rejected) {
-            break;
-        }
-    }
 }
 
 bool CBStapleRegrowthMCMovetype::attempt_move() {

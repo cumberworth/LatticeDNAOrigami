@@ -17,41 +17,39 @@ DistOrderParam::DistOrderParam(Domain& domain_1, Domain& domain_2) :
 }
 
 int DistOrderParam::calc_param() {
-    int dist {-1};
     if (m_domain_1.m_state != Occupancy::unassigned and
-            m_domain_2.m_state != Occupancy::unbound) {
+            m_domain_2.m_state != Occupancy::unassigned) {
 
         m_defined = true;
         VectorThree diff_vec {m_domain_2.m_pos - m_domain_1.m_pos};
-        dist = diff_vec.abssum();
+        m_param = diff_vec.abssum();
+        m_checked_param = m_param;
     }
     else {
         m_defined = false;
     }
-    m_param = dist;
-    m_checked_param = dist;
 
-    return dist;
+    return m_param;
 }
 
 int DistOrderParam::check_param(Domain& domain, VectorThree new_pos, VectorThree,
-        Occupancy) {
+        Occupancy state) {
     Domain* unmodded_domain {&m_domain_1};
     if (domain.m_d == m_domain_1.m_d) {
         unmodded_domain = &m_domain_2;
     }
-    int dist {-1};
-    if (unmodded_domain->m_state != Occupancy::unassigned) {
-        dist = (new_pos - unmodded_domain->m_pos).abssum();
-        // Consider using a checked defined variable instead
+    if (unmodded_domain->m_state != Occupancy::unassigned and
+            state != Occupancy::unassigned) {
+        m_checked_param = (new_pos - unmodded_domain->m_pos).abssum();
+        // Will be defined for configurations where that domain is unassigned
+        // Consider using a check defined variable instead
         m_defined = true;
     }
     else {
         m_defined = false;
     }
-    m_checked_param = dist;
 
-    return dist;
+    return m_checked_param;
 }
 
 int DistOrderParam::get_param() {
@@ -86,9 +84,18 @@ DistSumOrderParam::DistSumOrderParam(vector<DistOrderParam*> dist_params) :
 
 int DistSumOrderParam::calc_param() {
     int dist_sum {0};
+    m_defined = true;
     for (auto param: m_dist_params) {
+
+        // Will be defined if one of the domains is unassigned but being checked
+        // Obvoiusly this comment is prone to being out-of-date
         if (param->defined()) {
             dist_sum += param->get_param();
+        }
+        else {
+            m_defined = false;
+            dist_sum = m_param;
+            break;
         }
     }
     m_param = dist_sum;
@@ -100,8 +107,19 @@ int DistSumOrderParam::calc_param() {
 int DistSumOrderParam::check_param(Domain&, VectorThree, VectorThree,
         Occupancy) {
     int dist_sum {0};
+    m_defined = true;
     for (auto param: m_dist_params) {
-        dist_sum += param->get_checked_param();
+
+        // Will be defined if one of the domains is unassigned but being checked
+        // Obvoiusly this comment is prone to being out-of-date
+        if (param->defined()) {
+            dist_sum += param->get_checked_param();
+        }
+        else {
+            m_defined = false;
+            dist_sum = m_param;
+            break;
+        }
     }
     m_checked_param = dist_sum;
 
@@ -139,7 +157,7 @@ vector<Domain*> DistSumOrderParam::get_depending_domains() {
 }
 
 bool DistSumOrderParam::defined() {
-    return true;
+    return m_defined;
 }
 
 NumStaplesOrderParam::NumStaplesOrderParam(OrigamiSystem& origami) :
@@ -148,32 +166,40 @@ NumStaplesOrderParam::NumStaplesOrderParam(OrigamiSystem& origami) :
 }
 
 int NumStaplesOrderParam::calc_param() {
-    m_param = m_origami.num_staples();
-    m_checked_param = m_param;
+
+    // This is only defined for fully set configurations
+    if (m_origami.configuration_fully_set()) {
+        m_defined = true;
+        m_param = m_origami.num_staples();
+        m_checked_param = m_param;
+    }
+    else {
+        m_defined = false;
+    }
+
     return m_param;
 }
 
-int NumStaplesOrderParam::check_param(Domain& domain, VectorThree , VectorThree,
-        Occupancy state) {
-    if (domain.m_c != m_origami.c_scaffold) {
-        if (state == Occupancy::bound or state == Occupancy::misbound) {
-            auto staple = m_origami.get_chain(domain.m_c);
-            bool staple_already_bound {false};
-            for (auto d: staple) {
-                if (d->m_d == domain.m_d) {
-                    continue;
-                }
-                if (d->m_state == Occupancy::bound or d->m_state ==
-                        Occupancy::misbound) {
-                    staple_already_bound = true;
-                    break;
-                }
-                if (staple_already_bound) {
-                    m_checked_param += 1;
-                }
-            }
-        }
+int NumStaplesOrderParam::check_param(Domain&, VectorThree , VectorThree,
+        Occupancy occ) {
+
+    // This is only defined for fully set configurations
+    if (m_origami.num_unassigned_domains() == 1 and
+            occ != Occupancy::unassigned) {
+        m_defined = true;
+        m_checked_param = m_origami.num_staples();
     }
+    else {
+        m_defined = false;
+    }
+    return m_checked_param;
+}
+
+int NumStaplesOrderParam::check_delete_chain(int) {
+    // Actually just want it to be defined now, only ever delete one chain at
+    // a time and never unassign any other domains
+    m_defined = true;
+    m_checked_param = m_origami.num_staples() - 1;
 
     return m_checked_param;
 }
@@ -203,7 +229,7 @@ vector<Domain*> NumStaplesOrderParam::get_depending_domains() {
 }
 
 bool NumStaplesOrderParam::defined() {
-    return true;
+    return m_defined;
 }
 
 NumBoundDomainPairsOrderParam::NumBoundDomainPairsOrderParam(
@@ -213,20 +239,51 @@ NumBoundDomainPairsOrderParam::NumBoundDomainPairsOrderParam(
 }
 
 int NumBoundDomainPairsOrderParam::calc_param() {
-    m_param = m_origami.num_staples();
+
+    // This is only defined for fully set configurations
+    if (m_origami.configuration_fully_set()) {
+        m_param = m_origami.num_fully_bound_domain_pairs();
+        m_checked_param = m_param;
+        m_defined = true;
+    }
+    else {
+        m_defined = false;
+    }
 
     return m_param;
 }
 
 int NumBoundDomainPairsOrderParam::check_param(Domain&, VectorThree , VectorThree,
         Occupancy state) {
-    if (state == Occupancy::bound) {
-        m_checked_param ++;
+    
+    // This is only defined for fully set configurations
+    if (m_origami.num_unassigned_domains() == 1) {
+        if (state != Occupancy::unassigned) {
+            m_defined = true;
+            int num_domain_pairs = m_origami.num_fully_bound_domain_pairs();
+            if (state == Occupancy::bound) {
+                m_checked_param = num_domain_pairs + 1;
+            }
+            else {
+                m_checked_param = num_domain_pairs;
+            }
+        }
+        else {
+            m_defined = false;
+        }
     }
 
     return m_checked_param;
 }
 
+int NumBoundDomainPairsOrderParam::check_delete_chain(int) {
+    // Actually just want it to be defined now, only ever delete one chain at
+    // a time and never unassign any other domains
+    m_defined = true;
+    m_checked_param = m_origami.num_bound_domain_pairs();
+
+    return m_checked_param;
+}
 
 int NumBoundDomainPairsOrderParam::get_param() {
     return m_param;
@@ -253,7 +310,7 @@ vector<Domain*> NumBoundDomainPairsOrderParam::get_depending_domains() {
 }
 
 bool NumBoundDomainPairsOrderParam::defined() {
-    return true;
+    return m_defined;
 }
 
 SystemOrderParams::SystemOrderParams(InputParameters& params,
@@ -301,6 +358,10 @@ vector<DistSumOrderParam*> SystemOrderParams::get_dist_sums() {
 
 NumBoundDomainPairsOrderParam& SystemOrderParams::get_num_bound_domains() {
     return m_num_bound_domains;
+}
+
+NumStaplesOrderParam& SystemOrderParams::get_num_staples() {
+    return m_num_staples;
 }
 
 void SystemOrderParams::setup_distance_param(InputParameters& params) {
@@ -365,6 +426,13 @@ void SystemOrderParams::update_one_domain(Domain& domain) {
     m_num_bound_domains.calc_param();
 }
 
+void SystemOrderParams::update_delete_chain(int) {
+
+    // For now always only these depend on deletion of staple chain
+    m_num_staples.calc_param();
+    m_num_bound_domains.calc_param();
+}
+
 void SystemOrderParams::check_one_domain(Domain& domain, VectorThree pos,
         VectorThree ore, Occupancy state) {
     // Get distance parameters that are dependent on the domain
@@ -383,6 +451,13 @@ void SystemOrderParams::check_one_domain(Domain& domain, VectorThree pos,
     // For now always calculate as it's just getting a pre-calculated value
     m_num_staples.check_param(domain, pos, ore, state);
     m_num_bound_domains.check_param(domain, pos, ore, state);
+}
+
+void SystemOrderParams::check_delete_chain(int c_i) {
+
+    // For now always only these depend on deletion of staple chain
+    m_num_staples.check_delete_chain(c_i);
+    m_num_bound_domains.check_delete_chain(c_i);
 }
 
 LinearStepBiasFunction::LinearStepBiasFunction(OrderParam& order_param,
@@ -475,6 +550,12 @@ double GridBiasFunction::calc_bias(vector<int> params) {
 double GridBiasFunction::update_bias() {
     vector<int> key {};
     for (auto order_param: m_order_params) {
+
+        // No bias if order parameters not all defined
+        if (not order_param->defined()) {
+            m_bias = 0;
+            return 0;
+        }
         key.push_back(order_param->get_param());
     }
     double bias {calc_bias(key)};
@@ -484,11 +565,16 @@ double GridBiasFunction::update_bias() {
 }
 
 double GridBiasFunction::check_bias() {
-    vector<int> key;
+    vector<int> key {};
     for (auto order_param: m_order_params) {
-        key.push_back(order_param->get_checked_param());
+
+        // No bias if order parameters not all defined
+        if (not order_param->defined()) {
+            return 0;
+        }
+        key.push_back(order_param->get_param());
     }
-    double checked_bias {m_bias_grid[key]};
+    double checked_bias {calc_bias(key)};
 
     return checked_bias;
 }
@@ -625,6 +711,17 @@ double SystemBiases::calc_one_domain(Domain& domain) {
     return bias_diff;
 }
 
+double SystemBiases::calc_delete_chain(int c_i) {
+    m_system_order_params.update_delete_chain(c_i);
+
+    // For now assuming no staple distance constraints
+    double prev_bias {m_grid_bias_f.get_bias()};
+    double new_bias {m_grid_bias_f.update_bias()};
+    double bias_diff {new_bias - prev_bias};
+
+    return bias_diff;
+}
+
 double SystemBiases::check_one_domain(Domain& domain, VectorThree pos,
         VectorThree ore, Occupancy state) {
     double bias_diff {0};
@@ -642,6 +739,17 @@ double SystemBiases::check_one_domain(Domain& domain, VectorThree pos,
     double prev_bias {m_grid_bias_f.get_bias()};
     double new_bias {m_grid_bias_f.check_bias()};
     bias_diff += new_bias - prev_bias;
+
+    return bias_diff;
+}
+
+double SystemBiases::check_delete_chain(int c_i) {
+    m_system_order_params.check_delete_chain(c_i);
+
+    // For now only effects these biases
+    double prev_bias {m_grid_bias_f.get_bias()};
+    double new_bias {m_grid_bias_f.check_bias()};
+    double bias_diff {new_bias - prev_bias};
 
     return bias_diff;
 }

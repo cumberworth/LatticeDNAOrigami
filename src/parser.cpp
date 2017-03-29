@@ -268,23 +268,17 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         m_movetype_probs.push_back(prob.to_double());
         m_movetypes.push_back(3);
     }
-    if (vm.count("cb_staple_exchange")) {
-        string unparsed_fraction {vm["cb_staple_exchange"].as<string>()};
-        Fraction prob {unparsed_fraction};
-        m_movetype_probs.push_back(prob.to_double());
-        m_movetypes.push_back(4);
-    }
     if (vm.count("cb_staple_regrowth")) {
         string unparsed_fraction {vm["cb_staple_regrowth"].as<string>()};
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
-        m_movetypes.push_back(5);
+        m_movetypes.push_back(4);
     }
     if (vm.count("ctcb_scaffold_regrowth")) {
         string unparsed_fraction {vm["ctcb_scaffold_regrowth"].as<string>()};
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
-        m_movetypes.push_back(6);
+        m_movetypes.push_back(5);
     }
     if (vm.count("num_walks_filename")) {
         m_num_walks_filename = vm["num_walks_filename"].as<string>();

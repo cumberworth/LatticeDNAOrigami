@@ -5,6 +5,7 @@
 #include <set>
 #include <algorithm>
 #include <numeric>
+#include <cmath>
 
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
@@ -19,6 +20,7 @@
 
 using std::cout;
 using std::min;
+using std::pow;
 
 namespace mpi = boost::mpi;
 
@@ -235,7 +237,12 @@ PTGCMCSimulation::~PTGCMCSimulation() {
 // Could probably break this into two methods
 void PTGCMCSimulation::initialize_control_qs(InputParameters& params) {
     if (m_rank == m_master_rep) {
+ 
+        //  Temps
         m_control_qs.push_back(params.m_temps);
+
+        // Chemical potentials
+        m_control_qs.push_back({});
         for (int i {0}; i != m_num_reps; i++) {
 
             // Calculate chemical potential of each replica if constant [staple]
@@ -252,6 +259,8 @@ void PTGCMCSimulation::initialize_control_qs(InputParameters& params) {
             }
             m_control_qs[m_staple_u_i].push_back(staple_u);
         }
+
+        // Biases
         m_control_qs.push_back(params.m_bias_mults);
     }
 
@@ -384,7 +393,7 @@ void PTGCMCSimulation::attempt_exchange(int swap_i,
     // Alternates between two sets of pairs, allows for changes in T, u, and N
 
     // Collect results from all replicas
-    vector<vector<double>> dependent_qs {};
+    vector<vector<double>> dependent_qs {{}, {}, {}};
     master_receive(swap_i, dependent_qs);
 
     // Iterate through pairs in current set and attempt swap
@@ -543,16 +552,21 @@ UmbrellaSamplingSimulation::UmbrellaSamplingSimulation(
         m_num_iters {params.m_num_iters},
         m_steps {params.m_steps},
         // This is awfull
-        m_system_order_params {dynamic_cast<OrigamiSystemWithBias*>(&origami)->get_system_order_params()},
-        m_grid_bias {dynamic_cast<OrigamiSystemWithBias*>(&origami)->get_system_biases()->get_grid_bias()} {
+        m_system_order_params {dynamic_cast<OrigamiSystemWithBias*>(&origami)->
+                get_system_order_params()},
+        m_grid_bias {dynamic_cast<OrigamiSystemWithBias*>(&origami)->
+            get_system_biases()->get_grid_bias()} {
 
     // Initalize log file
     m_solver_file.open(params.m_output_filebase + ".solver");
 
     // Setup grid bias
-    OrderParam* dist_sum {m_system_order_params->get_dist_sums()[0]};
+    //OrderParam* dist_sum {m_system_order_params->get_dist_sums()[0]};
     OrderParam* num_bound_domains {&m_system_order_params->get_num_bound_domains()};
-    m_grid_params = {dist_sum, num_bound_domains};
+    OrderParam* num_staples {&m_system_order_params->get_num_staples()};
+    //m_grid_params = {dist_sum, num_bound_domains};
+    //m_grid_params = {dist_sum, num_staples};
+    m_grid_params = {num_bound_domains, num_staples};
     m_grid_bias->set_order_params(m_grid_params);
 
     // Set maximum allowed difference for determining if iteration is to be discarded
@@ -572,7 +586,7 @@ void UmbrellaSamplingSimulation::run() {
         // Write each iteration's output to a seperate file
         string prefix {"-" + std::to_string(n)};
         string output_filebase {m_params.m_output_filebase + prefix};
-        setup_output_files(m_params, output_filebase, m_origami_system);
+        m_output_files = setup_output_files(m_params, output_filebase, m_origami_system);
         m_logging_stream = new ofstream {output_filebase + ".out"};
 
         simulate(m_steps);
@@ -580,9 +594,9 @@ void UmbrellaSamplingSimulation::run() {
         vector<GridPoint> old_points(m_s_i.size());
         vector<GridPoint> old_only_points(m_S_n.size());
         fill_grid_sets(new_points, old_points, old_only_points);
-        bool step_is_equil {iteration_equilibrium_step(new_points)};
-        m_SE_n.insert(m_s_i.begin(), m_s_i.end());
+        bool step_is_equil {iteration_equilibrium_step(new_points, old_points)};
         if (step_is_equil) {
+            cout << "Discarding iteration\n\n";
             m_s_i.clear();
             m_f_i.clear();
             continue;
@@ -592,12 +606,11 @@ void UmbrellaSamplingSimulation::run() {
         estimate_current_weights(n, new_points, old_only_points);
         estimate_normalizations(n);
         update_bias();
+        output_summary(n);
         n++;
         m_output_files.clear();
         delete m_logging_stream;
-        // write summary information
     }
-    // write run summary information
 }
 
 void UmbrellaSamplingSimulation::update_grids(int n,
@@ -628,7 +641,7 @@ void UmbrellaSamplingSimulation::update_grids(int n,
         m_F_n[point].push_back(F_k_n);
 
         m_r_n[point].push_back(0);
-        for (size_t i {0}; i != m_f_i.size(); i++) {
+        for (int i {0}; i != n + 1; i++) {
             m_r_n[point][i] = static_cast<double>(m_f_n[point][i]) / F_k_n;
         }
 
@@ -684,14 +697,20 @@ void UmbrellaSamplingSimulation::estimate_current_weights(int n,
 }
 
 bool UmbrellaSamplingSimulation::iteration_equilibrium_step(
-        vector<GridPoint> new_points) {
+        vector<GridPoint> new_points, vector<GridPoint> old_points) {
     // Check if any visited gridpoint in current iteration further than x from
     // any previously visited gridpoints
     // Other mode advanced checks possible
     bool equilibrium_step {false};
     
     // This is a pretty ugly way of dealing with the first iteration step
-    if (m_SE_n.size() == 0) {
+    if (m_S_n.size() == 0) {
+        equilibrium_step = false;
+        return equilibrium_step;
+    }
+
+    // Must have at least one point that has been visited previously
+    if (old_points.size() == 0) {
         equilibrium_step = true;
         return equilibrium_step;
     }
@@ -700,7 +719,7 @@ bool UmbrellaSamplingSimulation::iteration_equilibrium_step(
     for (auto new_point: new_points) {
         // Does it matter what order I move through the dimensions?
         for (size_t dim {0}; dim != new_point.size(); dim++) {
-            GridPoint closest_point {find_closest_point(m_SE_n, new_point, dim)};
+            GridPoint closest_point {find_closest_point(m_S_n, new_point, dim)};
             if (abs(new_point[dim] - closest_point[dim]) > m_equil_dif[dim]) {
                 equilibrium_step = true;
                 break;
@@ -735,10 +754,45 @@ void UmbrellaSamplingSimulation::fill_grid_sets(vector<GridPoint>& new_points,
 
 void UmbrellaSamplingSimulation::update_bias() {
     for (auto point: m_S_n) {
+
         // No T to be consistent with biases here
-        m_E_w[point] = std::log(m_P_n[point]);
+        double old_bias {m_E_w[point]};
+        double new_bias {std::log(m_P_n[point])};
+        //double new_bias {std::log(m_p_n[point].back())};
+        double D_bias {new_bias - old_bias};
+        double updated_bias {new_bias};
+
+        // Limit how quckly bias can change
+        if (abs(D_bias) > m_max_D_bias) {
+            if (D_bias > 0) {
+                updated_bias = old_bias + m_max_D_bias;
+            }
+            else {
+                updated_bias = old_bias - m_max_D_bias;
+            }
+        }
+
+        m_E_w[point] = updated_bias;
     }
     m_grid_bias->replace_biases(m_E_w);
+}
+
+void UmbrellaSamplingSimulation::output_summary(int n) {
+    cout << "Iteration: " << n << "\n";
+    cout << "Normalization constants:\n";
+    for (auto N: m_N) {
+        cout << N << " ";
+    }
+    cout << "\n";
+    cout << "Gridpoint w, r, p, P, E:\n";
+    for (auto point: m_S_n) {
+        for (auto coor: point) {
+            cout << coor << " ";
+        }
+        cout << std::setprecision(3);
+        cout << ": " << std::setw(10) << m_w_n[point][n] << std::setw(10) << m_r_n[point][n] << std::setw(10) << m_p_n[point][n] << std::setw(10) << m_P_n[point] << std::setw(10) << m_E_w[point] << "\n";
+    }
+    cout << "\n";
 }
 
 void UmbrellaSamplingSimulation::estimate_normalizations(int n) {
@@ -753,9 +807,9 @@ void UmbrellaSamplingSimulation::estimate_normalizations(int n) {
 
     // Update probabilities
     for (auto point: m_S_n) {
-        int P_k_n {0};
+        double P_k_n {0};
         for (int i {0}; i != n + 1; i++) {
-            P_k_n += m_r_n[point][i] * m_N[i] * m_p_n[point][n];
+            P_k_n += m_r_n[point][i] * m_N[i] * m_p_n[point][i];
         }
         m_P_n[point] = P_k_n;
     }
@@ -774,8 +828,9 @@ double UmbrellaSamplingSimulation::estimate_initial_normalization(int n) {
     for (auto point: m_S_n) {
         double w_n_k {m_w_n[point][n]};
         double r_n_k {m_r_n[point][n]};
-        c_grid[point] = pow(r_n_k, 2) * m_F_n[point][n - 1] / F_prev_sum +
-                w_n_k*pow((1 - r_n_k), 2);
+        double c {pow(r_n_k, 2) * m_F_n[point][n - 1] / F_prev_sum +
+                w_n_k*pow((1 - r_n_k), 2)};
+        c_grid[point] = c;
     }
 
     // Calculate a(c)
@@ -798,47 +853,103 @@ void UmbrellaSamplingSimulation::estimate_final_normalizations() {
     int num_iters {static_cast<int>(m_N.size())};
     double num_iters_as_double {static_cast<double>(m_N.size())};
     Problem problem;
-    int num_residuals {0};
-    for (int n {0}; n != num_iters; n++) {
-        num_residuals += m_s_n[n].size();
-    }
+    vector<int> parameter_block_sizes {num_iters - 1, num_iters, num_iters, 1, 1};
     for (int n {0}; n != num_iters; n++) {
         double n_as_double {static_cast<double>(n)};
         for (auto point: m_s_n[n]) {
-            DynamicAutoDiffCostFunction<RDevSquareSum, 4>* cost_function =
-                    new DynamicAutoDiffCostFunction<RDevSquareSum, 4> {
-                            new RDevSquareSum {}};
+            CostFunction* cost_function =
+                    new RDevSquareSumCostFunction {1, parameter_block_sizes};
 
-            cost_function->AddParameterBlock(num_iters);
-            cost_function->AddParameterBlock(num_iters);
-            cost_function->AddParameterBlock(num_iters);
-            cost_function->AddParameterBlock(1);
-            cost_function->AddParameterBlock(1);
+            /* Autodiff
+            //DynamicAutoDiffCostFunction<RDevSquareSum, 4>* cost_function =
+            //    new DynamicAutoDiffCostFunction<RDevSquareSum, 4>(
+            //            new RDevSquareSum {});
 
-            cost_function->SetNumResiduals(num_residuals);
+            //cost_function->AddParameterBlock(num_iters);
+            //cost_function->AddParameterBlock(num_iters);
+            //cost_function->AddParameterBlock(num_iters);
+            //cost_function->AddParameterBlock(1);
+            //cost_function->AddParameterBlock(1);
+            //cost_function->SetNumResiduals(1);
+            */
 
             LossFunction* loss_function = new ScaledLoss {NULL, m_w_n[point][n],
                     ceres::TAKE_OWNERSHIP};
             // I am passing the core arrays that are held in vectors (&nvariable[0])
-            problem.AddResidualBlock(cost_function, loss_function, &m_N[0],
+            problem.AddResidualBlock(cost_function, loss_function, &m_N[1],
                     &m_r_n[point][0], &m_p_n[point][0], &n_as_double, &num_iters_as_double);
-            // I am not sure whether I should hold 
             problem.SetParameterBlockConstant(&m_r_n[point][0]);
             problem.SetParameterBlockConstant(&m_p_n[point][0]);
             problem.SetParameterBlockConstant(&n_as_double);
             problem.SetParameterBlockConstant(&num_iters_as_double);
         }
+        if (n != 0) {
+            problem.SetParameterLowerBound(&m_N[1], n - 1, 0);
+        }
     }
 
     Solver::Options options;
     options.max_num_iterations = 100;
-    options.minimizer_type = ceres::LINE_SEARCH;
+    options.minimizer_type = ceres::TRUST_REGION;
     options.minimizer_progress_to_stdout = false;
 
     Solver::Summary summary;
     Solve(options, &problem, &summary);
     m_solver_file << "Iteration " << (num_iters - 1) << "\n";
     m_solver_file << summary.FullReport() << "\n\n";
+}
+
+RDevSquareSumCostFunction::RDevSquareSumCostFunction(int num_residuals,
+        vector<int>& parameter_block_sizes) {
+    set_num_residuals(num_residuals);
+    vector<int>* parameter_block_sizes_ {mutable_parameter_block_sizes()};
+    *parameter_block_sizes_ = parameter_block_sizes;
+}
+
+bool RDevSquareSumCostFunction::Evaluate(
+        double const* const* params, // 0: N_n[1:]; 1: r_k_n; 2: p_k_n; 3: iter; 4 num_iters
+        double* residuals,
+        double** jacobians) const {
+
+    // Calculate cost function
+    double P_k_n {params[1][0] * params[2][0]};
+    int num_iters {static_cast<int>(params[4][0])};
+    for (int j {0}; j != num_iters - 1; j ++) {
+        P_k_n += params[1][j + 1] * params[0][j] * params[2][j + 1];
+    }
+    
+    int iter {static_cast<int>(params[3][0])};
+    if (iter == 0) {
+        residuals[0] = (params[2][0] - P_k_n) / P_k_n;
+    }
+    else {
+        residuals[0] = (params[0][iter - 1]*params[2][iter] - P_k_n) / P_k_n;
+    }
+
+    // Calculate Jacobian of cost function
+    if (jacobians != NULL && jacobians[0] != NULL) {
+        double P_k_n_sqr {pow(P_k_n, 2)};
+        if (iter == 0) {
+            for (int j {0}; j != num_iters - 1; j++) {
+                double term_two = -pow(params[2][iter], 2)*params[1][iter] /
+                    P_k_n_sqr;
+                jacobians[0][j] = term_two;
+            }
+        }
+        else {
+            for (int j {0}; j != num_iters - 1; j++) {
+                double term_two = -params[0][iter - 1]*pow(params[2][iter], 2)*params[1][iter] /
+                    P_k_n_sqr;
+                if (j - 1 == iter) {
+                    jacobians[0][j] = params[2][iter] / P_k_n + term_two;
+                }
+                else {
+                    jacobians[0][j] = term_two;
+                }
+            }
+        }
+    }
+    return true;
 }
 
 template <typename T>
@@ -855,7 +966,7 @@ bool RDevSquareSum::operator() (
     double i;
     for (i = 0; i != params[3][0]; i++) {}
     int i_int = static_cast<int>(i);
-    residual[0] = (params[1][i_int] * params[2][i_int] - residual[0]) / residual[0];
+    residual[0] = (params[0][i_int] * params[2][i_int] - residual[0]) / residual[0];
 
     return true;
 }

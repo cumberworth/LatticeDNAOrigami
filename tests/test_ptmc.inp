@@ -20,7 +20,7 @@ bias_mult=1
 
 # General simulation parameters
 simulation_type=t_parallel_tempering
-steps=1000000
+steps=10000000
 logging_freq=100000
 centering_freq=100000
 orientation_rotation=1/100

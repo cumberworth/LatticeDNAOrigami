@@ -13,6 +13,8 @@
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
 
+#include "ceres/ceres.h"
+
 #include "parser.h"
 #include "origami_system.h"
 #include "movetypes.h"
@@ -128,11 +130,11 @@ namespace Simulation {
             // Could be safer to have only one vector instead of seperating 
             // control and dependent. Then no chance of using index on wrong vector
             // Vectors of current replica quantities
-            vector<double> m_replica_control_qs;
-            vector<double> m_replica_dependent_qs;
+            vector<double> m_replica_control_qs = vector<double>(3);
+            vector<double> m_replica_dependent_qs = vector<double>(3);
 
             // Vectors of quantities accross all replicas (only filled by master)
-            vector<vector<double>> m_control_qs;
+            vector<vector<double>> m_control_qs {};
 
             // Index into the control qs to replica with those qs
             vector<int> m_q_to_repi;
@@ -240,11 +242,11 @@ namespace Simulation {
             vector<OrderParam*> m_grid_params {};
             GridBiasFunction* m_grid_bias;
             vector<int> m_equil_dif;
+            double m_max_D_bias {5};
 
             ofstream m_solver_file;
             
             // Variable names set to be consistent with mezei1987
-            SetOfGridPoints m_SE_n {}; // all grid points visited up to iteration n with discarded
             SetOfGridPoints m_S_n {}; // all grid points visited up to iteration n
             ArrayOfSets m_s_n {}; // grid points visited at iteration n
             SetOfGridPoints m_s_i {}; // grid points visited at current iteration
@@ -264,7 +266,9 @@ namespace Simulation {
                     int n,
                     vector<GridPoint> new_points,
                     vector<GridPoint> old_only_points);
-            bool iteration_equilibrium_step(vector<GridPoint> new_points);
+            bool iteration_equilibrium_step(
+                    vector<GridPoint> new_points,
+                    vector<GridPoint> old_points);
             void estimate_normalizations(int n);
             double estimate_initial_normalization(int n);
             void estimate_final_normalizations();
@@ -278,6 +282,16 @@ namespace Simulation {
                     vector<GridPoint>& old_points,
                     vector<GridPoint>& old_only_points);
             void update_bias();
+            void output_summary(int n);
+    };
+    
+    class RDevSquareSumCostFunction: public ceres::CostFunction {
+        public: 
+            RDevSquareSumCostFunction(int num_residuals, vector<int>& parameter_block_sizes);
+            ~RDevSquareSumCostFunction() {}
+            bool Evaluate(double const* const* parameters,
+                        double* residuals,
+                        double** jacobians) const;
     };
 
     struct RDevSquareSum {

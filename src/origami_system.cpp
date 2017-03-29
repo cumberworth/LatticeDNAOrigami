@@ -130,6 +130,10 @@ double OrigamiSystem::bias() const {
     return 0;
 }
 
+SystemOrderParams* OrigamiSystem::get_system_order_params() {
+    return m_system_order_params;
+}
+
 vector<Domain*> OrigamiSystem::get_chain(int c_i) {
     int c_i_index {index(m_chain_indices, c_i)};
     return m_domains[c_i_index];
@@ -213,6 +217,19 @@ ThermoOfHybrid OrigamiSystem::enthalpy_and_entropy() {
     return DH_DS_total;
 }
 
+bool OrigamiSystem::configuration_fully_set() {
+    if (m_num_unassigned_domains == 0) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+int OrigamiSystem::num_unassigned_domains() {
+    return m_num_unassigned_domains;
+}
+
 double get_bias() {
     return 0;
 }
@@ -220,6 +237,9 @@ double get_bias() {
 void OrigamiSystem::check_all_constraints() {
 
     // Unassign everything (and check nothing was already unassigned)
+    if (m_num_unassigned_domains != 0) {
+        throw OrigamiMisuse {};
+    }
     for (auto chain: m_domains) {
         for (auto domain: chain) {
             if (domain->m_state == Occupancy::unassigned) {
@@ -227,7 +247,7 @@ void OrigamiSystem::check_all_constraints() {
                 throw OrigamiMisuse {};
             }
             else {
-                m_energy += internal_unassign_domain(*domain);
+                unassign_domain(*domain);
             }
         }
     }
@@ -276,9 +296,14 @@ void OrigamiSystem::check_distance_constraints() {
     }
 }
 
+double OrigamiSystem::check_delete_chain(int) {
+    return 0;
+}
+
 double OrigamiSystem::unassign_domain(Domain& cd_i) {
     double delta_e {internal_unassign_domain(cd_i)};
     m_energy += delta_e;
+    m_num_unassigned_domains++;
 
     return delta_e;
 }
@@ -320,7 +345,8 @@ int OrigamiSystem::add_chain(int c_i_ident, int c_i) {
         m_domains.back().push_back(domain);
         prev_domain = domain;
 
-        m_num_domains += 1;
+        m_num_domains++;
+        m_num_unassigned_domains++;
     }
 
     return c_i;
@@ -341,6 +367,7 @@ void OrigamiSystem::delete_chain(int c_i) {
     m_num_domains -= m_domains[c_i_index].size();
     for (auto domain: m_domains[c_i_index]) {
         delete domain;
+        m_num_unassigned_domains--;
     }
     m_domains.erase(m_domains.begin() + c_i_index);
 }
@@ -362,6 +389,7 @@ double OrigamiSystem::set_checked_domain_config(
         delta_e += check_stacking(cd_i, *cd_i.m_bound_domain);
     }
     m_energy += delta_e;
+    m_num_unassigned_domains--;
     return delta_e;
 }
 
@@ -379,6 +407,7 @@ double OrigamiSystem::set_domain_config(
     if (not m_constraints_violated) {
         update_occupancies(cd_i, pos);
         m_energy += delta_e;
+        m_num_unassigned_domains--;
     }
     return delta_e;
 }
@@ -680,6 +709,9 @@ double OrigamiSystem::internal_unassign_domain(Domain& cd_i) {
             unassign_unbound_domain(cd_i);
             break;
         case Occupancy::unassigned:
+
+            // Allows for double unassignment
+            m_num_unassigned_domains--;
             break;
     }
     return delta_e;
@@ -1240,6 +1272,15 @@ double OrigamiSystemWithBias::check_domain_constraints(Domain& cd_i,
     return delta_e;
 }
 
+double OrigamiSystemWithBias::check_delete_chain(int c_i) {
+    return m_system_biases->check_delete_chain(c_i);
+}
+
+void OrigamiSystemWithBias::delete_chain(int c_i) {
+    OrigamiSystem::delete_chain(c_i);
+    m_system_biases->calc_delete_chain(c_i);
+}
+
 double OrigamiSystemWithBias::unassign_domain(Domain& cd_i) {
     double delta_e {OrigamiSystem::unassign_domain(cd_i)};
     delta_e += m_system_biases->calc_one_domain(cd_i);
@@ -1250,6 +1291,8 @@ double OrigamiSystemWithBias::unassign_domain(Domain& cd_i) {
 double OrigamiSystemWithBias::set_checked_domain_config(Domain& cd_i,
         VectorThree pos, VectorThree ore) {
     double delta_e {OrigamiSystem::set_checked_domain_config(cd_i, pos, ore)};
+
+    // If you change this to somehow use the checked value, lot's to check
     delta_e += m_system_biases->calc_one_domain(cd_i);
 
     return delta_e;
@@ -1268,10 +1311,6 @@ double OrigamiSystemWithBias::set_domain_config(Domain& cd_i, VectorThree pos,
 //    m_system_order_params->update_one_domain(cd_i);
 //    delta_e += m_system_biases->calc_one_domain(cd_i);
 //}
-
-SystemOrderParams* OrigamiSystemWithBias::get_system_order_params() {
-    return m_system_order_params;
-}
 
 SystemBiases* OrigamiSystemWithBias::get_system_biases() {
     return m_system_biases;

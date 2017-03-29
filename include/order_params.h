@@ -91,6 +91,7 @@ namespace OrderParams {
             int m_param {0};
             int m_checked_param;
             vector<DistOrderParam*> m_dist_params {};
+            bool m_defined {false};
     };
 
     class NumStaplesOrderParam: public OrderParam {
@@ -102,6 +103,7 @@ namespace OrderParams {
                     VectorThree new_pos,
                     VectorThree,
                     Occupancy);
+            int check_delete_chain(int c_i);
             int get_param();
             int get_checked_param();
             bool dependent_on(Domain& domain);
@@ -113,6 +115,7 @@ namespace OrderParams {
             OrigamiSystem& m_origami;
             int m_param {0};
             int m_checked_param {0};
+            bool m_defined {false};
     };
 
     class NumBoundDomainPairsOrderParam: public OrderParam {
@@ -124,6 +127,7 @@ namespace OrderParams {
                     VectorThree new_pos,
                     VectorThree,
                     Occupancy);
+            int check_delete_chain(int c_i);
             int get_param();
             int get_checked_param();
             bool dependent_on(Domain& domain);
@@ -135,6 +139,7 @@ namespace OrderParams {
             OrigamiSystem& m_origami;
             int m_param {0};
             int m_checked_param {0};
+            bool m_defined {false};
     };
 
     class SystemOrderParams {
@@ -145,12 +150,15 @@ namespace OrderParams {
             vector<DistOrderParam*> get_distance_params();
             vector<DistSumOrderParam*> get_dist_sums();
             NumBoundDomainPairsOrderParam& get_num_bound_domains();
+            NumStaplesOrderParam& get_num_staples();
             void update_one_domain(Domain& domain);
+            void update_delete_chain(int c_i);
             void check_one_domain(
                     Domain& domain,
                     VectorThree pos,
                     VectorThree ore,
                     Occupancy state);
+            void check_delete_chain(int c_i);
 
         private:
             OrigamiSystem& m_origami;
@@ -219,7 +227,7 @@ namespace OrderParams {
             double get_bias();
             double calc_bias(vector<int> params);
         private:
-            double m_bias;
+            double m_bias {0};
             vector<OrderParam*> m_order_params {};
             unordered_map<vector<int>, double> m_bias_grid {};
             double m_off_grid_bias {0};
@@ -253,6 +261,7 @@ namespace OrderParams {
                 changed and throwing an exception.
             */
             double calc_one_domain(Domain& domain);
+            double calc_delete_chain(int c_i);
 
             // Check change in bias from changing one domain but don't update total bias
             double check_one_domain(
@@ -260,6 +269,7 @@ namespace OrderParams {
                     VectorThree new_pos,
                     VectorThree new_ore,
                     Occupancy new_state);
+            double check_delete_chain(int c_i);
 
             GridBiasFunction* get_grid_bias();
 

@@ -186,44 +186,6 @@ namespace Movetypes {
                     vector<pair<Domain*, Domain*>> bound_domains);
     };
 
-    class CBStapleExchangeMCMovetype: public CBMCMovetype {
-        public:
-            using CBMCMovetype::CBMCMovetype;
-            CBStapleExchangeMCMovetype(
-                    OrigamiSystem& origami_system,
-                    RandomGens& random_gens,
-                    IdealRandomWalks& ideal_random_walks,
-                    InputParameters& params) :
-                    CBMCMovetype(
-                            origami_system,
-                            random_gens,
-                            ideal_random_walks,
-                            params) {}
-            bool attempt_move();
-
-            string m_label() {return "CBStapleExchangeMCMovetype";};
-        protected:
-
-            // These can be overidden for a derived class the excludes misbinding
-            int preconstrained_df {1};
-
-            // I select by domains not by sites, so this is consistent
-            int m_insertion_sites {m_origami_system.num_domains()};
-
-        private:
-            double calc_staple_insertion_acc_ratio(int c_i_ident);
-            double calc_staple_deletion_acc_ratio(int c_i_ident);
-            vector<double> calc_bias(vector<double> bfactors,
-                    Domain*, vector<pair<VectorThree, VectorThree>>&, VectorThree,
-                    vector<Domain*>);
-            bool insert_staple();
-            bool delete_staple();
-            void unassign_and_delete_staple(int c_i,vector<Domain*> staple);
-            void grow_chain(vector<Domain*> domains);
-            void unassign_for_regrowth(vector<Domain*>);
-
-    };
-
     class CBStapleRegrowthMCMovetype: public CBMCMovetype {
         public:
             using CBMCMovetype::CBMCMovetype;
@@ -352,7 +314,6 @@ namespace Movetypes {
         MovetypeConstructor orientation_rotation {movetype_constructor<OrientationRotationMCMovetype>};
         MovetypeConstructor met_staple_exchange {movetype_constructor<MetStapleExchangeMCMovetype>};
         MovetypeConstructor met_staple_regrowth {movetype_constructor<MetStapleExchangeMCMovetype>};
-        MovetypeConstructor cb_staple_exchange {movetype_constructor<CBStapleExchangeMCMovetype>};
         MovetypeConstructor cb_staple_regrowth {movetype_constructor<CBStapleRegrowthMCMovetype>};
         MovetypeConstructor ctcb_scaffold_regrowth {movetype_constructor<CTCBScaffoldRegrowthMCMovetype>};
     };
@@ -362,7 +323,6 @@ namespace Movetypes {
         movetype_constructor<OrientationRotationMCMovetype>,
         movetype_constructor<MetStapleExchangeMCMovetype>,
         movetype_constructor<MetStapleRegrowthMCMovetype>,
-        movetype_constructor<CBStapleExchangeMCMovetype>,
         movetype_constructor<CBStapleRegrowthMCMovetype>,
         movetype_constructor<CTCBScaffoldRegrowthMCMovetype>};
 }

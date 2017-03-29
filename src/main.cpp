@@ -8,6 +8,7 @@
 #include "files.h"
 #include "simulation.h"
 #include "order_params.h"
+#include "enumerate.h"
 
 using std::cout;
 
@@ -18,6 +19,7 @@ using namespace Origami;
 using namespace DomainContainer;
 using namespace Simulation;
 using namespace Movetypes;
+using namespace Enumerator;
 
 // This is getting a bit long
 int main(int argc, char* argv[]) {
@@ -48,31 +50,37 @@ int main(int argc, char* argv[]) {
             params.m_energy_filebase};
     }
 
-    // Setup simulation
-    GCMCSimulation* sim;
-    if (params.m_simulation_type == "constant_temp") {
-        sim = new ConstantTGCMCSimulation {*origami, params};
-    }
-    else if (params.m_simulation_type == "annealing") {
-        sim = new AnnealingGCMCSimulation {*origami, params};
-    }
-    else if (params.m_simulation_type == "t_parallel_tempering") {
-        sim = new TPTGCMCSimulation {*origami, params};
-    }
-    else if (params.m_simulation_type == "ut_parallel_tempering") {
-        sim = new UTPTGCMCSimulation {*origami, params};
-    }
-    else if (params.m_simulation_type == "hut_parallel_tempering") {
-        sim = new HUTPTGCMCSimulation {*origami, params};
-    }
-    else if (params.m_simulation_type == "umbrella_sampling") {
-        sim = new UmbrellaSamplingSimulation {*origami, params};
+    // Run enumeration
+    if (params.m_simulation_type == "enumerate") {
+        enumerate_main(*origami, params);
     }
     else {
-        cout << "No such simulation type.\n";
-        std::exit(1);
+        // Run simulation
+        GCMCSimulation* sim;
+        if (params.m_simulation_type == "constant_temp") {
+            sim = new ConstantTGCMCSimulation {*origami, params};
+        }
+        else if (params.m_simulation_type == "annealing") {
+            sim = new AnnealingGCMCSimulation {*origami, params};
+        }
+        else if (params.m_simulation_type == "t_parallel_tempering") {
+            sim = new TPTGCMCSimulation {*origami, params};
+        }
+        else if (params.m_simulation_type == "ut_parallel_tempering") {
+            sim = new UTPTGCMCSimulation {*origami, params};
+        }
+        else if (params.m_simulation_type == "hut_parallel_tempering") {
+            sim = new HUTPTGCMCSimulation {*origami, params};
+        }
+        else if (params.m_simulation_type == "umbrella_sampling") {
+            sim = new UmbrellaSamplingSimulation {*origami, params};
+        }
+        else {
+            cout << "No such simulation type.\n";
+            std::exit(1);
+        }
+        sim->run();
+        delete sim;
+        delete origami;
     }
-    sim->run();
-    delete sim;
-    delete origami;
 }

@@ -82,6 +82,7 @@ namespace Origami {
             const int c_scaffold {0}; // Unique chain index of scaffold
     
             // Configuration properties CONTAIN SOME AS ORDER PARAMS?
+            OrderParams::SystemOrderParams* get_system_order_params();
             vector<Domain*> get_chain(int c_i);
             vector<vector<Domain*>> get_chains();
             vector<Domain*> get_last_chain();
@@ -103,6 +104,8 @@ namespace Origami {
             double energy() const;
             virtual double bias() const;
             ThermoOfHybrid enthalpy_and_entropy();
+            bool configuration_fully_set();
+            int num_unassigned_domains();
     
             // Constraint checkers
             void check_all_constraints();
@@ -111,6 +114,7 @@ namespace Origami {
                     VectorThree pos,
                     VectorThree ore);
             void check_distance_constraints();
+            virtual double check_delete_chain(int);
     
             // Configuration modifiers
             virtual double unassign_domain(Domain& cd_i);
@@ -154,6 +158,9 @@ namespace Origami {
             int m_num_bound_domain_pairs {0}; // Num bound domains pairs
             int m_num_fully_bound_domain_pairs {0}; // Num bound fully complementary domain pairs
             int m_num_self_bound_domain_pairs {0}; // Num self-misbound domain pairs
+            int m_num_unassigned_domains {0};
+
+            OrderParams::SystemOrderParams* m_system_order_params;
 
             // CONSIDER CONTAINING ENERGY STUFF IN ANOTHER CLASS
             // ALSO CONSIDER DEFINING TYPE FOR THESE TABLES
@@ -255,17 +262,18 @@ namespace Origami {
                     string energy_filebase="");
 
             // Constraint checkers
-            virtual double check_domain_constraints(
+            double check_domain_constraints(
                     Domain& cd_i,
                     VectorThree pos,
                     VectorThree ore);
+            double check_delete_chain(int c_i);
     
             // Configuration modifiers
             double unassign_domain(Domain& cd_i);
             // Need to make the base one virtual still
             //int add_chain(int c_i_ident);
             //int add_chain(int c_i_ident, int uc_i);
-            //virtual void delete_chain(int c_i);
+            void delete_chain(int c_i);
             double set_checked_domain_config(
                     Domain& cd_i,
                     VectorThree pos,
@@ -275,12 +283,10 @@ namespace Origami {
                     VectorThree position,
                     VectorThree orientation);
             //void set_domain_orientation(Domain& cd_i, VectorThree ore);
-            OrderParams::SystemOrderParams* get_system_order_params();
             OrderParams::SystemBiases* get_system_biases();
             double bias() const;
 
         private:
-            OrderParams::SystemOrderParams* m_system_order_params;
             OrderParams::SystemBiases* m_system_biases;
     };
 
