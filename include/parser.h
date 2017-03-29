@@ -70,6 +70,8 @@ namespace Parser {
             vector<double> m_movetype_probs {};
             string m_num_walks_filename {""};
             int m_exchange_mult {1};
+            int m_max_total_staples {999};
+            int m_max_type_staples {999};
 
             // Annealing simulation parameters
             double m_max_temp {};

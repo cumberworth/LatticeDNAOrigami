@@ -17,7 +17,7 @@ distance_sum=true
 
 # General simulation parameters
 simulation_type=umbrella_sampling
-steps=10000000
+steps=1000000
 logging_freq=1000000
 centering_freq=1000
 orientation_rotation=1/4
@@ -26,10 +26,13 @@ met_staple_regrowth=1/4
 ctcb_scaffold_regrowth=1/4
 num_walks_filename=data/num_walks.arch
 exchange_mult=1000
+max_total_staples=4
+max_type_staples=2
 
 # Umbrella sampling options
 order_params=filler
 num_iters=10
+max_D_bias=0
 
 # Output options
 output_filebase=outs/test_us

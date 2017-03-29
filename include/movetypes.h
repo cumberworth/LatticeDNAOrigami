@@ -38,7 +38,9 @@ namespace Movetypes {
                     m_origami_system {origami_system},
                     m_random_gens {random_gens},
                     m_ideal_random_walks {ideal_random_walks},
-                    m_params {params} {}
+                    m_params {params},
+                    m_max_total_staples {params.m_max_total_staples},
+                    m_max_type_staples {params.m_max_type_staples} {}
             virtual ~MCMovetype() {};
 
             virtual bool attempt_move() = 0;
@@ -53,8 +55,9 @@ namespace Movetypes {
             InputParameters& m_params;
             bool m_rejected {false};
 
-            // Lazy way to calculte bias diff
-            double m_old_bias {0};
+            // Staple maxes
+            int m_max_total_staples;
+            int m_max_type_staples;
 
             // Lists of modified domains for move reversal
             vector<pair<int, int>> m_modified_domains {};

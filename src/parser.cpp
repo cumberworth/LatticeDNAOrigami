@@ -139,6 +139,8 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("ctcb_scaffold_regrowth", po::value<string>(), "CTCB scaffold regrowth movetype probability")
         ("num_walks_filename", po::value<string>(), "Precalculated number of ideal random walks archive")
         ("exchange_mult", po::value<double>(), "Exchange acceptance probability multiplier")
+        ("max_total_staples", po::value<int>(), "Max number of total staples")
+        ("max_type_staples", po::value<int>(), "Max number of staples of a given type")
 
         // Annealing simulation parameters
         ("max_temp", po::value<double>(), "Maximum temperature for annealing")
@@ -287,6 +289,12 @@ InputParameters::InputParameters(int argc, char* argv[]) {
 
     if (vm.count("exchange_mult")) {
         m_exchange_mult = vm["exchange_mult"].as<double>();
+    }
+    if (vm.count("max_total_staples")) {
+        m_max_total_staples = vm["max_total_staples"].as<int>();
+    }
+    if (vm.count("max_type_staples")) {
+        m_max_type_staples = vm["max_type_staples"].as<int>();
     }
 
     // Annealing simulation parameters
