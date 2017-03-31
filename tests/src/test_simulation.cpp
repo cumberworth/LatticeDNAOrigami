@@ -43,9 +43,8 @@ SCENARIO("PTGCMC methods are run", "[!hide][mpi]") {
 
     OrigamiSystem origami {setup_two_domain_scaffold_origami(temp, cation_M)};
     origami.add_chain(1);
-    SystemBiases system_bias {params, origami};
 
-    PTGCMCSimulation sim {origami, system_bias, params};
+    UTPTGCMCSimulation sim {origami, params};
 
     // Easy reference
     Domain& scaffold_d_1 {*origami.get_domain(0, 0)};
@@ -69,14 +68,16 @@ SCENARIO("PTGCMC methods are run", "[!hide][mpi]") {
         WHEN("PTMC exchange probability is calculated") {
             // Send enthalpy, bias, and num staples from rep 1 to rep 0
             ThermoOfHybrid DH_DS {origami.enthalpy_and_entropy()};
-            vector<double> enthalpies {DH_DS.enthalpy};
+            vector<long double> enthalpies {DH_DS.enthalpy};
             vector<double> biases {0};
             vector<int> staples {1};
+            vector<vector<double>> dependent_qs {{}, {}, {}};
             if (sim.m_rank == 1) {
-                sim.slave_send_and_recieve(0);
+                sim.slave_send(0);
+                sim.slave_receive(0);
             }
             else if (sim.m_rank == 0) {
-                sim.master_receive(0, enthalpies, biases, staples);
+                sim.master_receive(0, dependent_qs);
                 sim.master_send(0);
             }
 
@@ -94,16 +95,32 @@ SCENARIO("PTGCMC methods are run", "[!hide][mpi]") {
                         staple1_d_2)};
                 double enthalpy2 {0};
                 double DB {1/temp2 - 1/temp1};
-                double DH {enthalpy2 - enthalpy1};
+                double DH {enthalpy2*temp2 - enthalpy1*temp1};
                 double DBU {staple_u2/temp2 - staple_u1/temp1};
                 int DN {-1};
                 double exp_p_accept {exp(DB*DH - DBU*DN)};
 
-                double p_accept {sim.calc_acceptance_p(
-                        sim.m_temps[0], sim.m_temps[1],
-                        sim.m_staple_us[0], sim.m_staple_us[1], 
-                        enthalpies[0], enthalpies[1],
-                        biases[0], biases[1], staples[0], staples[1])};
+                // Build control quantitiy pairs vector
+                vector<pair<double, double>> control_q_pairs {};
+                for (auto control_q: sim.m_control_qs) { 
+                    double q_1 {control_q[0]};
+                    double q_2 {control_q[1]};
+                    control_q_pairs.push_back({q_1, q_2});
+                 }
+
+                // Build dependent quantity pairs vector
+                int repi1 {sim.m_q_to_repi[0]};
+                int repi2 {sim.m_q_to_repi[1]};
+                vector<pair<double, double>> dependent_q_pairs {};
+                for (auto dependent_q: dependent_qs) {
+                    double q_1 {dependent_q[repi1]};
+                    double q_2 {dependent_q[repi2]};
+                    dependent_q_pairs.push_back({q_1, q_2});
+                }
+
+
+                double p_accept {sim.calc_acceptance_p(control_q_pairs,
+                        dependent_q_pairs)};
 
                 THEN("Value matches expected") {
                    REQUIRE(p_accept == exp_p_accept);

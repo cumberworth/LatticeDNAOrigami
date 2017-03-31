@@ -58,7 +58,7 @@ namespace Origami {
                     const vector<vector<string>>& sequences,
                     const Chains& chains,
                     double temp,
-                    double lattice_site_volume,
+                    double volume,
                     double cation_M,
                     double staple_u,
                     bool cyclic,

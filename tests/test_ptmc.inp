@@ -12,15 +12,15 @@ distance_pairs=0 3
 distance_sum=true
 
 # Bias functions
-distance_bias=true
+distance_bias=false
 min_dist=1
 max_dist=4
 max_bias=10
 bias_mult=1
 
 # General simulation parameters
-simulation_type=t_parallel_tempering
-steps=10000000
+simulation_type=ut_parallel_tempering
+steps=1000000
 logging_freq=100000
 centering_freq=100000
 orientation_rotation=1/100
@@ -36,7 +36,7 @@ num_reps=2
 exchange_interval=100000
 constant_staple_M=true
 chem_pot_mults=1 1
-bias_mults=0 0.5
+bias_mults=0 0
 
 # Output options
 output_filebase=outs/test_ptmc

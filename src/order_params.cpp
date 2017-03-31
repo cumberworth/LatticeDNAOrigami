@@ -205,11 +205,11 @@ int NumStaplesOrderParam::check_delete_chain(int) {
 }
 
 int NumStaplesOrderParam::get_param() {
-    return m_origami.num_staples();
+    return m_param;
 }
 
 int NumStaplesOrderParam::get_checked_param() {
-    return m_origami.num_staples();
+    return m_checked_param;
 }
 
 bool NumStaplesOrderParam::dependent_on(Domain& domain) {
@@ -572,7 +572,7 @@ double GridBiasFunction::check_bias() {
         if (not order_param->defined()) {
             return 0;
         }
-        key.push_back(order_param->get_param());
+        key.push_back(order_param->get_checked_param());
     }
     double checked_bias {calc_bias(key)};
 
@@ -616,6 +616,11 @@ SystemBiases::SystemBiases(OrigamiSystem& origami,
         setup_distance_bias(params);
     }
     m_bias_fs.push_back(&m_grid_bias_f);
+
+    // Update total bias
+    for (auto bias_f: m_bias_fs) {
+        m_total_bias += bias_f->get_bias();
+    }
 }
 
 SystemBiases::~SystemBiases() {
@@ -707,8 +712,9 @@ double SystemBiases::calc_one_domain(Domain& domain) {
     double prev_bias {m_grid_bias_f.get_bias()};
     double new_bias {m_grid_bias_f.update_bias()};
     bias_diff += new_bias - prev_bias;
+    m_total_bias += bias_diff;
 
-    return bias_diff;
+    return bias_diff * m_bias_mult;
 }
 
 double SystemBiases::calc_delete_chain(int c_i) {
@@ -718,8 +724,9 @@ double SystemBiases::calc_delete_chain(int c_i) {
     double prev_bias {m_grid_bias_f.get_bias()};
     double new_bias {m_grid_bias_f.update_bias()};
     double bias_diff {new_bias - prev_bias};
+    m_total_bias += bias_diff;
 
-    return bias_diff;
+    return bias_diff * m_bias_mult;
 }
 
 double SystemBiases::check_one_domain(Domain& domain, VectorThree pos,
@@ -740,7 +747,7 @@ double SystemBiases::check_one_domain(Domain& domain, VectorThree pos,
     double new_bias {m_grid_bias_f.check_bias()};
     bias_diff += new_bias - prev_bias;
 
-    return bias_diff;
+    return bias_diff * m_bias_mult;
 }
 
 double SystemBiases::check_delete_chain(int c_i) {
@@ -751,7 +758,7 @@ double SystemBiases::check_delete_chain(int c_i) {
     double new_bias {m_grid_bias_f.check_bias()};
     double bias_diff {new_bias - prev_bias};
 
-    return bias_diff;
+    return bias_diff * m_bias_mult;
 }
 
 GridBiasFunction* SystemBiases::get_grid_bias() {

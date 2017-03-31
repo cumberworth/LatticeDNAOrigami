@@ -31,7 +31,6 @@ SCENARIO("Distributions are calculated for methods with random variables") {
     InputParameters params {};
 
     OrigamiSystem origami {setup_two_domain_scaffold_origami(temp, cation_M)};
-    SystemBias system_bias {params, origami};
     origami.add_chain(1);
 
     // Easy reference
@@ -41,7 +40,7 @@ SCENARIO("Distributions are calculated for methods with random variables") {
     Domain& staple_d_2 {*origami.get_domain(1, 1)};
 
     // Just need the shared movetype methods
-    IdentityMCMovetype movetype {origami, system_bias, random_gens,
+    IdentityMCMovetype movetype {origami, random_gens,
             ideal_random_walks, params};
 
     GIVEN("Uniform distribution for two domain one staple system domain selection.") {
@@ -125,7 +124,7 @@ SCENARIO("Distributions are calculated for methods with random variables") {
         int accepted_moves {0};
         int num_iters {100000};
         for (int i {0}; i != num_iters; i++) {
-            CTCBScaffoldRegrowthMCMovetype ct_movetype {origami, system_bias, random_gens,
+            CTCBScaffoldRegrowthMCMovetype ct_movetype {origami, random_gens,
                     ideal_random_walks, params};
             bool accepted {ct_movetype.attempt_move()};
             if (not accepted) {

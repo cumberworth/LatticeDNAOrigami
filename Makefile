@@ -1,9 +1,9 @@
 #CC = g++
 CC = mpicxx
-#CPPFLAGS = -I include -I /usr/include/eigen3 -g
-#LDFLAGS = -lblas -llapack -lcholmod -lcxsparse -lgomp -lceres -lglog -lboost_program_options -lboost_mpi -lboost_serialization -g
-CPPFLAGS = -I include -I /usr/include/eigen3 -O3
-LDFLAGS = -lblas -llapack -lcholmod -lcxsparse -lgomp -lceres -lglog -lboost_program_options -lboost_mpi -lboost_serialization -O3
+CPPFLAGS = -I include -I /usr/include/eigen3 -g
+LDFLAGS = -lblas -llapack -lcholmod -lcxsparse -lgomp -lceres -lglog -lboost_program_options -lboost_mpi -lboost_serialization -g
+#CPPFLAGS = -I include -I /usr/include/eigen3 -O3
+#LDFLAGS = -lblas -llapack -lcholmod -lcxsparse -lgomp -lceres -lglog -lboost_program_options -lboost_mpi -lboost_serialization -O3
 BUILD = build/
 vpath %.h include
 vpath %.cpp src

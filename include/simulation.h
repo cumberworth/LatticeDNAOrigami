@@ -157,7 +157,7 @@ namespace Simulation {
 
             // Communication methods
             void slave_send(int swap_i);
-            void slave_recieve(int swap_i);
+            void slave_receive(int swap_i);
             void master_receive(int swap_i, vector<vector<double>>& quantities);
             void master_send(int swap_i);
             void master_get_dependent_qs(vector<vector<double>>&);

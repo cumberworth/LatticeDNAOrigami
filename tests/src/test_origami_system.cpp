@@ -60,7 +60,7 @@ OrigamiSystem TestOrigamiSystem::setup_four_domain_scaffold_origami(
     double staple_M {1e-3};
     double lattice_site_volume {4e-28};
     bool cyclic {false};
-    string system_filename {"data/four_domain_loop.json"};
+    string system_filename {"data/four2_domain_loop.json"};
 
     OrigamiInputFile origami_input {system_filename};
     vector<vector<int>> identities {origami_input.m_identities};

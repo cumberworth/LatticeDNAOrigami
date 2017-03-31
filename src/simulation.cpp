@@ -307,7 +307,7 @@ void PTGCMCSimulation::run() {
         // Send information from slave nodes to master nodes
         if (m_rank != m_master_rep) {
             slave_send(swap_i);
-            slave_recieve(swap_i);
+            slave_receive(swap_i);
         }
 
         // Attempt exchanges between replicas
@@ -342,7 +342,7 @@ void PTGCMCSimulation::slave_send(int swap_i) {
     }
 }
 
-void PTGCMCSimulation::slave_recieve(int swap_i) {
+void PTGCMCSimulation::slave_receive(int swap_i) {
     // Receive quantities from master
     for (auto i: m_exchange_q_is) {
         m_world.recv(m_master_rep, swap_i, m_replica_dependent_qs[i]);
@@ -353,10 +353,10 @@ void PTGCMCSimulation::master_receive(int swap_i,
         vector<vector<double>>& dependent_qs) {
     master_get_dependent_qs(dependent_qs);
     for (int rep_i {1}; rep_i != m_num_reps; rep_i++) {
-        for (auto dependent_q: dependent_qs) {
+        for (size_t i {0}; i != dependent_qs.size(); i++) {
             double q;
             m_world.recv(rep_i, swap_i, q);
-            dependent_q.push_back(q);
+            dependent_qs[i].push_back(q);
         }
     }
 }
@@ -412,9 +412,9 @@ void PTGCMCSimulation::attempt_exchange(int swap_i,
         int repi1 {m_q_to_repi[i]};
         int repi2 {m_q_to_repi[i + 1]};
         vector<pair<double, double>> dependent_q_pairs {};
-        for (auto control_q: m_control_qs) {
-            double q_1 {control_q[repi1]};
-            double q_2 {control_q[repi2]};
+        for (auto dependent_q: dependent_qs) {
+            double q_1 {dependent_q[repi1]};
+            double q_2 {dependent_q[repi2]};
             dependent_q_pairs.push_back({q_1, q_2});
         }
 
@@ -460,8 +460,8 @@ double PTGCMCSimulation::calc_acceptance_p(
 
     double temp1 {control_q_pairs[m_temp_i].first};
     double temp2 {control_q_pairs[m_temp_i].second};
-    double staple_u1 {control_q_pairs[m_temp_i].first};
-    double staple_u2 {control_q_pairs[m_temp_i].second};
+    double staple_u1 {control_q_pairs[m_staple_u_i].first};
+    double staple_u2 {control_q_pairs[m_staple_u_i].second};
 
     double enthalpy1 {dependent_q_pairs[m_enthalpy_i].first};
     double enthalpy2 {dependent_q_pairs[m_enthalpy_i].second};
@@ -476,7 +476,7 @@ double PTGCMCSimulation::calc_acceptance_p(
     double DBias {bias2*temp2 - bias1*temp1};
     double DN {N2 - N1};
     double DBU {staple_u2 / temp2 - staple_u1 / temp1};
-    double p_accept {min({1.0, exp(DB*(DH +DBias) - DBU*DN)})};
+    double p_accept {min({1.0, exp(DB*(DH + DBias) - DBU*DN)})};
 
     return p_accept;
 }
@@ -550,13 +550,13 @@ UmbrellaSamplingSimulation::UmbrellaSamplingSimulation(
         GCMCSimulation(origami, params),
         m_params {params},
         m_num_iters {params.m_num_iters},
-        m_max_D_bias {params.m_max_D_bias},
         m_steps {params.m_steps},
         // This is awfull
         m_system_order_params {dynamic_cast<OrigamiSystemWithBias*>(&origami)->
                 get_system_order_params()},
         m_grid_bias {dynamic_cast<OrigamiSystemWithBias*>(&origami)->
-            get_system_biases()->get_grid_bias()} {
+            get_system_biases()->get_grid_bias()},
+        m_max_D_bias {params.m_max_D_bias} {
 
     // Initalize log file
     m_solver_file.open(params.m_output_filebase + ".solver");

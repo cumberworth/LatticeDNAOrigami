@@ -70,16 +70,16 @@ ConformationalEnumerator Enumerator::enumerate_four_domain_scaffold(
     GrowthpointEnumerator growthpoint_enumerator11 {conf_enumerator, origami};
     growthpoint_enumerator11.enumerate();
 
-    //conf_enumerator.add_staple(1);
-    //GrowthpointEnumerator growthpoint_enumerator21 {conf_enumerator, origami};
-    //growthpoint_enumerator21.enumerate();
-    //conf_enumerator.remove_staple(1);
-    //conf_enumerator.add_staple(2);
-    //GrowthpointEnumerator growthpoint_enumerator12 {conf_enumerator, origami};
-    //growthpoint_enumerator12.enumerate();
-    //conf_enumerator.add_staple(1);
-    //GrowthpointEnumerator growthpoint_enumerator22 {conf_enumerator, origami};
-    //growthpoint_enumerator22.enumerate();
+    conf_enumerator.add_staple(1);
+    GrowthpointEnumerator growthpoint_enumerator21 {conf_enumerator, origami};
+    growthpoint_enumerator21.enumerate();
+    conf_enumerator.remove_staple(1);
+    conf_enumerator.add_staple(2);
+    GrowthpointEnumerator growthpoint_enumerator12 {conf_enumerator, origami};
+    growthpoint_enumerator12.enumerate();
+    conf_enumerator.add_staple(1);
+    GrowthpointEnumerator growthpoint_enumerator22 {conf_enumerator, origami};
+    growthpoint_enumerator22.enumerate();
 
     return conf_enumerator;
 }

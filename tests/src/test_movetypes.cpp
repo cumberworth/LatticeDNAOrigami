@@ -79,7 +79,6 @@ SCENARIO("Example moves work as expected") {
     OrigamiSystem origami {setup_four_domain_scaffold_origami(temp, cation_M)};
     origami.add_chain(1);
     origami.add_chain(2);
-    SystemBias system_bias {params, origami};
 
     // Easy reference
     Domain& scaffold_d_1 {*origami.get_domain(0, 0)};
@@ -104,7 +103,7 @@ SCENARIO("Example moves work as expected") {
         origami.set_domain_config(staple1_d_2, {2, 0, 0}, {1, 0, 0});
 
         // Setup movetype
-        CBStapleRegrowthMCMovetype movetype {origami, system_bias, random_gens,
+        CBStapleRegrowthMCMovetype movetype {origami, random_gens,
                 ideal_random_walks, params};
 
         // Grow staple
@@ -155,7 +154,7 @@ SCENARIO("Example moves work as expected") {
         origami.set_domain_config(staple2_d_2, {1, 0, 0}, {0, -1, 0});
 
         // Setup movetype
-        CTCBScaffoldRegrowthMCMovetype movetype {origami, system_bias, random_gens,
+        CTCBScaffoldRegrowthMCMovetype movetype {origami, random_gens,
                 ideal_random_walks, params};
 
         // Scaffold domains to be regrown
@@ -243,7 +242,6 @@ SCENARIO("Connector staples are correctly identified") {
 
     // Using a four domain scaffold system for all tests here
     OrigamiSystem origami {setup_four_domain_scaffold_origami(temp, cation_M)};
-    SystemBias system_bias {params, origami};
 
     origami.add_chain(1);
     origami.add_chain(1);
@@ -272,7 +270,7 @@ SCENARIO("Connector staples are correctly identified") {
     origami.set_domain_config(scaffold_d_3, {1, 1, 0}, {0, 1, 0});
     origami.set_domain_config(scaffold_d_4, {0, 1, 0}, {0, -1, 0});
 
-    IdentityMCMovetype movetype {origami, system_bias, random_gens,
+    IdentityMCMovetype movetype {origami, random_gens,
             ideal_random_walks, params};
 
     // These are drawn out in my notebook
@@ -353,7 +351,6 @@ SCENARIO("Moves are fully run and origami system reset each time") {
     OrigamiSystem origami {setup_four_domain_scaffold_origami(temp, cation_M)};
     origami.add_chain(1);
     origami.add_chain(2);
-    SystemBias system_bias {params, origami};
 
     // Easy reference
     Domain& scaffold_d_1 {*origami.get_domain(0, 0)};
@@ -380,7 +377,7 @@ SCENARIO("Moves are fully run and origami system reset each time") {
     // Each movetype tried ten times
     WHEN("Met staple exchanges are carried out") {
         for (int i {0}; i != 10; i++) {
-            MetStapleExchangeMCMovetype movetype {origami, system_bias,
+            MetStapleExchangeMCMovetype movetype {origami,
                     random_gens, ideal_random_walks, params};
             simple_move_iteration(origami, movetype);
         }
@@ -388,7 +385,7 @@ SCENARIO("Moves are fully run and origami system reset each time") {
 
     WHEN("CB staple regrowths are carried out") {
         for (int i {0}; i != 10; i++) {
-            CBStapleRegrowthMCMovetype movetype {origami, system_bias,
+            CBStapleRegrowthMCMovetype movetype {origami,
                     random_gens, ideal_random_walks, params};
             simple_move_iteration(origami, movetype);
         }
@@ -396,7 +393,7 @@ SCENARIO("Moves are fully run and origami system reset each time") {
 
     WHEN("CTCB scaffold regrowths are carried out") {
         for (int i {0}; i != 10; i++) {
-            CTCBScaffoldRegrowthMCMovetype movetype {origami, system_bias, random_gens,
+            CTCBScaffoldRegrowthMCMovetype movetype {origami, random_gens,
                     ideal_random_walks, params};
             simple_move_iteration(origami, movetype);
         }
