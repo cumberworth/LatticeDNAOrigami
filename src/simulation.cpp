@@ -271,7 +271,7 @@ void PTGCMCSimulation::initialize_control_qs(InputParameters& params) {
             m_replica_control_qs[m_bias_i] = params.m_bias_mults[i];
 
             // Update chemical potential of each replica if constant [staple]
-            // Recalculating for each node rathr than sending from master
+            // Recalculating for each node rather than sending from master
             if (m_params.m_constant_staple_M) {
                 m_replica_control_qs[m_staple_u_i] = molarity_to_chempot(
                         m_params.m_staple_M, m_replica_control_qs[m_temp_i],
@@ -367,7 +367,7 @@ void PTGCMCSimulation::master_send(int swap_i) {
         int rep_i {m_q_to_repi[q_i]};
         if (rep_i == m_master_rep) {
             for (auto i: m_exchange_q_is) {
-                m_replica_control_qs[i] = m_control_qs[i][rep_i];
+                m_replica_control_qs[i] = m_control_qs[i][q_i];
             }
         }
         else {
