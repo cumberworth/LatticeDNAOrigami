@@ -215,9 +215,9 @@ PTGCMCSimulation::PTGCMCSimulation(OrigamiSystem& origami_system,
     if (m_rank == m_master_rep) {
         m_swapfile.open(params.m_output_filebase + ".swp");
         for (int rep {0}; rep != m_num_reps; rep++) {
-            for (size_t q {0}; q != m_control_qs.size(); q++) {
-                m_swapfile <<  m_control_qs[q][rep];
-                if (q != m_control_qs.size()) {
+            for (auto q_i: m_exchange_q_is) {
+                m_swapfile <<  m_control_qs[q_i][rep];
+                if (q_i + 1 != static_cast<int>(m_exchange_q_is.size())) {
                     m_swapfile << "/";
                 }
                 else {
@@ -345,7 +345,7 @@ void PTGCMCSimulation::slave_send(int swap_i) {
 void PTGCMCSimulation::slave_receive(int swap_i) {
     // Receive quantities from master
     for (auto i: m_exchange_q_is) {
-        m_world.recv(m_master_rep, swap_i, m_replica_dependent_qs[i]);
+        m_world.recv(m_master_rep, swap_i, m_replica_control_qs[i]);
     }
 }
 
@@ -424,11 +424,8 @@ void PTGCMCSimulation::attempt_exchange(int swap_i,
         // If accepted swap indices from quantities to replicas
         if (accept) {
             swap_count[i]++;
-            int repi1_old {repi1};
-            repi1 = repi2;
-            repi2 = repi1_old;
-            m_q_to_repi[i] = repi1;
-            m_q_to_repi[i + 1] = repi2;
+            m_q_to_repi[i] = repi2;
+            m_q_to_repi[i + 1] = repi1;
         }
     }
 

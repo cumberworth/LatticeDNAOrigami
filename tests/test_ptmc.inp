@@ -33,7 +33,7 @@ exchange_mult=1000
 # Parallel tempering options
 temps=330 335
 num_reps=2
-exchange_interval=100000
+exchange_interval=100
 constant_staple_M=true
 chem_pot_mults=1 1
 bias_mults=0 0
