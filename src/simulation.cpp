@@ -602,7 +602,7 @@ void UmbrellaSamplingSimulation::run() {
         m_S_n.insert(m_s_i.begin(), m_s_i.end());
         update_grids(n, new_points, old_points, old_only_points);
         estimate_current_weights(n, new_points, old_only_points);
-        estimate_normalizations(n);
+        //estimate_normalizations(n);
         update_bias();
         output_summary(n);
         n++;
@@ -680,6 +680,7 @@ void UmbrellaSamplingSimulation::estimate_current_weights(int n,
         vector<double> p_k_n(n);
         m_p_n[point] = p_k_n;
     }
+
     // Calculate for all visited points
     for (auto point: m_s_n.back()) {
         double point_bias {m_grid_bias->calc_bias(point)};
@@ -755,9 +756,18 @@ void UmbrellaSamplingSimulation::update_bias() {
 
         // No T to be consistent with biases here
         double old_bias {m_E_w[point]};
-        double new_bias {std::log(m_P_n[point])};
-        //double new_bias {std::log(m_p_n[point].back())};
-        double D_bias {new_bias - old_bias};
+        //double new_bias {std::log(m_P_n[point])};
+        double p_k_n {m_p_n[point].back()};
+        double D_bias;
+        double new_bias;
+        if (p_k_n == 0) {
+            D_bias = -m_max_D_bias;
+            new_bias = old_bias + D_bias;
+        }
+        else {
+            new_bias = std::log(p_k_n);
+            D_bias = new_bias - old_bias;
+        }
         double updated_bias {new_bias};
 
         // Limit how quckly bias can change
@@ -777,18 +787,20 @@ void UmbrellaSamplingSimulation::update_bias() {
 
 void UmbrellaSamplingSimulation::output_summary(int n) {
     cout << "Iteration: " << n << "\n";
-    cout << "Normalization constants:\n";
-    for (auto N: m_N) {
-        cout << N << " ";
-    }
+    //cout << "Normalization constants:\n";
+    //for (auto N: m_N) {
+    //    cout << N << " ";
+    //}
     cout << "\n";
-    cout << "Gridpoint w, r, p, P, E:\n";
+    //cout << "Gridpoint w, r, p, P, E:\n";
+    cout << "Gridpoint w, r, p, E:\n";
     for (auto point: m_S_n) {
         for (auto coor: point) {
             cout << coor << " ";
         }
         cout << std::setprecision(3);
-        cout << ": " << std::setw(10) << m_w_n[point][n] << std::setw(10) << m_r_n[point][n] << std::setw(10) << m_p_n[point][n] << std::setw(10) << m_P_n[point] << std::setw(10) << m_E_w[point] << "\n";
+        //cout << ": " << std::setw(10) << m_w_n[point][n] << std::setw(10) << m_r_n[point][n] << std::setw(10) << m_p_n[point][n] << std::setw(10) << m_P_n[point] << std::setw(10) << m_E_w[point] << "\n";
+        cout << ": " << std::setw(10) << m_w_n[point][n] << std::setw(10) << m_r_n[point][n] << std::setw(10) << m_p_n[point][n] << std::setw(10) << m_E_w[point] << "\n";
     }
     cout << "\n";
 }
