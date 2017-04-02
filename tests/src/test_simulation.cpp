@@ -25,6 +25,8 @@ using namespace TestOrigamiSystem;
 //       //check start and end points
 //  }
 
+mpi::environment m_env;
+mpi::communicator m_world;
 
 SCENARIO("PTGCMC methods are run", "[!hide][mpi]") {
     double temp {330};
@@ -125,7 +127,35 @@ SCENARIO("PTGCMC methods are run", "[!hide][mpi]") {
                 THEN("Value matches expected") {
                    REQUIRE(p_accept == exp_p_accept);
                 }
+           }
+        }
+
+        WHEN("Exchanges made") {
+            double temp_1 {330};
+            double temp_2 {340};
+            double staple_u_1 {molarity_to_chempot(1e-6, 330., 4e-28)};
+            double staple_u_2 {staple_u_1 * 1.5};
+            if (sim.m_rank == 0) {
+
+                // Perform swap
+                sim.m_q_to_repi[0] = 1;
+                sim.m_q_to_repi[1] = 0;
+
+                // Send to replica
+                sim.master_send(0);
+                THEN("Control qs swapped") {
+                    REQUIRE(sim.m_replica_control_qs[sim.m_temp_i] == temp_2);
+                    REQUIRE(sim.m_replica_control_qs[sim.m_staple_u_i] == staple_u_2);
+                }
+            }
+            else {
+                sim.slave_receive(0);
+                THEN("Control qs swapped") {
+                    REQUIRE(sim.m_replica_control_qs[sim.m_temp_i] == temp_1);
+                    REQUIRE(sim.m_replica_control_qs[sim.m_staple_u_i] == staple_u_1);
+                }
             }
         }
+
     }
 }
