@@ -30,6 +30,7 @@ namespace OrderParams {
                     Occupancy new_state) = 0;
             virtual int get_param() = 0;
             virtual int get_checked_param() = 0;
+            virtual string get_label();
             //virtual void update_param() = 0;
             //virtual int get_param() = 0;
 
@@ -39,6 +40,9 @@ namespace OrderParams {
 
             // Check whether order parameter currently defined
             virtual bool defined() = 0;
+
+        private:
+            string m_label {"order_param"};
     };
 
     class DistOrderParam: public OrderParam {
@@ -55,6 +59,7 @@ namespace OrderParams {
                     Occupancy);
             int get_param();
             int get_checked_param();
+            string get_label();
             bool dependent_on(Domain& domain);
             vector<Domain*> get_depending_domains();
             // Consider having seperate check for checking the order param only
@@ -66,6 +71,7 @@ namespace OrderParams {
             int m_param {0};
             int m_checked_param;
             bool m_defined;
+            string m_label {"dist"};
     };
 
     class DistSumOrderParam: public OrderParam {
@@ -82,6 +88,7 @@ namespace OrderParams {
                     Occupancy);
             int get_param();
             int get_checked_param();
+            string get_label();
             bool dependent_on(Domain& domain);
             vector<Domain*> get_depending_domains();
             // Consider having seperate check for checking the order param only
@@ -92,6 +99,7 @@ namespace OrderParams {
             int m_checked_param;
             vector<DistOrderParam*> m_dist_params {};
             bool m_defined {false};
+            string m_label {"dist_sum"};
     };
 
     class NumStaplesOrderParam: public OrderParam {
@@ -106,6 +114,7 @@ namespace OrderParams {
             int check_delete_chain(int c_i);
             int get_param();
             int get_checked_param();
+            string get_label();
             bool dependent_on(Domain& domain);
             vector<Domain*> get_depending_domains();
             // Consider having seperate check for checking the order param only
@@ -116,6 +125,7 @@ namespace OrderParams {
             int m_param {0};
             int m_checked_param {0};
             bool m_defined {false};
+            string m_label {"num_staples"};
     };
 
     class NumBoundDomainPairsOrderParam: public OrderParam {
@@ -130,6 +140,7 @@ namespace OrderParams {
             int check_delete_chain(int c_i);
             int get_param();
             int get_checked_param();
+            string get_label();
             bool dependent_on(Domain& domain);
             vector<Domain*> get_depending_domains();
             // Consider having seperate check for checking the order param only
@@ -140,6 +151,7 @@ namespace OrderParams {
             int m_param {0};
             int m_checked_param {0};
             bool m_defined {false};
+            string m_label {"num_bound_domains"};
     };
 
     class SystemOrderParams {
@@ -151,6 +163,7 @@ namespace OrderParams {
             vector<DistSumOrderParam*> get_dist_sums();
             NumBoundDomainPairsOrderParam& get_num_bound_domains();
             NumStaplesOrderParam& get_num_staples();
+            vector<OrderParam*> get_order_params();
             void update_one_domain(Domain& domain);
             void update_delete_chain(int c_i);
             void check_one_domain(
@@ -164,7 +177,7 @@ namespace OrderParams {
             OrigamiSystem& m_origami;
 
             // Vectors of each type of order param
-            // Will leave as a 
+            vector<OrderParam*> m_order_params {};
             vector<DistOrderParam*> m_dists {};
             vector<DistSumOrderParam*> m_dist_sums {};
             NumStaplesOrderParam m_num_staples;
@@ -207,6 +220,32 @@ namespace OrderParams {
             int m_max_param;
             double m_max_bias;
             double m_slope;
+            double m_bias;
+
+            double calc_bias(int param);
+    };
+
+    class SquareWellBiasFunction: public BiasFunction {
+        // a between and including min and max values of given parameter, b otherwise
+        public:
+            SquareWellBiasFunction(
+                    OrderParam& order_param,
+                    int min_param,
+                    int max_param,
+                    double well_bias,
+                    double oustide_bias);
+            ~SquareWellBiasFunction() {};
+                double update_bias();
+            double check_bias();
+            bool dependent_on(OrderParam& order_param);
+            double get_bias();
+
+        private:
+            OrderParam& m_order_param;
+            int m_min_param;
+            int m_max_param;
+            double m_well_bias;
+            double m_outside_bias;
             double m_bias;
 
             double calc_bias(int param);
@@ -273,6 +312,12 @@ namespace OrderParams {
 
             GridBiasFunction* get_grid_bias();
 
+            void add_square_well_bias(
+                    int well_min,
+                    int well_max,
+                    double well_bias,
+                    double outside_bias);
+
         private:
             OrigamiSystem& m_origami;
             SystemOrderParams& m_system_order_params;
@@ -280,6 +325,7 @@ namespace OrderParams {
 
             vector<BiasFunction*> m_bias_fs {};
             vector<LinearStepBiasFunction*> m_dist_bias_fs {};
+            vector<SquareWellBiasFunction*> m_well_bias_fs {};
             GridBiasFunction m_grid_bias_f {};
 
             unordered_map<pair<int, int>, vector<BiasFunction*>> m_domain_to_bias_fs{};

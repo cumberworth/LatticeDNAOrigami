@@ -63,6 +63,13 @@ namespace Origami {
                     double staple_u,
                     bool cyclic,
                     string energy_filebase="");
+            OrigamiSystem(
+                    const vector<vector<int>>& identities,
+                    const vector<vector<string>>& sequences,
+                    const Chains& chains,
+                    double volume,
+                    double staple_u,
+                    InputParameters& params);
             virtual ~OrigamiSystem();
 
             // THESE NEED TO BE IMPLEMENTED TO DEAL WITH THE DOMAIN POINTER VECTOR
@@ -132,6 +139,8 @@ namespace Origami {
             virtual void set_domain_orientation(Domain& cd_i, VectorThree ore);
             void centre();
             void set_all_domains();
+            void set_all_domains(Chains config);
+            void set_config(Chains new_config);
 
             // System state modifiers
             void update_temp(double temp);
@@ -188,7 +197,8 @@ namespace Origami {
             void get_energies();
             void calc_energies();
             void calc_energy(string seq_i, string seq_j, pair<int, int> key);
-            void initialize_domains(Chains chains);
+            void initialize_scaffold(Chain scaffold_chain);
+            void initialize_staples(Chains chain);
 
             // Energy calculation
             double check_stacking(Domain& cd_new, Domain& cd_old);
@@ -253,13 +263,10 @@ namespace Origami {
                     const vector<vector<int>>& identities,
                     const vector<vector<string>>& sequences,
                     const Chains& chains,
-                    double temp,
-                    double lattice_site_volume,
-                    double cation_M,
+                    double volume,
                     double staple_u,
-                    bool cyclic,
-                    InputParameters& params,
-                    string energy_filebase="");
+                    InputParameters& params);
+            ~OrigamiSystemWithBias();
 
             // Constraint checkers
             double check_domain_constraints(

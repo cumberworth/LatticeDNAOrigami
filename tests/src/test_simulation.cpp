@@ -7,6 +7,7 @@
 #include "parser.h"
 #include "files.h"
 #include "simulation.h"
+#include "ptmc_simulation.h"
 #include "test_origami_system.h"
 
 using std::cout;
@@ -17,6 +18,7 @@ using namespace Utility;
 using namespace Files;
 using namespace Origami;
 using namespace Simulation;
+using namespace PTMC;
 using namespace TestOrigamiSystem;
 
 // Consider writing some tests for the other simulation methods

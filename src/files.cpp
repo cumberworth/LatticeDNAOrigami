@@ -3,15 +3,20 @@
 #include <vector>
 #include <fstream>
 #include <iostream>
-#include <json/json.h>
+#include <string>
+#include <sstream>
+
+#include "json/json.h"
 
 #include "files.h"
+#include "order_params.h"
 
 using std::ifstream;
 using std::vector;
 using std::cout;
 
 using namespace Files;
+using namespace OrderParams;
 
 OrigamiInputFile::OrigamiInputFile(string filename) {
     ifstream jsonraw {filename, ifstream::binary};
@@ -66,6 +71,106 @@ OrigamiInputFile::OrigamiInputFile(string filename) {
     m_cyclic = jsoncyclic.asBool();
 }
 
+vector<vector<int>> OrigamiInputFile::get_identities() {
+    return m_identities;
+}
+
+vector<vector<string>> OrigamiInputFile::get_sequences() {
+    return m_sequences;
+}
+
+vector<Chain> OrigamiInputFile::get_config() {
+    return m_chains;
+}
+
+bool OrigamiInputFile::is_cyclic() {
+    return m_cyclic;
+}
+
+OrigamiTrajInputFile::OrigamiTrajInputFile(string filename):
+        m_filename {filename} {
+    m_file.open(m_filename);
+}
+
+vector<Chain> OrigamiTrajInputFile::read_config(int step) {
+    vector<Chain> step_chains {};
+    go_to_step(step);
+    while (true) {
+        string identity_line;
+        std::getline(m_file, identity_line);
+        if (identity_line.empty()) {
+            break;
+        }
+
+        std::istringstream identity_line_stream {identity_line};
+        int chain_index;
+        identity_line_stream >> chain_index;
+        int chain_identity;
+        identity_line_stream >> chain_identity;
+
+        string pos_line;
+        std::getline(m_file, pos_line);
+        std::istringstream pos_line_stream {pos_line};
+        vector<VectorThree> positions {};
+        while (not pos_line_stream.eof()) {
+            int x;
+            pos_line_stream >> x;
+            int y;
+            pos_line_stream >> y;
+            int z;
+            pos_line_stream >> z;
+            positions.push_back({x, y, z});
+        }
+
+        string ore_line;
+        std::getline(m_file, pos_line);
+        std::istringstream ore_line_stream {pos_line};
+        vector<VectorThree> orientations {};
+        while (not ore_line_stream.eof()) {
+            int x;
+            ore_line_stream >> x;
+            int y;
+            ore_line_stream >> y;
+            int z;
+            ore_line_stream >> z;
+            orientations.push_back({x, y, z});
+        }
+
+        Chain chain {chain_index, chain_identity, positions, orientations};
+        step_chains.push_back(chain);
+
+    }
+
+    return step_chains;
+}
+
+void OrigamiTrajInputFile::go_to_step(unsigned int step){
+    // Assumes 5 lines per step, returns line after step number
+    // Really ugly fragile method for doing this
+    m_file.seekg(std::ios::beg);
+    for(unsigned int i=0; i != step; ++i){
+        bool end_of_step_reached {false};
+        while (not end_of_step_reached) {
+            string line;
+            std::getline(m_file, line);
+            if (line.empty()) {
+                end_of_step_reached = true;
+            }
+            if (m_file.eof()) {
+                throw FileMisuse {};
+            }
+        }
+    }
+
+    // Check that read step is requested step
+    string step_s;
+    std::getline(m_file, step_s);
+    //int read_step {std::stoi(step_s)};
+    //if (read_step != step) {
+    //    throw FileMisuse {};
+    //}
+}
+
 OrigamiOutputFile::OrigamiOutputFile(
         string filename,
         int write_freq,
@@ -104,5 +209,38 @@ void OrigamiCountsOutputFile::write(long int step) {
     m_file << m_origami_system.num_bound_domain_pairs() << " ";
     m_file << m_origami_system.num_fully_bound_domain_pairs() << " ";
     m_file << m_origami_system.num_misbound_domain_pairs() << " ";
+    m_file << "\n";
+}
+
+OrigamiEnergiesOutputFile::OrigamiEnergiesOutputFile(string filename,
+        int write_freq, OrigamiSystem& origami_system) :
+        OrigamiOutputFile {filename, write_freq, origami_system} {
+
+    m_file << "step energy bias\n";
+}
+
+void OrigamiEnergiesOutputFile::write(long int step) {
+    m_file << step << " ";
+    m_file << m_origami_system.energy() << " ";
+    m_file << m_origami_system.bias() << " ";
+    m_file << "\n";
+}
+
+OrigamiOrderParamsOutputFile::OrigamiOrderParamsOutputFile(string filename,
+        int write_freq, OrigamiSystem& origami_system) :
+        OrigamiOutputFile {filename, write_freq, origami_system},
+        m_system_order_params {origami_system.get_system_order_params()},
+        m_order_params {m_system_order_params->get_order_params()} {
+    for (auto order_param: m_order_params) {
+        m_file << order_param->get_label() << " ";
+    }
+    m_file << "\n";
+}
+
+void OrigamiOrderParamsOutputFile::write(long int step) {
+    m_file << step;
+    for (auto order_param: m_order_params) {
+        m_file << " " << order_param->get_param();
+    }
     m_file << "\n";
 }

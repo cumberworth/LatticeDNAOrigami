@@ -6,7 +6,10 @@
 #include "nearest_neighbour.h"
 #include "domain.h"
 #include "files.h"
-#include "simulation.h"
+#include "constant_temp_simulation.h"
+#include "annealing_simulation.h"
+#include "ptmc_simulation.h"
+#include "us_simulation.h"
 #include "order_params.h"
 #include "enumerate.h"
 
@@ -18,6 +21,10 @@ using namespace Files;
 using namespace Origami;
 using namespace DomainContainer;
 using namespace Simulation;
+using namespace ConstantTemp;
+using namespace Annealing;
+using namespace PTMC;
+using namespace US;
 using namespace Movetypes;
 using namespace Enumerator;
 
@@ -27,10 +34,13 @@ int main(int argc, char* argv[]) {
 
     // Setup origami system
     OrigamiInputFile origami_input {params.m_origami_input_filename};
-    vector<vector<int>> identities {origami_input.m_identities};
-    vector<vector<string>> sequences {origami_input.m_sequences};
-    bool cyclic {origami_input.m_cyclic};
-    vector<Chain> configs = origami_input.m_chains;
+    vector<vector<int>> identities {origami_input.get_identities()};
+    vector<vector<string>> sequences {origami_input.get_sequences()};
+    vector<Chain> configs = origami_input.get_config();
+    if (params.m_restart_traj_file != "") {
+        OrigamiTrajInputFile traj_file {params.m_restart_traj_file};
+        configs = traj_file.read_config(params.m_restart_step);
+    }
 
     // Calculate chemical potential from specified staple concentration
     double staple_u {molarity_to_chempot(params.m_staple_M,
@@ -41,13 +51,11 @@ int main(int argc, char* argv[]) {
     OrigamiSystem* origami;
     if (params.m_biases_present) {
         origami = new OrigamiSystemWithBias {identities, sequences, configs,
-                params.m_temp, volume, params.m_cation_M, staple_u, cyclic,
-                params, params.m_energy_filebase};
+                volume, staple_u, params};
     }
     else {
         origami = new OrigamiSystem {identities, sequences, configs,
-            params.m_temp, volume, params.m_cation_M, staple_u, cyclic,
-            params.m_energy_filebase};
+            volume, staple_u, params};
     }
 
     // Run enumeration
@@ -73,7 +81,10 @@ int main(int argc, char* argv[]) {
             sim = new HUTPTGCMCSimulation {*origami, params};
         }
         else if (params.m_simulation_type == "umbrella_sampling") {
-            sim = new UmbrellaSamplingSimulation {*origami, params};
+            sim = new SimpleUSGCMCSimulation {*origami, params};
+        }
+        else if (params.m_simulation_type == "mw_umbrella_sampling") {
+            sim = new MWUSGCMCSimulation {*origami, params};
         }
         else {
             cout << "No such simulation type.\n";

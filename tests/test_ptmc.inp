@@ -6,6 +6,8 @@ cation_M=1
 temp_for_staple_u=330
 lattice_site_volume=4e-28
 energy_filebase=data/four
+restart_traj_filebase=outs/test_ptmc
+restart_step=9
 
 # Order parameters
 distance_pairs=0 3
@@ -20,8 +22,8 @@ bias_mult=1
 
 # General simulation parameters
 simulation_type=ut_parallel_tempering
-steps=1000000
-logging_freq=100000
+steps=1
+logging_freq=1
 centering_freq=100000
 orientation_rotation=1/100
 met_staple_exchange=97/100
@@ -33,12 +35,13 @@ exchange_mult=1000
 # Parallel tempering options
 temps=330 335
 num_reps=2
-exchange_interval=100
+exchange_interval=1
 constant_staple_M=true
 chem_pot_mults=1 1
 bias_mults=0 0
+restart_swap_file=outs/test_ptmc.swp
 
 # Output options
-output_filebase=outs/test_ptmc
-configs_output_freq=100000
-counts_output_freq=100000
+output_filebase=outs/test_ptmc_1
+configs_output_freq=1
+counts_output_freq=1

@@ -58,11 +58,8 @@ SCENARIO("Order parameters and bias functions") {
                 identities,
                 sequences,
                 configs,
-                temp,
                 volume,
-                cation_M,
                 staple_u,
-                cyclic,
                 params};
 
         Domain& scaffold_d_1 {*origami.get_domain(0, 0)};
@@ -120,11 +117,8 @@ SCENARIO("Order parameters and bias functions") {
                 identities,
                 sequences,
                 configs,
-                temp,
                 volume,
-                cation_M,
                 staple_u,
-                cyclic,
                 params};
 
         Domain& scaffold_d_1 {*origami.get_domain(0, 0)};

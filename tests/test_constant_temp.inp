@@ -7,6 +7,8 @@ temp_for_staple_u=340
 staple_u_mult=1
 lattice_site_volume=4e-28
 energy_filebase=data/four
+restart_traj_file=outs/test_constant_temp.trj
+restart_step=9
 
 # Order parameters
 distance_pairs=0 3
@@ -21,9 +23,9 @@ bias_mult=1
 
 # General simulation parameters
 simulation_type=constant_temp
-steps=1
-logging_freq=100000
-centering_freq=100000
+steps=10000
+logging_freq=1000
+centering_freq=1000
 orientation_rotation=1/4
 met_staple_exchange=1/4
 cb_staple_regrowth=1/4
@@ -32,6 +34,7 @@ ctcb_scaffold_regrowth=1/4
 exchange_mult=1000
 
 # Output options
-output_filebase=outs/test_constant_temp
-configs_output_freq=1000000
-counts_output_freq=1000000
+output_filebase=outs/test_constant_temp_1
+configs_output_freq=1000
+counts_output_freq=1000
+order_params_output_freq=1000

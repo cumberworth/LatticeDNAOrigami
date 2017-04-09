@@ -10,6 +10,10 @@ using namespace OrderParams;
 
 using std::abs;
 
+string OrderParam::get_label() {
+    return m_label;
+}
+
 DistOrderParam::DistOrderParam(Domain& domain_1, Domain& domain_2) :
         m_domain_1 {domain_1},
         m_domain_2 {domain_2} {
@@ -58,6 +62,10 @@ int DistOrderParam::get_param() {
 
 int DistOrderParam::get_checked_param() {
     return m_checked_param;
+}
+
+string DistOrderParam::get_label() {
+    return m_label;
 }
 
 bool DistOrderParam::dependent_on(Domain& domain) {
@@ -132,6 +140,10 @@ int DistSumOrderParam::get_param() {
 
 int DistSumOrderParam::get_checked_param() {
     return m_checked_param;
+}
+
+string DistSumOrderParam::get_label() {
+    return m_label;
 }
 
 bool DistSumOrderParam::dependent_on(Domain& domain) {
@@ -210,6 +222,10 @@ int NumStaplesOrderParam::get_param() {
 
 int NumStaplesOrderParam::get_checked_param() {
     return m_checked_param;
+}
+
+string NumStaplesOrderParam::get_label() {
+    return m_label;
 }
 
 bool NumStaplesOrderParam::dependent_on(Domain& domain) {
@@ -293,6 +309,10 @@ int NumBoundDomainPairsOrderParam::get_checked_param() {
     return m_checked_param;
 }
 
+string NumBoundDomainPairsOrderParam::get_label() {
+    return m_label;
+}
+
 bool NumBoundDomainPairsOrderParam::dependent_on(Domain& domain) {
     bool dependent;
     if (domain.m_c == 0) {
@@ -335,7 +355,11 @@ SystemOrderParams::SystemOrderParams(InputParameters& params,
         DistSumOrderParam* dist_sum;
         dist_sum = new DistSumOrderParam {get_distance_params()};
         m_dist_sums.push_back(dist_sum);
+        m_order_params.push_back(dist_sum);
     }
+
+    m_order_params.push_back(&m_num_staples);
+    m_order_params.push_back(&m_num_bound_domains);
 }
 
 SystemOrderParams::~SystemOrderParams() {
@@ -364,6 +388,10 @@ NumStaplesOrderParam& SystemOrderParams::get_num_staples() {
     return m_num_staples;
 }
 
+vector<OrderParam*> SystemOrderParams::get_order_params() {
+    return m_order_params;
+}
+
 void SystemOrderParams::setup_distance_param(InputParameters& params) {
 
     // Extract domain ids and store domain pairs
@@ -383,6 +411,7 @@ void SystemOrderParams::setup_distance_param(InputParameters& params) {
         DistOrderParam* order_param;
         order_param = new DistOrderParam {domain_1, domain_2};
         m_dists.push_back(order_param);
+        m_order_params.push_back(order_param);
         add_param_dependency(domain_1, order_param);
         add_param_dependency(domain_2, order_param);
     }
@@ -472,31 +501,31 @@ LinearStepBiasFunction::LinearStepBiasFunction(OrderParam& order_param,
 }
 
 double LinearStepBiasFunction::update_bias() {
-    double bias;
+    double new_bias;
     int param {m_order_param.get_param()};
     if (m_order_param.defined()) {
-        bias = calc_bias(param);
+        new_bias = calc_bias(param);
     }
     else {
-        bias = 0;
+        new_bias = 0;
     }
-    m_bias = bias;
+    m_bias = new_bias;
     
-    return bias;
+    return new_bias;
 }
 
 double LinearStepBiasFunction::calc_bias(int param) {
-    double bias {0};
+    double new_bias {0};
     if (param <= m_min_param) {
-        bias = 0;
+        new_bias = 0;
     }
     else if (param > m_min_param and param <= m_max_param) {
-        bias = m_slope * (param - m_min_param);
+        new_bias = m_slope * (param - m_min_param);
     }
     else {
-        bias = m_max_bias;
+        new_bias = m_max_bias;
     }
-    return bias;
+    return new_bias;
 }
 
 double LinearStepBiasFunction::check_bias() {
@@ -521,6 +550,68 @@ bool LinearStepBiasFunction::dependent_on(OrderParam& order_param) {
 }
 
 double LinearStepBiasFunction::get_bias() {
+    return m_bias;
+}
+
+SquareWellBiasFunction::SquareWellBiasFunction(OrderParam& order_param,
+        int min_param, int max_param, double well_bias, double outside_bias) :
+        m_order_param {order_param},
+        m_min_param {min_param},
+        m_max_param {max_param},
+        m_well_bias {well_bias},
+        m_outside_bias {outside_bias} {
+
+    update_bias();
+}
+
+double SquareWellBiasFunction::update_bias() {
+    double new_bias;
+    int param {m_order_param.get_param()};
+    if (m_order_param.defined()) {
+        new_bias = calc_bias(param);
+    }
+    else {
+        new_bias = 0;
+    }
+    m_bias = new_bias;
+    
+    return new_bias;
+}
+
+double SquareWellBiasFunction::calc_bias(int param) {
+    double new_bias {0};
+    if (param < m_min_param or param > m_max_param) {
+        new_bias = m_outside_bias;
+    }
+    else {
+        new_bias = m_well_bias;
+    }
+
+    return new_bias;
+}
+
+double SquareWellBiasFunction::check_bias() {
+    double checked_bias;
+    int param {m_order_param.get_checked_param()};
+    if (m_order_param.defined()) {
+        checked_bias = calc_bias(param);
+    }
+    else {
+        checked_bias = 0;
+    }
+    return checked_bias;
+}
+
+bool SquareWellBiasFunction::dependent_on(OrderParam& order_param) {
+    bool dependent {false};
+    if (&order_param == &m_order_param) {
+        dependent = true;
+    }
+
+    return dependent;
+}
+
+double SquareWellBiasFunction::get_bias() {
     return m_bias;
 }
 
@@ -615,6 +706,10 @@ SystemBiases::SystemBiases(OrigamiSystem& origami,
     if (params.m_distance_bias) {
         setup_distance_bias(params);
     }
+    if (params.m_square_well_bias) {
+        add_square_well_bias(params.m_min_well_param, params.m_max_well_param,
+                params.m_well_bias, params.m_outside_bias);
+    }
     m_bias_fs.push_back(&m_grid_bias_f);
 
     // Update total bias
@@ -624,7 +719,10 @@ SystemBiases::SystemBiases(OrigamiSystem& origami,
 }
 
 SystemBiases::~SystemBiases() {
-    for (auto bias_f: m_bias_fs) {
+    for (auto bias_f: m_dist_bias_fs) {
+        delete bias_f;
+    }
+    for (auto bias_f: m_well_bias_fs) {
         delete bias_f;
     }
 }
@@ -709,6 +807,15 @@ double SystemBiases::calc_one_domain(Domain& domain) {
         double new_bias {dist_bias_f->update_bias()};
         bias_diff += new_bias - prev_bias;
     }
+
+    // Square well bias fs
+    for (auto well_bias_f: m_well_bias_fs) {
+        double prev_bias {well_bias_f->get_bias()};
+        double new_bias {well_bias_f->update_bias()};
+        bias_diff += new_bias - prev_bias;
+    }
+
+    // Grid bias f
     double prev_bias {m_grid_bias_f.get_bias()};
     double new_bias {m_grid_bias_f.update_bias()};
     bias_diff += new_bias - prev_bias;
@@ -724,6 +831,15 @@ double SystemBiases::calc_delete_chain(int c_i) {
     double prev_bias {m_grid_bias_f.get_bias()};
     double new_bias {m_grid_bias_f.update_bias()};
     double bias_diff {new_bias - prev_bias};
+
+
+    // Square well
+    for (auto well_bias_f: m_well_bias_fs) {
+        double prev_bias {well_bias_f->get_bias()};
+        double new_bias {well_bias_f->update_bias()};
+        bias_diff += new_bias - prev_bias;
+    }
+
     m_total_bias += bias_diff;
 
     return bias_diff * m_bias_mult;
@@ -743,6 +859,15 @@ double SystemBiases::check_one_domain(Domain& domain, VectorThree pos,
         double new_bias {dist_bias_f->check_bias()};
         bias_diff += new_bias - prev_bias;
     }
+
+    // Square well
+    for (auto well_bias_f: m_well_bias_fs) {
+        double prev_bias {well_bias_f->get_bias()};
+        double new_bias {well_bias_f->check_bias()};
+        bias_diff += new_bias - prev_bias;
+    }
+
+    // Grid
     double prev_bias {m_grid_bias_f.get_bias()};
     double new_bias {m_grid_bias_f.check_bias()};
     bias_diff += new_bias - prev_bias;
@@ -758,9 +883,29 @@ double SystemBiases::check_delete_chain(int c_i) {
     double new_bias {m_grid_bias_f.check_bias()};
     double bias_diff {new_bias - prev_bias};
 
+    // Square well
+    for (auto well_bias_f: m_well_bias_fs) {
+        double prev_bias {well_bias_f->get_bias()};
+        double new_bias {well_bias_f->check_bias()};
+        bias_diff += new_bias - prev_bias;
+    }
+
     return bias_diff * m_bias_mult;
 }
 
 GridBiasFunction* SystemBiases::get_grid_bias() {
     return &m_grid_bias_f;
+}
+
+void SystemBiases::add_square_well_bias(int well_min, int well_max,
+        double well_bias, double outside_bias) {
+    SquareWellBiasFunction* well_bias_f;
+    OrderParam* num_staples_op {&m_system_order_params.get_num_staples()};
+    well_bias_f = new SquareWellBiasFunction {*num_staples_op,
+        well_min, well_max, well_bias, outside_bias};
+    m_well_bias_fs.push_back(well_bias_f);
+    m_bias_fs.push_back(&m_grid_bias_f);
+
+    // Update total bias
+    m_total_bias += well_bias_f->get_bias();
 }

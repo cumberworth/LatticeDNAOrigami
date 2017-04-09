@@ -111,7 +111,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("cyclic", po::value<bool>(), "Cyclic scaffold")
         ("energy_filebase", po::value<string>(), "Filebase for read/write of energies")
         ("restart_traj_file", po::value<string>(), "Trajectory file to restart from")
-        //("restart_traj_files", po::value<string>(), "Trajectory file to restart from")
+        ("restart_traj_filebase", po::value<string>(), "Trajectory restart filebase")
         ("restart_step", po::value<int>(), "Step to restart from")
 
         // Order parameters
@@ -125,6 +125,11 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("max_bias", po::value<double>(), "Value of bias at dist >= max_dist")
         ("bias_mult", po::value<double>(), "Total bias multiplier")
         ("grid_bias", po::value<bool>(), "Include a grid bias")
+        ("square_well_bias", po::value<bool>(), "Include a square well bias on the number of staples")
+        ("min_well_param", po::value<int>(), "Min number of staples for well bias")
+        ("max_well_param", po::value<int>(), "Max number of staples for well bias ")
+        ("well_bias", po::value<double>(), "Well bias")
+        ("outside_bias", po::value<double>(), "Bias outside the well")
 
         // General simulation parameters
         ("simulation_type", po::value<string>(), "constant_temp, annealing, or parallel_tempering")
@@ -155,16 +160,26 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("constant_staple_M", po::value<bool>(), "Hold staple concentration constant")
         ("chem_pot_mults", po::value<string>(), "Factor to multiply base chem pot for each rep")
         ("bias_mults", po::value<string>(), "Multiplier for system bias")
+        ("restart_swap_file", po::value<string>(), "Swap file to restart from")
 
         // Umbrella sampling options
         ("order_params", po::value<string>(), "List of order parameters to apply to")
-        ("num_iters", po::value<int>(), "Number of iterations")
+        ("max_num_iters", po::value<int>(), "Number of iterations")
         ("max_D_bias", po::value<double>(), "Max change in bias per iteration")
+        ("equil_steps", po::value<long int>(), "Number of equilibration steps")
+        ("prod_steps", po::value<long int>(), "Number of production steps")
+        ("max_rel_P_diff", po::value<double>(), "Maximum allowed change in P for convergence")
+        ("biases_file", po::value<string>(), "Initial guesses at grid biases")
+        ("biases_filebase", po::value<string>(), "Filebase for grid bias files")
+        ("multi_window", po::value<bool>(), "Use multiple windows")
+        ("windows_file", po::value<string>(), "File containing windows as min/max pairs of tuples")
 
         // Output options
         ("output_filebase", po::value<string>(), "Base name for output files")
         ("configs_output_freq", po::value<int>(), "Configuration output write frequency")
-        ("counts_output_freq", po::value<int>(), "Coounts output write frequency")
+        ("counts_output_freq", po::value<int>(), "Counts output write frequency")
+        ("energies_output_freq", po::value<int>(), "Energies output write frequency")
+        ("order_params_output_freq", po::value<int>(), "Order parameters write frequency")
         ;
 
     po::variables_map vm;
@@ -204,6 +219,9 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     if (vm.count("restart_traj_file")) {
         m_restart_traj_file = vm["restart_traj_file"].as<string>();
     }
+    if (vm.count("restart_traj_filebase")) {
+        m_restart_traj_filebase = vm["restart_traj_filebase"].as<string>();
+    }
     if (vm.count("restart_step")) {
         m_restart_step = vm["restart_step"].as<int>();
     }
@@ -237,6 +255,23 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     }
     if (vm.count("grid_bias")) {
         m_grid_bias = vm["grid_bias"].as<bool>();
+        m_biases_present = true;
+    }
+    if (vm.count("square_well_bias")) {
+        m_square_well_bias = vm["square_well_bias"].as<bool>();
+        m_biases_present = true;
+    }
+    if (vm.count("min_well_param")) {
+        m_min_well_param = vm["min_well_param"].as<int>();
+    }
+    if (vm.count("max_well_param")) {
+        m_max_well_param = vm["max_well_param"].as<int>();
+    }
+    if (vm.count("well_bias")) {
+        m_well_bias = vm["well_bias"].as<double>();
+    }
+    if (vm.count("outside_bias")) {
+        m_outside_bias = vm["outside_bias"].as<double>();
     }
 
     // General simulation parameters
@@ -333,17 +368,41 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         string bias_mults_s {vm["bias_mults"].as<string>()};
         m_bias_mults = string_to_double_vector(bias_mults_s);
     }
+    if (vm.count("restart_swap_file")) {
+        m_restart_swap_file = vm["restart_swap_file"].as<string>();
+    }
 
     // Umbrella sampling options
     if (vm.count("order_params")) {
         string order_params_s {vm["order_params"].as<string>()};
         m_order_params = split(order_params_s, ' ');
     }
-    if (vm.count("num_iters")) {
-        m_num_iters = vm["num_iters"].as<int>();
+    if (vm.count("max_num_iters")) {
+        m_max_num_iters = vm["max_num_iters"].as<int>();
     }
     if (vm.count("max_D_bias")){
         m_max_D_bias = vm["max_D_bias"].as<double>();
+    }
+    if (vm.count("equil_steps")){
+        m_equil_steps = vm["equil_steps"].as<long int>();
+    }
+    if (vm.count("prod_steps")){
+        m_prod_steps = vm["prod_steps"].as<long int>();
+    }
+    if (vm.count("max_rel_P_diff")){
+        m_max_rel_P_diff = vm["max_rel_P_diff"].as<double>();
+    }
+    if (vm.count("biases_file")){
+        m_biases_file = vm["biases_file"].as<string>();
+    }
+    if (vm.count("biases_filebase")){
+        m_biases_filebase = vm["biases_filebase"].as<string>();
+    }
+    if (vm.count("multi_window")){
+        m_multi_window = vm["multi_window"].as<bool>();
+    }
+    if (vm.count("windows_file")){
+        m_windows_file = vm["windows_file"].as<string>();
     }
 
     // Output options
@@ -356,10 +415,17 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     if (vm.count("counts_output_freq")) {
         m_counts_output_freq = vm["counts_output_freq"].as<int>();
     }
+    if (vm.count("energies_output_freq")) {
+        m_energies_output_freq = vm["energies_output_freq"].as<int>();
+    }
+    if (vm.count("order_params_output_freq")) {
+        m_order_params_output_freq = vm["order_params_output_freq"].as<int>();
+    }
 }
 
 void InputParameters::set_default_sim_options() {
-    if (m_simulation_type == "umbrella_sampling") {
+    if (m_simulation_type == "umbrella_sampling" or
+            m_simulation_type == "mw_umbrella_sampling") {
         m_biases_present = true;
         m_grid_bias = true;
     }

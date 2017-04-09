@@ -60,12 +60,39 @@ OrigamiSystem::OrigamiSystem(
         m_energy_filebase {energy_filebase} {
 
     initialize_complementary_associations();
-    initialize_domains(chains);
+    initialize_scaffold(chains[0]);
+    initialize_staples(chains);
     get_energies();
-    set_all_domains();
+    set_all_domains(chains);
+}
+
+OrigamiSystem::OrigamiSystem(
+        const vector<vector<int>>& identities,
+        const vector<vector<string>>& sequences,
+        const Chains& chains,
+        double volume,
+        double staple_u,
+        InputParameters& params) :
+
+        m_identities {identities},
+        m_sequences {sequences},
+        m_temp {params.m_temp},
+        m_volume {volume},
+        m_cation_M {params.m_cation_M},
+        m_staple_u {staple_u},
+        m_cyclic {params.m_cyclic},
+        m_energy_filebase {params.m_energy_filebase} {
+
+    initialize_complementary_associations();
+    initialize_scaffold(chains[0]);
+    initialize_staples(chains);
+    get_energies();
+    set_all_domains(chains);
+    m_system_order_params = new SystemOrderParams {params, *this};
 }
 
 OrigamiSystem::~OrigamiSystem() {
+    delete m_system_order_params;
     for (auto chain: m_domains) {
         for (auto domain: chain) {
             delete domain;
@@ -269,6 +296,23 @@ void OrigamiSystem::check_all_constraints() {
     set_all_domains();
 }
 
+void OrigamiSystem::set_config(Chains chains) {
+
+    // Unassign and delete everything but scaffold
+    for (auto chain: m_domains) {
+        for (auto domain: chain) {
+            unassign_domain(*domain);
+        }
+    }
+    for (int i {static_cast<int>(m_domains.size() - 1)}; i != 0; i--) {
+        delete_chain(m_domains[i][0]->m_c);
+    }
+
+    initialize_staples(chains);
+    set_all_domains(chains);
+}
+
+
 double OrigamiSystem::check_domain_constraints(
         Domain& cd_i,
         VectorThree pos,
@@ -442,6 +486,36 @@ void OrigamiSystem::centre() {
 }
 
 void OrigamiSystem::set_all_domains() {
+    // Use current positions and orientations
+    for (auto chain: m_domains) {
+        for (auto domain: chain) {
+            set_domain_config(*domain, domain->m_pos, domain->m_ore);
+            if (m_constraints_violated) {
+                cout << "b\n";
+                set_domain_config(*domain, domain->m_pos, domain->m_ore);
+                throw OrigamiMisuse {};
+            }
+        }
+    }
+    check_distance_constraints();
+}
+
+void OrigamiSystem::set_all_domains(Chains config) {
+    // Use given positions and orientations
+
+    // Set position and orientation of domains
+    for (size_t i {0}; i != config.size(); i++) {
+        Chain chain {config[i]};
+        int num_domains {static_cast<int>(m_domains[i].size())};
+        for (int d_i {0}; d_i != num_domains; d_i++) {
+            Domain* domain {m_domains[i][d_i]};
+            VectorThree pos = chain.positions[d_i];
+            VectorThree ore = chain.orientations[d_i];
+            domain->m_pos = pos;
+            domain->m_ore = ore;
+        }
+    }
+
     // Set all domains and check all constraints
     for (auto chain: m_domains) {
         for (auto domain: chain) {
@@ -596,43 +670,33 @@ void OrigamiSystem::calc_energy(string seq_i, string seq_j,
     m_stacking_energies[key] = s_energy;
 }
 
-void OrigamiSystem::initialize_domains(Chains chains) {
-    // Set domain vectors (but no constraint check/state setting)
+void OrigamiSystem::initialize_staples(Chains chains) {
 
     // Create domain objects
-    for (size_t i {0}; i != chains.size(); i++) {
+    for (size_t i {1}; i != chains.size(); i++) {
         Chain chain {chains[i]};
         int c_i {chain.index};
         int c_i_ident {chain.identity};
         add_chain(c_i_ident, c_i);
-
-        // Make scaffold chain domains modular if cyclic
-        if (m_cyclic and c_i == c_scaffold) {
-            Domain* first_domain {m_domains[c_i][0]};
-            Domain* last_domain {m_domains[c_i].back()};
-            last_domain->m_forward_domain = first_domain;
-            first_domain->m_backward_domain = last_domain;
-        }
-    }
-
-    // Set position and orientation of domains
-    for (size_t i {0}; i != chains.size(); i++) {
-        Chain chain {chains[i]};
-        int c_i {chain.index};
-        int domains_c_i {m_chain_indices[c_i]};
-        int num_domains {static_cast<int>(m_domains[domains_c_i].size())};
-        for (int d_i {0}; d_i != num_domains; d_i++) {
-            Domain* domain {m_domains[c_i][d_i]};
-            VectorThree pos = chain.positions[d_i];
-            VectorThree ore = chain.orientations[d_i];
-            domain->m_pos = pos;
-            domain->m_ore = ore;
-        }
     }
 
     // Current unique chain index
-    m_current_c_i = *max_element(m_chain_identities.begin(),
-            m_chain_identities.end());
+    m_current_c_i = *max_element(m_chain_indices.begin(),
+            m_chain_indices.end());
+}
+
+void OrigamiSystem::initialize_scaffold(Chain scaffold_chain) {
+    int c_i {scaffold_chain.index};
+    int c_i_ident {scaffold_chain.identity};
+    add_chain(c_i_ident, c_i);
+
+    // Make scaffold chain domains modular if cyclic
+    if (m_cyclic) {
+        Domain* first_domain {m_domains[c_i][0]};
+        Domain* last_domain {m_domains[c_i].back()};
+        last_domain->m_forward_domain = first_domain;
+        first_domain->m_backward_domain = last_domain;
+    }
 }
 
 double OrigamiSystem::check_stacking(Domain& cd_new, Domain& cd_old) {
@@ -1224,25 +1288,21 @@ OrigamiSystemWithBias::OrigamiSystemWithBias(
         const vector<vector<int>>& identities,
         const vector<vector<string>>& sequences,
         const Chains& chains,
-        double temp,
         double volume,
-        double cation_M,
         double staple_u,
-        bool cyclic,
-        InputParameters& params,
-        string energy_filebase) :
+        InputParameters& params) :
         OrigamiSystem(
                 identities,
                 sequences,
                 chains,
-                temp,
                 volume,
-                cation_M,
                 staple_u,
-                cyclic,
-                energy_filebase) {
-    m_system_order_params = new SystemOrderParams {params, *this};
+                params) {
     m_system_biases = new SystemBiases {*this, *m_system_order_params, params};
+}
+
+OrigamiSystemWithBias::~OrigamiSystemWithBias() {
+    delete m_system_biases;
 }
 
 double OrigamiSystemWithBias::check_domain_constraints(Domain& cd_i,

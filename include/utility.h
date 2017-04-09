@@ -29,6 +29,7 @@ namespace Utility {
     // Exception types
     struct NoElement {};
     struct OrigamiMisuse {};
+    struct FileMisuse {};
     struct NotImplemented {};
 
     // Constrants

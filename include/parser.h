@@ -46,6 +46,7 @@ namespace Parser {
             bool m_cyclic {false};
             string m_energy_filebase {""};
             string m_restart_traj_file {""};
+            string m_restart_traj_filebase {""};
             int m_restart_step;
 
             // Order parameters
@@ -60,6 +61,11 @@ namespace Parser {
             int m_max_dist;
             double m_max_bias;
             double m_bias_mult {1};
+            bool m_square_well_bias {false};
+            int m_max_well_param;
+            int m_min_well_param;
+            double m_well_bias;
+            double m_outside_bias;
 
             // General simulation parameters
             string m_simulation_type {"constant_temp"};
@@ -86,16 +92,26 @@ namespace Parser {
             bool m_constant_staple_M {true};
             vector<double> m_chem_pot_mults {};
             vector<double> m_bias_mults {};
+            string m_restart_swap_file {};
 
             // Umbrella sampling simulation parameters
             vector<string> m_order_params {};
-            int m_num_iters {0};
+            int m_max_num_iters {0};
             double m_max_D_bias {0};
+            long int m_equil_steps {0};
+            long int m_prod_steps {0};
+            double m_max_rel_P_diff {0.1};
+            string m_biases_file {};
+            string m_biases_filebase {};
+            bool m_multi_window {false};
+            string m_windows_file {};
 
             // Output options
             string m_output_filebase;
             int m_configs_output_freq {0};
             int m_counts_output_freq {0};
+            int m_energies_output_freq {0};
+            int m_order_params_output_freq {0};
 
         private:
             void set_default_sim_options();
