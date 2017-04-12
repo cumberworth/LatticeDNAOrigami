@@ -3,6 +3,8 @@
 #ifndef US_SIMULATION_H
 #define US_SIMULATION_H
 
+#include "boost/serialization/vector.hpp"
+
 #include "simulation.h"
 
 using namespace Simulation;
@@ -140,7 +142,7 @@ namespace US {
             vector<string> m_starting_files {};
             vector<int> m_starting_steps {};
 
-            void update_internal(long int step) {}
+            void update_internal(long int) {}
             void parse_windows_file(string filename);
             void update_master_order_params(int n);
             void update_master_converged_sims(bool sim_converged, int n);
