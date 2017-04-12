@@ -12,6 +12,7 @@ using std::vector;
 namespace Parser {
     vector<int> string_to_int_vector(string string_v);
     vector<double> string_to_double_vector(string string_v);
+    vector<string> string_to_string_vector(string string_v);
 
     // These are from a stackexchange answer
     template<typename Out>
@@ -46,8 +47,10 @@ namespace Parser {
             bool m_cyclic {false};
             string m_energy_filebase {""};
             string m_restart_traj_file {""};
+            vector<string> m_restart_traj_files {""};
             string m_restart_traj_filebase {""};
             int m_restart_step;
+            vector<int> m_restart_steps;
 
             // Order parameters
             bool m_distance_sum {false};

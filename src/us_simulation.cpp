@@ -146,8 +146,16 @@ bool USGCMCSimulation::weights_converged() {
         return converged;
     }
 
+    // Check states that were sampled previously are sampled now
+    for (auto point: m_S_n) {
+        if (m_w_i[point] == 0) {
+            converged = false;
+            return converged;
+        }
+    }
+
+    // Check that relative change in weight is less than max value
     // Maybe only check weights that aren't very small
-    // Maybe have minimum number of iterations allowed
     for (auto point: m_S_n) {
         double rel_dif {(m_lP_n[point] - m_old_lP_n[point]) / m_old_lP_n[point]};
         if (abs(rel_dif) > m_max_rel_P_diff) {
@@ -480,6 +488,10 @@ MWUSGCMCSimulation::MWUSGCMCSimulation(OrigamiSystem& origami,
     if (params.m_restart_traj_filebase != "") {
         params.m_restart_traj_filebase += window_postfix;
         params.m_restart_traj_file = params.m_restart_traj_filebase + ".trj";
+    }
+    if (params.m_restart_traj_files[m_rank] != "") {
+        params.m_restart_traj_file = params.m_restart_traj_files[m_rank];
+        params.m_restart_step = params.m_restart_steps[m_rank];
     }
 
     m_us_sim = new SimpleUSGCMCSimulation {origami, params};

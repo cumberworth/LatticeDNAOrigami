@@ -4,6 +4,7 @@
 #include <fstream>
 #include <boost/program_options.hpp>
 #include <sstream>
+#include <sstream>
 
 #include "parser.h"
 
@@ -41,6 +42,18 @@ vector<double> Parser::string_to_double_vector(string string_v) {
         delim_pos = string_v.find(delim, start_pos);
     }
     v.push_back(stod(string_v.substr(start_pos, string_v.size())));
+
+    return v;
+}
+
+vector<string> Parser::string_to_string_vector(string string_v) {
+    std::stringstream sstream {string_v};
+    vector<string> v {};
+    while (not sstream.eof()) {
+        string ele;
+        sstream >> ele;
+        v.push_back(ele);
+    }
 
     return v;
 }
@@ -112,7 +125,9 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("energy_filebase", po::value<string>(), "Filebase for read/write of energies")
         ("restart_traj_file", po::value<string>(), "Trajectory file to restart from")
         ("restart_traj_filebase", po::value<string>(), "Trajectory restart filebase")
+        ("restart_traj_files", po::value<string>(), "Trajectory restart files for each replicate")
         ("restart_step", po::value<int>(), "Step to restart from")
+        ("restart_steps", po::value<int>(), "Restart step for each replicate")
 
         // Order parameters
         ("distance_pairs", po::value<string>(), "Scaffold domains to restrain")
@@ -219,11 +234,19 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     if (vm.count("restart_traj_file")) {
         m_restart_traj_file = vm["restart_traj_file"].as<string>();
     }
+    if (vm.count("restart_traj_files")) {
+        string file_s = vm["restart_traj_files"].as<string>();
+        m_restart_traj_files = string_to_string_vector(file_s);
+    }
     if (vm.count("restart_traj_filebase")) {
         m_restart_traj_filebase = vm["restart_traj_filebase"].as<string>();
     }
     if (vm.count("restart_step")) {
         m_restart_step = vm["restart_step"].as<int>();
+    }
+    if (vm.count("restart_steps")) {
+        string steps_s = vm["restart_steps"].as<string>();
+        m_restart_steps = string_to_int_vector(steps_s);
     }
 
     // Order parameters
