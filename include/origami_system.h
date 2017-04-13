@@ -57,16 +57,6 @@ namespace Origami {
                     const vector<vector<int>>& identities,
                     const vector<vector<string>>& sequences,
                     const Chains& chains,
-                    double temp,
-                    double volume,
-                    double cation_M,
-                    double staple_u,
-                    bool cyclic,
-                    string energy_filebase="");
-            OrigamiSystem(
-                    const vector<vector<int>>& identities,
-                    const vector<vector<string>>& sequences,
-                    const Chains& chains,
                     double volume,
                     double staple_u,
                     InputParameters& params);

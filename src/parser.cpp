@@ -127,7 +127,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("restart_traj_filebase", po::value<string>(), "Trajectory restart filebase")
         ("restart_traj_files", po::value<string>(), "Trajectory restart files for each replicate")
         ("restart_step", po::value<int>(), "Step to restart from")
-        ("restart_steps", po::value<int>(), "Restart step for each replicate")
+        ("restart_steps", po::value<string>(), "Restart step for each replicate")
 
         // Order parameters
         ("distance_pairs", po::value<string>(), "Scaffold domains to restrain")

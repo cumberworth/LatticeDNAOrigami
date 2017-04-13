@@ -524,6 +524,7 @@ void MWUSGCMCSimulation::run() {
         }
         if (not sim_converged) {
             m_us_sim->run_iteration(n);
+            cout << "Node " + std::to_string(m_rank) + "finished iteration\n";
             sim_converged = m_us_sim->weights_converged();
         }
         update_master_order_params(n);

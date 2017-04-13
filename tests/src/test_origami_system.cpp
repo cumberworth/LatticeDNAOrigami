@@ -26,10 +26,17 @@ OrigamiSystem TestOrigamiSystem::setup_two_domain_scaffold_origami(
         double temp,
         double cation_M) {
     // Setups up system with no staples and unassigned scaffold
-    double staple_M {1e-3};
-    double lattice_site_volume {4e-28};
-    bool cyclic {false};
+    InputParameters params {};
+    params.m_temp = temp;
+    params.m_staple_M = 1e-3;
+    params.m_lattice_site_volume = 4e-28;
+    params.m_cyclic = false;
+    params.m_cation_M = cation_M;
     string system_filename {"data/two_domain.json"};
+    
+    double staple_u {molarity_to_chempot(params.m_staple_M, temp,
+            params.m_lattice_site_volume)};
+    double volume {chempot_to_volume(staple_u, temp)};
 
     OrigamiInputFile origami_input {system_filename};
     vector<vector<int>> identities {origami_input.m_identities};
@@ -40,11 +47,9 @@ OrigamiSystem TestOrigamiSystem::setup_two_domain_scaffold_origami(
             identities,
             sequences,
             configs,
-            temp,
-            staple_M,
-            cation_M,
-            lattice_site_volume,
-            cyclic};
+            volume,
+            staple_u,
+            params};
 
     origami.unassign_domain(*origami.get_domain(0, 0));
     origami.unassign_domain(*origami.get_domain(0, 1));
@@ -57,9 +62,12 @@ OrigamiSystem TestOrigamiSystem::setup_four_domain_scaffold_origami(
         double cation_M) {
     // Setups up system with no staples and unassigned scaffold
     // Scaffold: 1 2 3 4, staple 1: 1 4, staple 2: 3 2
-    double staple_M {1e-3};
-    double lattice_site_volume {4e-28};
-    bool cyclic {false};
+    InputParameters params {};
+    params.m_temp = temp;
+    params.m_staple_M = 1e-3;
+    params.m_lattice_site_volume = 4e-28;
+    params.m_cyclic = false;
+    params.m_cation_M = cation_M;
     string system_filename {"data/four2_domain_loop.json"};
 
     OrigamiInputFile origami_input {system_filename};
@@ -67,15 +75,17 @@ OrigamiSystem TestOrigamiSystem::setup_four_domain_scaffold_origami(
     vector<vector<string>> sequences {origami_input.m_sequences};
     vector<Chain> configs {origami_input.m_chains};
 
+    double staple_u {molarity_to_chempot(params.m_staple_M, temp,
+            params.m_lattice_site_volume)};
+    double volume {chempot_to_volume(staple_u, temp)};
+
     OrigamiSystem origami {
             identities,
             sequences,
             configs,
-            temp,
-            staple_M,
-            cation_M,
-            lattice_site_volume,
-            cyclic};
+            volume,
+            staple_u,
+            params};
 
     origami.unassign_domain(*origami.get_domain(0, 0));
     origami.unassign_domain(*origami.get_domain(0, 1));
@@ -89,9 +99,12 @@ OrigamiSystem TestOrigamiSystem::setup_snodin_origami(
         double temp,
         double cation_M) {
 
-    double staple_M {1e-3};
-    double lattice_site_volume {4e-28};
-    bool cyclic {false};
+    InputParameters params {};
+    params.m_temp = temp;
+    params.m_staple_M = 1e-3;
+    params.m_lattice_site_volume = 4e-28;
+    params.m_cyclic = false;
+    params.m_cation_M = cation_M;
     string system_filename {"data/snodin_unbound.json"};
 
     OrigamiInputFile origami_input {system_filename};
@@ -99,15 +112,17 @@ OrigamiSystem TestOrigamiSystem::setup_snodin_origami(
     vector<vector<string>> sequences {origami_input.m_sequences};
     vector<Chain> configs {origami_input.m_chains};
 
+    double staple_u {molarity_to_chempot(params.m_staple_M, temp,
+            params.m_lattice_site_volume)};
+    double volume {chempot_to_volume(staple_u, temp)};
+
     OrigamiSystem origami {
             identities,
             sequences,
             configs,
-            temp,
-            staple_M,
-            cation_M,
-            lattice_site_volume,
-            cyclic};
+            volume,
+            staple_u,
+            params};
 
     for (auto domain: origami.get_chain(0)) {
         origami.unassign_domain(*domain);

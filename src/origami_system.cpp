@@ -43,33 +43,6 @@ OrigamiSystem::OrigamiSystem(
         const vector<vector<int>>& identities,
         const vector<vector<string>>& sequences,
         const Chains& chains,
-        double temp,
-        double volume,
-        double cation_M,
-        double staple_u,
-        bool cyclic,
-        string energy_filebase) :
-
-        m_identities {identities},
-        m_sequences {sequences},
-        m_temp {temp},
-        m_volume {volume},
-        m_cation_M {cation_M},
-        m_staple_u {staple_u},
-        m_cyclic {cyclic},
-        m_energy_filebase {energy_filebase} {
-
-    initialize_complementary_associations();
-    initialize_scaffold(chains[0]);
-    initialize_staples(chains);
-    get_energies();
-    set_all_domains(chains);
-}
-
-OrigamiSystem::OrigamiSystem(
-        const vector<vector<int>>& identities,
-        const vector<vector<string>>& sequences,
-        const Chains& chains,
         double volume,
         double staple_u,
         InputParameters& params) :
