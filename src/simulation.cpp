@@ -156,7 +156,7 @@ void GCMCSimulation::write_log_entry(long int step, MCMovetype& movetype,
     *m_logging_stream << "Accepted: " << accepted << " ";
     *m_logging_stream << "Temp: " << m_origami_system.m_temp << " ";
     *m_logging_stream << "Energy: " << m_origami_system.energy() << " ";
-//    *m_logging_stream << "Bias: " << m_system_bias.calc_bias() << " ";
+    *m_logging_stream << "Bias: " << m_origami_system.bias() << " ";
     *m_logging_stream << "\n";
 }
 

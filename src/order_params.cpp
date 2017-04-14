@@ -706,9 +706,11 @@ SystemBiases::SystemBiases(OrigamiSystem& origami,
     if (params.m_distance_bias) {
         setup_distance_bias(params);
     }
+    //OrderParam* op {&m_system_order_params.get_num_staples()};
+    OrderParam* op {&m_system_order_params.get_num_bound_domains()};
     if (params.m_square_well_bias) {
-        add_square_well_bias(params.m_min_well_param, params.m_max_well_param,
-                params.m_well_bias, params.m_outside_bias);
+       add_square_well_bias(op, params.m_min_well_param, params.m_max_well_param,
+             params.m_well_bias, params.m_outside_bias);
     }
     m_bias_fs.push_back(&m_grid_bias_f);
 
@@ -897,11 +899,10 @@ GridBiasFunction* SystemBiases::get_grid_bias() {
     return &m_grid_bias_f;
 }
 
-void SystemBiases::add_square_well_bias(int well_min, int well_max,
+void SystemBiases::add_square_well_bias(OrderParam* op, int well_min, int well_max,
         double well_bias, double outside_bias) {
     SquareWellBiasFunction* well_bias_f;
-    OrderParam* num_staples_op {&m_system_order_params.get_num_staples()};
-    well_bias_f = new SquareWellBiasFunction {*num_staples_op,
+    well_bias_f = new SquareWellBiasFunction {*op,
         well_min, well_max, well_bias, outside_bias};
     m_well_bias_fs.push_back(well_bias_f);
     m_bias_fs.push_back(&m_grid_bias_f);

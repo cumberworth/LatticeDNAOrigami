@@ -512,7 +512,12 @@ void CBMCMovetype::calc_biases(
             }
             case Occupancy::unassigned:
                 configs.push_back({p_new, {0, 0, 0}});
-                bfactors.push_back(6);
+
+                // Biases can be position dependent, but will be orientation
+                // independent
+                double delta_e {m_origami_system.check_domain_constraints(
+                        domain, p_new, {1, 0, 0})};
+                bfactors.push_back(6 * exp(-delta_e));
         }
     }
 }

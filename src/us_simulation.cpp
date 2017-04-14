@@ -293,37 +293,8 @@ void USGCMCSimulation::estimate_current_weights() {
     }
 }
 
-bool USGCMCSimulation::iteration_equilibrium_step() {
-    // Check if any visited gridpoint in current iteration further than x from
-    // any previously visited gridpoints
-    // Other mode advanced checks possible
-    bool equilibrium_step {false};
-    
-    // This is a pretty ugly way of dealing with the first iteration step
-    if (m_S_n.size() == 0) {
-        equilibrium_step = false;
-        return equilibrium_step;
-    }
-
-    // Must have at least one point that has been visited previously
-    if (m_old_points.size() == 0) {
-        equilibrium_step = true;
-        return equilibrium_step;
-    }
-
-    // Check distance between new points and closest previously sampled points
-    for (auto new_point: m_new_points) {
-        // Does it matter what order I move through the dimensions?
-        for (size_t dim {0}; dim != new_point.size(); dim++) {
-            GridPoint closest_point {find_closest_point(m_S_n, new_point, dim)};
-            if (abs(new_point[dim] - closest_point[dim]) > m_equil_dif[dim]) {
-                equilibrium_step = true;
-                break;
-            }
-        }
-    }
-
-    return equilibrium_step;
+bool SimpleUSGCMCSimulation::iteration_equilibrium_step() {
+    return false;
 }
 
 void USGCMCSimulation::fill_grid_sets() {
@@ -440,6 +411,8 @@ MWUSGCMCSimulation::MWUSGCMCSimulation(OrigamiSystem& origami,
         GCMCSimulation {origami, params},
         m_params {params},
         m_max_num_iters {params.m_max_num_iters},
+        m_system_order_params {dynamic_cast<OrigamiSystemWithBias*>(&origami)->
+                get_system_order_params()},
         m_system_biases {dynamic_cast<OrigamiSystemWithBias*>(&origami)->
                 get_system_biases()} {
 
@@ -470,12 +443,18 @@ MWUSGCMCSimulation::MWUSGCMCSimulation(OrigamiSystem& origami,
     // Setup square well potentials
     GridPoint window_min {m_window_mins[m_rank]};
     GridPoint window_max {m_window_maxs[m_rank]};
-    for (size_t i {0}; i != window_min.size(); i++) {
-        int window_comp_min {window_min[i]};
-        int window_comp_max {window_max[i]};
-        m_system_biases->add_square_well_bias(window_comp_min, window_comp_max,
+    OrderParam* n_staples {&m_system_order_params->get_num_staples()};
+    OrderParam* n_domains {&m_system_order_params->get_num_bound_domains()};
+
+    // Hard coded which ops are used
+    int domain_min {window_min[0]};
+    int domain_max {window_max[0]};
+    m_system_biases->add_square_well_bias(n_domains, domain_min, domain_max,
                 params.m_well_bias, params.m_outside_bias);
-    }
+    int staple_min {window_min[1]};
+    int staple_max {window_max[1]};
+    m_system_biases->add_square_well_bias(n_staples, staple_min, staple_max,
+                params.m_well_bias, params.m_outside_bias);
 
     // Update filebases and construct US sim object
     string window_postfix {m_window_postfixes[m_rank]};
@@ -489,7 +468,7 @@ MWUSGCMCSimulation::MWUSGCMCSimulation(OrigamiSystem& origami,
         params.m_restart_traj_filebase += window_postfix;
         params.m_restart_traj_file = params.m_restart_traj_filebase + ".trj";
     }
-    if (params.m_restart_traj_files[m_rank] != "") {
+    if (not params.m_restart_traj_files.empty()) {
         params.m_restart_traj_file = params.m_restart_traj_files[m_rank];
         params.m_restart_step = params.m_restart_steps[m_rank];
     }
@@ -524,7 +503,6 @@ void MWUSGCMCSimulation::run() {
         }
         if (not sim_converged) {
             m_us_sim->run_iteration(n);
-            cout << "Node " + std::to_string(m_rank) + "finished iteration\n";
             sim_converged = m_us_sim->weights_converged();
         }
         update_master_order_params(n);
@@ -634,7 +612,7 @@ void MWUSGCMCSimulation::select_starting_configs() {
             GridPoint point {m_points[i][step]};
 
             // Make this more robust
-            GridPoint win_point {point[1]};
+            GridPoint win_point {point[0], point[1]};
             if (m_order_param_to_configs.find(win_point) != m_order_param_to_configs.end()) {
                 m_order_param_to_configs[win_point].push_back({i, step});
             }

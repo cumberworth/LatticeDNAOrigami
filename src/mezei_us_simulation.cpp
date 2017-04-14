@@ -25,6 +25,39 @@ MezeiUSGCMCSimulation::MezeiUSGCMCSimulation(OrigamiSystem& origami,
     m_solver_file.open(params.m_output_filebase + ".solver");
 }
 
+bool MezeiUSGCMCSimulation::iteration_equilibrium_step() {
+    // Check if any visited gridpoint in current iteration further than x from
+    // any previously visited gridpoints
+    // Other mode advanced checks possible
+    bool equilibrium_step {false};
+    
+    // This is a pretty ugly way of dealing with the first iteration step
+    if (m_S_n.size() == 0) {
+        equilibrium_step = false;
+        return equilibrium_step;
+    }
+
+    // Must have at least one point that has been visited previously
+    if (m_old_points.size() == 0) {
+        equilibrium_step = true;
+        return equilibrium_step;
+    }
+
+    // Check distance between new points and closest previously sampled points
+    for (auto new_point: m_new_points) {
+        // Does it matter what order I move through the dimensions?
+        for (size_t dim {0}; dim != new_point.size(); dim++) {
+            GridPoint closest_point {find_closest_point(m_S_n, new_point, dim)};
+            if (abs(new_point[dim] - closest_point[dim]) > m_equil_dif[dim]) {
+                equilibrium_step = true;
+                break;
+            }
+        }
+    }
+
+    return equilibrium_step;
+}
+
 void MezeiUSGCMCSimulation::update_grids(int n) {
     // Update tracking stuff
     m_s_n.push_back(m_s_i);

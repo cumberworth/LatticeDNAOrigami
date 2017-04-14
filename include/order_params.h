@@ -313,6 +313,7 @@ namespace OrderParams {
             GridBiasFunction* get_grid_bias();
 
             void add_square_well_bias(
+                    OrderParam* op,
                     int well_min,
                     int well_max,
                     double well_bias,

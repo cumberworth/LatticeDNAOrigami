@@ -78,7 +78,7 @@ namespace US {
             void update_internal(long int step);
             void estimate_current_weights();
             virtual void update_grids(int n) = 0;
-            bool iteration_equilibrium_step();
+            virtual bool iteration_equilibrium_step() = 0;
             void fill_grid_sets();
             virtual void update_bias(int n) = 0;
             virtual void output_summary(int n) = 0;
@@ -94,6 +94,7 @@ namespace US {
             ~SimpleUSGCMCSimulation() {}
             
         private:
+            bool iteration_equilibrium_step();
             void update_bias(int);
             void update_grids(int);
             void output_summary(int n);
@@ -120,6 +121,7 @@ namespace US {
             long int m_equil_steps;
             long int m_steps;
             long int m_prod_steps;
+            SystemOrderParams* m_system_order_params;
             SystemBiases* m_system_biases;
 
             ofstream* m_us_stream;

@@ -240,7 +240,7 @@ OrigamiOrderParamsOutputFile::OrigamiOrderParamsOutputFile(string filename,
 void OrigamiOrderParamsOutputFile::write(long int step) {
     m_file << step;
     for (auto order_param: m_order_params) {
-        m_file << " " << order_param->get_param();
+        m_file << " " << order_param->calc_param();
     }
     m_file << "\n";
 }
