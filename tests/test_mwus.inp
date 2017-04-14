@@ -1,0 +1,54 @@
+# System input and parameters
+#origami_input_filename=data/snodin_unbound.json
+origami_input_filename=data/four2_domain_loop.json
+temp=345
+staple_M=1e-6
+cation_M=1
+temp_for_staple_u=345
+staple_u_mult=1
+lattice_site_volume=4e-28
+#energy_filebase=data/snodin
+energy_filebase=data/four
+#restart_traj_filebase=outs/test_mwus_345
+#restart_step=9
+
+# Order parameters
+distance_pairs=0 3
+#distance_pairs=4 7 10 13 16 19
+distance_sum=true
+
+# System biases
+well_bias=0
+outside_bias=99
+
+# General simulation parameters
+simulation_type=mw_umbrella_sampling
+steps=1000000
+logging_freq=100000
+centering_freq=100000
+orientation_rotation=1/100
+met_staple_exchange=97/100
+cb_staple_regrowth=1/100
+ctcb_scaffold_regrowth=1/100
+#num_walks_filename=data/num_walks.arch
+exchange_mult=1000
+max_total_staples=4
+max_type_staples=2
+
+# Umbrella sampling options
+order_params=filler
+max_num_iters=20
+max_D_bias=1
+equil_steps=10000000
+prod_steps=0
+max_rel_P_diff=0.1
+#biases_filebase=outs/test_mwus_345
+multi_window=true
+windows_file=data/test_mwus.windows
+
+# Output options
+output_filebase=outs/test_mwus_345
+configs_output_freq=100000
+counts_output_freq=100000
+order_params_output_freq=100000
+energies_output_freq=100000
