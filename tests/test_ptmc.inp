@@ -6,8 +6,8 @@ cation_M=1
 temp_for_staple_u=330
 lattice_site_volume=4e-28
 energy_filebase=data/four
-restart_traj_filebase=outs/test_ptmc
-restart_step=9
+#restart_traj_filebase=outs/test_ptmc
+#restart_step=9
 
 # Order parameters
 distance_pairs=0 3
@@ -39,7 +39,7 @@ exchange_interval=1
 constant_staple_M=true
 chem_pot_mults=1 1
 bias_mults=0 0
-restart_swap_file=outs/test_ptmc.swp
+#restart_swap_file=outs/test_ptmc.swp
 
 # Output options
 output_filebase=outs/test_ptmc_1

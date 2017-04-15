@@ -48,7 +48,7 @@ namespace Movetypes {
 
             virtual string m_label() {return "MCMovetype";};
 
-//        protected:
+        protected:
             OrigamiSystem& m_origami_system;
             RandomGens& m_random_gens;
             IdealRandomWalks& m_ideal_random_walks;

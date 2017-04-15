@@ -296,7 +296,7 @@ int NumBoundDomainPairsOrderParam::check_delete_chain(int) {
     // Actually just want it to be defined now, only ever delete one chain at
     // a time and never unassign any other domains
     m_defined = true;
-    m_checked_param = m_origami.num_bound_domain_pairs();
+    m_checked_param = m_origami.num_fully_bound_domain_pairs();
 
     return m_checked_param;
 }
@@ -708,10 +708,13 @@ SystemBiases::SystemBiases(OrigamiSystem& origami,
     }
     //OrderParam* op {&m_system_order_params.get_num_staples()};
     OrderParam* op {&m_system_order_params.get_num_bound_domains()};
-    if (params.m_square_well_bias) {
-       add_square_well_bias(op, params.m_min_well_param, params.m_max_well_param,
-             params.m_well_bias, params.m_outside_bias);
-    }
+    //if (params.m_square_well_bias) {
+       //add_square_well_bias(op, params.m_min_well_param, params.m_max_well_param,
+       //      params.m_well_bias, params.m_outside_bias);
+       add_square_well_bias(op, 2, 4, 0, 99);
+    op = &m_system_order_params.get_num_staples();
+       add_square_well_bias(op, 2, 3, 0, 99);
+    //}
     m_bias_fs.push_back(&m_grid_bias_f);
 
     // Update total bias
