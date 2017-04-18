@@ -471,7 +471,8 @@ MWUSGCMCSimulation::MWUSGCMCSimulation(OrigamiSystem& origami,
     }
     if (params.m_restart_traj_filebase != "") {
         params.m_restart_traj_filebase += window_postfix;
-        params.m_restart_traj_file = params.m_restart_traj_filebase + ".trj";
+        params.m_restart_traj_file = params.m_restart_traj_filebase +
+                m_params.m_restart_traj_postfix;
     }
     if (not params.m_restart_traj_files.empty()) {
         params.m_restart_traj_file = params.m_restart_traj_files[m_rank];

@@ -145,7 +145,7 @@ vector<Chain> OrigamiTrajInputFile::read_config(int step) {
 }
 
 void OrigamiTrajInputFile::go_to_step(unsigned int step){
-    // Assumes 5 lines per step, returns line after step number
+    // Returns line after step number
     // Really ugly fragile method for doing this
     m_file.seekg(std::ios::beg);
     for(unsigned int i=0; i != step; ++i){
