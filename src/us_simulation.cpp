@@ -140,7 +140,11 @@ void USGCMCSimulation::clear_grids() {
 }
 
 bool USGCMCSimulation::weights_converged() {
-    bool converged {true};
+
+    // For now not using this
+    return false;
+
+    /*bool converged {true};
     if (m_old_lP_n.size() != m_S_n.size()) {
         converged = false;
         return converged;
@@ -165,6 +169,7 @@ bool USGCMCSimulation::weights_converged() {
     }
 
     return converged;
+    */
 }
 
 void USGCMCSimulation::run_production(int n) {

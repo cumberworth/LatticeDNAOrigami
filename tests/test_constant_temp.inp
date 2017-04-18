@@ -8,7 +8,7 @@ staple_u_mult=1
 lattice_site_volume=4e-28
 energy_filebase=data/four
 restart_traj_file=outs/test_constant_temp.trj
-restart_step=9
+restart_step=0
 
 # Order parameters
 distance_pairs=0 3
