@@ -49,6 +49,7 @@ namespace Parser {
             string m_restart_traj_file {""};
             vector<string> m_restart_traj_files {};
             string m_restart_traj_filebase {""};
+            string m_restart_traj_postfix {".trj"};
             int m_restart_step;
             vector<int> m_restart_steps;
 

@@ -125,6 +125,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("energy_filebase", po::value<string>(), "Filebase for read/write of energies")
         ("restart_traj_file", po::value<string>(), "Trajectory file to restart from")
         ("restart_traj_filebase", po::value<string>(), "Trajectory restart filebase")
+        ("restart_traj_postfix", po::value<string>(), "Trajectory restart postfix")
         ("restart_traj_files", po::value<string>(), "Trajectory restart files for each replicate")
         ("restart_step", po::value<int>(), "Step to restart from")
         ("restart_steps", po::value<string>(), "Restart step for each replicate")
@@ -240,6 +241,9 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     }
     if (vm.count("restart_traj_filebase")) {
         m_restart_traj_filebase = vm["restart_traj_filebase"].as<string>();
+    }
+    if (vm.count("restart_traj_postfix")) {
+        m_restart_traj_postfix = vm["restart_traj_postfix"].as<string>();
     }
     if (vm.count("restart_step")) {
         m_restart_step = vm["restart_step"].as<int>();

@@ -20,7 +20,7 @@ PTGCMCSimulation::PTGCMCSimulation(OrigamiSystem& origami_system,
     // Update starting configs if restarting
     if (m_params.m_restart_traj_filebase != "") {
         string filename {params.m_restart_traj_filebase + "-" + string_rank +
-                ".trj"};
+                params.m_restart_traj_postfix};
         OrigamiTrajInputFile traj_inp {filename};
         Chains restart_config {traj_inp.read_config(params.m_restart_step)};
         m_origami_system.set_config(restart_config);
