@@ -84,7 +84,6 @@ void USGCMCSimulation::run() {
             break;
         }
     }
-    output_weights();
     run_production(n);
 }
 
@@ -128,6 +127,7 @@ void USGCMCSimulation::run_iteration(int n) {
             delete m_logging_stream;
         }
     }
+    output_weights();
 }
 
 void USGCMCSimulation::clear_grids() {
@@ -530,7 +530,6 @@ void MWUSGCMCSimulation::run() {
         }
     }
 
-    m_us_sim->output_weights();
     n_sims++;
     m_us_sim->run_production(n_sims);
 }
