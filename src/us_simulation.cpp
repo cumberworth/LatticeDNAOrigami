@@ -134,6 +134,7 @@ void USGCMCSimulation::clear_grids() {
     m_points.clear();
     m_s_i.clear();
     m_f_i.clear();
+    m_w_i.clear();
     m_new_points.clear();
     m_old_points.clear();
     m_old_only_points.clear();
@@ -181,6 +182,7 @@ void USGCMCSimulation::run_production(int n) {
     m_output_files = setup_output_files(m_params, output_filebase, m_origami_system);
     m_logging_stream = new ofstream {output_filebase + ".out"};
 
+    clear_grids();
     simulate(m_prod_steps);
     fill_grid_sets();
     m_S_n.insert(m_s_i.begin(), m_s_i.end());
