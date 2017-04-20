@@ -2,10 +2,10 @@
 CC = mpicxx
 
 # Without ceres
-CPPFLAGS = -Iinclude -g
-LDFLAGS = -lboost_program_options -lboost_mpi -lboost_serialization -g
-#CPPFLAGS = -Iinclude -O3
-#LDFLAGS = -lboost_program_options -lboost_mpi -lboost_serialization -O3
+#CPPFLAGS = -Iinclude -g
+#LDFLAGS = -lboost_program_options -lboost_mpi -lboost_serialization -g
+CPPFLAGS = -Iinclude -O3
+LDFLAGS = -lboost_program_options -lboost_mpi -lboost_serialization -O3
 
 # With ceres
 #CPPFLAGS = -Iinclude -I/usr/include/eigen3 -g

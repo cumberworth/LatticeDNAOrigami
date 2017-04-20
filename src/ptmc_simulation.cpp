@@ -150,6 +150,7 @@ void PTGCMCSimulation::run() {
 
         // Run the simulation
         simulate(m_exchange_interval, step);
+        update_dependent_qs();
         step += m_exchange_interval;
 
         // Send information from slave nodes to master nodes
