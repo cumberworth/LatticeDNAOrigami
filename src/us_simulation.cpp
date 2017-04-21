@@ -62,7 +62,10 @@ USGCMCSimulation::USGCMCSimulation(
 
     // Read in weights if specified
     if (params.m_biases_file != "") {
-        read_weights(params.m_biases_file);
+        ifstream bias_file {params.m_biases_file};
+        if (bias_file.good()) {
+            read_weights(params.m_biases_file);
+        }
     }
 
     // Update starting configs if restarting
