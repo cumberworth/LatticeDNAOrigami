@@ -25,7 +25,8 @@ namespace Enumerator {
         public:
             ConformationalEnumerator(
                     OrigamiSystem& origami_system);
-            void enumerate();
+            virtual ~ConformationalEnumerator() {};
+            virtual void enumerate();
             void add_staple(int staple);
             void remove_staple(int staple);
             vector<Domain*> add_growthpoint(
@@ -47,15 +48,16 @@ namespace Enumerator {
             unordered_map<vector<int>, double> m_state_weights {};
             unordered_map<vector<int>, double> m_normalized_weights {};
 
-        private:
+        protected:
+            virtual void unassign_domains(vector<vector<Domain*>> all_chains);
             void enumerate_domain(Domain* domain, VectorThree p_prev);
             void set_growthpoint_domains(Domain* domain, VectorThree p_new);
             void set_comp_growthpoint_domains(Domain* domain, Domain* bound_domain, VectorThree p_new);
             void set_mis_growthpoint_domains(Domain* domain, Domain* bound_domain, VectorThree p_new);
             void set_bound_domain(Domain* domain, VectorThree p_new);
-            void set_unbound_domain(Domain* domain, VectorThree p_new);
-            void grow_next_domain(Domain* domain, VectorThree p_new);
-            void create_domains_stack();
+            virtual void set_unbound_domain(Domain* domain, VectorThree p_new);
+            virtual void grow_next_domain(Domain* domain, VectorThree p_new);
+            virtual void create_domains_stack();
             void create_staple_stack(Domain* domain);
             double calc_multiplier(Domain* domain, Domain* other_domain);
             int count_involved_staples(Domain* domain);
@@ -89,20 +91,44 @@ namespace Enumerator {
             unordered_map<int, int> m_identities_to_num_unassigned {};
     };
   
-    class GrowthpointEnumerator {
+    class StapleConformationalEnumerator: public ConformationalEnumerator  {
         public:
-            GrowthpointEnumerator(
-                    ConformationalEnumerator& conformational_enumerator,
-                    OrigamiSystem& origami_system);
+            using ConformationalEnumerator::ConformationalEnumerator;
             void enumerate();
 
         private:
+            void unassign_domains(vector<vector<Domain*>>);
+            void grow_next_domain(Domain* domain, VectorThree p_new);
+            void create_domains_stack();
+            void set_unbound_domain(Domain* domain, VectorThree p_new);
+
+            unordered_map<Domain*, Domain*> m_inverse_growthpoints {};
+    };
+
+    class GrowthpointEnumerator {
+        public:
+            virtual ~GrowthpointEnumerator() {}
+            virtual void enumerate() = 0;
+
+        protected:
+    };
+
+    class MisbindingGrowthpointEnumerator: public GrowthpointEnumerator {
+        public:
+            MisbindingGrowthpointEnumerator(
+                    ConformationalEnumerator& conformational_enumerator,
+                    OrigamiSystem& origami_system);
+            ~MisbindingGrowthpointEnumerator() {}
+            void enumerate();
+
+        private:
+            bool growthpoints_repeated();
+            void enumerate_internal();
             void recurse_or_enumerate_conf(
                     int staple_ident,
                     int d_i,
                     size_t staple_length,
                     Domain* old_domain);
-            bool growthpoints_repeated();
 
             ConformationalEnumerator& m_conformational_enumerator;
   
@@ -116,6 +142,63 @@ namespace Enumerator {
             // Set of all previously enumerated set of growthpoints
             vector<vector<pair<pair<int, int>, pair<int, int>>>> m_enumerated_growthpoints {};
     };
+
+    class NoMisbindingGrowthpointEnumerator: public GrowthpointEnumerator {
+        public:
+            NoMisbindingGrowthpointEnumerator(
+                    ConformationalEnumerator& conformational_enumerator,
+                    OrigamiSystem& origami_system);
+            ~NoMisbindingGrowthpointEnumerator() {}
+            void enumerate();
+
+        private:
+            bool growthpoints_repeated();
+            void enumerate_internal();
+            void recurse_or_enumerate_conf(
+                    int staple_ident,
+                    int d_i,
+                    size_t staple_length,
+                    Domain* old_domain);
+
+            ConformationalEnumerator& m_conformational_enumerator;
+  
+            vector<pair<int, int>> m_staples {}; // identity, number copies
+            vector<vector<Domain*>> m_unbound_system_domains {}; // keep track of available domains
+            OrigamiSystem& m_origami_system;
+
+            // Current set of growthpoints (each growthpoint is a chain id and a domain index)
+            vector<pair<pair<int, int>, pair<int, int>>> m_growthpoints {};
+
+            // Set of all previously enumerated set of growthpoints
+            vector<vector<pair<pair<int, int>, pair<int, int>>>> m_enumerated_growthpoints {};
+    };
+
+    class StapleEnumerator {
+        public:
+            StapleEnumerator(
+                    GrowthpointEnumerator& m_growthpoint_enumerator,
+                    ConformationalEnumerator& conformational_enumerator,
+                    OrigamiSystem& origami_system);
+            void enumerate(int max_total_staples, int max_type_staples);
+
+        private:
+            GrowthpointEnumerator& m_growthpoint_enumerator;
+            ConformationalEnumerator& m_conf_enumerator;
+            OrigamiSystem& m_origami_system;
+
+            int m_num_staple_types;
+
+            int m_num_staple_combos {0};
+            int m_cur_max_total_staples;
+            int m_max_type_staples;
+
+            void recurse(
+                    int cur_num_staples,
+                    int staple_type_i,
+                    int cur_num_staples_i);
+
+    };
+
   
     ConformationalEnumerator enumerate_two_domain_scaffold(OrigamiSystem& origami);
     ConformationalEnumerator enumerate_four_domain_scaffold(OrigamiSystem& origami);

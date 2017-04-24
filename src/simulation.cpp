@@ -99,9 +99,9 @@ GCMCSimulation::~GCMCSimulation() {
     close_output_files();
 }
 
-void GCMCSimulation::simulate(long int steps, int start_step) {
+void GCMCSimulation::simulate(long long int steps, int start_step) {
 
-    for (long int step {start_step + 1}; step != (steps + start_step + 1); step ++) {
+    for (long long int step {start_step + 1}; step != (steps + start_step + 1); step ++) {
         
         // Pick movetype and apply
         unique_ptr<MCMovetype> movetype {select_movetype()};
@@ -147,7 +147,7 @@ unique_ptr<MCMovetype> GCMCSimulation::select_movetype() {
     return movetype;
 }
 
-void GCMCSimulation::write_log_entry(long int step, MCMovetype& movetype,
+void GCMCSimulation::write_log_entry(long long int step, MCMovetype& movetype,
         bool accepted) {
 
     *m_logging_stream << "Step: " << step << " ";

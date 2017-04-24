@@ -23,7 +23,7 @@ AnnealingGCMCSimulation::AnnealingGCMCSimulation(OrigamiSystem& origami_system,
 
 void AnnealingGCMCSimulation::run() {
     double temp {m_max_temp};
-    int step {0};
+    long long int step {0};
     while (temp >= m_min_temp) {
         m_origami_system.update_temp(temp);
         simulate(m_steps_per_temp, step);

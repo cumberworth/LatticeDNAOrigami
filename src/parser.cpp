@@ -122,6 +122,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("staple_u_mult", po::value<double>(), "Multiplier for staple u")
         ("lattice_site_volume", po::value<double>(), "Volume per lattice site (L)")
         ("cyclic", po::value<bool>(), "Cyclic scaffold")
+        ("no_misbinding", po::value<bool>(), "Turn off misbinding")
         ("energy_filebase", po::value<string>(), "Filebase for read/write of energies")
         ("restart_traj_file", po::value<string>(), "Trajectory file to restart from")
         ("restart_traj_filebase", po::value<string>(), "Trajectory restart filebase")
@@ -149,7 +150,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
 
         // General simulation parameters
         ("simulation_type", po::value<string>(), "constant_temp, annealing, or parallel_tempering")
-        ("steps", po::value<long int>(), "Number of MC steps")
+        ("steps", po::value<long long int>(), "Number of MC steps")
         ("logging_freq", po::value<int>(), "Logging frequency")
         ("centering_freq", po::value<int>(), "Centering frequency")
         ("orientation_rotation", po::value<string>(), "Orientational rotation movetype probability")
@@ -163,16 +164,19 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("max_total_staples", po::value<int>(), "Max number of total staples")
         ("max_type_staples", po::value<int>(), "Max number of staples of a given type")
 
+        // Enumerator parameters
+        ("enumerate_staples_only", po::value<bool>(), "Enumerate staples only")
+
         // Annealing simulation parameters
         ("max_temp", po::value<double>(), "Maximum temperature for annealing")
         ("min_temp", po::value<double>(), "Minimum temperature for annealing")
         ("temp_interval", po::value<double>(), "Temperature interval for annealing")
-        ("steps_per_temp", po::value<int>(), "Steps per temperature in annealing")
+        ("steps_per_temp", po::value<long long int>(), "Steps per temperature in annealing")
 
         // Parallel tempering options 
         ("temps", po::value<string>(), "Temperature list")
         ("num_reps", po::value<int>(), "Number of replicas")
-        ("exchange_interval", po::value<int>(), "Steps between exchange attempts")
+        ("exchange_interval", po::value<long long int>(), "Steps between exchange attempts")
         ("constant_staple_M", po::value<bool>(), "Hold staple concentration constant")
         ("chem_pot_mults", po::value<string>(), "Factor to multiply base chem pot for each rep")
         ("bias_mults", po::value<string>(), "Multiplier for system bias")
@@ -182,8 +186,8 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("order_params", po::value<string>(), "List of order parameters to apply to")
         ("max_num_iters", po::value<int>(), "Number of iterations")
         ("max_D_bias", po::value<double>(), "Max change in bias per iteration")
-        ("equil_steps", po::value<long int>(), "Number of equilibration steps")
-        ("prod_steps", po::value<long int>(), "Number of production steps")
+        ("equil_steps", po::value<long long int>(), "Number of equilibration steps")
+        ("prod_steps", po::value<long long int>(), "Number of production steps")
         ("max_rel_P_diff", po::value<double>(), "Maximum allowed change in P for convergence")
         ("biases_file", po::value<string>(), "Initial guesses at grid biases")
         ("biases_filebase", po::value<string>(), "Filebase for grid bias files")
@@ -228,6 +232,9 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     }
     if (vm.count("cyclic")) {
         m_cyclic = vm["cyclic"].as<bool>();
+    }
+    if (vm.count("no_misbinding")) {
+        m_no_misbinding = vm["no_misbinding"].as<bool>();
     }
     if (vm.count("energy_filebase")) {
         m_energy_filebase = vm["energy_filebase"].as<string>();
@@ -307,7 +314,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         set_default_sim_options();
     }
     if (vm.count("steps")) {
-        m_steps = vm["steps"].as<long int>();
+        m_steps = vm["steps"].as<long long int>();
     }
     if (vm.count("logging_freq")) {
         m_logging_freq = vm["logging_freq"].as<int>();
@@ -359,6 +366,11 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         m_max_type_staples = vm["max_type_staples"].as<int>();
     }
 
+    // Enumerator parameters
+    if (vm.count("enumerate_staples_only")) {
+        m_enumerate_staples_only = vm["enumerate_staples_only"].as<bool>();
+    }
+
     // Annealing simulation parameters
     if (vm.count("max_temp")) {
         m_max_temp = vm["max_temp"].as<double>();
@@ -370,7 +382,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         m_temp_interval = vm["temp_interval"].as<double>();
     }
     if (vm.count("steps_per_temp")) {
-        m_steps_per_temp = vm["steps_per_temp"].as<int>();
+        m_steps_per_temp = vm["steps_per_temp"].as<long long int>();
     }
 
     // Parallel tempering options 
@@ -411,10 +423,10 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         m_max_D_bias = vm["max_D_bias"].as<double>();
     }
     if (vm.count("equil_steps")){
-        m_equil_steps = vm["equil_steps"].as<long int>();
+        m_equil_steps = vm["equil_steps"].as<long long int>();
     }
     if (vm.count("prod_steps")){
-        m_prod_steps = vm["prod_steps"].as<long int>();
+        m_prod_steps = vm["prod_steps"].as<long long int>();
     }
     if (vm.count("max_rel_P_diff")){
         m_max_rel_P_diff = vm["max_rel_P_diff"].as<double>();

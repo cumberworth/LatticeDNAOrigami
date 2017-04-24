@@ -16,7 +16,7 @@ namespace ConstantTemp {
                     InputParameters& params);
             void run() {simulate(m_steps);}
         private:
-            void update_internal(long int) {};
+            void update_internal(long long int) {};
             long int m_steps;
     };
 }

@@ -267,7 +267,7 @@ int USGCMCSimulation::get_grid_dim() {
     return m_grid_params.size();
 }
 
-void USGCMCSimulation::update_internal(long int step) {
+void USGCMCSimulation::update_internal(long long int step) {
     GridPoint point {};
     for (auto grid_param: m_grid_params) {
         point.push_back(grid_param->get_param());

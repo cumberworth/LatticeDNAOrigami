@@ -45,6 +45,7 @@ namespace Parser {
             double m_staple_u_mult {1};
             double m_lattice_site_volume {1}; // L
             bool m_cyclic {false};
+            bool m_no_misbinding {false};
             string m_energy_filebase {""};
             string m_restart_traj_file {""};
             vector<string> m_restart_traj_files {};
@@ -73,7 +74,7 @@ namespace Parser {
 
             // General simulation parameters
             string m_simulation_type {"constant_temp"};
-            long int m_steps {0};
+            long long int m_steps {0};
             int m_logging_freq {0};
             int m_centering_freq {0};
             vector<int> m_movetypes {};
@@ -82,6 +83,9 @@ namespace Parser {
             int m_exchange_mult {1};
             int m_max_total_staples {999};
             int m_max_type_staples {999};
+
+            // Enumerator parameters
+            bool m_enumerate_staples_only {false};
 
             // Annealing simulation parameters
             double m_max_temp {};
@@ -102,8 +106,8 @@ namespace Parser {
             vector<string> m_order_params {};
             int m_max_num_iters {0};
             double m_max_D_bias {0};
-            long int m_equil_steps {0};
-            long int m_prod_steps {0};
+            long long int m_equil_steps {0};
+            long long int m_prod_steps {0};
             double m_max_rel_P_diff {0.1};
             string m_biases_file {};
             string m_biases_filebase {};

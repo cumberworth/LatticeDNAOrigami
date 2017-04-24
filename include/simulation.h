@@ -64,13 +64,13 @@ namespace Simulation {
             IdealRandomWalks m_ideal_random_walks {};
 
             // Shared interface
-            virtual void update_internal(long int step) = 0;
+            virtual void update_internal(long long int step) = 0;
 
             // Shared methods
-            void simulate(long int steps, int start_step=0);
+            void simulate(long long int steps, int start_step=0);
             unique_ptr<MCMovetype> select_movetype();
             void write_log_entry(
-                    long int step,
+                    long long int step,
                     MCMovetype& movetype,
                     bool accepted);
             void close_output_files();

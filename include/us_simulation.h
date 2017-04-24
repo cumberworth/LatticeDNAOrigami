@@ -46,9 +46,9 @@ namespace US {
         protected:
             InputParameters& m_params;
             long int m_max_num_iters;
-            long int m_equil_steps;
-            long int m_steps;
-            long int m_prod_steps;
+            long long int m_equil_steps;
+            long long int m_steps;
+            long long int m_prod_steps;
             double m_max_rel_P_diff;
             SystemOrderParams* m_system_order_params;
             vector<OrderParam*> m_grid_params {};
@@ -75,7 +75,7 @@ namespace US {
             vector<GridPoint> m_points; // timeseries of grid points visited
 
             void clear_grids();
-            void update_internal(long int step);
+            void update_internal(long long int step);
             void estimate_current_weights();
             virtual void update_grids(int n) = 0;
             virtual bool iteration_equilibrium_step() = 0;
@@ -144,7 +144,7 @@ namespace US {
             vector<string> m_starting_files {};
             vector<int> m_starting_steps {};
 
-            void update_internal(long int) {}
+            void update_internal(long long int) {}
             void parse_windows_file(string filename);
             void update_master_order_params(int n);
             void update_master_converged_sims(bool sim_converged, int n);

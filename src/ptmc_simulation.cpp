@@ -138,7 +138,7 @@ void PTGCMCSimulation::initialize_control_qs(InputParameters& params) {
 
 void PTGCMCSimulation::run() {
     // Run temperature/chemical potential parallel tempering grand cannonical monte carlo
-    int step {0};
+    long long int step {0};
 
     // Keep track of number of attempted and succesful swaps
     vector<int> attempt_count(m_num_reps - 1, 0);

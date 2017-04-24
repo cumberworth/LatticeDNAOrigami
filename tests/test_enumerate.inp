@@ -1,11 +1,13 @@
 # System input and parameters
-origami_input_filename=data/four2_domain_loop.json
-temp=370
+#origami_input_filename=data/four2_domain_loop.json
+origami_input_filename=data/snodin_unbound.json
+temp=330
 staple_M=1e-6
 cation_M=1
 temp_for_staple_u=330
 staple_u_mult=1
 lattice_site_volume=4e-28
+no_misbinding=true
 
 # Order parameters
 distance_pairs=0 3
@@ -18,6 +20,9 @@ max_bias=-100
 bias_mult=1
 
 # Enumeration parameters
+enumerate_staples_only=true
+max_total_staples=4
+max_type_staples=2
 simulation_type=enumerate
 
 # Output options

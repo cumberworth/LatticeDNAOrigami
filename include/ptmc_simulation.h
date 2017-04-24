@@ -88,7 +88,7 @@ namespace PTMC {
                     vector<int> attempt_count,
                     vector<int> swap_count);
 
-            void update_internal(long int step) {};
+            void update_internal(long long int step) {};
     };
 
     class TPTGCMCSimulation: public PTGCMCSimulation {
