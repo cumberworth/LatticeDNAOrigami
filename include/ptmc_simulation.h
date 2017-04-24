@@ -30,7 +30,7 @@ namespace PTMC {
             int m_master_rep {0};
             int m_swaps;
             int m_num_reps;
-            int m_exchange_interval;
+            long long int m_exchange_interval;
 
             ofstream m_swapfile; // Only used by master
 
@@ -88,7 +88,7 @@ namespace PTMC {
                     vector<int> attempt_count,
                     vector<int> swap_count);
 
-            void update_internal(long long int step) {};
+            void update_internal(long long int) {};
     };
 
     class TPTGCMCSimulation: public PTGCMCSimulation {

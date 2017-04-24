@@ -394,7 +394,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         m_num_reps = vm["num_reps"].as<int>();
     }
     if (vm.count("exchange_interval")) {
-        m_exchange_interval = vm["exchange_interval"].as<int>();
+        m_exchange_interval = vm["exchange_interval"].as<long long int>();
     }
     if (vm.count("constant_staple_M")) {
         m_constant_staple_M = vm["constant_staple_M"].as<bool>();
