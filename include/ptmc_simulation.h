@@ -49,7 +49,8 @@ namespace PTMC {
             // Indices into control quantities vector for type
             int m_temp_i {0};
             int m_staple_u_i {1};
-            int m_bias_mult_i {2};
+            int m_volume_i {2};
+            int m_bias_mult_i {3};
 
             // Indices into dependent quantities vector for type
             int m_enthalpy_i {0};

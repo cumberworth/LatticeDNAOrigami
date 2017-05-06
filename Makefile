@@ -2,10 +2,10 @@
 CC = mpicxx
 
 # Without ceres
-CPPFLAGS = -Iinclude -g
-LDFLAGS = -lboost_program_options -lboost_mpi -lboost_serialization -g
-#CPPFLAGS = -Iinclude -O3
-#LDFLAGS = -lboost_program_options -lboost_mpi -lboost_serialization -O3
+#CPPFLAGS = -Iinclude -g
+#LDFLAGS = -lboost_program_options -lboost_mpi -lboost_serialization -g
+CPPFLAGS = -Iinclude -O3
+LDFLAGS = -lboost_program_options -lboost_mpi -lboost_serialization -O3
 
 # With ceres
 #CPPFLAGS = -Iinclude -I/usr/include/eigen3 -g
@@ -22,7 +22,7 @@ TARGET = bin/latticeDNAOrigami
 
 all: $(TARGET)
 
-$(TARGET): $(BUILD)main.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o $(BUILD)domain.o $(BUILD)simulation.o $(BUILD)movetypes.o $(BUILD)random_gens.o $(BUILD)ideal_random_walk.o $(BUILD)parser.o $(BUILD)order_params.o $(BUILD)enumerate.o $(BUILD)constant_temp_simulation.o $(BUILD)annealing_simulation.o $(BUILD)ptmc_simulation.o $(BUILD)us_simulation.o # $(BUILD)mezei_us_simulation.o
+$(TARGET): $(BUILD)main.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o $(BUILD)domain.o $(BUILD)simulation.o $(BUILD)movetypes.o $(BUILD)random_gens.o $(BUILD)ideal_random_walk.o $(BUILD)parser.o $(BUILD)order_params.o $(BUILD)enumerate.o $(BUILD)constant_temp_simulation.o $(BUILD)annealing_simulation.o $(BUILD)ptmc_simulation.o $(BUILD)us_simulation.o $(BUILD)stoichastic_weights_simulation.o $(BUILD)cd_scaffold_regrowth.o # $(BUILD)mezei_us_simulation.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(TESTTARGET): $(BUILD)test.o $(BUILD)origami_system.o $(BUILD)utility.o $(BUILD)nearest_neighbour.o $(BUILD)files.o $(BUILD)json.o $(BUILD)domain.o $(BUILD)simulation.o $(BUILD)movetypes.o $(BUILD)random_gens.o $(BUILD)ideal_random_walk.o $(BUILD)parser.o $(BUID)order_params.o
@@ -81,6 +81,12 @@ $(BUILD)ptmc_simulation.o: ptmc_simulation.cpp ptmc_simulation.h
 	$(CC) -o $@ -c $(CPPFLAGS) $<
 
 $(BUILD)us_simulation.o: us_simulation.cpp us_simulation.h
+	$(CC) -o $@ -c $(CPPFLAGS) $<
+
+$(BUILD)stoichastic_weights_simulation.o: stoichastic_weights_simulation.cpp stoichastic_weights_simulation.h
+	$(CC) -o $@ -c $(CPPFLAGS) $<
+
+$(BUILD)cd_scaffold_regrowth.o: cd_scaffold_regrowth.cpp cd_scaffold_regrowth.h
 	$(CC) -o $@ -c $(CPPFLAGS) $<
 
 $(BUILD)mezei_us_simulation.o: mezei_us_simulation.cpp mezei_us_simulation.h

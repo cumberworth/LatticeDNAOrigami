@@ -99,7 +99,7 @@ GCMCSimulation::~GCMCSimulation() {
     close_output_files();
 }
 
-void GCMCSimulation::simulate(long long int steps, int start_step) {
+void GCMCSimulation::simulate(long long int steps, long long int start_step) {
 
     for (long long int step {start_step + 1}; step != (steps + start_step + 1); step ++) {
         

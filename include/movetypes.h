@@ -24,6 +24,8 @@ using namespace RandomGen;
 using namespace IdealRandomWalk;
 using namespace OrderParams;
 
+// Forward declaration
+
 namespace Movetypes {
 
     // Movetype classes

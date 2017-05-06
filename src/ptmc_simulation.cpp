@@ -89,7 +89,8 @@ void PTGCMCSimulation::initialize_control_qs(InputParameters& params) {
         //  Temps
         m_control_qs.push_back(params.m_temps);
 
-        // Chemical potentials
+        // Chemical potentials and volumes
+        m_control_qs.push_back({});
         m_control_qs.push_back({});
         for (int i {0}; i != m_num_reps; i++) {
 
@@ -106,6 +107,9 @@ void PTGCMCSimulation::initialize_control_qs(InputParameters& params) {
                 staple_u *= m_params.m_chem_pot_mults[i];
             }
             m_control_qs[m_staple_u_i].push_back(staple_u);
+
+            double volume {chempot_to_volume(staple_u, params.m_temps[i])};
+            m_control_qs[m_volume_i].push_back(volume);
         }
 
         // Biases
@@ -308,6 +312,8 @@ double PTGCMCSimulation::calc_acceptance_p(
     double temp2 {control_q_pairs[m_temp_i].second};
     double staple_u1 {control_q_pairs[m_staple_u_i].first};
     double staple_u2 {control_q_pairs[m_staple_u_i].second};
+    double V1 {dependent_q_pairs[m_volume_i].first};
+    double V2 {dependent_q_pairs[m_volume_i].second};
 
     double enthalpy1 {dependent_q_pairs[m_enthalpy_i].first};
     double enthalpy2 {dependent_q_pairs[m_enthalpy_i].second};
@@ -322,7 +328,8 @@ double PTGCMCSimulation::calc_acceptance_p(
     double DBias {bias2*temp2 - bias1*temp1};
     double DN {N2 - N1};
     double DBU {staple_u2 / temp2 - staple_u1 / temp1};
-    double p_accept {min({1.0, exp(DB*(DH + DBias) - DBU*DN)})};
+    double Vratio {pow(V2/V1, DN)};
+    double p_accept {min({1.0, Vratio*exp(DB*(DH + DBias) - DBU*DN)})};
 
     return p_accept;
 }

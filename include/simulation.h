@@ -67,7 +67,7 @@ namespace Simulation {
             virtual void update_internal(long long int step) = 0;
 
             // Shared methods
-            void simulate(long long int steps, int start_step=0);
+            void simulate(long long int steps, long long int start_step=0);
             unique_ptr<MCMovetype> select_movetype();
             void write_log_entry(
                     long long int step,

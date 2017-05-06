@@ -10,6 +10,7 @@
 #include "annealing_simulation.h"
 #include "ptmc_simulation.h"
 #include "us_simulation.h"
+#include "stoichastic_weights_simulation.h"
 #include "order_params.h"
 #include "enumerate.h"
 
@@ -23,6 +24,7 @@ using namespace DomainContainer;
 using namespace Simulation;
 using namespace ConstantTemp;
 using namespace Annealing;
+using namespace StoichasticWeights;
 using namespace PTMC;
 using namespace US;
 using namespace Movetypes;
@@ -85,6 +87,9 @@ int main(int argc, char* argv[]) {
         }
         else if (params.m_simulation_type == "mw_umbrella_sampling") {
             sim = new MWUSGCMCSimulation {*origami, params};
+        }
+        else if (params.m_simulation_type == "stoichastic_weights") {
+            sim = new SWMCSimulation {*origami, params};
         }
         else {
             cout << "No such simulation type.\n";

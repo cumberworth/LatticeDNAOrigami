@@ -1,10 +1,10 @@
 # System input and parameters
-#origami_input_filename=data/four2_domain_loop.json
-origami_input_filename=data/snodin_unbound.json
-temp=345
+origami_input_filename=data/four2_domain_loop.json
+#origami_input_filename=data/snodin_unbound.json
+temp=330
 staple_M=1e-6
 cation_M=1
-temp_for_staple_u=345
+temp_for_staple_u=330
 staple_u_mult=1
 lattice_site_volume=4e-28
 energy_filebase=data/snodin
@@ -27,15 +27,15 @@ simulation_type=constant_temp
 steps=10000000
 logging_freq=1000000
 centering_freq=1000000
-orientation_rotation=1/100
-met_staple_exchange=97/100
-cb_staple_regrowth=1/100
-ctcb_scaffold_regrowth=1/100
+#orientation_rotation=1/100
+met_staple_exchange=1/2
+cb_staple_regrowth=1/2
+#ctcb_scaffold_regrowth=1/100
 #num_walks_filename=data/num_walks.arch
 exchange_mult=1000
 
 # Output options
 output_filebase=outs/test_constant_temp_1
-configs_output_freq=1000
-counts_output_freq=1000
-order_params_output_freq=1000
+configs_output_freq=1000000
+counts_output_freq=1000000
+order_params_output_freq=1000000
