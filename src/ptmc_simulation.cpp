@@ -312,8 +312,8 @@ double PTGCMCSimulation::calc_acceptance_p(
     double temp2 {control_q_pairs[m_temp_i].second};
     double staple_u1 {control_q_pairs[m_staple_u_i].first};
     double staple_u2 {control_q_pairs[m_staple_u_i].second};
-    double V1 {dependent_q_pairs[m_volume_i].first};
-    double V2 {dependent_q_pairs[m_volume_i].second};
+    double V1 {control_q_pairs[m_volume_i].first};
+    double V2 {control_q_pairs[m_volume_i].second};
 
     double enthalpy1 {dependent_q_pairs[m_enthalpy_i].first};
     double enthalpy2 {dependent_q_pairs[m_enthalpy_i].second};
