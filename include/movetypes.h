@@ -44,7 +44,8 @@ namespace Movetypes {
             virtual ~MCMovetype() {};
 
             virtual bool attempt_move() = 0;
-            void reset_origami();
+            virtual void reset_origami();
+            void reset_internal();
 
             virtual string m_label() {return "MCMovetype";};
 
@@ -101,38 +102,6 @@ namespace Movetypes {
             virtual void grow_chain(vector<Domain*> domains) = 0;
             pair<Domain*, Domain*> select_new_growthpoint(vector<Domain*> selected_chain);
     };
-
-    // Movetype construction
-
-    template<typename T>
-    unique_ptr<MCMovetype> movetype_constructor(
-            OrigamiSystem& origami_system,
-            RandomGens& random_gens,
-            IdealRandomWalks& ideal_random_walks,
-            InputParameters& params);
-
-    using MovetypeConstructor = unique_ptr<MCMovetype> (*)(
-            OrigamiSystem& origami_system,
-            RandomGens& random_gens,
-            IdealRandomWalks& ideal_random_walks,
-            InputParameters& params);
-
-    struct Movetype {
-        MovetypeConstructor identity {movetype_constructor<IdentityMCMovetype>};
-        MovetypeConstructor orientation_rotation {movetype_constructor<OrientationRotationMCMovetype>};
-        MovetypeConstructor met_staple_exchange {movetype_constructor<MetStapleExchangeMCMovetype>};
-        MovetypeConstructor met_staple_regrowth {movetype_constructor<MetStapleExchangeMCMovetype>};
-        MovetypeConstructor cb_staple_regrowth {movetype_constructor<CBStapleRegrowthMCMovetype>};
-        MovetypeConstructor ctcb_scaffold_regrowth {movetype_constructor<CTCBScaffoldRegrowthMCMovetype>};
-    };
-
-    const vector<MovetypeConstructor> movetype {
-        movetype_constructor<IdentityMCMovetype>,
-        movetype_constructor<OrientationRotationMCMovetype>,
-        movetype_constructor<MetStapleExchangeMCMovetype>,
-        movetype_constructor<MetStapleRegrowthMCMovetype>,
-        movetype_constructor<CBStapleRegrowthMCMovetype>,
-        movetype_constructor<CTCBScaffoldRegrowthMCMovetype>};
 }
 
 #endif // MOVETYPES_H

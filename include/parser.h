@@ -10,6 +10,16 @@ using std::string;
 using std::vector;
 
 namespace Parser {
+
+    enum class MovetypeID {
+        OrientationRotation,
+        MetStapleExchange,
+        MetStapleRegrowth,
+        CBStapleRegrowth,
+        CTCBScaffoldRegrowth
+    };
+
+    // String parsing helper functions
     vector<int> string_to_int_vector(string string_v);
     vector<double> string_to_double_vector(string string_v);
     vector<string> string_to_string_vector(string string_v);
@@ -17,6 +27,7 @@ namespace Parser {
     // These are from a stackexchange answer
     template<typename Out>
     void split(const string& s, char delim, Out result);
+
     vector<string> split(const string& s, char delim);
 
     class Fraction {
@@ -77,7 +88,7 @@ namespace Parser {
             long long int m_steps {0};
             int m_logging_freq {0};
             int m_centering_freq {0};
-            vector<int> m_movetypes {};
+            vector<MovetypeID> m_movetypes {};
             vector<double> m_movetype_probs {};
             string m_num_walks_filename {""};
             int m_exchange_mult {1};

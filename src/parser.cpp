@@ -326,31 +326,31 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         string unparsed_fraction {vm["orientation_rotation"].as<string>()};
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
-        m_movetypes.push_back(1);
+        m_movetypes.push_back(MovetypeID::OrientationRotation);
     }
     if (vm.count("met_staple_exchange")) {
         string unparsed_fraction {vm["met_staple_exchange"].as<string>()};
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
-        m_movetypes.push_back(2);
+        m_movetypes.push_back(MovetypeID::MetStapleExchange);
     }
     if (vm.count("met_staple_regrowth")) {
         string unparsed_fraction {vm["met_staple_regrowth"].as<string>()};
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
-        m_movetypes.push_back(3);
+        m_movetypes.push_back(MovetypeID::MetStapleRegrowth);
     }
     if (vm.count("cb_staple_regrowth")) {
         string unparsed_fraction {vm["cb_staple_regrowth"].as<string>()};
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
-        m_movetypes.push_back(4);
+        m_movetypes.push_back(MovetypeID::CBStapleRegrowth);
     }
     if (vm.count("ctcb_scaffold_regrowth")) {
         string unparsed_fraction {vm["ctcb_scaffold_regrowth"].as<string>()};
         Fraction prob {unparsed_fraction};
         m_movetype_probs.push_back(prob.to_double());
-        m_movetypes.push_back(5);
+        m_movetypes.push_back(MovetypeID::CTCBScaffoldRegrowth);
     }
     if (vm.count("num_walks_filename")) {
         m_num_walks_filename = vm["num_walks_filename"].as<string>();

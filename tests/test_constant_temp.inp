@@ -7,7 +7,8 @@ cation_M=1
 temp_for_staple_u=330
 staple_u_mult=1
 lattice_site_volume=4e-28
-energy_filebase=data/snodin
+#energy_filebase=data/snodin
+energy_filebase=data/four
 #restart_traj_file=outs/test_constant_temp.trj
 #restart_step=0
 
@@ -24,13 +25,13 @@ distance_sum=true
 
 # General simulation parameters
 simulation_type=constant_temp
-steps=10000000
-logging_freq=1000000
-centering_freq=1000000
-#orientation_rotation=1/100
-met_staple_exchange=1/2
-cb_staple_regrowth=1/2
-#ctcb_scaffold_regrowth=1/100
+steps=1000000
+logging_freq=100000
+centering_freq=100000
+orientation_rotation=1
+#met_staple_exchange=1/4
+#cb_staple_regrowth=1/4
+#ctcb_scaffold_regrowth=1/4
 #num_walks_filename=data/num_walks.arch
 exchange_mult=1000
 

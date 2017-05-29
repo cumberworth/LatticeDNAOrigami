@@ -171,6 +171,14 @@ bool MCMovetype::scan_for_scaffold_domain(
     return false;
 }
 
+void MCMovetype::reset_internal() {
+    m_modified_domains.clear();
+    m_assigned_domains.clear();
+    m_added_chains.clear();
+    m_prev_pos.clear();
+    m_prev_ore.clear();
+}
+
 double RegrowthMCMovetype::set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old) {
     //// Set growth point with new orientation
     //VectorThree o_new {select_random_orientation()};
@@ -232,14 +240,4 @@ pair<Domain*, Domain*> RegrowthMCMovetype::select_new_growthpoint(
         growth_domain_old = select_random_domain();
     }
     return {growth_domain_new, growth_domain_old};
-}
-
-template<typename T>
-unique_ptr<MCMovetype> Movetypes::movetype_constructor(
-        OrigamiSystem& origami_system,
-        RandomGens& random_gens,
-        IdealRandomWalks& ideal_random_walks,
-        InputParameters& params) {
-    return unique_ptr<MCMovetype> {new T {origami_system, random_gens,
-            ideal_random_walks, params}};
 }

@@ -15,6 +15,9 @@
 #include "utility.h"
 #include "random_gens.h"
 #include "movetypes.h"
+#include "orientation_movetype.h"
+#include "met_movetypes.h"
+#include "cb_movetypes.h"
 #include "simulation.h"
 #include "files.h"
 
@@ -27,6 +30,9 @@ using std::pow;
 namespace mpi = boost::mpi;
 
 using namespace Movetypes;
+using namespace OrientationMovetype;
+using namespace MetMovetypes;
+using namespace CBMovetypes;
 using namespace Simulation;
 using namespace Utility;
 using namespace RandomGen;
@@ -75,14 +81,12 @@ GCMCSimulation::GCMCSimulation(OrigamiSystem& origami_system,
     m_logging_freq = params.m_logging_freq;
     m_centering_freq = params.m_centering_freq;
 
-    // Create movetype constructors
-    for (auto movetype_i: params.m_movetypes) {
-        m_movetype_constructors.push_back(movetype[movetype_i]);
-    }
+    // Constructor movetypes
+    construct_movetypes(params);
 
     // Create cumulative probability array
     double cum_prob {0};
-    for (size_t i {0}; i != m_movetype_constructors.size(); i++) {
+    for (size_t i {0}; i != m_movetypes.size(); i++) {
         cum_prob += params.m_movetype_probs[i];
         m_cumulative_probs.push_back(cum_prob);
     }
@@ -99,6 +103,33 @@ GCMCSimulation::~GCMCSimulation() {
     close_output_files();
 }
 
+void GCMCSimulation::construct_movetypes(InputParameters& params) {
+    for (auto movetype_id: params.m_movetypes) {
+        unique_ptr<MCMovetype> movetype;
+        if (movetype_id == MovetypeID::OrientationRotation) {
+            movetype.reset(new OrientationRotationMCMovetype {
+                    m_origami_system, m_random_gens, m_ideal_random_walks, params});
+        }
+        else if (movetype_id == MovetypeID::MetStapleExchange) {
+            movetype.reset(new MetStapleExchangeMCMovetype {
+                    m_origami_system, m_random_gens, m_ideal_random_walks, params});
+        }
+        else if (movetype_id == MovetypeID::MetStapleRegrowth) {
+            movetype.reset(new MetStapleRegrowthMCMovetype {
+                    m_origami_system, m_random_gens, m_ideal_random_walks, params});
+        }
+        else if (movetype_id == MovetypeID::CBStapleRegrowth) {
+            movetype.reset(new CBStapleRegrowthMCMovetype {
+                    m_origami_system, m_random_gens, m_ideal_random_walks, params});
+        }
+        else if (movetype_id == MovetypeID::CTCBScaffoldRegrowth) {
+            movetype.reset(new CTCBScaffoldRegrowthMCMovetype {
+                    m_origami_system, m_random_gens, m_ideal_random_walks, params});
+        }
+        m_movetypes.push_back(std::move(movetype));
+    }
+}
+
 void GCMCSimulation::simulate(long long int steps, long long int start_step) {
 
     for (long long int step {start_step + 1}; step != (steps + start_step + 1); step ++) {
@@ -110,6 +141,7 @@ void GCMCSimulation::simulate(long long int steps, long long int start_step) {
         if (not accepted) {
             movetype->reset_origami();
         }
+        movetype->reset_internal();
 
         // Center and check constraints
         if (m_centering_freq != 0 and step % m_centering_freq == 0) {
@@ -139,8 +171,7 @@ unique_ptr<MCMovetype> GCMCSimulation::select_movetype() {
     double prob {m_random_gens.uniform_real()};
     for (size_t i {0}; i != m_cumulative_probs.size(); i++) {
         if (prob < m_cumulative_probs[i]) {
-            movetype = m_movetype_constructors[i](m_origami_system,
-                    m_random_gens, m_ideal_random_walks, m_params);
+            movetype.reset(m_movetypes[i].release());
             break;
         }
     }

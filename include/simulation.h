@@ -58,7 +58,7 @@ namespace Simulation {
             int m_centering_freq;
             InputParameters& m_params;
             vector <OrigamiOutputFile*> m_output_files;
-            vector<MovetypeConstructor> m_movetype_constructors;
+            vector<unique_ptr<MCMovetype>> m_movetypes;
             vector<double> m_cumulative_probs;
             RandomGens m_random_gens {};
             IdealRandomWalks m_ideal_random_walks {};
@@ -67,6 +67,7 @@ namespace Simulation {
             virtual void update_internal(long long int step) = 0;
 
             // Shared methods
+            void construct_movetypes(InputParameters& params);
             void simulate(long long int steps, long long int start_step=0);
             unique_ptr<MCMovetype> select_movetype();
             void write_log_entry(
