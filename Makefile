@@ -43,7 +43,7 @@ $(BUILDDIR)/%.o: %.cpp $(DEPDIR)/%.d
 
 .PHONY: clean install
 clean:
-	rm $(BUILD)*.o
+	rm $(BUILDDIR)/*.o
 
 install:
 	cp $(TARGET) $(PREFIX)

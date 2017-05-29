@@ -25,11 +25,11 @@ distance_sum=true
 
 # General simulation parameters
 simulation_type=constant_temp
-steps=1000000
+steps=10000000
 logging_freq=100000
 centering_freq=100000
-orientation_rotation=1
-#met_staple_exchange=1/4
+orientation_rotation=1/2
+met_staple_exchange=1/2
 #cb_staple_regrowth=1/4
 #ctcb_scaffold_regrowth=1/4
 #num_walks_filename=data/num_walks.arch
