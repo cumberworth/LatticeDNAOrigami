@@ -14,6 +14,7 @@ PTGCMCSimulation::PTGCMCSimulation(OrigamiSystem& origami_system,
         GCMCSimulation(origami_system, params),
         m_num_reps {params.m_num_reps},
         m_exchange_interval {params.m_exchange_interval} {
+    cout << "WARNING: DOES NOT APPEAR TO OBEY BALANCE";
     m_swaps = params.m_steps / m_exchange_interval;
     string string_rank {std::to_string(m_rank)};
 
