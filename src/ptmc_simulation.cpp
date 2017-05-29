@@ -330,6 +330,7 @@ double PTGCMCSimulation::calc_acceptance_p(
     double DBU {staple_u2 / temp2 - staple_u1 / temp1};
     double Vratio {pow(V2/V1, DN)};
     double p_accept {min({1.0, Vratio*exp(DB*(DH + DBias) - DBU*DN)})};
+    cout << p_accept << "\n";
 
     return p_accept;
 }
