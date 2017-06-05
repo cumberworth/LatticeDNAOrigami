@@ -39,6 +39,8 @@ namespace Movetypes {
                     m_random_gens {random_gens},
                     m_ideal_random_walks {ideal_random_walks},
                     m_params {params},
+                    //HACK
+                    m_system_bias {*origami_system.get_system_biases()},
                     m_max_total_staples {params.m_max_total_staples},
                     m_max_type_staples {params.m_max_type_staples} {}
             virtual ~MCMovetype() {};
@@ -55,6 +57,8 @@ namespace Movetypes {
             IdealRandomWalks& m_ideal_random_walks;
             InputParameters& m_params;
             bool m_rejected {false};
+            //HACK
+            SystemBiases& m_system_bias;
 
             // Staple maxes
             int m_max_total_staples;
@@ -81,6 +85,8 @@ namespace Movetypes {
             bool test_acceptance(long double p_ratio);
             bool staple_is_connector(vector<Domain*> staple);
             bool scan_for_scaffold_domain(Domain*, set<int>& participating_chains);
+
+            virtual void update_bias() = 0;
     };
 
     class IdentityMCMovetype: public MCMovetype {

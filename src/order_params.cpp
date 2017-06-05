@@ -430,6 +430,22 @@ vector<OrderParam*> SystemOrderParams::get_dependent_dists(
     return m_domain_to_order_params[key];
 }
 
+void SystemOrderParams::update_params() {
+    // HACK
+    for (auto order_param: m_order_params) {
+        order_param->calc_param();
+    }
+}
+
+void SystemOrderParams::update_params_deletion_case() {
+    // SUPER HACK
+    for (auto order_param: m_order_params) {
+        order_param->calc_param();
+    }
+    // SUPER SUPER HACK
+    m_num_staples.set_param(m_num_staples.get_param() - 1);
+}
+
 void SystemOrderParams::update_one_domain(Domain& domain) {
     // Do distance ones, then sum, and also the num bound domains and staples.
     // There will a seperate vector for each order parameter type; I just iterate
@@ -785,6 +801,19 @@ void SystemBiases::add_bias_f_dependency(Domain& domain, BiasFunction* bias_f) {
 //}
 
 double SystemBiases::calc_bias() {
+    m_system_order_params.update_params();
+    double total_bias {0};
+    for (auto bias_f: m_bias_fs) {
+        double bias {bias_f->update_bias()};
+        total_bias += bias;
+    }
+    m_total_bias = total_bias;
+
+    return total_bias * m_bias_mult;
+}
+
+double SystemBiases::calc_bias_delete_case() {
+    m_system_order_params.update_params_deletion_case();
     double total_bias {0};
     for (auto bias_f: m_bias_fs) {
         double bias {bias_f->update_bias()};

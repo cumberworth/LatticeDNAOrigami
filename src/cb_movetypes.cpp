@@ -258,6 +258,11 @@ pair<Domain*, Domain*> CBMCMovetype::select_old_growthpoint(
     return {growth_domain_new, growth_domain_old};
 }
 
+void CBMCMovetype::update_bias() {
+    double total_bias {m_system_bias.calc_bias()};
+    m_bias *= -total_bias;
+}
+
 bool CBStapleRegrowthMCMovetype::attempt_move() {
     bool accepted;
 
@@ -290,6 +295,8 @@ bool CBStapleRegrowthMCMovetype::attempt_move() {
         return accepted;
     }
 
+    //HACK
+    update_bias();
     // Regrow staple in old conformation
     setup_for_regrow_old();
 
@@ -304,6 +311,8 @@ bool CBStapleRegrowthMCMovetype::attempt_move() {
 
     // Revert modifier and test acceptance
     m_modifier = m_new_modifier;
+    //HACK
+    update_bias();
     accepted = test_cb_acceptance();
     return accepted;
 }
@@ -387,6 +396,8 @@ bool CTCBScaffoldRegrowthMCMovetype::attempt_move() {
         return accepted;
     }
 
+    //HACK
+    update_bias();
     // Regrow in old conformation
     setup_for_regrow_old();
     m_constraintpoints.reset_active_endpoints();
@@ -406,6 +417,8 @@ bool CTCBScaffoldRegrowthMCMovetype::attempt_move() {
 
     // Reset modifier and test acceptance
     m_modifier = 1;
+    //HACK
+    update_bias();
     accepted = test_cb_acceptance();
     return accepted;
 }

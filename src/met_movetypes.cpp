@@ -41,7 +41,16 @@ void MetMCMovetype::unassign_domains(vector<Domain*> domains) {
     }
 }
 
+void MetMCMovetype::update_bias() {
+    double total_bias {m_system_bias.calc_bias()};
+    m_delta_e -= total_bias;
+
+    return;
+}
+
 bool MetStapleExchangeMCMovetype::attempt_move() {
+    // HACK
+    update_bias();
 
     // Select inertion or deletion with equal frequency
     bool accept;
@@ -61,6 +70,8 @@ void MetStapleExchangeMCMovetype::reset_internal() {
 }
 
 bool MetStapleExchangeMCMovetype::staple_insertion_accepted(int c_i_ident) {
+    // HACK
+    update_bias();
     double boltz_factor {exp(-(m_delta_e))};
     int Ni_new {m_origami_system.num_staples_of_ident(c_i_ident)};
 
@@ -83,6 +94,10 @@ bool MetStapleExchangeMCMovetype::staple_insertion_accepted(int c_i_ident) {
 }
 
 bool MetStapleExchangeMCMovetype::staple_deletion_accepted(int c_i_ident) {
+    // SUPER HACK
+    double total_bias {m_system_bias.calc_bias_delete_case()};
+    m_delta_e -= total_bias;
+
     double boltz_factor {exp(-(m_delta_e))};
     int Ni {m_origami_system.num_staples_of_ident(c_i_ident)};
 
@@ -167,6 +182,8 @@ bool MetStapleExchangeMCMovetype::delete_staple() {
 }
 
 bool MetStapleRegrowthMCMovetype::attempt_move() {
+    // HACK
+    update_bias();
     bool accepted;
 
     // No staples to regrow
@@ -202,6 +219,8 @@ bool MetStapleRegrowthMCMovetype::attempt_move() {
         return accepted;
     }
 
+    // HACK
+    update_bias();
     double boltz_factor {exp(-(m_delta_e))};
     accepted = test_acceptance(boltz_factor);
     return accepted;

@@ -15,6 +15,9 @@ namespace OrientationMovetype {
             bool attempt_move();
 
             string m_label() {return "OrientationRotationMCMovetype";};
+
+            //HACK
+            void update_bias() {}
     };
 }
 

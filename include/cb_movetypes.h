@@ -48,6 +48,8 @@ namespace CBMovetypes {
                     vector<Domain*> selected_chain);
             pair<Domain*, Domain*> select_old_growthpoint(
                     vector<pair<Domain*, Domain*>> bound_domains);
+
+            void update_bias();
     };
 
     class CBStapleRegrowthMCMovetype: public CBMCMovetype {

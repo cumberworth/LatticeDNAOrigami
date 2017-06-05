@@ -111,6 +111,8 @@ namespace OrderParams {
                     Occupancy);
             int check_delete_chain(int c_i);
             int get_param();
+            //SUPER HACK
+            int set_param(int param) {m_param = param;}
             int get_checked_param();
             string get_label();
             bool dependent_on(Domain& domain);
@@ -162,6 +164,9 @@ namespace OrderParams {
             NumBoundDomainPairsOrderParam& get_num_bound_domains();
             NumStaplesOrderParam& get_num_staples();
             vector<OrderParam*> get_order_params();
+
+            void update_params();
+            void update_params_deletion_case();
             void update_one_domain(Domain& domain);
             void update_delete_chain(int c_i);
             void check_one_domain(
@@ -281,6 +286,7 @@ namespace OrderParams {
 
             // Recalculate everything
             double calc_bias();
+            double calc_bias_delete_case();
             double get_bias();
 
             // Bias can be tuned with a multiplier
