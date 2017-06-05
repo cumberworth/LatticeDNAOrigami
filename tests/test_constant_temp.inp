@@ -25,7 +25,7 @@ distance_sum=true
 
 # General simulation parameters
 simulation_type=constant_temp
-steps=4000000
+steps=5000000
 logging_freq=100000
 centering_freq=100000
 orientation_rotation=1/6

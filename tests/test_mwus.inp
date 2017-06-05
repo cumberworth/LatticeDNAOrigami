@@ -36,7 +36,7 @@ max_type_staples=2
 
 # Umbrella sampling options
 order_params=filler
-max_num_iters=1
+max_num_iters=5
 max_D_bias=1
 equil_steps=0
 iter_steps=1000000

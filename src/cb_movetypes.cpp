@@ -260,7 +260,7 @@ pair<Domain*, Domain*> CBMCMovetype::select_old_growthpoint(
 
 void CBMCMovetype::update_bias() {
     double total_bias {m_system_bias.calc_bias()};
-    m_bias *= -total_bias;
+    m_bias *= exp(-total_bias);
 }
 
 bool CBStapleRegrowthMCMovetype::attempt_move() {

@@ -180,14 +180,16 @@ NumStaplesOrderParam::NumStaplesOrderParam(OrigamiSystem& origami) :
 int NumStaplesOrderParam::calc_param() {
 
     // This is only defined for fully set configurations
-    if (m_origami.configuration_fully_set()) {
+    //HACK
+    /*if (m_origami.configuration_fully_set()) {
         m_defined = true;
         m_param = m_origami.num_staples();
         m_checked_param = m_param;
     }
     else {
         m_defined = false;
-    }
+    }*/
+    m_param = m_origami.num_staples();
 
     return m_param;
 }
@@ -257,14 +259,16 @@ NumBoundDomainPairsOrderParam::NumBoundDomainPairsOrderParam(
 int NumBoundDomainPairsOrderParam::calc_param() {
 
     // This is only defined for fully set configurations
-    if (m_origami.configuration_fully_set()) {
+    //HACK
+    /*if (m_origami.configuration_fully_set()) {
         m_param = m_origami.num_fully_bound_domain_pairs();
         m_checked_param = m_param;
         m_defined = true;
     }
     else {
         m_defined = false;
-    }
+    }*/
+    m_param = m_origami.num_fully_bound_domain_pairs();
 
     return m_param;
 }
@@ -658,11 +662,12 @@ double GridBiasFunction::update_bias() {
     vector<int> key {};
     for (auto order_param: m_order_params) {
 
+        //HACK
         // No bias if order parameters not all defined
-        if (not order_param->defined()) {
-            m_bias = 0;
-            return 0;
-        }
+        //if (not order_param->defined()) {
+        //    m_bias = 0;
+        //    return 0;
+        //}
         key.push_back(order_param->get_param());
     }
     double bias {calc_bias(key)};
