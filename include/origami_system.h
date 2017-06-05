@@ -161,7 +161,7 @@ namespace Origami {
             int m_num_unassigned_domains {0};
 
             OrderParams::SystemOrderParams* m_system_order_params;
-            OrderParams::SystemBiases* m_system_biases {nullptr};
+            OrderParams::SystemBiases* m_system_biases;
 
             // CONSIDER CONTAINING ENERGY STUFF IN ANOTHER CLASS
             // ALSO CONSIDER DEFINING TYPE FOR THESE TABLES

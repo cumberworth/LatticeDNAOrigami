@@ -64,6 +64,7 @@ OrigamiSystem::OrigamiSystem(
     get_energies();
     set_all_domains(chains);
     m_system_order_params = new SystemOrderParams {params, *this};
+    m_system_biases = new SystemBiases {*this, *m_system_order_params, params};
 }
 
 OrigamiSystem::~OrigamiSystem() {
@@ -1277,7 +1278,6 @@ OrigamiSystemWithBias::OrigamiSystemWithBias(
                 volume,
                 staple_u,
                 params) {
-    m_system_biases = new SystemBiases {*this, *m_system_order_params, params};
 }
 
 OrigamiSystemWithBias::~OrigamiSystemWithBias() {
@@ -1399,14 +1399,15 @@ OrigamiSystem* Origami::setup_origami(InputParameters& params) {
     double volume {chempot_to_volume(staple_u, params.m_temp)};
 
     OrigamiSystem* origami;
-    if (params.m_biases_present) {
-        origami = new OrigamiSystemWithBias {identities, sequences, configs,
-                volume, staple_u, params};
-    }
-    else {
+    //HACK
+    //if (params.m_biases_present) {
+    //    origami = new OrigamiSystemWithBias {identities, sequences, configs,
+    //            volume, staple_u, params};
+    //}
+    //else {
         origami = new OrigamiSystem {identities, sequences, configs,
             volume, staple_u, params};
-    }
+    //}
 
     return origami;
 }
