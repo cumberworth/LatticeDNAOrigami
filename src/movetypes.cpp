@@ -177,6 +177,8 @@ void MCMovetype::reset_internal() {
     m_added_chains.clear();
     m_prev_pos.clear();
     m_prev_ore.clear();
+    m_rejected = false;
+    m_modifier = 1;
 }
 
 double RegrowthMCMovetype::set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old) {

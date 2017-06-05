@@ -19,11 +19,6 @@ using GridOfFloatArrays = unordered_map<GridPoint, vector<double>>;
 
 namespace US {
 
-    GridPoint find_closest_point(
-            set<GridPoint> search_set,
-            GridPoint target_point,
-            int dim);
-
     class USGCMCSimulation: public GCMCSimulation {
         // Adaptive US base class. For 2D order parameters only
         public:
@@ -47,8 +42,9 @@ namespace US {
             InputParameters& m_params;
             long int m_max_num_iters;
             long long int m_equil_steps;
-            long long int m_steps;
+            long long int m_iter_steps;
             long long int m_prod_steps;
+            long long int m_steps;
             double m_max_rel_P_diff;
             SystemOrderParams* m_system_order_params;
             vector<OrderParam*> m_grid_params {};
@@ -62,13 +58,11 @@ namespace US {
             vector<GridPoint> m_old_points {};
             vector<GridPoint> m_old_only_points {};
 
-            // Variable names set to be consistent with mezei1987
             SetOfGridPoints m_S_n {}; // all grid points visited up to iteration n
             SetOfGridPoints m_s_i {}; // grid points visited at current iteration
             GridInts m_f_i {}; // number of visits at each grid point at current iteration
             GridFloats m_p_i {}; // locally normalized weight of grid point for current iteration
-            GridFloats m_lP_n {}; // locally normalized weight of grid point
-            GridFloats m_old_lP_n {}; // previous m_lP_n
+            GridFloats m_old_p_i {}; // previous m_p_i
             GridFloats m_w_i {}; // relative contribution of grid points for current iteration
             GridFloats m_E_w {}; // biases at each each iteration
 
@@ -78,15 +72,13 @@ namespace US {
             void update_internal(long long int step);
             void estimate_current_weights();
             virtual void update_grids(int n) = 0;
-            virtual bool iteration_equilibrium_step() = 0;
             void fill_grid_sets();
             virtual void update_bias(int n) = 0;
             virtual void output_summary(int n) = 0;
-            void prod_output_summary();
     };
 
     class SimpleUSGCMCSimulation: public USGCMCSimulation {
-        // Simple adaptive US
+        // A simple adaptive US. Could probably merge into above
         public:
             SimpleUSGCMCSimulation(
                     OrigamiSystem& origami,
@@ -94,12 +86,13 @@ namespace US {
             ~SimpleUSGCMCSimulation() {}
             
         private:
-            bool iteration_equilibrium_step();
             void update_bias(int);
             void update_grids(int);
             void output_summary(int n);
     };
 
+    // This doesn't really need to inherit the whole GCSimulation
+    // Consider a base interface class Simulation
     class MWUSGCMCSimulation: public GCMCSimulation {
         public:
             MWUSGCMCSimulation(
@@ -131,6 +124,7 @@ namespace US {
             int m_grid_dim {0};
             vector<GridPoint> m_window_mins {};
             vector<GridPoint> m_window_maxs {};
+            vector<unsigned int> m_num_points {}; // num grid points per window
             vector<string> m_output_filebases {};
             vector<string> m_window_postfixes {};
             string m_starting_file {};
@@ -144,12 +138,17 @@ namespace US {
             vector<string> m_starting_files {};
             vector<int> m_starting_steps {};
 
+            void setup_window_variables();
+            void setup_window_restraints();
+            void setup_window_sims(OrigamiSystem& origami);
+            void output_iter_summary(int n);
             void update_internal(long long int) {}
             void parse_windows_file(string filename);
             void update_master_order_params(int n);
             void update_master_converged_sims(bool sim_converged, int n);
             void update_starting_config(int n);
-            void select_starting_configs();
+            void select_starting_configs(int n);
+            void sort_configs_by_ops();
     };
 }
 

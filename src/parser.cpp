@@ -187,6 +187,7 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("max_num_iters", po::value<int>(), "Number of iterations")
         ("max_D_bias", po::value<double>(), "Max change in bias per iteration")
         ("equil_steps", po::value<long long int>(), "Number of equilibration steps")
+        ("iter_steps", po::value<long long int>(), "Number of steps per iteration")
         ("prod_steps", po::value<long long int>(), "Number of production steps")
         ("max_rel_P_diff", po::value<double>(), "Maximum allowed change in P for convergence")
         ("biases_file", po::value<string>(), "Initial guesses at grid biases")
@@ -424,6 +425,9 @@ InputParameters::InputParameters(int argc, char* argv[]) {
     }
     if (vm.count("equil_steps")){
         m_equil_steps = vm["equil_steps"].as<long long int>();
+    }
+    if (vm.count("iter_steps")){
+        m_iter_steps = vm["iter_steps"].as<long long int>();
     }
     if (vm.count("prod_steps")){
         m_prod_steps = vm["prod_steps"].as<long long int>();

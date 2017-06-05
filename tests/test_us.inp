@@ -1,10 +1,10 @@
 # System input and parameters
 #origami_input_filename=data/snodin_unbound.json
 origami_input_filename=data/four2_domain_loop.json
-temp=345
+temp=330
 staple_M=1e-6
 cation_M=1
-temp_for_staple_u=345
+temp_for_staple_u=330
 staple_u_mult=1
 lattice_site_volume=4e-28
 #energy_filebase=data/snodin
@@ -16,21 +16,20 @@ distance_pairs=0 3
 distance_sum=true
 
 # Bias functions
-square_well_bias=false
-min_well_param=1
+square_well_bias=true
+min_well_param=0
 max_well_param=2
 well_bias=0
 outside_bias=99
 
 # General simulation parameters
 simulation_type=umbrella_sampling
-steps=1000000
 logging_freq=100000
 centering_freq=100000
-orientation_rotation=1/100
-met_staple_exchange=97/100
-cb_staple_regrowth=1/100
-ctcb_scaffold_regrowth=1/100
+orientation_rotation=1/6
+met_staple_exchange=1/2
+cb_staple_regrowth=1/6
+ctcb_scaffold_regrowth=1/6
 #num_walks_filename=data/num_walks.arch
 exchange_mult=1000
 max_total_staples=4
@@ -38,9 +37,10 @@ max_type_staples=2
 
 # Umbrella sampling options
 order_params=filler
-max_num_iters=20
+max_num_iters=1
 max_D_bias=1
-equil_steps=1000000
+equil_steps=0
+iter_steps=1000000
 prod_steps=0
 max_rel_P_diff=0.1
 #biases_file=outs/test_us.biases

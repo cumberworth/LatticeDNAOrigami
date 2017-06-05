@@ -1,7 +1,7 @@
 # Autodependency recipe from
 # http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
 
-OPTLEVEL =-O3
+OPTLEVEL = -O3 -g
 BUILDDIR = build
 PREFIX = ../../bin/latticeDNAOrigami
 TARGET = latticeDNAOrigami
@@ -31,9 +31,9 @@ DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.Td
 COMPILE.cpp = $(CPP) $(DEPFLAGS) $(CPPFLAGS) $(TARGET_ARCH) -c
 POSTCOMPILE = @mv -f $(DEPDIR)/$*.Td $(DEPDIR)/$*.d && touch $@
 
-all: $(TARGET)
+all: $(TARGETDIR)/$(TARGET)
 
-$(TARGET): $(OBJECTS)
+$(TARGETDIR)/$(TARGET): $(OBJECTS)
 	$(CPP) $(LDFLAGS) -o $@ $^ 
 
 $(BUILDDIR)/%.o: %.cpp
@@ -41,14 +41,15 @@ $(BUILDDIR)/%.o: %.cpp $(DEPDIR)/%.d
 	$(COMPILE.cpp) $(OUTPUT_OPTION) $<
 	$(POSTCOMPILE)
 
+
+$(DEPDIR)/%.d: ;
+.PRECIOUS: $(DEPDIR)/%.d
+
+include $(wildcard $(patsubst %,$(DEPDIR)/%.d,$(basename $(sources))))
+
 .PHONY: clean install
 clean:
 	rm $(BUILDDIR)/*.o
 
 install:
 	cp $(TARGET) $(PREFIX)
-
-$(DEPDIR)/%.d: ;
-.PRECIOUS: $(DEPDIR)/%.d
-
-include $(wildcard $(patsubst %,$(DEPDIR)/%.d,$(basename $(sources))))

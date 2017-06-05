@@ -22,8 +22,6 @@ using std::unique_ptr;
 namespace Utility {
     
     // Find index for given element
-//    template<typename Element_T>
-//    int index(vector<Element_T> container, Element_T element);
     int index(vector<int> container, int element);
 
     // Exception types
@@ -31,6 +29,7 @@ namespace Utility {
     struct OrigamiMisuse {};
     struct FileMisuse {};
     struct NotImplemented {};
+    struct SimulationMisuse {};
 
     // Constrants
     const double NA {6.022140857e23};

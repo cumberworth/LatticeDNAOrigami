@@ -14,6 +14,7 @@
 #include "utility.h"
 #include "nearest_neighbour.h"
 #include "order_params.h"
+#include "files.h"
 
 using std::abs;
 using std::max_element;
@@ -23,6 +24,7 @@ using namespace NearestNeighbour;
 using namespace Utility;
 using namespace Origami;
 using namespace OrderParams;
+using namespace Files;
 
 // Public methods
 
@@ -132,6 +134,10 @@ double OrigamiSystem::bias() const {
 
 SystemOrderParams* OrigamiSystem::get_system_order_params() {
     return m_system_order_params;
+}
+
+SystemBiases* OrigamiSystem::get_system_biases() {
+    return m_system_biases;
 }
 
 vector<Domain*> OrigamiSystem::get_chain(int c_i) {
@@ -1345,10 +1351,6 @@ double OrigamiSystemWithBias::set_domain_config(Domain& cd_i, VectorThree pos,
 //    delta_e += m_system_biases->calc_one_domain(cd_i);
 //}
 
-SystemBiases* OrigamiSystemWithBias::get_system_biases() {
-    return m_system_biases;
-}
-
 double OrigamiSystemWithBias::bias() const {
     return m_system_biases->get_bias();
 }
@@ -1377,4 +1379,34 @@ double Origami::molarity_to_chempot(double molarity, double temp,
 
 double Origami::chempot_to_volume(double chempot, double temp) {
     return exp(-chempot / temp);
+}
+
+OrigamiSystem* Origami::setup_origami(InputParameters& params) {
+
+    OrigamiInputFile origami_input {params.m_origami_input_filename};
+    vector<vector<int>> identities {origami_input.get_identities()};
+    vector<vector<string>> sequences {origami_input.get_sequences()};
+    vector<Chain> configs = origami_input.get_config();
+    if (params.m_restart_traj_file != "") {
+        OrigamiTrajInputFile traj_file {params.m_restart_traj_file};
+        configs = traj_file.read_config(params.m_restart_step);
+    }
+
+    // Calculate chemical potential from specified staple concentration
+    double staple_u {molarity_to_chempot(params.m_staple_M,
+            params.m_temp_for_staple_u, params.m_lattice_site_volume)};
+    staple_u *= params.m_staple_u_mult;
+    double volume {chempot_to_volume(staple_u, params.m_temp)};
+
+    OrigamiSystem* origami;
+    if (params.m_biases_present) {
+        origami = new OrigamiSystemWithBias {identities, sequences, configs,
+                volume, staple_u, params};
+    }
+    else {
+        origami = new OrigamiSystem {identities, sequences, configs,
+            volume, staple_u, params};
+    }
+
+    return origami;
 }

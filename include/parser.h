@@ -118,6 +118,7 @@ namespace Parser {
             int m_max_num_iters {0};
             double m_max_D_bias {0};
             long long int m_equil_steps {0};
+            long long int m_iter_steps {0};
             long long int m_prod_steps {0};
             double m_max_rel_P_diff {0.1};
             string m_biases_file {};

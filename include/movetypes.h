@@ -45,7 +45,7 @@ namespace Movetypes {
 
             virtual bool attempt_move() = 0;
             virtual void reset_origami();
-            void reset_internal();
+            virtual void reset_internal();
 
             virtual string m_label() {return "MCMovetype";};
 

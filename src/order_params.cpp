@@ -706,10 +706,12 @@ SystemBiases::SystemBiases(OrigamiSystem& origami,
     if (params.m_distance_bias) {
         setup_distance_bias(params);
     }
-    OrderParam* op {&m_system_order_params.get_num_staples()};
-    //OrderParam* op {&m_system_order_params.get_num_bound_domains()};
+    OrderParam* op1 {&m_system_order_params.get_num_staples()};
+    OrderParam* op2 {&m_system_order_params.get_num_bound_domains()};
     if (params.m_square_well_bias) {
-       add_square_well_bias(op, params.m_min_well_param, params.m_max_well_param,
+       add_square_well_bias(op1, params.m_min_well_param, params.m_max_well_param,
+             params.m_well_bias, params.m_outside_bias);
+       add_square_well_bias(op2, params.m_min_well_param, params.m_max_well_param,
              params.m_well_bias, params.m_outside_bias);
        //add_square_well_bias(op, 2, 4, 0, 99);
     //op = &m_system_order_params.get_num_staples();

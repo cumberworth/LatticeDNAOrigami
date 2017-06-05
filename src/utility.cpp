@@ -13,8 +13,6 @@ using std::cout;
 using std::vector;
 using std::unique_ptr;
 
-//template<typename Element_T>
-//int index(vector<Element_T> container, Element_T element) {
 int Utility::index(vector<int> container, int element) {
     for (size_t i {0}; i != container.size(); i++) {
         if (container[i] == element) {

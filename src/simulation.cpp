@@ -105,7 +105,7 @@ GCMCSimulation::~GCMCSimulation() {
 
 void GCMCSimulation::construct_movetypes(InputParameters& params) {
     for (auto movetype_id: params.m_movetypes) {
-        unique_ptr<MCMovetype> movetype;
+        shared_ptr<MCMovetype> movetype;
         if (movetype_id == MovetypeID::OrientationRotation) {
             movetype.reset(new OrientationRotationMCMovetype {
                     m_origami_system, m_random_gens, m_ideal_random_walks, params});
@@ -126,7 +126,7 @@ void GCMCSimulation::construct_movetypes(InputParameters& params) {
             movetype.reset(new CTCBScaffoldRegrowthMCMovetype {
                     m_origami_system, m_random_gens, m_ideal_random_walks, params});
         }
-        m_movetypes.push_back(std::move(movetype));
+        m_movetypes.push_back(movetype);
     }
 }
 
@@ -135,7 +135,7 @@ void GCMCSimulation::simulate(long long int steps, long long int start_step) {
     for (long long int step {start_step + 1}; step != (steps + start_step + 1); step ++) {
         
         // Pick movetype and apply
-        unique_ptr<MCMovetype> movetype {select_movetype()};
+        shared_ptr<MCMovetype> movetype {select_movetype()};
         bool accepted;
         accepted = movetype->attempt_move();
         if (not accepted) {
@@ -166,12 +166,12 @@ void GCMCSimulation::simulate(long long int steps, long long int start_step) {
     }
 }
 
-unique_ptr<MCMovetype> GCMCSimulation::select_movetype() {
-    unique_ptr<MCMovetype> movetype;
+shared_ptr<MCMovetype> GCMCSimulation::select_movetype() {
+    shared_ptr<MCMovetype> movetype;
     double prob {m_random_gens.uniform_real()};
     for (size_t i {0}; i != m_cumulative_probs.size(); i++) {
         if (prob < m_cumulative_probs[i]) {
-            movetype.reset(m_movetypes[i].release());
+            movetype = m_movetypes[i];
             break;
         }
     }

@@ -28,6 +28,7 @@ namespace MetMovetypes {
             bool attempt_move();
 
             string m_label() {return "MetStapleExchangeMCMovetype";}
+            void reset_internal();
         protected:
 
             // These can be overidden for a derived class the excludes misbinding

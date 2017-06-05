@@ -31,8 +31,6 @@ namespace OrderParams {
             virtual int get_param() = 0;
             virtual int get_checked_param() = 0;
             virtual string get_label();
-            //virtual void update_param() = 0;
-            //virtual int get_param() = 0;
 
             // Check whether order parameters dependent on given domain
             virtual bool dependent_on(Domain& domain) = 0;

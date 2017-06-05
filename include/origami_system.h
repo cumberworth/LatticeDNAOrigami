@@ -80,6 +80,7 @@ namespace Origami {
     
             // Configuration properties CONTAIN SOME AS ORDER PARAMS?
             OrderParams::SystemOrderParams* get_system_order_params();
+            OrderParams::SystemBiases* get_system_biases();
             vector<Domain*> get_chain(int c_i);
             vector<vector<Domain*>> get_chains();
             vector<Domain*> get_last_chain();
@@ -160,6 +161,7 @@ namespace Origami {
             int m_num_unassigned_domains {0};
 
             OrderParams::SystemOrderParams* m_system_order_params;
+            OrderParams::SystemBiases* m_system_biases {nullptr};
 
             // CONSIDER CONTAINING ENERGY STUFF IN ANOTHER CLASS
             // ALSO CONSIDER DEFINING TYPE FOR THESE TABLES
@@ -280,12 +282,11 @@ namespace Origami {
                     VectorThree position,
                     VectorThree orientation);
             //void set_domain_orientation(Domain& cd_i, VectorThree ore);
-            OrderParams::SystemBiases* get_system_biases();
             double bias() const;
-
-        private:
-            OrderParams::SystemBiases* m_system_biases;
     };
+
+    // Moved from main
+    OrigamiSystem* setup_origami(InputParameters& params);
 
     double molarity_to_lattice_volume(double molarity, double lattice_site_volume);
 

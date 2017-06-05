@@ -55,6 +55,11 @@ bool MetStapleExchangeMCMovetype::attempt_move() {
     return accept;
 }
 
+void MetStapleExchangeMCMovetype::reset_internal() {
+    MetMCMovetype::reset_internal();
+    m_insertion_sites = m_origami_system.num_domains();
+}
+
 bool MetStapleExchangeMCMovetype::staple_insertion_accepted(int c_i_ident) {
     double boltz_factor {exp(-(m_delta_e))};
     int Ni_new {m_origami_system.num_staples_of_ident(c_i_ident)};
