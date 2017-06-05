@@ -130,7 +130,7 @@ double OrigamiSystem::energy() const {
 }
 
 double OrigamiSystem::bias() const {
-    return 0;
+    return m_system_biases->get_bias();
 }
 
 SystemOrderParams* OrigamiSystem::get_system_order_params() {
@@ -235,10 +235,6 @@ bool OrigamiSystem::configuration_fully_set() {
 
 int OrigamiSystem::num_unassigned_domains() {
     return m_num_unassigned_domains;
-}
-
-double get_bias() {
-    return 0;
 }
 
 void OrigamiSystem::check_all_constraints() {
