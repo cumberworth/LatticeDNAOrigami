@@ -21,7 +21,7 @@ namespace MetMovetypes {
             void grow_chain(vector<Domain*> domains);
             void unassign_domains(vector<Domain*> domains);
 
-            void update_bias();
+            void update_bias(int sign);
     };
 
     class MetStapleExchangeMCMovetype: public MetMCMovetype {

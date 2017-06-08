@@ -198,6 +198,8 @@ int USGCMCSimulation::get_grid_dim() {
 }
 
 void USGCMCSimulation::update_internal(long long int step) {
+    //HACK
+    m_system_order_params->update_params();
     GridPoint point {};
     for (auto grid_param: m_grid_params) {
         point.push_back(grid_param->get_param());
@@ -514,13 +516,18 @@ void MWUSGCMCSimulation::select_starting_configs(int n) {
                 int max_comp {m_window_maxs[i][j]};
                 point.push_back(m_random_gens.uniform_int(min_comp, max_comp));
             }
-            tried_points.insert(point);
             point_sampled = (m_order_param_to_configs.find(point) !=
                     m_order_param_to_configs.end());
-            all_points_tried = (tried_points.size() == m_num_points[i]);
-            if (all_points_tried) {
-                cout << "Window " << i << " outside of domain\n";
-                throw SimulationMisuse {};
+            if (point_sampled) {
+                break;
+            }
+            else {
+                tried_points.insert(point);
+                all_points_tried = (tried_points.size() == m_num_points[i]);
+                if (all_points_tried) {
+                    cout << "Window " << i << " outside of domain\n";
+                    throw SimulationMisuse {};
+                }
             }
         }
 

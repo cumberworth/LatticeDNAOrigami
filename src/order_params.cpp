@@ -587,12 +587,13 @@ SquareWellBiasFunction::SquareWellBiasFunction(OrderParam& order_param,
 double SquareWellBiasFunction::update_bias() {
     double new_bias;
     int param {m_order_param.get_param()};
-    if (m_order_param.defined()) {
+    //HACK
+    //if (m_order_param.defined()) {
         new_bias = calc_bias(param);
-    }
-    else {
-        new_bias = 0;
-    }
+    //}
+    //else {
+    //    new_bias = 0;
+    //}
     m_bias = new_bias;
     
     return new_bias;
@@ -944,7 +945,7 @@ void SystemBiases::add_square_well_bias(OrderParam* op, int well_min, int well_m
     well_bias_f = new SquareWellBiasFunction {*op,
         well_min, well_max, well_bias, outside_bias};
     m_well_bias_fs.push_back(well_bias_f);
-    m_bias_fs.push_back(&m_grid_bias_f);
+    m_bias_fs.push_back(well_bias_f);
 
     // Update total bias
     m_total_bias += well_bias_f->get_bias();

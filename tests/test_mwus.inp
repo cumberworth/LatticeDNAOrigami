@@ -13,9 +13,9 @@ energy_filebase=data/four
 #restart_step=9
 
 # Order parameters
-distance_pairs=0 3
+#distance_pairs=0 3
 #distance_pairs=4 7 10 13 16 19
-distance_sum=true
+#distance_sum=true
 
 # System biases
 well_bias=0
@@ -38,7 +38,7 @@ max_type_staples=2
 order_params=filler
 max_num_iters=5
 max_D_bias=1
-equil_steps=0
+equil_steps=1000000
 iter_steps=1000000
 prod_steps=0
 max_rel_P_diff=0.1

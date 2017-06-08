@@ -112,7 +112,7 @@ namespace OrderParams {
             int check_delete_chain(int c_i);
             int get_param();
             //SUPER HACK
-            int set_param(int param) {m_param = param;}
+            void set_param(int param) {m_param = param;}
             int get_checked_param();
             string get_label();
             bool dependent_on(Domain& domain);

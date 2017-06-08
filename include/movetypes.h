@@ -86,7 +86,7 @@ namespace Movetypes {
             bool staple_is_connector(vector<Domain*> staple);
             bool scan_for_scaffold_domain(Domain*, set<int>& participating_chains);
 
-            virtual void update_bias() = 0;
+            virtual void update_bias(int sign) = 0;
     };
 
     class IdentityMCMovetype: public MCMovetype {

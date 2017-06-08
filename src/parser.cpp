@@ -93,24 +93,15 @@ Fraction::Fraction(string unparsed_fraction) {
 
 InputParameters::InputParameters(int argc, char* argv[]) {
 
-    // Command line parser for getting config file name
-    po::options_description cl_desc {"Allowed options"};
+    // Command line options description
+    po::options_description cl_desc {"Command line options"};
     cl_desc.add_options()
+        ("help,h", "Display available options")
         ("parameter_filename,i", po::value<string>())
-        ;
+    ;
 
-    po::variables_map cl_vm;
-    po::store(po::parse_command_line(argc, argv, cl_desc), cl_vm);
-    po::notify(cl_vm);
-
-    if (not cl_vm.count("parameter_filename")) {
-        cout << "Input parameter file must be provided.\n";
-        exit(1);
-    }
-    ifstream parameter_file {cl_vm["parameter_filename"].as<string>()};
-
-    // Setup parser
-    po::options_description desc {};
+    // Parameter file options description
+    po::options_description desc {"Parameter file options"};
     desc.add_options()
 
         // System input and parameters
@@ -201,8 +192,26 @@ InputParameters::InputParameters(int argc, char* argv[]) {
         ("counts_output_freq", po::value<int>(), "Counts output write frequency")
         ("energies_output_freq", po::value<int>(), "Energies output write frequency")
         ("order_params_output_freq", po::value<int>(), "Order parameters write frequency")
-        ;
+    ;
 
+    // Command line variable map
+    po::variables_map cl_vm;
+    po::store(po::parse_command_line(argc, argv, cl_desc), cl_vm);
+    po::notify(cl_vm);
+
+    if (cl_vm.count("help")) {
+        cout << cl_desc << "\n";
+        cout << desc << "\n";
+        exit(1);
+    }
+
+    if (not cl_vm.count("parameter_filename")) {
+        cout << "Input parameter file must be provided.\n";
+        exit(1);
+    }
+
+    // Parameter file variable map
+    ifstream parameter_file {cl_vm["parameter_filename"].as<string>()};
     po::variables_map vm;
     po::store(po::parse_config_file(parameter_file, desc), vm);
     po::notify(vm);
