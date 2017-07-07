@@ -10,13 +10,13 @@
 #include "origami_system.h"
 #include "order_params.h"
 
-using std::ofstream;
-using std::ifstream;
-
-using namespace Origami;
-using namespace OrderParams;
-
 namespace Files {
+
+    using std::ofstream;
+    using std::ifstream;
+
+    using namespace Origami;
+    using namespace OrderParams;
 
     class OrigamiInputFile {
         // Input file for OrigamiSystem configuration and topology

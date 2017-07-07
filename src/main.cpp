@@ -13,22 +13,22 @@
 #include "order_params.h"
 #include "enumerate.h"
 
-using std::cout;
-
-using namespace Parser;
-using namespace Utility;
-using namespace Files;
-using namespace Origami;
-using namespace DomainContainer;
-using namespace Simulation;
-using namespace ConstantTemp;
-using namespace Annealing;
-using namespace PTMC;
-using namespace US;
-using namespace Movetypes;
-using namespace Enumerator;
-
 int main(int argc, char* argv[]) {
+
+    using std::cout;
+    using namespace Parser;
+    using namespace Utility;
+    using namespace Files;
+    using namespace Origami;
+    using namespace DomainContainer;
+    using namespace Simulation;
+    using namespace ConstantTemp;
+    using namespace Annealing;
+    using namespace PTMC;
+    using namespace US;
+    using namespace Movetypes;
+    using namespace Enumerator;
+
     InputParameters params {argc, argv};
     OrigamiSystem* origami {setup_origami(params)};
 

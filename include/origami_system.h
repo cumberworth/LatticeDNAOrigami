@@ -17,18 +17,6 @@
 #include "domain.h"
 #include "parser.h"
 
-using std::vector;
-using std::set;
-using std::pair;
-using std::unordered_map;
-using std::string;
-using std::valarray;
-
-using namespace Utility;
-using namespace DomainContainer;
-using namespace NearestNeighbour;
-using namespace Parser;
-
 // Forward declaration
 
 namespace OrderParams {
@@ -37,6 +25,18 @@ namespace OrderParams {
 }
 
 namespace Origami {
+
+    using std::vector;
+    using std::set;
+    using std::pair;
+    using std::unordered_map;
+    using std::string;
+    using std::valarray;
+
+    using namespace Utility;
+    using namespace DomainContainer;
+    using namespace NearestNeighbour;
+    using namespace Parser;
 
     // For passing information between file objects and origami system
     struct Chain {

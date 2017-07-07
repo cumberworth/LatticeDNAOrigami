@@ -5,9 +5,10 @@
 
 #include "simulation.h"
 
-using namespace Simulation;
 
 namespace Annealing {
+
+    using namespace Simulation;
 
     class AnnealingGCMCSimulation: public GCMCSimulation {
         public:

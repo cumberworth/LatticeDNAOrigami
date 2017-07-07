@@ -6,10 +6,10 @@
 #include "movetypes.h"
 #include "top_constraint_points.h"
 
-using namespace Movetypes;
-using namespace TopConstraintPoints;
-
 namespace CBMovetypes {
+
+    using namespace Movetypes;
+    using namespace TopConstraintPoints;
 
     class CBMCMovetype: public RegrowthMCMovetype {
         public:

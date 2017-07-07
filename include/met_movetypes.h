@@ -5,11 +5,12 @@
 
 #include "movetypes.h"
 
-using namespace Movetypes;
 
 namespace MetMovetypes {
 
-     class MetMCMovetype: public RegrowthMCMovetype {
+    using namespace Movetypes;
+
+    class MetMCMovetype: public RegrowthMCMovetype {
         public:
             using RegrowthMCMovetype::RegrowthMCMovetype;
 

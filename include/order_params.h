@@ -10,13 +10,13 @@
 #include "domain.h"
 #include "origami_system.h"
 
-using std::vector;
-
-using namespace Parser;
-using namespace DomainContainer;
-using namespace Origami;
-
 namespace OrderParams {
+
+    using std::vector;
+
+    using namespace Parser;
+    using namespace DomainContainer;
+    using namespace Origami;
 
     class OrderParam {
         // System parameters calculated from current config

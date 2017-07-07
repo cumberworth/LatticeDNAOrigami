@@ -12,15 +12,15 @@
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 
-using std::vector;
-using std::array;
-using std::bind;
-using std::unordered_map;
-using std::pair;
-using std::unique_ptr;
-
 namespace Utility {
     
+    using std::vector;
+    using std::array;
+    using std::bind;
+    using std::unordered_map;
+    using std::pair;
+    using std::unique_ptr;
+
     // Find index for given element
     int index(vector<int> container, int element);
 

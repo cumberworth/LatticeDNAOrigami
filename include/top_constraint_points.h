@@ -7,12 +7,12 @@
 #include "origami_system.h"
 #include "ideal_random_walk.h"
 
-using namespace Parser;
-using namespace Origami;
-using namespace RandomGen;
-using namespace IdealRandomWalk;
-
 namespace TopConstraintPoints {
+
+    using namespace Parser;
+    using namespace Origami;
+    using namespace RandomGen;
+    using namespace IdealRandomWalk;
 
     class Constraintpoints {
         public:

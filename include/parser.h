@@ -6,10 +6,10 @@
 #include <string>
 #include <vector>
 
-using std::string;
-using std::vector;
-
 namespace Parser {
+
+    using std::string;
+    using std::vector;
 
     enum class MovetypeID {
         OrientationRotation,
@@ -104,7 +104,7 @@ namespace Parser {
             double m_temp_interval {};
             int m_steps_per_temp {};
 
-            // Parallel tempring simulation parameters
+            // Parallel tempering simulation parameters
             vector<double> m_temps {};
             int m_num_reps {};
             int m_exchange_interval {};

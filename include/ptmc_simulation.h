@@ -5,9 +5,9 @@
 
 #include "simulation.h"
 
-using namespace Simulation;
-
 namespace PTMC {
+
+    using namespace Simulation;
 
     class PTGCMCSimulation: public GCMCSimulation {
         // Base method for parallel tempering in GC ensemble

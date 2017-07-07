@@ -5,9 +5,9 @@
 
 #include "simulation.h"
 
-using namespace Simulation;
-
 namespace ConstantTemp {
+
+    using namespace Simulation;
 
     class ConstantTGCMCSimulation: public GCMCSimulation {
         public:

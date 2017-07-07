@@ -9,13 +9,13 @@
 #include "files.h"
 #include "order_params.h"
   
-using namespace Parser;
-using namespace DomainContainer;
-using namespace Origami;
-using namespace Files;
-using namespace OrderParams;
-
 namespace Enumerator {
+
+    using namespace Parser;
+    using namespace DomainContainer;
+    using namespace Origami;
+    using namespace Files;
+    using namespace OrderParams;
 
     void print_matrix(vector<vector<long double>> matrix, string filename);
 

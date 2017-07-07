@@ -15,13 +15,13 @@
 
 #include "hash.h"
 
-using std::unordered_map;
-using std::pair;
-using std::string;
-
-using namespace::Utility;
-
 namespace IdealRandomWalk {
+
+    using std::unordered_map;
+    using std::pair;
+    using std::string;
+
+    using namespace::Utility;
 
     class IdealRandomWalks {
         public:

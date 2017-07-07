@@ -2,12 +2,11 @@
 
 #ifndef ORIENTATION_MOVETYPE_H
 #define ORIENTATION_MOVETYPE_H
-
 #include "movetypes.h"
 
-using namespace Movetypes;
-
 namespace OrientationMovetype {
+
+    using namespace Movetypes;
 
     class OrientationRotationMCMovetype: public MCMovetype {
         public:

@@ -9,14 +9,14 @@
 #include <unordered_map>
 #include <vector>
 
-using std::pair;
-using std::tuple;
-using std::string;
-using std::map;
-using std::unordered_map;
-using std::vector;
-
 namespace NearestNeighbour {
+
+    using std::pair;
+    using std::tuple;
+    using std::string;
+    using std::map;
+    using std::unordered_map;
+    using std::vector;
 
     // Molar gas consant (J/K/mol)
     const double R {8.3144598};

@@ -20,24 +20,24 @@
 #include "ideal_random_walk.h"
 #include "order_params.h"
 
-using std::vector;
-using std::unique_ptr;
-using std::shared_ptr;
-using std::map;
-using std::ostream;
-using std::unordered_map;
-using std::set;
-
-namespace mpi = boost::mpi;
-
-using namespace Parser;
-using namespace Origami;
-using namespace Movetypes;
-using namespace Files;
-using namespace IdealRandomWalk;
-using namespace OrderParams;
-
 namespace Simulation {
+
+    using std::vector;
+    using std::unique_ptr;
+    using std::shared_ptr;
+    using std::map;
+    using std::ostream;
+    using std::unordered_map;
+    using std::set;
+
+    namespace mpi = boost::mpi;
+
+    using namespace Parser;
+    using namespace Origami;
+    using namespace Movetypes;
+    using namespace Files;
+    using namespace IdealRandomWalk;
+    using namespace OrderParams;
 
     vector<OrigamiOutputFile*> setup_output_files(
             InputParameters& params,

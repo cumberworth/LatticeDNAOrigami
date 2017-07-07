@@ -9,10 +9,11 @@
 
 #include "hash.h"
 
-using std::pair;
-using std::unordered_map;
-
 namespace RandomGen {
+
+    using std::pair;
+    using std::unordered_map;
+
     class RandomGens {
         public:
             RandomGens();

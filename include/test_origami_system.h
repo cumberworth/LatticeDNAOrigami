@@ -5,9 +5,9 @@
 
 #include "origami_system.h"
 
-using namespace Origami;
-
 namespace TestOrigamiSystem {
+
+    using namespace Origami;
 
     OrigamiSystem setup_two_domain_scaffold_origami(double temp, double cation_M);
     OrigamiSystem setup_four_domain_scaffold_origami(double temp, double cation_M);

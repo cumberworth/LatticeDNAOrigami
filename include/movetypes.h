@@ -14,19 +14,17 @@
 #include "ideal_random_walk.h"
 #include "order_params.h"
 
-using std::cout;
-using std::unique_ptr;
-using std::set;
-
-using namespace Parser;
-using namespace Origami;
-using namespace RandomGen;
-using namespace IdealRandomWalk;
-using namespace OrderParams;
-
 namespace Movetypes {
 
-    // Movetype classes
+    using std::cout;
+    using std::unique_ptr;
+    using std::set;
+
+    using namespace Parser;
+    using namespace Origami;
+    using namespace RandomGen;
+    using namespace IdealRandomWalk;
+    using namespace OrderParams;
 
     class MCMovetype {
         public:

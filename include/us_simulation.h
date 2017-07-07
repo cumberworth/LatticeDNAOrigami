@@ -7,17 +7,17 @@
 
 #include "simulation.h"
 
-using namespace Simulation;
-
-using GridPoint = vector<int>;
-using SetOfGridPoints = set<GridPoint>;
-using ArrayOfSets = vector<SetOfGridPoints>;
-using GridInts = unordered_map<GridPoint, int>;
-using GridFloats = unordered_map<GridPoint, double>;
-using GridOfIntArrays = unordered_map<GridPoint, vector<int>>;
-using GridOfFloatArrays = unordered_map<GridPoint, vector<double>>;
-
 namespace US {
+
+    using namespace Simulation;
+
+    using GridPoint = vector<int>;
+    using SetOfGridPoints = set<GridPoint>;
+    using ArrayOfSets = vector<SetOfGridPoints>;
+    using GridInts = unordered_map<GridPoint, int>;
+    using GridFloats = unordered_map<GridPoint, double>;
+    using GridOfIntArrays = unordered_map<GridPoint, vector<int>>;
+    using GridOfFloatArrays = unordered_map<GridPoint, vector<double>>;
 
     class USGCMCSimulation: public GCMCSimulation {
         // Adaptive US base class. For 2D order parameters only

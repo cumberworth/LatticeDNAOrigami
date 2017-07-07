@@ -5,9 +5,9 @@
 
 #include "utility.h"
 
-using namespace Utility;
-
 namespace DomainContainer{
+
+    using namespace Utility;
 
     class Domain {
         // DNA origami binding domain
