@@ -174,12 +174,25 @@ namespace Files {
     OrigamiOutputFile::OrigamiOutputFile(
             string filename,
             int write_freq,
+            int max_num_staples,
             OrigamiSystem& origami_system) :
             m_filename {filename},
             m_write_freq {write_freq},
             m_origami_system {origami_system} {
 
+        // This assumes 2 domain staples
+        m_max_num_domains = 2 * max_num_staples +
+                m_origami_system.get_chain(0).size();
         m_file.open(m_filename);
+    }
+
+    void OrigamiVSFOutputFile::write(long int) {
+        m_file << "atom 0:";
+        size_t scaffold_length {m_origami_system.get_chain(0).size()};
+        m_file << scaffold_length << " radius 0.25 type scaffold\n";
+
+        m_file << "atom " << scaffold_length << ":" << m_max_num_domains - 1;
+        m_file << " radius 0.25 type staple";
     }
 
     void OrigamiTrajOutputFile::write(long int step) {
@@ -202,6 +215,66 @@ namespace Files {
         m_file << "\n";
     }
 
+    void OrigamiVCFOutputFile::write(long int) {
+        m_file << "timestep\n";
+        for (auto chain: m_origami_system.get_chains()) {
+            for (auto domain: chain) {
+                for (int i {0}; i != 3; i++) {
+                    m_file << domain->m_pos[i] << " ";
+                }
+                m_file << "\n";
+            }
+        }
+
+        int num_doms {m_origami_system.num_domains()};
+        for (int dom_i {num_doms}; dom_i != m_max_num_domains; dom_i++) {
+            for (int i {0}; i !=3; i++) {
+                m_file << 0 << " ";
+            }
+            m_file << "\n";
+        }
+        m_file << "\n";
+    }
+
+    void OrigamiOrientationOutputFile::write(long int) {
+        for (auto chain: m_origami_system.get_chains()) {
+            for (auto domain: chain) {
+                for (int i {0}; i != 3; i++) {
+                    m_file << domain->m_ore[i] << " ";
+                }
+            }
+        }
+        int num_doms {m_origami_system.num_domains()};
+        for (int dom_i {num_doms}; dom_i != m_max_num_domains; dom_i++) {
+            for (int i {0}; i !=3; i++) {
+                m_file << 0 << " ";
+            }
+        }
+        m_file << "\n";
+    }
+
+    void OrigamiStateOutputFile::write(long int) {
+        for (auto chain: m_origami_system.get_chains()) {
+            for (auto domain: chain) {
+                if (domain->m_state == Occupancy::unbound) {
+                    m_file << "1 ";
+                }
+                else if (domain->m_state == Occupancy::bound) {
+                    m_file << "2 ";
+                }
+                else if (domain->m_state == Occupancy::misbound) {
+                    m_file << "3 ";
+                }
+            }
+        }
+        int num_doms {m_origami_system.num_domains()};
+        for (int dom_i {num_doms}; dom_i != m_max_num_domains; dom_i++) {
+            m_file << "0 ";
+        }
+                
+        m_file << "\n";
+    }
+
     void OrigamiCountsOutputFile::write(long int step) {
         m_file << step << " ";
         m_file << m_origami_system.num_staples() << " ";
@@ -213,8 +286,8 @@ namespace Files {
     }
 
     OrigamiEnergiesOutputFile::OrigamiEnergiesOutputFile(string filename,
-            int write_freq, OrigamiSystem& origami_system) :
-            OrigamiOutputFile {filename, write_freq, origami_system} {
+            int write_freq, int max_num_staples, OrigamiSystem& origami_system) :
+            OrigamiOutputFile {filename, write_freq, max_num_staples, origami_system} {
 
         m_file << "step energy bias\n";
     }
@@ -227,8 +300,8 @@ namespace Files {
     }
 
     OrigamiOrderParamsOutputFile::OrigamiOrderParamsOutputFile(string filename,
-            int write_freq, OrigamiSystem& origami_system) :
-            OrigamiOutputFile {filename, write_freq, origami_system},
+            int write_freq, int max_num_staples, OrigamiSystem& origami_system) :
+            OrigamiOutputFile {filename, write_freq, max_num_staples, origami_system},
             m_system_order_params {origami_system.get_system_order_params()},
             m_order_params {m_system_order_params->get_order_params()} {
         for (auto order_param: m_order_params) {

@@ -57,6 +57,7 @@ namespace Files {
             OrigamiOutputFile(
                     string filename,
                     int write_freq,
+                    int max_num_staples,
                     OrigamiSystem& origami_system);
             virtual ~OrigamiOutputFile() {};
 
@@ -68,10 +69,39 @@ namespace Files {
         protected:
             OrigamiSystem& m_origami_system;
             ofstream m_file;
+            int m_max_num_domains;
+    };
+
+    class OrigamiVSFOutputFile: public OrigamiOutputFile {
+        // Write a VSF file of the system
+        public:
+            using OrigamiOutputFile::OrigamiOutputFile;
+            void write(long int);
     };
 
     class OrigamiTrajOutputFile: public OrigamiOutputFile {
         // Trajectory output file for simulation configurations
+        public:
+            using OrigamiOutputFile::OrigamiOutputFile;
+            void write(long int step);
+    };
+
+    class OrigamiVCFOutputFile: public OrigamiOutputFile {
+        // Output file for simulation configurations compatible with VMD
+        public:
+            using OrigamiOutputFile::OrigamiOutputFile;
+            void write(long int step);
+    };
+
+    class OrigamiOrientationOutputFile: public OrigamiOutputFile {
+        // Simple format for orientation vector output mainly for vmd viewing
+        public:
+            using OrigamiOutputFile::OrigamiOutputFile;
+            void write(long int step);
+    };
+
+    class OrigamiStateOutputFile: public OrigamiOutputFile {
+        // Outputs binding state of each domain
         public:
             using OrigamiOutputFile::OrigamiOutputFile;
             void write(long int step);
@@ -82,6 +112,7 @@ namespace Files {
             OrigamiEnergiesOutputFile(
                     string filename,
                     int write_freq,
+                    int max_num_staples,
                     OrigamiSystem& origami_system);
             using OrigamiOutputFile::OrigamiOutputFile;
             void write(long int step);
@@ -98,6 +129,7 @@ namespace Files {
             OrigamiOrderParamsOutputFile(
                     string filename,
                     int write_freq,
+                    int max_num_staples,
                     OrigamiSystem& origami_system);
             void write(long int step);
         private:

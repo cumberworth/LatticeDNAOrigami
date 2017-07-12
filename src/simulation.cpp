@@ -43,31 +43,53 @@ namespace Simulation {
     vector<OrigamiOutputFile*> setup_output_files(
             InputParameters& params, string output_filebase,
             OrigamiSystem& origami) {
-        // Setup trajectory and staple/domain count file
+
+    // Hack to get a vsf file
+    OrigamiVSFOutputFile vsf_file {
+            output_filebase + ".vsf", 0,
+            params.m_max_total_staples, origami};
+    vsf_file.write(0);
 
         vector<OrigamiOutputFile*> outs {};
         if (params.m_configs_output_freq != 0) {
             OrigamiOutputFile* config_out = new OrigamiTrajOutputFile {
                     output_filebase + ".trj", params.m_configs_output_freq,
-                    origami};
+                    params.m_max_total_staples, origami};
+            outs.push_back(config_out);
+        }
+        if (params.m_vtf_output_freq != 0) {
+            OrigamiOutputFile* config_out = new OrigamiVCFOutputFile {
+                    output_filebase + ".vcf", params.m_vtf_output_freq,
+                    params.m_max_total_staples, origami};
+            outs.push_back(config_out);
+
+            config_out = new OrigamiStateOutputFile {
+                    output_filebase + ".states", params.m_vtf_output_freq,
+                    params.m_max_total_staples, origami};
+            outs.push_back(config_out);
+
+            config_out = new OrigamiOrientationOutputFile {
+                    output_filebase + ".ores", params.m_vtf_output_freq,
+                    params.m_max_total_staples, origami};
             outs.push_back(config_out);
         }
         if (params.m_counts_output_freq != 0) {
             OrigamiOutputFile* counts_out = new OrigamiCountsOutputFile {
                     output_filebase + ".counts", params.m_counts_output_freq,
-                    origami};
+                    params.m_max_total_staples, origami};
             outs.push_back(counts_out);
         }
         if (params.m_energies_output_freq != 0) {
             OrigamiOutputFile* energies_out = new OrigamiEnergiesOutputFile {
                     output_filebase + ".ene", params.m_energies_output_freq,
-                    origami};
+                    params.m_max_total_staples, origami};
             outs.push_back(energies_out);
         }
         if (params.m_order_params_output_freq != 0) {
             OrigamiOutputFile* order_params_out = new OrigamiOrderParamsOutputFile {
                     output_filebase + ".order_params",
-                    params.m_order_params_output_freq, origami};
+                    params.m_order_params_output_freq, params.m_max_total_staples,
+                    origami};
             outs.push_back(order_params_out);
         }
 
@@ -81,6 +103,7 @@ namespace Simulation {
 
         m_logging_freq = params.m_logging_freq;
         m_centering_freq = params.m_centering_freq;
+        m_constraint_check_freq = params.m_constraint_check_freq;
 
         // Constructor movetypes
         construct_movetypes(params);
@@ -147,6 +170,8 @@ namespace Simulation {
             // Center and check constraints
             if (m_centering_freq != 0 and step % m_centering_freq == 0) {
                 m_origami_system.centre();
+            }
+            if (m_constraint_check_freq != 0 and step % m_constraint_check_freq == 0) {
                 m_origami_system.check_all_constraints();
             }
 

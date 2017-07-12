@@ -88,6 +88,7 @@ namespace Parser {
             long long int m_steps {0};
             int m_logging_freq {0};
             int m_centering_freq {0};
+            int m_constraint_check_freq {0};
             vector<MovetypeID> m_movetypes {};
             vector<double> m_movetype_probs {};
             string m_num_walks_filename {""};
@@ -129,6 +130,7 @@ namespace Parser {
             // Output options
             string m_output_filebase;
             int m_configs_output_freq {0};
+            int m_vtf_output_freq {0};
             int m_counts_output_freq {0};
             int m_energies_output_freq {0};
             int m_order_params_output_freq {0};

@@ -8,13 +8,13 @@ temp_for_staple_u=330
 staple_u_mult=1
 lattice_site_volume=4e-28
 #energy_filebase=data/snodin
-energy_filebase=data/four
+#energy_filebase=data/four
 #restart_traj_file=outs/test_constant_temp.trj
 #restart_step=0
 
 # Order parameters
-distance_pairs=0 3
-distance_sum=true
+#distance_pairs=0 3
+#distance_sum=true
 
 # Bias functions
 #distance_bias=false
@@ -27,16 +27,21 @@ distance_sum=true
 simulation_type=constant_temp
 steps=1000000
 logging_freq=100000
-centering_freq=100000
+centering_freq=1
 orientation_rotation=1/6
 met_staple_exchange=1/2
 cb_staple_regrowth=1/6
 ctcb_scaffold_regrowth=1/6
 #num_walks_filename=data/num_walks.arch
 exchange_mult=1000
+#max_total_staples=24
+#max_type_staples=2
+max_total_staples=4
+max_type_staples=2
 
 # Output options
 output_filebase=outs/test_constant_temp_1
-configs_output_freq=1000000
-counts_output_freq=1000000
-order_params_output_freq=1000000
+configs_output_freq=100000
+vtf_output_freq=1000
+counts_output_freq=100000
+order_params_output_freq=100000

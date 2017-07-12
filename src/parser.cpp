@@ -144,6 +144,7 @@ namespace Parser {
             ("steps", po::value<long long int>(), "Number of MC steps")
             ("logging_freq", po::value<int>(), "Logging frequency")
             ("centering_freq", po::value<int>(), "Centering frequency")
+            ("constraint_check_freq", po::value<int>(), "Constraint check frequency")
             ("orientation_rotation", po::value<string>(), "Orientational rotation movetype probability")
             ("met_staple_exchange", po::value<string>(), "Met staple exchange movetype probability")
             ("met_staple_regrowth", po::value<string>(), "Met staple regrowth movetype probability")
@@ -189,6 +190,7 @@ namespace Parser {
             // Output options
             ("output_filebase", po::value<string>(), "Base name for output files")
             ("configs_output_freq", po::value<int>(), "Configuration output write frequency")
+            ("vtf_output_freq", po::value<int>(), "Configuration output write frequency")
             ("counts_output_freq", po::value<int>(), "Counts output write frequency")
             ("energies_output_freq", po::value<int>(), "Energies output write frequency")
             ("order_params_output_freq", po::value<int>(), "Order parameters write frequency")
@@ -332,6 +334,9 @@ namespace Parser {
         if (vm.count("centering_freq")) {
             m_centering_freq = vm["centering_freq"].as<int>();
         }
+        if (vm.count("constraint_check_freq")) {
+            m_constraint_check_freq = vm["constraint_check_freq"].as<int>();
+        }
         if (vm.count("orientation_rotation")) {
             string unparsed_fraction {vm["orientation_rotation"].as<string>()};
             Fraction prob {unparsed_fraction};
@@ -463,6 +468,9 @@ namespace Parser {
         }
         if (vm.count("configs_output_freq")) {
             m_configs_output_freq = vm["configs_output_freq"].as<int>();
+        }
+        if (vm.count("vtf_output_freq")) {
+            m_vtf_output_freq = vm["vtf_output_freq"].as<int>();
         }
         if (vm.count("counts_output_freq")) {
             m_counts_output_freq = vm["counts_output_freq"].as<int>();

@@ -57,6 +57,7 @@ namespace Simulation {
             ostream* m_logging_stream;
             int m_logging_freq;
             int m_centering_freq;
+            int m_constraint_check_freq;
             InputParameters& m_params;
             vector <OrigamiOutputFile*> m_output_files;
             vector<shared_ptr<MCMovetype>> m_movetypes;
