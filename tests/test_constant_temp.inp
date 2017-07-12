@@ -1,6 +1,6 @@
 # System input and parameters
-origami_input_filename=data/four2_domain_loop.json
-#origami_input_filename=data/snodin_unbound.json
+#origami_input_filename=data/four2_domain_loop.json
+origami_input_filename=data/snodin_unbound.json
 temp=330
 staple_M=1e-6
 cation_M=1
@@ -34,10 +34,10 @@ cb_staple_regrowth=1/6
 ctcb_scaffold_regrowth=1/6
 #num_walks_filename=data/num_walks.arch
 exchange_mult=1000
-#max_total_staples=24
-#max_type_staples=2
-max_total_staples=4
+max_total_staples=24
 max_type_staples=2
+#max_total_staples=4
+#max_type_staples=2
 
 # Output options
 output_filebase=outs/test_constant_temp_1
