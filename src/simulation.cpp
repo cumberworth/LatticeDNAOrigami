@@ -11,6 +11,7 @@
 
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
+#include <boost/process.hpp>
 
 #include "utility.h"
 #include "random_gens.h"
@@ -30,6 +31,7 @@ namespace Simulation {
     using std::pow;
 
     namespace mpi = boost::mpi;
+    namespace bp = boost::process;
 
     using namespace Movetypes;
     using namespace OrientationMovetype;
@@ -44,11 +46,11 @@ namespace Simulation {
             InputParameters& params, string output_filebase,
             OrigamiSystem& origami) {
 
-    // Hack to get a vsf file
-    OrigamiVSFOutputFile vsf_file {
-            output_filebase + ".vsf", 0,
-            params.m_max_total_staples, origami};
-    vsf_file.write(0);
+        // Hack to get a vsf file
+        OrigamiVSFOutputFile vsf_file {
+                output_filebase + ".vsf", 0,
+                params.m_max_total_staples, origami};
+        vsf_file.write(0);
 
         vector<OrigamiOutputFile*> outs {};
         if (params.m_configs_output_freq != 0) {
@@ -104,6 +106,11 @@ namespace Simulation {
         m_logging_freq = params.m_logging_freq;
         m_centering_freq = params.m_centering_freq;
         m_constraint_check_freq = params.m_constraint_check_freq;
+        m_vmd_pipe_freq = params.m_vmd_pipe_freq;
+
+        if (m_vmd_pipe_freq != 0) {
+            setup_vmd_pipe();
+        }
 
         // Constructor movetypes
         construct_movetypes(params);
@@ -125,6 +132,9 @@ namespace Simulation {
 
     GCMCSimulation::~GCMCSimulation() {
         close_output_files();
+        if (m_vmd_pipe_freq != 0) {
+            close_vmd_pipe();
+        }
     }
 
     void GCMCSimulation::construct_movetypes(InputParameters& params) {
@@ -148,6 +158,10 @@ namespace Simulation {
             }
             else if (movetype_id == MovetypeID::CTCBScaffoldRegrowth) {
                 movetype.reset(new CTCBScaffoldRegrowthMCMovetype {
+                        m_origami_system, m_random_gens, m_ideal_random_walks, params});
+            }
+            else if (movetype_id == MovetypeID::CTCBLinkerRegrowth) {
+                movetype.reset(new CTCBLinkerRegrowthMCMovetype {
                         m_origami_system, m_random_gens, m_ideal_random_walks, params});
             }
             m_movetypes.push_back(movetype);
@@ -178,6 +192,11 @@ namespace Simulation {
             // Write log entry to standard out
             if (m_logging_freq !=0 and step % m_logging_freq == 0) {
                 write_log_entry(step, *movetype, accepted);
+            }
+
+            // VMD pipe
+            if (m_vmd_pipe_freq != 0 and step % m_vmd_pipe_freq == 0) {
+                pipe_to_vmd();
             }
 
             // Update internal simulation variables
@@ -215,6 +234,47 @@ namespace Simulation {
         *m_logging_stream << "Energy: " << m_origami_system.energy() << " ";
         *m_logging_stream << "Bias: " << m_origami_system.bias() << " ";
         *m_logging_stream << "\n";
+    }
+
+    void GCMCSimulation::setup_vmd_pipe() {
+        string output_filebase {m_params.m_output_filebase + "_vmd"};
+        vmd_struct_file = new OrigamiVSFOutputFile {
+                output_filebase + ".vsf", 0,
+                m_params.m_max_total_staples, m_origami_system};
+
+        vmd_coors_file = new OrigamiVCFOutputFile {
+                output_filebase + ".vcf", 0,
+                m_params.m_max_total_staples, m_origami_system};
+
+        vmd_states_file = new OrigamiStateOutputFile {
+                output_filebase + ".states", 0,
+                m_params.m_max_total_staples, m_origami_system};
+
+        vmd_ores_file = new OrigamiOrientationOutputFile {
+                output_filebase + ".ores", 0,
+                m_params.m_max_total_staples, m_origami_system};
+
+        pipe_to_vmd();
+        if (m_params.m_create_vmd_instance) {
+            vmd_proc = new bp::child {bp::search_path("vmd"),
+                "-e", m_params.m_vmd_file_dir + "/pipe.tcl",
+                "-args", m_params.m_vmd_file_dir, m_params.m_output_filebase + "_vmd",
+                bp::std_out > "/dev/null"};
+        }
+    }
+
+    void GCMCSimulation::pipe_to_vmd() {
+        vmd_struct_file->open_write_close();
+        vmd_coors_file->open_write_close();
+        vmd_states_file->open_write_close();
+        vmd_ores_file->open_write_close();
+    }
+
+    void GCMCSimulation::close_vmd_pipe() {
+        delete vmd_struct_file;
+        delete vmd_coors_file;
+        delete vmd_states_file;
+        delete vmd_ores_file;
     }
 
     void GCMCSimulation::close_output_files() {

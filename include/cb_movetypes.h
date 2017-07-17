@@ -81,14 +81,19 @@ namespace CBMovetypes {
                             random_gens,
                             ideal_random_walks,
                             params) {};
-            bool attempt_move();
+            virtual bool attempt_move();
             void reset_internal();
 
             string m_label() {return "CTCBScaffoldRegrowthMCMovetype";};
-        private:
+        protected:
             Constraintpoints m_constraintpoints {m_origami_system, m_ideal_random_walks};
             int m_dir;
-            vector<Domain*> select_scaffold_indices();
+            vector<Domain*> select_indices(vector<Domain*>);
+            pair<Domain*, Domain*> select_endpoints(vector<Domain*> domains, int min_size);
+            vector<Domain*> select_cyclic_segment(Domain* start_domain,
+                    Domain* end_domain);
+            vector<Domain*> select_linear_segment(Domain* start_domain,
+                    Domain* end_domain);
             void grow_chain(vector<Domain*> domains);
             void grow_staple_and_update_endpoints(Domain* growth_domain_old);
             vector<double> calc_bias(
@@ -97,6 +102,22 @@ namespace CBMovetypes {
                     vector<pair<VectorThree, VectorThree>>& configs,
                     VectorThree p_prev,
                     vector<Domain*> domains);
+    };
+
+    class CTCBLinkerRegrowthMCMovetype: public CTCBScaffoldRegrowthMCMovetype {
+        public:
+            using CTCBScaffoldRegrowthMCMovetype::CTCBScaffoldRegrowthMCMovetype;
+            bool attempt_move();
+
+            string m_label() {return "CTCBLinkerRegrowthMCMovetype";};
+
+        private:
+            void reset_segment(vector<Domain*> segment, size_t last_di);
+            void select_linkers(vector<Domain*> domains, vector<Domain*>& linker1, vector<Domain*>& linker2,
+                    vector<Domain*>& central_segment);
+            bool domains_bound_externally(vector<Domain*> domains);
+            bool scan_for_external_scaffold_domain(Domain* domain,
+                    vector<Domain*> domains, set<int>& participating_chains);
     };
 }
 

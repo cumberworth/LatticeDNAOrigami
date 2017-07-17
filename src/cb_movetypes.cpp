@@ -1,5 +1,6 @@
 // cb_movetypes.cpp
 
+#include "algorithm"
 #include "utility.h"
 #include "movetypes.h"
 #include "cb_movetypes.h"
@@ -287,7 +288,7 @@ namespace CBMovetypes {
         // Select growth points on chains
         pair<Domain*, Domain*> growthpoint {select_new_growthpoint(selected_chain)};
 
-        auto bound_domains {find_bound_domains(selected_chain)};
+        auto bound_domains = find_bound_domains(selected_chain);
         unassign_domains(selected_chain);
 
         // Grow staple
@@ -371,7 +372,9 @@ namespace CBMovetypes {
         bool accepted;
 
         m_regrow_old = false;
-        vector<Domain*> scaffold_domains {select_scaffold_indices()};
+        vector<Domain*> scaffold {m_origami_system.get_chain(
+                m_origami_system.c_scaffold)};
+        vector<Domain*> scaffold_domains {select_indices(scaffold)};
 
         m_constraintpoints.calculate_constraintpoints(scaffold_domains);
         set<int> staples {m_constraintpoints.staples_to_be_regrown()};
@@ -430,58 +433,77 @@ namespace CBMovetypes {
         m_constraintpoints.reset_internal();
     }
 
-    vector<Domain*> CTCBScaffoldRegrowthMCMovetype::select_scaffold_indices() {
+    vector<Domain*> CTCBScaffoldRegrowthMCMovetype::select_indices(
+            vector<Domain*> segment) {
 
-        // Randomly select endpoints
-        vector<Domain*> scaffold {m_origami_system.get_chain(m_origami_system.c_scaffold)};
-        Domain* start_domain {scaffold[m_random_gens.uniform_int(0, scaffold.size() - 1)]};
-        Domain* end_domain {scaffold[m_random_gens.uniform_int(0, scaffold.size() - 1)]};
-        while (start_domain->m_d == end_domain->m_d) {
-            end_domain = scaffold[m_random_gens.uniform_int(0, scaffold.size() - 1)];
-        }
-        
+        pair<Domain*, Domain*> endpoints {select_endpoints(segment, 1)};
         vector<Domain*> domains {};
-
-        // Cyclic domains
         if (m_origami_system.m_cyclic) {
+            domains = select_cyclic_segment(endpoints.first, endpoints.second);
+        }
+        else {
+            domains = select_linear_segment(endpoints.first, endpoints.second);
+        }
 
-            // Select direction of regrowth MESSY
-            m_dir = m_random_gens.uniform_int(0, 1);
-            if (m_dir == 0) {
-                m_dir = -1;
-            }
-            Domain* endpoint_domain {(*end_domain) + m_dir};
-            int d_i {start_domain->m_d};
-            Domain* cur_domain {start_domain};
-            while (d_i != end_domain->m_d) {
-                domains.push_back(cur_domain);
-                cur_domain = (*cur_domain) + m_dir;
-                d_i = cur_domain->m_d;
-            }
-            domains.push_back(end_domain);
+        // If end domain is end of chain, no endpoint
+        Domain* endpoint_domain {(*endpoints.second) + m_dir};
+        if (endpoint_domain != nullptr) {
             m_constraintpoints.add_active_endpoint(endpoint_domain, endpoint_domain->m_pos);
         }
 
-        // Linear domains
+        return domains;
+    }
+
+    pair<Domain*, Domain*> CTCBScaffoldRegrowthMCMovetype::select_endpoints(
+            vector<Domain*> domains, int min_size) {
+
+        Domain* start_domain {domains[m_random_gens.uniform_int(0, domains.size() - 1)]};
+        Domain* end_domain {domains[m_random_gens.uniform_int(0, domains.size() - 1)]};
+        while (std::abs(start_domain->m_d - end_domain->m_d) < min_size) {
+            end_domain = domains[m_random_gens.uniform_int(0, domains.size() - 1)];
+        }
+
+        return {start_domain, end_domain};
+    }
+
+    vector<Domain*> CTCBScaffoldRegrowthMCMovetype::select_cyclic_segment(
+            Domain* start_domain, Domain* end_domain) {
+
+        vector<Domain*> domains {};
+
+        // Select direction of regrowth MESSY
+        m_dir = m_random_gens.uniform_int(0, 1);
+        if (m_dir == 0) {
+            m_dir = -1;
+        }
+        int d_i {start_domain->m_d};
+        Domain* cur_domain {start_domain};
+        while (d_i != end_domain->m_d) {
+            domains.push_back(cur_domain);
+            cur_domain = (*cur_domain) + m_dir;
+            d_i = cur_domain->m_d;
+        }
+        domains.push_back(end_domain);
+
+        return domains;
+    }
+
+    vector<Domain*> CTCBScaffoldRegrowthMCMovetype::select_linear_segment(
+            Domain* start_domain, Domain* end_domain) {
+
+        vector<Domain*> scaffold {m_origami_system.get_chain(m_origami_system.c_scaffold)};
+        vector<Domain*> domains {};
+
+        // Find direction of regrowth
+        if (end_domain->m_d > start_domain->m_d) {
+            m_dir = 1;
+        }
         else {
-
-            // Find direction of regrowth
-            if (end_domain->m_d > start_domain->m_d) {
-                m_dir = 1;
-            }
-            else {
-                m_dir = -1;
-            }
-            Domain* endpoint_domain {(*end_domain) + m_dir};
-            for (int d_i {start_domain->m_d}; d_i != end_domain->m_d + m_dir; d_i += m_dir) {
-                Domain* cur_domain {scaffold[d_i]};
-                domains.push_back(cur_domain);
-            }
-
-            // If end domain is end of chain, no endpoint
-            if (endpoint_domain != nullptr) {
-                m_constraintpoints.add_active_endpoint(endpoint_domain, endpoint_domain->m_pos);
-            }
+            m_dir = -1;
+        }
+        for (int d_i {start_domain->m_d}; d_i != end_domain->m_d + m_dir; d_i += m_dir) {
+            Domain* cur_domain {scaffold[d_i]};
+            domains.push_back(cur_domain);
         }
 
         return domains;
@@ -580,5 +602,334 @@ namespace CBMovetypes {
         }
 
         return norm_weights;
+    }
+
+    bool CTCBLinkerRegrowthMCMovetype::attempt_move() {
+        bool accepted;
+        m_regrow_old = false;
+
+        // Pick region to be modified
+        vector<Domain*> scaffold {m_origami_system.get_chain(
+                m_origami_system.c_scaffold)};
+        pair<Domain*, Domain*> endpoints {select_endpoints(scaffold, 3)};
+        vector<Domain*> scaffold_domains {};
+        if (m_origami_system.m_cyclic) {
+            scaffold_domains = select_cyclic_segment(endpoints.first, endpoints.second);
+        }
+        else {
+            scaffold_domains = select_linear_segment(endpoints.first, endpoints.second);
+        }
+
+        // Pick linker regions/central region
+        vector<Domain*> linker1 {};
+        vector<Domain*> linker2 {};
+        vector<Domain*> central_segment {};
+        select_linkers(scaffold_domains, linker1, linker2, central_segment);
+
+        // Reject moves that have central region bound externally
+        if (domains_bound_externally(central_segment)) {
+            accepted = false;
+            return accepted;
+        }
+
+        // Calculate topology constraints
+        vector<Domain*> linkers {linker1};
+        linkers.insert(linkers.end(), linker2.begin(), linker2.end());
+        m_constraintpoints.calculate_constraintpoints(linkers); // Deal with terminal domains properly
+        set<int> staples {m_constraintpoints.staples_to_be_regrown()};
+        
+        // Unassign domains
+        vector<Domain*> linker1_domains_to_unassign(linker1.begin() + 1,
+                linker1.end());
+        unassign_domains(linker1_domains_to_unassign);
+        vector<Domain*> linker2_domains_to_unassign(linker2.begin() + 1,
+                linker2.end());
+        unassign_domains(linker2_domains_to_unassign);
+        for (auto c_i: staples) {
+            unassign_domains(m_origami_system.get_chain(c_i));
+        }
+        set<int> central_staples {find_staples(central_segment)};
+        vector<Domain*> central_domains {central_segment};
+        for (auto staple: central_staples) {
+            vector<Domain*> staple_domains {m_origami_system.get_chain(staple)};
+            for (auto domain: staple_domains) {
+                central_domains.push_back(domain);
+            }
+        }
+
+        // Consider a more efficient method for this
+        unassign_domains(central_domains); 
+
+        // Select and apply transformation for central segment
+        bool regrowth_possible {false};
+        while (not regrowth_possible) {
+
+            // Translation component
+            VectorThree disp {};
+            for (int i {0}; i != 3; i++) {
+                disp[i] = m_random_gens.uniform_int(0, m_params.m_max_displacement);
+            }
+
+            // Rotation component
+            // Select rotation center (from central scaffold domain positions)
+            int center_di {m_random_gens.uniform_int(0, central_segment.size() - 1)};
+            pair<int, int> center_key {central_segment[center_di]->m_c,
+                    central_segment[center_di]->m_d};
+            VectorThree center {m_prev_pos[center_key]};
+
+            // Select axis and number of turns
+            int axis_i {m_random_gens.uniform_int(0, 2)};
+            VectorThree axis {basis_vectors[axis_i]};
+            int turns {m_random_gens.uniform_int(0, 3)};
+
+            // Apply transformation
+            bool transform_applied {true};
+            for (size_t di {0}; di != central_domains.size(); di++) {
+                Domain* domain {central_domains[di]};
+                pair<int, int> key {domain->m_c, domain->m_d};
+                VectorThree pos {m_prev_pos[key]};
+                VectorThree ore {m_prev_ore[key]};
+
+                // Translation
+                pos = pos + disp;
+
+                // Rotation
+                pos = pos.rotate(center, axis, turns);
+                ore = ore.rotate({0, 0, 0}, axis, turns);
+
+                // If position occupied by external domain, try again
+                if (m_origami_system.position_occupancy(pos) == Occupancy::bound or
+                        m_origami_system.position_occupancy(pos) == Occupancy::misbound) {
+                    reset_segment(central_domains, di);
+                    transform_applied = false;
+                    break;
+                }
+                else if (m_origami_system.position_occupancy(pos) == Occupancy::unbound) {
+                    Domain* unbound_domain {m_origami_system.unbound_domain_at(pos)};
+                    if (find(central_domains.begin(), central_domains.end(),
+                                unbound_domain) == central_domains.end()) {
+                        reset_segment(central_domains, di);
+                        transform_applied = false;
+                        break;
+                    }
+                }
+                m_origami_system.set_checked_domain_config(*domain, pos, ore);
+                m_assigned_domains.push_back(key);
+            }
+
+            // If regrowth not possible, reset central domain
+            if (transform_applied) {
+                int dist1 {(linker1[0]->m_pos - central_segment[0]->m_pos).abssum()};
+                int dist2 {(linker2[0]->m_pos - central_segment.back()->m_pos).abssum()};
+                if (dist1 <= static_cast<int>(linker1.size()) and
+                        dist2 <= static_cast<int>(linker2.size())) {
+                    regrowth_possible = true;
+                }
+                else {
+                    reset_segment(central_domains, central_domains.size());
+                }
+            }
+        }
+
+        // Add terminal constraint points (consider only adding once if central seg is only 1 domain)
+        m_constraintpoints.add_active_endpoint(central_segment[0],
+                central_segment[0]->m_pos);
+        if (central_segment[0]->m_d != central_segment.back()->m_d) {
+            m_constraintpoints.add_active_endpoint(central_segment.back(),
+                    central_segment.back()->m_pos);
+        }
+
+        // Grow linkers
+        if (m_constraintpoints.is_growthpoint(linker1[0])) {
+            grow_staple_and_update_endpoints(linker1[0]);
+            if (m_rejected) {
+                accepted = false;
+                return accepted;
+            }
+        }
+        grow_chain(linker1);
+        if (m_rejected) {
+            accepted = false;
+            return accepted;
+        }
+        if (m_constraintpoints.is_growthpoint(linker2[0])) {
+            grow_staple_and_update_endpoints(linker2[0]);
+            if (m_rejected) {
+                accepted = false;
+                return accepted;
+            }
+        }
+        grow_chain(linker2);
+        if (m_rejected) {
+            accepted = false;
+            return accepted;
+        }
+        m_origami_system.check_all_constraints();
+
+        //HACK
+        update_bias(+1);
+        // Regrow in old conformation
+        setup_for_regrow_old();
+        m_constraintpoints.reset_active_endpoints();
+
+        // Unassign staples except those directly and indirectly bound to external scaffold domains
+        unassign_domains(linker1_domains_to_unassign);
+        unassign_domains(linker2_domains_to_unassign);
+        for (auto c_i: staples) {
+            unassign_domains(m_origami_system.get_chain(c_i));
+        }
+
+        // Consider a more efficient method for this
+        unassign_domains(central_domains); 
+
+        // Move central region back to original position
+        for (auto domain: central_domains) {
+            pair<int, int> key {domain->m_c, domain->m_d};
+            VectorThree pos {m_old_pos[key]};
+            VectorThree ore {m_old_ore[key]};
+            m_origami_system.set_checked_domain_config(*domain, pos, ore);
+            m_assigned_domains.push_back(key);
+        }
+
+        // Grow linkers
+        if (m_constraintpoints.is_growthpoint(linker1[0])) {
+            grow_staple_and_update_endpoints(linker1[0]);
+        }
+        grow_chain(linker1);
+        if (m_constraintpoints.is_growthpoint(linker2[0])) {
+            grow_staple_and_update_endpoints(linker2[0]);
+        }
+        grow_chain(linker2);
+        m_origami_system.check_all_constraints();
+
+        // Reset modifier and test acceptance
+        m_modifier = 1;
+        //HACK
+        update_bias(+1);
+        accepted = test_cb_acceptance();
+        m_origami_system.check_all_constraints();
+        return accepted;
+    }
+
+    void CTCBLinkerRegrowthMCMovetype::reset_segment(vector<Domain*> segment,
+            size_t last_di) {
+
+        for (size_t di {0}; di != last_di; di++) {
+            Domain* domain {segment[di]};
+            m_origami_system.unassign_domain(*domain);
+            m_assigned_domains.pop_back(); // HACK
+        }
+    }
+
+    void CTCBLinkerRegrowthMCMovetype::select_linkers(vector<Domain*> domains,
+            vector<Domain*>& linker1, vector<Domain*>& linker2,
+            vector<Domain*>& central_segment) {
+
+        // Select endpoints (these will be inluded as central segment)
+        // Exclude the terminal domains to ensure always linkers to regrow
+        int start_di {m_random_gens.uniform_int(1, domains.size() - 2)};
+        int end_di {m_random_gens.uniform_int(1, domains.size() - 2)};
+
+        if (end_di < start_di) {
+            std::swap(start_di, end_di);
+        }
+        
+        for (int i {0}; i != static_cast<int>(domains.size()); i++) {
+            if (i < start_di) {
+                linker1.push_back(domains[i]);
+            }
+            else if (i >= start_di and i <= end_di) {
+                central_segment.push_back(domains[i]);
+            }
+            else {
+                linker2.push_back(domains[i]);
+            }
+        }
+
+        // Growing from external to central, order needs to reflect this
+        std::reverse(linker2.begin(), linker2.end());
+    }
+
+    bool CTCBLinkerRegrowthMCMovetype::domains_bound_externally(
+            vector<Domain*> domains) {
+
+        bool externally_bound {false};
+        for (auto domain: domains) {
+            if (domain->m_state != Occupancy::unbound) {
+                Domain* bound_domain {domain->m_bound_domain};
+                if (bound_domain->m_c == m_origami_system.c_scaffold) {
+                    bool domain_in_range {find(domains.begin(), domains.end(),
+                            bound_domain) != domains.end()};
+                    if (not domain_in_range) {
+                        externally_bound = true;
+                        break;
+                    }
+                    else {
+                        continue;
+                    }
+                }
+
+                set<int> participating_chains {domain->m_c};
+                if (not scan_for_external_scaffold_domain(bound_domain, domains,
+                            participating_chains)) {
+                    externally_bound = false;
+                }
+                else {
+                    externally_bound = true;
+                    break;
+                }
+            }
+        }
+
+        return externally_bound;
+    }
+
+    bool CTCBLinkerRegrowthMCMovetype::scan_for_external_scaffold_domain(
+            Domain* domain,
+            vector<Domain*> domains,
+            set<int>& participating_chains) {
+
+        bool externally_bound {false};
+        int c_i {domain->m_c};
+        participating_chains.insert(c_i);
+        vector<Domain*> staple {m_origami_system.get_chain(c_i)};
+        for (auto cur_domain: staple) {
+            if (cur_domain == domain) {
+                continue;
+            }
+            Domain* bound_domain {cur_domain->m_bound_domain};
+            if (bound_domain != nullptr) {
+
+                // Skip if bound to self
+                if (bound_domain->m_c == domain->m_c) {
+                    continue;
+                }
+
+                // Check if bound to scaffold
+                bool domain_on_scaffold {bound_domain->m_c == m_origami_system.c_scaffold};
+                if (domain_on_scaffold) {
+                    bool domain_in_range {find(domains.begin(), domains.end(),
+                            bound_domain) != domains.end()};
+                    if (not domain_in_range) {
+                        externally_bound = true;
+                        break;
+                    }
+                    else {
+                        continue;
+                    }
+                }
+
+                // Check if bound domain already in progress
+                if (participating_chains.count(bound_domain->m_c) > 0) {
+                    continue;
+                }
+                else {
+                    externally_bound = scan_for_external_scaffold_domain(
+                            bound_domain, domains, participating_chains);
+                }
+            }
+        }
+
+        return externally_bound;
     }
 }

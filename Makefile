@@ -1,7 +1,7 @@
 # Autodependency recipe from
 # http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
 
-OPTLEVEL = -O3
+OPTLEVEL = -g
 BUILDDIR = build
 PREFIX = ../../bin/latticeDNAOrigami
 TARGET = latticeDNAOrigami
@@ -18,7 +18,7 @@ OBJECTS := $(subst $(SRCDIR),$(BUILDDIR),$(OBJECTS))
 
 CPP = mpicxx
 CPPFLAGS = -Iinclude $(OPTLEVEL)
-LDFLAGS = -lboost_program_options -lboost_mpi -lboost_serialization $(OPTLEVEL)
+LDFLAGS = -lboost_program_options -lboost_mpi -lboost_serialization -lboost_system -lboost_filesystem $(OPTLEVEL)
 
 # For compiling on Dexter (using local Boost installation (I think that's why this is needed))
 #CPPFLAGS = -I/home/amc226/include -Iinclude $(OPTLEVEL)

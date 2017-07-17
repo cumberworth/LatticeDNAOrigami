@@ -80,7 +80,69 @@ namespace Utility {
             rot[0] = -rot[0];
             rot[1] = -rot[1];
         }
+//        else {
+//           throw SimulationMisuse {};
+//      }
         return rot;
+    }
+
+    VectorThree VectorThree::rotate(VectorThree origin, VectorThree axis,
+            int turns) {
+
+        VectorThree rot = *this;
+        if (turns == 0) {
+            return rot;
+        }
+        rot = rot - origin;
+        if (turns % 2 == 0) {
+            if (axis == xhat) {
+                rot[1] = -rot[1];
+                rot[2] = -rot[2];
+            }
+            else if (axis == yhat) {
+                rot[0] = -rot[0];
+                rot[2] = -rot[2];
+            }
+            else if (axis == zhat) {
+                rot[0] = -rot[0];
+                rot[1] = -rot[1];
+            }
+            else {
+                throw SimulationMisuse {};
+            }
+        }
+        else {
+            int dir;
+            bool odd_turns_even {(turns - 1)/2 % 2 == 0};
+            bool turns_neg {turns < 0};
+            if (not turns_neg and odd_turns_even) {
+                dir = 1;
+            }
+            else {
+                dir = -1;
+            }
+
+            if (axis == xhat) {
+                std::swap(rot[1], rot[2]);
+                rot[1] *= -dir;
+                rot[2] *= dir;
+            }
+            else if (axis == yhat) {
+                std::swap(rot[0], rot[2]);
+                rot[0] *= -dir;
+                rot[2] *= dir;
+            }
+            else if (axis == zhat) {
+                std::swap(rot[0], rot[1]);
+                rot[0] *= -dir;
+                rot[1] *= dir;
+            }
+            else {
+                throw SimulationMisuse {};
+            }
+        }
+
+        return rot + origin;
     }
 
     int VectorThree::sum() {

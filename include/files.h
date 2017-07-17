@@ -61,6 +61,7 @@ namespace Files {
                     OrigamiSystem& origami_system);
             virtual ~OrigamiOutputFile() {};
 
+            void open_write_close();
             virtual void write(long int step) = 0;
 
             const string m_filename;

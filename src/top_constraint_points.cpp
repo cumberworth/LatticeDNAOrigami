@@ -116,18 +116,29 @@ namespace TopConstraintPoints {
             int endpoint_d_i {endpoint.first};
             int first_d_i {domains.front()->m_d};
             int last_d_i {domains.back()->m_d};
-            if (domain->m_c == m_origami_system.c_scaffold or not (
-                        (endpoint_d_i >= first_d_i and endpoint_d_i <= last_d_i) or
-                        (endpoint_d_i >= last_d_i and endpoint_d_i <= first_d_i))) {
+            bool apply_constraint {false};
+            // Why is it not that condition?
+            if (domain->m_c != m_origami_system.c_scaffold) {
+                if ((endpoint_d_i >= first_d_i and endpoint_d_i <= last_d_i) or
+                        (endpoint_d_i >= last_d_i and endpoint_d_i <= first_d_i)) {
+                    apply_constraint = true;
+                }
+            }
+            else {
+                if ((endpoint_d_i >= first_d_i and endpoint_d_i <= (last_d_i + 1)) or
+                        (endpoint_d_i >= (last_d_i - 1) and endpoint_d_i <= (first_d_i))) {
+                    apply_constraint = true;
+                }
+            }
+            if (apply_constraint) {
                 int steps {calc_remaining_steps(endpoint_d_i, domain, dir,
                         step_offset)};
                 VectorThree endpoint_p {endpoint.second};
                 prod_num_walks *= m_ideal_random_walks.num_walks(pos, endpoint_p,
                         steps);
             }
-            else {
-            }
         }
+
         return prod_num_walks;
     }
 

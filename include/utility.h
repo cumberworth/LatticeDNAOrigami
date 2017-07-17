@@ -57,6 +57,7 @@ namespace Utility {
             const int& at(const size_t& i) const {return m_container.at(i);};
 
             VectorThree rotate_half(VectorThree axis);
+            VectorThree rotate(VectorThree origin, VectorThree axis, int turns);
             int sum();
             int abssum();
             VectorThree absolute();
@@ -87,6 +88,8 @@ namespace Utility {
             {0, -1, 0},
             {0, 0, 1},
             {0, 0, -1}};
+
+    const vector<VectorThree> basis_vectors {xhat, yhat, zhat};
 }
 
 #endif // UTILITY_H

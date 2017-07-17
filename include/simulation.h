@@ -12,6 +12,7 @@
 
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
+#include <boost/process.hpp>
 
 #include "parser.h"
 #include "origami_system.h"
@@ -27,10 +28,12 @@ namespace Simulation {
     using std::shared_ptr;
     using std::map;
     using std::ostream;
+    using std::ofstream;
     using std::unordered_map;
     using std::set;
 
     namespace mpi = boost::mpi;
+    namespace bp = boost::process;
 
     using namespace Parser;
     using namespace Origami;
@@ -58,12 +61,20 @@ namespace Simulation {
             int m_logging_freq;
             int m_centering_freq;
             int m_constraint_check_freq;
+            int m_vmd_pipe_freq;
             InputParameters& m_params;
             vector <OrigamiOutputFile*> m_output_files;
             vector<shared_ptr<MCMovetype>> m_movetypes;
             vector<double> m_cumulative_probs;
             RandomGens m_random_gens {};
             IdealRandomWalks m_ideal_random_walks {};
+
+            // VMD realtime visualization
+            OrigamiVSFOutputFile* vmd_struct_file {NULL};
+            OrigamiVCFOutputFile* vmd_coors_file {NULL};
+            OrigamiStateOutputFile* vmd_states_file {NULL};
+            OrigamiOrientationOutputFile* vmd_ores_file {NULL};
+            bp::child* vmd_proc {NULL};
 
             // Shared interface
             virtual void update_internal(long long int step) = 0;
@@ -76,6 +87,9 @@ namespace Simulation {
                     long long int step,
                     MCMovetype& movetype,
                     bool accepted);
+            void setup_vmd_pipe();
+            void pipe_to_vmd();
+            void close_vmd_pipe();
             void close_output_files();
     };
 }

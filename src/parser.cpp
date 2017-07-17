@@ -121,6 +121,7 @@ namespace Parser {
             ("restart_traj_files", po::value<string>(), "Trajectory restart files for each replicate")
             ("restart_step", po::value<int>(), "Step to restart from")
             ("restart_steps", po::value<string>(), "Restart step for each replicate")
+            ("vmd_file_dir", po::value<string>(), "Directory containing VMD scripts for viewing simulations")
 
             // Order parameters
             ("distance_pairs", po::value<string>(), "Scaffold domains to restrain")
@@ -151,6 +152,8 @@ namespace Parser {
             ("cb_staple_exchange", po::value<string>(), "CB staple exchange movetype probability")
             ("cb_staple_regrowth", po::value<string>(), "CB staple regrowth movetype probability")
             ("ctcb_scaffold_regrowth", po::value<string>(), "CTCB scaffold regrowth movetype probability")
+            ("ctcb_linker_regrowth", po::value<string>(), "CTCB linker regrowth movetype probability")
+            ("max_displacement", po::value<int>(), "Max displacement of linked region in CTCB linker regrowth")
             ("num_walks_filename", po::value<string>(), "Precalculated number of ideal random walks archive")
             ("exchange_mult", po::value<double>(), "Exchange acceptance probability multiplier")
             ("max_total_staples", po::value<int>(), "Max number of total staples")
@@ -194,6 +197,8 @@ namespace Parser {
             ("counts_output_freq", po::value<int>(), "Counts output write frequency")
             ("energies_output_freq", po::value<int>(), "Energies output write frequency")
             ("order_params_output_freq", po::value<int>(), "Order parameters write frequency")
+            ("vmd_pipe_freq", po::value<int>(), "Realtime VMD visualization updating frequency")
+            ("create_vmd_instance", po::value<bool>(), "Create VMD instance")
         ;
 
         // Command line variable map
@@ -270,6 +275,9 @@ namespace Parser {
         if (vm.count("restart_steps")) {
             string steps_s = vm["restart_steps"].as<string>();
             m_restart_steps = string_to_int_vector(steps_s);
+        }
+        if (vm.count("vmd_file_dir")) {
+            m_vmd_file_dir = vm["vmd_file_dir"].as<string>();
         }
 
         // Order parameters
@@ -366,6 +374,15 @@ namespace Parser {
             Fraction prob {unparsed_fraction};
             m_movetype_probs.push_back(prob.to_double());
             m_movetypes.push_back(MovetypeID::CTCBScaffoldRegrowth);
+        }
+        if (vm.count("ctcb_linker_regrowth")) {
+            string unparsed_fraction {vm["ctcb_linker_regrowth"].as<string>()};
+            Fraction prob {unparsed_fraction};
+            m_movetype_probs.push_back(prob.to_double());
+            m_movetypes.push_back(MovetypeID::CTCBLinkerRegrowth);
+        }
+        if (vm.count("max_displacement")) {
+            m_max_displacement = vm["max_displacement"].as<int>();
         }
         if (vm.count("num_walks_filename")) {
             m_num_walks_filename = vm["num_walks_filename"].as<string>();
@@ -480,6 +497,12 @@ namespace Parser {
         }
         if (vm.count("order_params_output_freq")) {
             m_order_params_output_freq = vm["order_params_output_freq"].as<int>();
+        }
+        if (vm.count("vmd_pipe_freq")) {
+            m_vmd_pipe_freq = vm["vmd_pipe_freq"].as<int>();
+        }
+        if (vm.count("create_vmd_instance")) {
+            m_create_vmd_instance = vm["create_vmd_instance"].as<bool>();
         }
     }
 

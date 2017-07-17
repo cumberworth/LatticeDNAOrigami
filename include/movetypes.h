@@ -82,6 +82,7 @@ namespace Movetypes {
             VectorThree select_random_orientation();
             bool test_acceptance(long double p_ratio);
             bool staple_is_connector(vector<Domain*> staple);
+            set<int> find_staples(vector<Domain*> domains);
             bool scan_for_scaffold_domain(Domain*, set<int>& participating_chains);
 
             virtual void update_bias(int sign) = 0;

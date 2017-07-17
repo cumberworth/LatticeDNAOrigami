@@ -16,7 +16,8 @@ namespace Parser {
         MetStapleExchange,
         MetStapleRegrowth,
         CBStapleRegrowth,
-        CTCBScaffoldRegrowth
+        CTCBScaffoldRegrowth,
+        CTCBLinkerRegrowth
     };
 
     // String parsing helper functions
@@ -64,6 +65,8 @@ namespace Parser {
             string m_restart_traj_postfix {".trj"};
             int m_restart_step;
             vector<int> m_restart_steps;
+            string m_vmd_file_dir;
+            bool m_create_vmd_instance {false};
 
             // Order parameters
             bool m_distance_sum {false};
@@ -91,6 +94,7 @@ namespace Parser {
             int m_constraint_check_freq {0};
             vector<MovetypeID> m_movetypes {};
             vector<double> m_movetype_probs {};
+            int m_max_displacement {0};
             string m_num_walks_filename {""};
             int m_exchange_mult {1};
             int m_max_total_staples {999};
@@ -134,6 +138,7 @@ namespace Parser {
             int m_counts_output_freq {0};
             int m_energies_output_freq {0};
             int m_order_params_output_freq {0};
+            int m_vmd_pipe_freq {0};
 
         private:
             void set_default_sim_options();

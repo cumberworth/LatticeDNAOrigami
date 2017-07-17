@@ -67,6 +67,7 @@ namespace Origami {
 
     OrigamiSystem::~OrigamiSystem() {
         delete m_system_order_params;
+        delete m_system_biases;
         for (auto chain: m_domains) {
             for (auto domain: chain) {
                 delete domain;

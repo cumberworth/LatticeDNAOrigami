@@ -47,6 +47,7 @@ namespace Movetypes {
             Domain* domain {m_origami_system.get_domain(c_i, d_i)};
             m_origami_system.set_checked_domain_config(*domain, pos, ore);
         }
+
         m_origami_system.m_constraints_violated = false;
     }
 
@@ -126,6 +127,18 @@ namespace Movetypes {
             }
         }
         return false;
+    }
+
+    set<int> MCMovetype::find_staples(vector<Domain*> domains) {
+        set<int> staples {};
+        for (auto domain: domains) {
+            Domain* bound_domain {domain->m_bound_domain};
+            if (bound_domain != nullptr and bound_domain->m_c != 0) {
+                scan_for_scaffold_domain(bound_domain, staples);
+            }
+        }
+
+        return staples;
     }
 
     bool MCMovetype::scan_for_scaffold_domain(

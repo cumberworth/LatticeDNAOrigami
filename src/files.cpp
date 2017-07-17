@@ -186,6 +186,12 @@ namespace Files {
         m_file.open(m_filename);
     }
 
+    void OrigamiOutputFile::open_write_close() {
+        m_file.open(m_filename);
+        write(0);
+        m_file.close();
+    }
+
     void OrigamiVSFOutputFile::write(long int) {
         m_file << "atom 0:";
         size_t scaffold_length {m_origami_system.get_chain(0).size()};
