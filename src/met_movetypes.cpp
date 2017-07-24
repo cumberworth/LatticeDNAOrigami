@@ -1,13 +1,19 @@
 // met_movetypes.cpp
 
-#include "utility.h"
-#include "movetypes.h"
+#include <map>
+#include <set>
+#include <utility>
+
 #include "met_movetypes.h"
 
 namespace MetMovetypes {
 
-    using namespace Movetypes;
-    using namespace Utility;
+    using std::map;
+    using std::pair;
+    using std::set;
+
+    using Movetypes::add_tracker;
+    using Utility::VectorThree;
 
     void MetMCMovetype::reset_internal() {
         MCMovetype::reset_internal();
@@ -28,6 +34,7 @@ namespace MetMovetypes {
             else {
                 pair<int, int> key {domain->m_c, domain->m_d};
                 m_assigned_domains.push_back(key);
+                write_config();
             }
         }
     }
@@ -42,27 +49,77 @@ namespace MetMovetypes {
         }
     }
 
-    void MetMCMovetype::update_bias(int sign) {
+    void MetMCMovetype::add_external_bias() {
         double total_bias {m_system_bias.calc_bias()};
-        m_delta_e += sign * total_bias;
+        m_delta_e += total_bias;
 
         return;
     }
 
-    bool MetStapleExchangeMCMovetype::attempt_move() {
-        // HACK
-        update_bias(-1);
+    void MetMCMovetype::subtract_external_bias() {
+        double total_bias {m_system_bias.calc_bias()};
+        m_delta_e -= total_bias;
+
+        return;
+    }
+
+    bool MetStapleExchangeMCMovetype::attempt_move(long long int step) {
+        m_step = step;
+        write_config();
+        m_general_tracker.attempts++;
+        subtract_external_bias();
 
         // Select inertion or deletion with equal frequency
         bool accept;
         if (m_random_gens.uniform_real() < 0.5) {
+            m_tracker.staple_insertion = true;
             accept = insert_staple();
         }
         else {
+            m_tracker.staple_insertion = false;
             accept = delete_staple();
         }
         
         return accept;
+    }
+
+    void MetStapleExchangeMCMovetype::write_log_summary(ostream* log_stream) {
+
+        // Insertion of each staple type
+        map<int, int> insertion_attempts {};
+        map<int, int> insertion_accepts {};
+        map<int, int> deletion_attempts {};
+        map<int, int> deletion_accepts {};
+        set<int> staple_types {};
+        for (auto tracker: m_tracking) {
+            auto info = tracker.first;
+            auto counts = tracker.second;
+            staple_types.insert(info.staple_type);
+            if (info.staple_insertion) {
+                insertion_attempts[info.staple_type] = counts.attempts;
+                insertion_accepts[info.staple_type] = counts.accepts;
+            }
+            else if (not info.no_staples) {
+                deletion_attempts[info.staple_type] = counts.attempts;
+                deletion_accepts[info.staple_type] = counts.accepts;
+            }
+        }
+
+        for (auto st: staple_types) {
+            *log_stream << "    Staple type: " << st << "\n";
+            int iats {insertion_attempts[st]};
+            int iacs {insertion_accepts[st]};
+            float ifreq {static_cast<float>(iacs) / iats};
+            *log_stream << "        Insertion attempts: " << iats << "\n";
+            *log_stream << "        Insertion accepts: " << iacs << "\n";
+            *log_stream << "        Insertion frequency: " << ifreq << "\n";
+            int dats {deletion_attempts[st]};
+            int dacs {deletion_accepts[st]};
+            float dfreq {static_cast<float>(dacs) / dats};
+            *log_stream << "        Deletion attempts: " << dats << "\n";
+            *log_stream << "        Deletion accepts: " << dacs << "\n";
+            *log_stream << "        Deletion frequency: " << dfreq << "\n";
+        }
     }
 
     void MetStapleExchangeMCMovetype::reset_internal() {
@@ -71,8 +128,7 @@ namespace MetMovetypes {
     }
 
     bool MetStapleExchangeMCMovetype::staple_insertion_accepted(int c_i_ident) {
-        // HACK
-        update_bias(+1);
+        add_external_bias();
         double boltz_factor {exp(-m_delta_e)};
         int Ni_new {m_origami_system.num_staples_of_ident(c_i_ident)};
 
@@ -115,17 +171,20 @@ namespace MetMovetypes {
     }
 
     bool MetStapleExchangeMCMovetype::insert_staple() {
-        bool accepted;
+        bool accepted {false};
 
         // Select and add chain of random identity
         int c_i_ident {select_random_staple_identity()};
+        m_tracker.staple_type = c_i_ident;
 
         // Check if number staples exceeds max allowed
         if (m_origami_system.num_staples() == m_max_total_staples) {
-            return false;
+            add_tracker(m_tracker, m_tracking, accepted);
+            return accepted;
         }
         if (m_origami_system.num_staples_of_ident(c_i_ident) == m_max_type_staples) {
-            return false;
+            add_tracker(m_tracker, m_tracking, accepted);
+            return accepted;
         }
 
         int c_i {m_origami_system.add_chain(c_i_ident)};
@@ -139,35 +198,38 @@ namespace MetMovetypes {
 
         m_delta_e += set_growth_point(*growthpoint.first, *growthpoint.second);
         if (m_rejected) {
-            accepted = false;
+            add_tracker(m_tracker, m_tracking, accepted);
             return accepted;
         }
 
         grow_staple(growthpoint.first->m_d, selected_chain);
         if (m_rejected) {
-            accepted = false;
+            add_tracker(m_tracker, m_tracking, accepted);
             return accepted;
         }
 
         accepted = staple_insertion_accepted(c_i_ident);
+        add_tracker(m_tracker, m_tracking, accepted);
+        m_general_tracker.accepts += accepted;
         return accepted;
     }
 
     bool MetStapleExchangeMCMovetype::delete_staple() {
-        bool accepted;
+        bool accepted {false};
 
         // Select random identity and staple of that type
         int c_i_ident {select_random_staple_identity()};
+        m_tracker.staple_type = c_i_ident;
         int c_i {select_random_staple_of_identity(c_i_ident)};
         if (m_rejected) {
-            accepted = false;
+            add_tracker(m_tracker, m_tracking, accepted);
             return accepted;
         }
 
         // Reject if staple is connector
         vector<Domain*> staple {m_origami_system.get_chain(c_i)};
         if (staple_is_connector(staple)) {
-            accepted = false;
+            add_tracker(m_tracker, m_tracking, accepted);
             return accepted;
         }
 
@@ -175,6 +237,8 @@ namespace MetMovetypes {
         unassign_domains(staple);
         m_delta_e += m_origami_system.check_delete_chain(c_i);
         accepted = staple_deletion_accepted(c_i_ident);
+        add_tracker(m_tracker, m_tracking, accepted);
+        m_general_tracker.accepts += accepted;
         if (accepted) {
             m_origami_system.delete_chain(c_i);
         }
@@ -182,24 +246,27 @@ namespace MetMovetypes {
         return accepted;
     }
 
-    bool MetStapleRegrowthMCMovetype::attempt_move() {
-        // HACK
-        update_bias(-1);
-        bool accepted;
+    bool MetStapleRegrowthMCMovetype::attempt_move(long long int step) {
+        m_step = step;
+        write_config();
+        bool accepted {false};
+        m_general_tracker.attempts++;
+        subtract_external_bias();
 
         // No staples to regrow
         if (m_origami_system.num_staples() == 0) {
-            accepted = false;
+            add_tracker(m_tracker, m_tracking, accepted);
             return accepted;
         }
 
         // Select a staple to regrow
         int c_i_index {m_random_gens.uniform_int(1, m_origami_system.num_staples())};
         vector<Domain*> selected_chain {m_origami_system.get_chains()[c_i_index]};
+        m_tracker.staple_type = selected_chain[0]->m_c_ident;
 
         // Reject if staple is connector
         if (staple_is_connector(selected_chain)) {
-            accepted = false;
+            add_tracker(m_tracker, m_tracking, accepted);
             return accepted;
         }
 
@@ -216,14 +283,42 @@ namespace MetMovetypes {
         }
         grow_staple(growthpoint.first->m_d, selected_chain);
         if (m_rejected) {
-            accepted = false;
+            add_tracker(m_tracker, m_tracking, accepted);
             return accepted;
         }
 
-        // HACK
-        update_bias(+1);
+        add_external_bias();
         double boltz_factor {exp(-(m_delta_e))};
         accepted = test_acceptance(boltz_factor);
+        m_general_tracker.accepts++;
+        add_tracker(m_tracker, m_tracking, accepted);
         return accepted;
+    }
+
+    void MetStapleRegrowthMCMovetype::write_log_summary(ostream* log_stream) {
+
+        // Insertion of each staple type
+        map<int, int> attempts {};
+        map<int, int> accepts {};
+        set<int> staple_types {};
+        for (auto tracker: m_tracking) {
+            auto info = tracker.first;
+            auto counts = tracker.second;
+            staple_types.insert(info.staple_type);
+            if (not info.no_staples) {
+                attempts[info.staple_type] = counts.attempts;
+                accepts[info.staple_type] = counts.accepts;
+            }
+        }
+
+        for (auto st: staple_types) {
+            *log_stream << "    Staple type: " << st << "\n";
+            int ats {attempts[st]};
+            int acs {accepts[st]};
+            double freq {static_cast<double>(acs) / ats};
+            *log_stream << "        Attempts: " << ats << "\n";
+            *log_stream << "        Accepts: " << acs << "\n";
+            *log_stream << "        Frequency: " << freq << "\n";
+        }
     }
 }

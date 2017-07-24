@@ -14,6 +14,7 @@
 #include <boost/serialization/array.hpp>
 
 #include "hash.h"
+#include "utility.h"
 
 namespace IdealRandomWalk {
 
@@ -21,7 +22,7 @@ namespace IdealRandomWalk {
     using std::pair;
     using std::string;
 
-    using namespace::Utility;
+    using Utility::VectorThree;
 
     class IdealRandomWalks {
         public:

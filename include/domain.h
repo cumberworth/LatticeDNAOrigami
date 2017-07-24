@@ -7,7 +7,8 @@
 
 namespace DomainContainer{
 
-    using namespace Utility;
+    using Utility::Occupancy;
+    using Utility::VectorThree;
 
     class Domain {
         // DNA origami binding domain

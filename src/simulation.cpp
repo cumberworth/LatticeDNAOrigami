@@ -29,6 +29,7 @@ namespace Simulation {
     using std::cout;
     using std::min;
     using std::pow;
+    using std::setw;
 
     namespace mpi = boost::mpi;
     namespace bp = boost::process;
@@ -60,20 +61,9 @@ namespace Simulation {
             outs.push_back(config_out);
         }
         if (params.m_vtf_output_freq != 0) {
-            OrigamiOutputFile* config_out = new OrigamiVCFOutputFile {
-                    output_filebase + ".vcf", params.m_vtf_output_freq,
-                    params.m_max_total_staples, origami};
-            outs.push_back(config_out);
-
-            config_out = new OrigamiStateOutputFile {
-                    output_filebase + ".states", params.m_vtf_output_freq,
-                    params.m_max_total_staples, origami};
-            outs.push_back(config_out);
-
-            config_out = new OrigamiOrientationOutputFile {
-                    output_filebase + ".ores", params.m_vtf_output_freq,
-                    params.m_max_total_staples, origami};
-            outs.push_back(config_out);
+            setup_config_files(params.m_output_filebase,
+                    params.m_max_total_staples, params.m_vtf_output_freq,
+                    origami, outs);
         }
         if (params.m_counts_output_freq != 0) {
             OrigamiOutputFile* counts_out = new OrigamiCountsOutputFile {
@@ -98,6 +88,26 @@ namespace Simulation {
         return outs;
     }
 
+    void setup_config_files (
+            const string filebase,
+            const int max_total_staples,
+            const int freq,
+            OrigamiSystem& origami,
+            vector<OrigamiOutputFile*>& files) {
+
+        OrigamiOutputFile* config_out = new OrigamiVCFOutputFile {
+                filebase + ".vcf", freq, max_total_staples, origami};
+        files.push_back(config_out);
+
+        config_out = new OrigamiStateOutputFile {
+                filebase + ".states", freq, max_total_staples, origami};
+        files.push_back(config_out);
+
+        config_out = new OrigamiOrientationOutputFile {
+                filebase + ".ores", freq, max_total_staples, origami};
+        files.push_back(config_out);
+    }
+
     GCMCSimulation::GCMCSimulation(OrigamiSystem& origami_system,
             InputParameters& params) :
             m_origami_system {origami_system},
@@ -105,11 +115,19 @@ namespace Simulation {
 
         m_logging_freq = params.m_logging_freq;
         m_centering_freq = params.m_centering_freq;
+        m_centering_domain = params.m_centering_domain;
         m_constraint_check_freq = params.m_constraint_check_freq;
         m_vmd_pipe_freq = params.m_vmd_pipe_freq;
 
         if (m_vmd_pipe_freq != 0) {
             setup_vmd_pipe();
+        }
+
+        // HACK (files won't be right if filebase changed in derived constructor)
+        if (params.m_vcf_per_domain) {
+            setup_config_files(params.m_output_filebase + "_move",
+                    params.m_max_total_staples, params.m_configs_output_freq,
+                    m_origami_system, m_config_per_move_files);
         }
 
         // Constructor movetypes
@@ -128,6 +146,7 @@ namespace Simulation {
             boost::archive::binary_iarchive num_walks_arch {num_walks_file};
             num_walks_arch >> m_ideal_random_walks;
         }
+
     }
 
     GCMCSimulation::~GCMCSimulation() {
@@ -142,27 +161,33 @@ namespace Simulation {
             shared_ptr<MCMovetype> movetype;
             if (movetype_id == MovetypeID::OrientationRotation) {
                 movetype.reset(new OrientationRotationMCMovetype {
-                        m_origami_system, m_random_gens, m_ideal_random_walks, params});
+                        m_origami_system, m_random_gens, m_ideal_random_walks,
+                        m_config_per_move_files, params});
             }
             else if (movetype_id == MovetypeID::MetStapleExchange) {
                 movetype.reset(new MetStapleExchangeMCMovetype {
-                        m_origami_system, m_random_gens, m_ideal_random_walks, params});
+                        m_origami_system, m_random_gens, m_ideal_random_walks,
+                        m_config_per_move_files, params});
             }
             else if (movetype_id == MovetypeID::MetStapleRegrowth) {
                 movetype.reset(new MetStapleRegrowthMCMovetype {
-                        m_origami_system, m_random_gens, m_ideal_random_walks, params});
+                        m_origami_system, m_random_gens, m_ideal_random_walks,
+                        m_config_per_move_files, params});
             }
             else if (movetype_id == MovetypeID::CBStapleRegrowth) {
                 movetype.reset(new CBStapleRegrowthMCMovetype {
-                        m_origami_system, m_random_gens, m_ideal_random_walks, params});
+                        m_origami_system, m_random_gens, m_ideal_random_walks,
+                        m_config_per_move_files, params});
             }
             else if (movetype_id == MovetypeID::CTCBScaffoldRegrowth) {
                 movetype.reset(new CTCBScaffoldRegrowthMCMovetype {
-                        m_origami_system, m_random_gens, m_ideal_random_walks, params});
+                        m_origami_system, m_random_gens, m_ideal_random_walks,
+                        m_config_per_move_files, params});
             }
             else if (movetype_id == MovetypeID::CTCBLinkerRegrowth) {
                 movetype.reset(new CTCBLinkerRegrowthMCMovetype {
-                        m_origami_system, m_random_gens, m_ideal_random_walks, params});
+                        m_origami_system, m_random_gens, m_ideal_random_walks,
+                        m_config_per_move_files, params});
             }
             m_movetypes.push_back(movetype);
         }
@@ -175,7 +200,7 @@ namespace Simulation {
             // Pick movetype and apply
             shared_ptr<MCMovetype> movetype {select_movetype()};
             bool accepted;
-            accepted = movetype->attempt_move();
+            accepted = movetype->attempt_move(step);
             if (not accepted) {
                 movetype->reset_origami();
             }
@@ -183,7 +208,7 @@ namespace Simulation {
 
             // Center and check constraints
             if (m_centering_freq != 0 and step % m_centering_freq == 0) {
-                m_origami_system.centre();
+                m_origami_system.center(m_centering_domain);
             }
             if (m_constraint_check_freq != 0 and step % m_constraint_check_freq == 0) {
                 m_origami_system.check_all_constraints();
@@ -191,7 +216,7 @@ namespace Simulation {
 
             // Write log entry to standard out
             if (m_logging_freq !=0 and step % m_logging_freq == 0) {
-                write_log_entry(step, *movetype, accepted);
+                write_log_entry(step, accepted, *movetype);
             }
 
             // VMD pipe
@@ -209,6 +234,7 @@ namespace Simulation {
                 }
             }
         }
+        write_log_summary();
     }
 
     shared_ptr<MCMovetype> GCMCSimulation::select_movetype() {
@@ -223,17 +249,42 @@ namespace Simulation {
         return movetype;
     }
 
-    void GCMCSimulation::write_log_entry(long long int step, MCMovetype& movetype,
-            bool accepted) {
+    void GCMCSimulation::write_log_entry(
+            const long long int step,
+            bool accepted,
+            MCMovetype& movetype) {
 
-        *m_logging_stream << "Step: " << step << " ";
-        *m_logging_stream << "Movetype: " << movetype.m_label() << " ";
-        *m_logging_stream << "Staples: " << m_origami_system.num_staples() << " ";
-        *m_logging_stream << "Accepted: " << accepted << " ";
-        *m_logging_stream << "Temp: " << m_origami_system.m_temp << " ";
-        *m_logging_stream << "Energy: " << m_origami_system.energy() << " ";
-        *m_logging_stream << "Bias: " << m_origami_system.bias() << " ";
+        *m_logging_stream << "Step: " << step << "\n";
+        *m_logging_stream << "Temperature: " << m_origami_system.m_temp << "\n";
+        *m_logging_stream << "Bound staples: " << m_origami_system.num_staples() << "\n";
+        *m_logging_stream << "Unique bound staples: " << m_origami_system.num_unique_staples() << "\n";
+        *m_logging_stream << "Fully bound domain pairs: " << m_origami_system.num_fully_bound_domain_pairs() << "\n";
+        *m_logging_stream << "System energy: " << m_origami_system.energy() << "\n";
+        *m_logging_stream << "External bias: " << m_origami_system.bias() << "\n";
+        *m_logging_stream << "Movetype: " << movetype.m_label() << "\n";
+        *m_logging_stream << "Accepted: " << std::boolalpha << accepted << "\n";
         *m_logging_stream << "\n";
+    }
+
+    void GCMCSimulation::write_log_summary() {
+        *m_logging_stream << "Run summary" << "\n\n";
+        ofstream* movetype_sum_stream;
+        movetype_sum_stream = new ofstream {m_params.m_output_filebase +
+                ".moves"};
+        for (auto movetype: m_movetypes) {
+            *m_logging_stream << "Movetype: " << movetype->m_label() << "\n";
+            int attempts {movetype->get_attempts()};
+            int accepts {movetype->get_accepts()};
+            double freq {static_cast<double>(accepts) / attempts};
+            *m_logging_stream << "    Attempts: " << attempts << "\n";
+            *m_logging_stream << "    Accepts: " << accepts << "\n";
+            *m_logging_stream << "    Frequency: " << freq << "\n";
+
+            movetype->write_log_summary(movetype_sum_stream);
+            *m_logging_stream << "\n";
+        }
+        movetype_sum_stream->close();
+        delete movetype_sum_stream;
     }
 
     void GCMCSimulation::setup_vmd_pipe() {
@@ -280,6 +331,9 @@ namespace Simulation {
     void GCMCSimulation::close_output_files() {
         for (auto output_file: m_output_files) {
             delete output_file;
+        }
+        for (auto file: m_config_per_move_files) {
+            delete file;
         }
         m_output_files.clear();
     }

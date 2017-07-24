@@ -6,7 +6,6 @@
 #include <vector>
 #include <array>
 #include <functional>
-#include <unordered_map>
 #include <memory>
 
 #include <boost/archive/text_oarchive.hpp>
@@ -17,7 +16,6 @@ namespace Utility {
     using std::vector;
     using std::array;
     using std::bind;
-    using std::unordered_map;
     using std::pair;
     using std::unique_ptr;
 
@@ -74,6 +72,44 @@ namespace Utility {
 
     // Hash needs this, ambiguous to also have method
     bool operator==(const VectorThree& v1, const VectorThree& v2);
+
+    struct StapleExchangeTracking {
+        bool staple_insertion;
+        bool no_staples;
+        int staple_type;
+    };
+    bool operator==(
+            const StapleExchangeTracking& t1,
+            const StapleExchangeTracking& t2);
+
+    struct StapleRegrowthTracking {
+        bool no_staples;
+        int staple_type;
+    };
+    bool operator==(
+            const StapleRegrowthTracking& t1,
+            const StapleRegrowthTracking& t2);
+
+    struct CTCBScaffoldRegrowthTracking {
+        int num_scaffold_domains;
+        int num_staples;
+    };
+    bool operator==(
+            const CTCBScaffoldRegrowthTracking& t1,
+            const CTCBScaffoldRegrowthTracking& t2);
+
+    struct CTCBLinkerRegrowthTracking {
+        bool central_domains_connected;
+        int num_linker_domains;
+        int num_linker_staples;
+        int num_central_domains;
+        int num_central_staples;
+        int disp_sum;
+        int rot_turns;
+    };
+    bool operator==(
+            const CTCBLinkerRegrowthTracking& t1,
+            const CTCBLinkerRegrowthTracking& t2);
 
     // Base unit vectors
     const VectorThree xhat {1, 0, 0};

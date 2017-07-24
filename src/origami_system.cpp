@@ -441,13 +441,13 @@ namespace Origami {
         }
     }
 
-    void OrigamiSystem::centre() {
+    void OrigamiSystem::center(int centering_domain) {
         // Translate the system such that the first scaffold domain is on the origin
 
         // The maps that go from a position to something need to be reset
         unordered_map<VectorThree, Domain*> pos_to_unbound_d {};
         unordered_map<VectorThree, Occupancy> position_occupancies {};
-        VectorThree refpos {m_domains[0][0]->m_pos};
+        VectorThree refpos {m_domains[0][centering_domain]->m_pos};
         for (auto chain: m_domains) {
             for (auto domain: chain) {
                 VectorThree new_pos {domain->m_pos - refpos};

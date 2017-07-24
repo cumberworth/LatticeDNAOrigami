@@ -1,18 +1,15 @@
 // top_constraint_points.cpp
 
-#include <set>
 #include <cmath>
 
 #include "utility.h"
 #include "top_constraint_points.h"
 
-using std::fmin;
-using std::set;
-using std::find;
-
 namespace TopConstraintPoints {
 
-    using namespace Utility;
+    using std::fmin;
+    using std::set;
+    using std::find;
 
     Constraintpoints::Constraintpoints(
             OrigamiSystem& origami_system,
@@ -212,12 +209,6 @@ namespace TopConstraintPoints {
                     checked_staples.insert(c_i);
                 }
             }
-        }
-
-        // Remove endpoints on first scaffold domain unless cyclic and regrowing whole thing
-        if (not m_origami_system.m_cyclic and scaffold_domains.size() !=
-                m_origami_system.get_chain(0).size()) {
-            remove_active_endpoint(scaffold_domains[0]);
         }
     }
 

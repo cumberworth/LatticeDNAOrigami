@@ -3,14 +3,10 @@
 #include <iostream>
 
 #include "domain.h"
-#include "utility.h"
-#include "origami_system.h"
 
 namespace DomainContainer {
 
     using std::cout;
-    using namespace Utility;
-    using namespace Origami;
 
     Domain* Domain::operator+(int incr) {
 

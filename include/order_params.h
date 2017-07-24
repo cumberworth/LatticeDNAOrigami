@@ -5,10 +5,10 @@
 
 #include <vector>
 
-#include "hash.h"
-#include "parser.h"
 #include "domain.h"
+#include "hash.h"
 #include "origami_system.h"
+#include "parser.h"
 
 namespace OrderParams {
 

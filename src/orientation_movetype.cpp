@@ -10,8 +10,11 @@ namespace OrientationMovetype {
     using namespace Movetypes;
     using namespace Utility;
 
-    bool OrientationRotationMCMovetype::attempt_move() {
+    bool OrientationRotationMCMovetype::attempt_move(long long int step) {
+        m_step = step;
         bool accept;
+        write_config();
+        m_general_tracker.attempts++;
         
         // Select random chain, domain, and orientation
         Domain* domain {select_random_domain()};
@@ -37,8 +40,13 @@ namespace OrientationMovetype {
         else {
             m_origami_system.set_domain_orientation(*domain, o_new);
             accept = true;
+            m_general_tracker.accepts++;
         }
+        write_config();
 
         return accept;
+    }
+
+    void OrientationRotationMCMovetype::write_log_summary(ostream*) {
     }
 }

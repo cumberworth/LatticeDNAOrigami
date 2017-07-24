@@ -165,4 +165,42 @@ namespace Utility {
         int z {sorted_container[2]};
         return {VectorThree {x, y, z}};
     }
+
+    bool operator==(
+            const StapleExchangeTracking& t1,
+            const StapleExchangeTracking& t2) {
+
+        return (t1.staple_insertion == t2.staple_insertion and
+                t1.no_staples == t2.no_staples and
+                t1.staple_type == t2.staple_type);
+    }
+
+    bool operator==(
+            const StapleRegrowthTracking& t1,
+            const StapleRegrowthTracking& t2) {
+
+        return (t1.no_staples == t2.no_staples and
+                t1.staple_type == t2.staple_type);
+    }
+
+    bool operator==(
+            const CTCBScaffoldRegrowthTracking& t1,
+            const CTCBScaffoldRegrowthTracking& t2) {
+
+        return (t1.num_scaffold_domains == t2.num_scaffold_domains and
+                t1.num_staples == t2.num_staples);
+    }
+
+    bool operator==(
+            const CTCBLinkerRegrowthTracking& t1,
+            const CTCBLinkerRegrowthTracking& t2) {
+
+        return (t1.central_domains_connected == t2.central_domains_connected and
+                t1.num_linker_domains == t2.num_linker_domains and
+                t1.num_linker_staples == t2.num_linker_staples and
+                t1.num_central_domains == t2.num_central_domains and
+                t1.num_central_staples == t2.num_central_staples and
+                t1.disp_sum == t2.disp_sum and
+                t1.rot_turns == t2.rot_turns);
+    }
 }

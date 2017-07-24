@@ -4,27 +4,46 @@
 #define MOVETYPES_H
 
 #include <iostream>
+#include <iostream>
+#include <unordered_map>
 #include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include <memory>
-
+#include "files.h"
+#include "ideal_random_walk.h"
+#include "domain.h"
+#include "order_params.h"
+#include "origami_system.h"
 #include "parser.h"
 #include "random_gens.h"
-#include "origami_system.h"
-#include "ideal_random_walk.h"
-#include "order_params.h"
+#include "utility.h"
 
 namespace Movetypes {
 
     using std::cout;
+    using std::ostream;
     using std::unique_ptr;
+    using std::pair;
     using std::set;
+    using std::string;
+    using std::unordered_map;
+    using std::vector;
 
-    using namespace Parser;
-    using namespace Origami;
-    using namespace RandomGen;
-    using namespace IdealRandomWalk;
-    using namespace OrderParams;
+    using DomainContainer::Domain;
+    using Files::OrigamiOutputFile;
+    using IdealRandomWalk::IdealRandomWalks;
+    using OrderParams::SystemBiases;
+    using Origami::OrigamiSystem;
+    using Parser::InputParameters;
+    using RandomGen::RandomGens;
+    using Utility::VectorThree;
+
+    struct MovetypeTracking {
+        int attempts;
+        int accepts;
+    };
 
     class MCMovetype {
         public:
@@ -32,29 +51,42 @@ namespace Movetypes {
                     OrigamiSystem& origami_system,
                     RandomGens& random_gens,
                     IdealRandomWalks& ideal_random_walks,
-                    InputParameters& params) :
-                    m_origami_system {origami_system},
-                    m_random_gens {random_gens},
-                    m_ideal_random_walks {ideal_random_walks},
-                    m_params {params},
-                    //HACK
-                    m_system_bias {*origami_system.get_system_biases()},
-                    m_max_total_staples {params.m_max_total_staples},
-                    m_max_type_staples {params.m_max_type_staples} {}
+                    vector<OrigamiOutputFile*> config_files,
+                    InputParameters& params);
             virtual ~MCMovetype() {};
 
-            virtual bool attempt_move() = 0;
+            virtual bool attempt_move(long long int step) = 0;
             virtual void reset_origami();
             virtual void reset_internal();
-
             virtual string m_label() {return "MCMovetype";};
+            virtual void write_log_summary(ostream* log_stream) = 0;
+
+            int get_attempts();
+            int get_accepts();
 
         protected:
+            Domain* select_random_domain();
+            int select_random_staple_identity();
+            int select_random_staple_of_identity(int c_i_ident);
+            VectorThree select_random_position(VectorThree p_prev);
+            VectorThree select_random_orientation();
+            bool test_acceptance(long double p_ratio);
+            bool staple_is_connector(vector<Domain*> staple);
+            set<int> find_staples(vector<Domain*> domains);
+            bool scan_for_scaffold_domain(Domain*, set<int>& participating_chains);
+            void write_config();
+
+            virtual void add_external_bias() = 0;
+            virtual void subtract_external_bias() = 0;
+
+
             OrigamiSystem& m_origami_system;
             RandomGens& m_random_gens;
             IdealRandomWalks& m_ideal_random_walks;
+            vector<OrigamiOutputFile*> m_config_files;
             InputParameters& m_params;
             bool m_rejected {false};
+            int m_config_output_freq;
             //HACK
             SystemBiases& m_system_bias;
 
@@ -74,18 +106,8 @@ namespace Movetypes {
             // Modifier to correct for excluded volume and overcounting
             double m_modifier {1};
 
-            // Shared methods
-            Domain* select_random_domain();
-            int select_random_staple_identity();
-            int select_random_staple_of_identity(int c_i_ident);
-            VectorThree select_random_position(VectorThree p_prev);
-            VectorThree select_random_orientation();
-            bool test_acceptance(long double p_ratio);
-            bool staple_is_connector(vector<Domain*> staple);
-            set<int> find_staples(vector<Domain*> domains);
-            bool scan_for_scaffold_domain(Domain*, set<int>& participating_chains);
-
-            virtual void update_bias(int sign) = 0;
+            MovetypeTracking m_general_tracker {0, 0};
+            long long int m_step {0};
     };
 
     class IdentityMCMovetype: public MCMovetype {
@@ -93,20 +115,34 @@ namespace Movetypes {
             using MCMovetype::MCMovetype;
             bool attempt_move() {return true;};
 
-            string m_label() {return "IdentityMCMovetype";};
+            string m_label() {return "Identity";};
     };
 
     class RegrowthMCMovetype: public MCMovetype {
         public:
             using MCMovetype::MCMovetype;
 
-            string m_label() {return "RegrowthMCMovetype";};
+            string m_label() {return "Regrowth";};
         protected:
             virtual double set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old);
             void grow_staple(int d_i_index, vector<Domain*> selected_chain);
             virtual void grow_chain(vector<Domain*> domains) = 0;
             pair<Domain*, Domain*> select_new_growthpoint(vector<Domain*> selected_chain);
     };
+
+    template <typename T>
+    void add_tracker(
+            T tracker,
+            unordered_map<T, MovetypeTracking>& trackers,
+            bool accepted) {
+        if (trackers.find(tracker) == trackers.end()) {
+            trackers[tracker] = {1, accepted};
+        }
+        else {
+            trackers[tracker].attempts++;
+            trackers[tracker].accepts += accepted;
+        }
+    }
 }
 
 #endif // MOVETYPES_H

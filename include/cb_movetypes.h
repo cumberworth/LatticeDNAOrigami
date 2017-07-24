@@ -3,121 +3,300 @@
 #ifndef CB_STAPLE_MOVETYPES_H
 #define CB_STAPLE_MOVETYPES_H
 
-#include "movetypes.h"
-#include "top_constraint_points.h"
+#include <iostream>
+#include <set>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
+#include "domain.h"
+#include "hash.h"
+#include "ideal_random_walk.h"
+#include "movetypes.h"
+#include "origami_system.h"
+#include "parser.h"
+#include "random_gens.h"
+#include "top_constraint_points.h"
+#include "utility.h"
+
+/*  Movetypes involving configuration bias */
 namespace CBMovetypes {
 
-    using namespace Movetypes;
-    using namespace TopConstraintPoints;
+    using std::ostream;
+    using std::pair;
+    using std::set;
+    using std::string;
+    using std::unordered_map;
+    using std::vector;
 
+    using DomainContainer::Domain;
+    using IdealRandomWalk::IdealRandomWalks;
+    using Movetypes::MovetypeTracking;
+    using Movetypes::RegrowthMCMovetype;
+    using Movetypes::add_tracker;
+    using Origami::OrigamiSystem;
+    using Parser::InputParameters;
+    using RandomGen::RandomGens;
+    using TopConstraintPoints::Constraintpoints;
+    using Utility::VectorThree;
+    using Utility::StapleRegrowthTracking;
+    using Utility::CTCBScaffoldRegrowthTracking;
+    using Utility::CTCBLinkerRegrowthTracking;
+    using Utility::VectorThree;
+
+    typedef vector<pair<VectorThree, VectorThree>> configsT;
+    typedef pair<Domain*, Domain*> domainPairT;
+
+    /*  Base for CB moves */
     class CBMCMovetype: public RegrowthMCMovetype {
+
         public:
             using RegrowthMCMovetype::RegrowthMCMovetype;
 
-            virtual void reset_internal();
-            string m_label() {return "CBMCMovetype";};
+            virtual void reset_internal() override;
+            virtual string m_label() override {return "CB";};
+
         protected:
-            long double m_bias {1};
-            long double m_new_bias {1};
-            double m_new_modifier {1};
-            bool m_regrow_old {false};
+
+            /*  Calculate the CB trial weights and rosenbluth-type weight */
+            virtual vector<double> calc_bias(
+                    const vector<double> bfactors, // Boltzman weights
+                    const configsT& configs, // Configs
+                    const VectorThree p_prev, // Position of growthpoint domain
+                    Domain* domain, // Domain being regrown
+                    vector<Domain*> domains) = 0; // Domains in segment
+
+            /*  Calculate the Boltzmann weights for all configurations
+           
+                Fills the configuration and weights arrays with the Boltzmann
+                weights for all configurations available to the given domain.
+                If all orientations are permissible for a given position, it
+                will output zero-orientation and multiply the weight by the
+                number of possible orientations.
+            */
+            void calc_biases(
+                    const VectorThree p_prev, // Position of growthpoint domain
+                    Domain& domain, // Domain to calculate weights for
+                    configsT& configs, // Configs considered
+                    vector<double>& bfactors); // Weights for configs
+
+            /*  Select and set a configuration for a domain using CB */
+            void select_and_set_config(
+                    const int i, // Index in segment array of domain to regrow
+                    vector<Domain*> domains); // Segment being regrown
+
+            /*  Select and set a configuration from given configs and weights */
+            void select_and_set_new_config(
+                    const vector<double> weights, // Weights
+                    const configsT configs, // Config
+                    Domain& domain); // Domain being regrown
+
+            /*  Set configuration to old */
+            void select_and_set_old_config(Domain& domain);
+
+            /*  Set growthpoint without checking constraints */
+            double set_old_growth_point(
+                    Domain& growth_domain_new,
+                    Domain& growth_domain_old);
+
+            /*  Test move acceptance and take appropriate action
+
+                If accepted it will revert to the new configuration (as the
+                system will currently be in the old configuration), otherwise
+                it will clear the reset arrays so that reset origami has no
+                effect.
+            */
+            bool test_cb_acceptance();
+
+            /*  Unassign all given domains and store old configurations */
+            void unassign_domains(vector<Domain*>);
+
+            /*  Prepare interals for regrowing old configuration */
+            void setup_for_regrow_old();
+
+            /*  Find all domains bound directly to give domains */
+            vector<domainPairT> find_bound_domains(
+                    vector<Domain*> selected_chain);
+
+            /*  Select a growthpoint from set of possible */
+            domainPairT select_old_growthpoint(
+                    vector<domainPairT> bound_domains);
+
+            /*  Include external bias on whole configuration in Rosenbluth */
+            void add_external_bias() override;
+            void subtract_external_bias() override;
+
+            long double m_bias {1}; // Rosenbluth-type weight
+            long double m_new_bias {1}; // Storage for new config's Rosenbluth
+            double m_new_modifier {1}; // Storage for new config's modifier
+            bool m_regrow_old {false}; // Regrowing old configuration
             unordered_map<pair<int, int>, VectorThree> m_old_pos {};
             unordered_map<pair<int, int>, VectorThree> m_old_ore {};
-
-            void calc_biases(
-                    Domain& domain,
-                    VectorThree p_prev,
-                    vector<pair<VectorThree, VectorThree>>& configs,
-                    vector<double>& bfactors);
-            virtual vector<double> calc_bias(vector<double> bfactors,
-                    Domain*, vector<pair<VectorThree, VectorThree>>&, VectorThree,
-                    vector<Domain*>) = 0;
-            void select_and_set_config(vector<Domain*> domains, int i);
-            void select_and_set_new_config(
-                    Domain& domain,
-                    vector<double> weights,
-                    vector<pair<VectorThree, VectorThree>> configs);
-            void select_and_set_old_config(Domain& domain);
-            //double set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old);
-            double set_old_growth_point(Domain& growth_domain_new, Domain& growth_domain_old);
-            bool test_cb_acceptance();
-            void unassign_domains(vector<Domain*>);
-            void setup_for_regrow_old();
-            vector<pair<Domain*, Domain*>> find_bound_domains(
-                    vector<Domain*> selected_chain);
-            pair<Domain*, Domain*> select_old_growthpoint(
-                    vector<pair<Domain*, Domain*>> bound_domains);
-
-            void update_bias(int sign);
     };
 
+    /*  CB regrowth of staples */
     class CBStapleRegrowthMCMovetype: public CBMCMovetype {
         public:
             using CBMCMovetype::CBMCMovetype;
-            bool attempt_move();
 
-            string m_label() {return "CBStapleRegrowthMCMovetype";};
+            bool attempt_move(long long int step) override;
+            string m_label() final override {return "CB staple regrowth";}
+            void write_log_summary(ostream* log_entry) override;
+
         private:
+
+            /*  Calculate the CB trial weights and rosenbluth-type weight */
+            vector<double> calc_bias(
+                    const vector<double> bfactors, // Boltzman weights
+                    const configsT& configs, // Configs
+                    const VectorThree p_prev, // Position of growthpoint domain
+                    Domain* domain, // Domain being regrown
+                    vector<Domain*> domains) final override; // Domains in segment
+
+            /*  Grow out domains from first in given array */
+            void grow_chain(vector<Domain*> domains) override;
+
+            /*  Set given growthpoint and grow staple */
             void set_growthpoint_and_grow_staple(
-                    pair<Domain*, Domain*> growthpoint,
+                    domainPairT growthpoint,
                     vector<Domain*> selected_chain);
-            void grow_chain(vector<Domain*> domains);
-            vector<double> calc_bias(vector<double> bfactors,
-                    Domain*, vector<pair<VectorThree, VectorThree>>&, VectorThree,
-                    vector<Domain*>);
+
+            StapleRegrowthTracking m_tracker {};
+            unordered_map<StapleRegrowthTracking, MovetypeTracking> m_tracking {};
     };
 
-    class CTCBScaffoldRegrowthMCMovetype: public CBMCMovetype {
+    /*  Base for CTCB regrowth moves */
+    class CTCBRegrowthMCMovetype: public CBMCMovetype {
         public:
             using CBMCMovetype::CBMCMovetype;
-            CTCBScaffoldRegrowthMCMovetype(
-                    OrigamiSystem& origami_system,
-                    RandomGens& random_gens,
-                    IdealRandomWalks& ideal_random_walks,
-                    InputParameters& params) :
-                    CBMCMovetype(
-                            origami_system,
-                            random_gens,
-                            ideal_random_walks,
-                            params) {};
-            virtual bool attempt_move();
-            void reset_internal();
 
-            string m_label() {return "CTCBScaffoldRegrowthMCMovetype";};
+            void reset_internal() override;
+            string m_label() override {return "CTCB regrowth";};
+
         protected:
-            Constraintpoints m_constraintpoints {m_origami_system, m_ideal_random_walks};
-            int m_dir;
-            vector<Domain*> select_indices(vector<Domain*>);
-            pair<Domain*, Domain*> select_endpoints(vector<Domain*> domains, int min_size);
-            vector<Domain*> select_cyclic_segment(Domain* start_domain,
-                    Domain* end_domain);
-            vector<Domain*> select_linear_segment(Domain* start_domain,
-                    Domain* end_domain);
-            void grow_chain(vector<Domain*> domains);
-            void grow_staple_and_update_endpoints(Domain* growth_domain_old);
+
+            /*  Calculate the CB trial weights and rosenbluth-type weight */
             vector<double> calc_bias(
-                    vector<double> bfactors,
-                    Domain* domain,
-                    vector<pair<VectorThree, VectorThree>>& configs,
-                    VectorThree p_prev,
-                    vector<Domain*> domains);
+                    const vector<double> bfactors, // Boltzman weights
+                    const configsT& configs, // Configs
+                    const VectorThree p_prev, // Position of growthpoint domain
+                    Domain* domain, // Domain being regrown
+                    vector<Domain*> domains) final override; // Domains in segment
+
+            /*  Grow out domains from first in given array */
+            void grow_chain(vector<Domain*> domains) final override;
+
+            /*  Select endpoints of a chain segment of given length */
+            domainPairT select_endpoints(
+                    const vector<Domain*> domains,
+                    const int min_size);
+
+            /*  Return segment of linear domains given endpoints */
+            vector<Domain*> select_cyclic_segment(
+                    Domain* start_domain,
+                    Domain* end_domain);
+
+            /*  Return segment of cyclic domains given endpoints
+
+                Selects a direction of regrowth with uniform probability
+            */
+            vector<Domain*> select_linear_segment(
+                    Domain* start_domain,
+                    Domain* end_domain);
+
+            /*  Grow given staple and update fixed-end biases */
+            void grow_staple_and_update_endpoints(
+                    Domain* growth_domain_old);
+
+            Constraintpoints m_constraintpoints {m_origami_system,
+                    m_ideal_random_walks}; // For fixed end biases
+            int m_dir; // Direction of regrowth (should remove)
     };
 
-    class CTCBLinkerRegrowthMCMovetype: public CTCBScaffoldRegrowthMCMovetype {
+    /*  CTCB regrowth of scaffold segments and bound staples */
+    class CTCBScaffoldRegrowthMCMovetype: public CTCBRegrowthMCMovetype {
         public:
-            using CTCBScaffoldRegrowthMCMovetype::CTCBScaffoldRegrowthMCMovetype;
-            bool attempt_move();
+            using CTCBRegrowthMCMovetype::CTCBRegrowthMCMovetype;
 
-            string m_label() {return "CTCBLinkerRegrowthMCMovetype";};
+            virtual bool attempt_move(long long int step) final override;
+            string m_label() final override {return "CTCB scaffold regrowth";}
+            void write_log_summary(ostream* log_entry) override;
 
         private:
+
+            /*  Select scaffold segment to be regrown */
+            vector<Domain*> select_indices(vector<Domain*>);
+
+            CTCBScaffoldRegrowthTracking m_tracker {};
+            unordered_map<CTCBScaffoldRegrowthTracking, MovetypeTracking> m_tracking {};
+    };
+
+    /*  Transformation of a segment and regrowth of its linkers */
+    class CTCBLinkerRegrowthMCMovetype: public CTCBRegrowthMCMovetype {
+        public:
+            using CTCBRegrowthMCMovetype::CTCBRegrowthMCMovetype;
+
+            bool attempt_move(long long int step) final override;
+            string m_label() final override {return "CTCB linker regrowth";}
+            void write_log_summary(ostream* log_entry) override;
+            void reset_internal() override;
+
+        private:
+
+            /*  Unasssign domains reset arrays for resetting */
             void reset_segment(vector<Domain*> segment, size_t last_di);
-            void select_linkers(vector<Domain*> domains, vector<Domain*>& linker1, vector<Domain*>& linker2,
+
+            /*  Select segment to be transformed and both linkers
+
+                Returns staples to be regrown. Also sets up the constraints for
+                the fixed end biases.
+            */
+            set<int> select_and_setup_segments(
+                    vector<Domain*>& linker1,
+                    vector<Domain*>& linker2,
                     vector<Domain*>& central_segment);
+
+            /*  Setup constraints for fixed end biases
+
+                Returns staples to be regrown.
+            */
+            set<int> setup_fixed_end_biases(
+                    vector<Domain*>& linker1,
+                    vector<Domain*>& linker2,
+                    vector<Domain*>& scaffold_domains);
+
             bool domains_bound_externally(vector<Domain*> domains);
-            bool scan_for_external_scaffold_domain(Domain* domain,
-                    vector<Domain*> domains, set<int>& participating_chains);
+            bool scan_for_external_scaffold_domain(
+                    Domain* domain,
+                    vector<Domain*> domains,
+                    set<int>& participating_chains);
+
+            /*  Transform the central segment */
+            void transform_segment(
+                    vector<Domain*> linker1,
+                    vector<Domain*> linker2,
+                    vector<Domain*> central_segment,
+                    vector<Domain*> central_domains);
+
+            /*  Translate and rotate segment */
+            bool apply_transformation(
+                    vector<Domain*> central_domains,
+                    VectorThree disp,
+                    VectorThree center,
+                    VectorThree axis,
+                    int turns);
+
+            /*  Check if enough steps to regrow linkers */
+            bool steps_less_than_distance(
+                    vector<Domain*> linker1,
+                    vector<Domain*> linker2);
+
+            void revert_transformation(vector<Domain*> central_domains);
+
+            CTCBLinkerRegrowthTracking m_tracker {};
+            unordered_map<CTCBLinkerRegrowthTracking, MovetypeTracking> m_tracking {};
+            vector<Domain*> m_linker_endpoints;
     };
 }
 

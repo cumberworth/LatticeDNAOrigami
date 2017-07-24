@@ -14,12 +14,12 @@
 #include <boost/mpi/communicator.hpp>
 #include <boost/process.hpp>
 
-#include "parser.h"
-#include "origami_system.h"
-#include "movetypes.h"
 #include "files.h"
 #include "ideal_random_walk.h"
+#include "movetypes.h"
 #include "order_params.h"
+#include "origami_system.h"
+#include "parser.h"
 
 namespace Simulation {
 
@@ -47,6 +47,13 @@ namespace Simulation {
             string output_filebase,
             OrigamiSystem& origami);
 
+    void setup_config_files(
+            const string filebase,
+            const int max_total_staples,
+            const int freq,
+            OrigamiSystem& origami,
+            vector<OrigamiOutputFile*>& files);
+
     class GCMCSimulation {
         public:
             GCMCSimulation(
@@ -56,14 +63,34 @@ namespace Simulation {
             virtual void run() = 0;
 
         protected:
+
+            // Shared interface
+            virtual void update_internal(long long int step) = 0;
+
+            // Shared methods
+            void construct_movetypes(InputParameters& params);
+            void simulate(long long int steps, long long int start_step=0);
+            shared_ptr<MCMovetype> select_movetype();
+            void write_log_entry(
+                    const long long int step,
+                    bool accepted,
+                    MCMovetype& movetype);
+            void write_log_summary();
+            void setup_vmd_pipe();
+            void pipe_to_vmd();
+            void close_vmd_pipe();
+            void close_output_files();
+
             OrigamiSystem& m_origami_system;
             ostream* m_logging_stream;
             int m_logging_freq;
             int m_centering_freq;
+            int m_centering_domain;
             int m_constraint_check_freq;
             int m_vmd_pipe_freq;
             InputParameters& m_params;
             vector <OrigamiOutputFile*> m_output_files;
+            vector <OrigamiOutputFile*> m_config_per_move_files {};
             vector<shared_ptr<MCMovetype>> m_movetypes;
             vector<double> m_cumulative_probs;
             RandomGens m_random_gens {};
@@ -75,22 +102,6 @@ namespace Simulation {
             OrigamiStateOutputFile* vmd_states_file {NULL};
             OrigamiOrientationOutputFile* vmd_ores_file {NULL};
             bp::child* vmd_proc {NULL};
-
-            // Shared interface
-            virtual void update_internal(long long int step) = 0;
-
-            // Shared methods
-            void construct_movetypes(InputParameters& params);
-            void simulate(long long int steps, long long int start_step=0);
-            shared_ptr<MCMovetype> select_movetype();
-            void write_log_entry(
-                    long long int step,
-                    MCMovetype& movetype,
-                    bool accepted);
-            void setup_vmd_pipe();
-            void pipe_to_vmd();
-            void close_vmd_pipe();
-            void close_output_files();
     };
 }
 

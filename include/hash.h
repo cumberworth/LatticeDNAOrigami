@@ -5,12 +5,14 @@
 #include <iostream>
 
 #include "utility.h"
-#include "domain.h"
 
 namespace std {
 
     using Utility::VectorThree;
-    using namespace DomainContainer;
+    using Utility::StapleExchangeTracking;
+    using Utility::StapleRegrowthTracking;
+    using Utility::CTCBScaffoldRegrowthTracking;
+    using Utility::CTCBLinkerRegrowthTracking;
 
     /* Copied from a stack exchange question (which is copied from the BOOST
        library) for allowing pairs to be hashed.
@@ -50,6 +52,48 @@ namespace std {
             return seed;
         }
     };
+
+    template<> struct hash<StapleExchangeTracking> {
+        inline size_t operator()(const StapleExchangeTracking& x) const {
+            size_t seed = 0;
+            hash_combine(seed, x.no_staples);
+            hash_combine(seed, x.staple_type);
+            return seed;
+        }
+    };
+
+    template<> struct hash<StapleRegrowthTracking> {
+        inline size_t operator()(const StapleRegrowthTracking& x) const {
+            size_t seed = 0;
+            hash_combine(seed, x.no_staples);
+            hash_combine(seed, x.staple_type);
+            return seed;
+        }
+    };
+
+    template<> struct hash<CTCBScaffoldRegrowthTracking> {
+        inline size_t operator()(const CTCBScaffoldRegrowthTracking& x) const {
+            size_t seed = 0;
+            hash_combine(seed, x.num_scaffold_domains);
+            hash_combine(seed, x.num_staples);
+            return seed;
+        }
+    };
+
+    template<> struct hash<CTCBLinkerRegrowthTracking> {
+        inline size_t operator()(const CTCBLinkerRegrowthTracking& x) const {
+            size_t seed = 0;
+            hash_combine(seed, x.central_domains_connected);
+            hash_combine(seed, x.num_linker_domains);
+            hash_combine(seed, x.num_linker_staples);
+            hash_combine(seed, x.num_central_domains);
+            hash_combine(seed, x.num_central_staples);
+            hash_combine(seed, x.disp_sum);
+            hash_combine(seed, x.rot_turns);
+            return seed;
+        }
+    };
+
 }
 
 #endif // HASH_H

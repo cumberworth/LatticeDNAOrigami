@@ -3,16 +3,31 @@
 #ifndef TOP_CONSTRAINT_POINTS_H
 #define TOP_CONSTRAINT_POINTS_H
 
-#include "random_gens.h"
-#include "origami_system.h"
+#include <vector>
+#include <set>
+#include <unordered_map>
+#include <utility>
+
 #include "ideal_random_walk.h"
+#include "domain.h"
+#include "origami_system.h"
+#include "parser.h"
+#include "random_gens.h"
+#include "utility.h"
 
 namespace TopConstraintPoints {
 
-    using namespace Parser;
-    using namespace Origami;
-    using namespace RandomGen;
-    using namespace IdealRandomWalk;
+    using std::pair;
+    using std::set;
+    using std::unordered_map;
+    using std::vector;
+
+    using DomainContainer::Domain;
+    using IdealRandomWalk::IdealRandomWalks;
+    using Origami::OrigamiSystem;
+    using Parser::InputParameters;
+    using RandomGen::RandomGens;
+    using Utility::VectorThree;
 
     class Constraintpoints {
         public:

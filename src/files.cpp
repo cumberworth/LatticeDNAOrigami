@@ -246,7 +246,12 @@ namespace Files {
         for (auto chain: m_origami_system.get_chains()) {
             for (auto domain: chain) {
                 for (int i {0}; i != 3; i++) {
-                    m_file << domain->m_ore[i] << " ";
+                    if (domain->m_state != Occupancy::unassigned) {
+                        m_file << domain->m_ore[i] << " ";
+                    }
+                    else {
+                        m_file << 0 << " ";
+                    }
                 }
             }
         }
@@ -270,6 +275,9 @@ namespace Files {
                 }
                 else if (domain->m_state == Occupancy::misbound) {
                     m_file << "3 ";
+                }
+                else {
+                    m_file << "0 ";
                 }
             }
         }

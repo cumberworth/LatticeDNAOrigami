@@ -3,20 +3,24 @@
 #ifndef FILES_H
 #define FILES_H
 
+#include <fstream>
 #include <string>
 #include <vector>
-#include <fstream>
 
 #include "origami_system.h"
 #include "order_params.h"
 
 namespace Files {
 
-    using std::ofstream;
     using std::ifstream;
+    using std::ofstream;
+    using std::string;
+    using std::vector;
 
-    using namespace Origami;
-    using namespace OrderParams;
+    using Origami::Chain;
+    using Origami::OrigamiSystem;
+    using OrderParams::OrderParam;
+    using OrderParams::SystemOrderParams;
 
     class OrigamiInputFile {
         // Input file for OrigamiSystem configuration and topology

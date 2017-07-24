@@ -5,7 +5,6 @@
 
 #include "simulation.h"
 
-
 namespace Annealing {
 
     using namespace Simulation;

@@ -2,6 +2,7 @@
 
 #ifndef ORIENTATION_MOVETYPE_H
 #define ORIENTATION_MOVETYPE_H
+
 #include "movetypes.h"
 
 namespace OrientationMovetype {
@@ -11,12 +12,14 @@ namespace OrientationMovetype {
     class OrientationRotationMCMovetype: public MCMovetype {
         public:
             using MCMovetype::MCMovetype;
-            bool attempt_move();
+            bool attempt_move(long long int step) override final;
 
-            string m_label() {return "OrientationRotationMCMovetype";};
+            string m_label() override final {return "Orientation rotation";};
+            void write_log_summary(ostream* log_stream) override final;
 
-            //HACK
-            void update_bias(int sign) {}
+        private:
+            void add_external_bias() override final {}
+            void subtract_external_bias() override final {}
     };
 }
 

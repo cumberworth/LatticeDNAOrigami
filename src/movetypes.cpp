@@ -16,6 +16,26 @@ namespace Movetypes {
     using std::find;
     using namespace Utility;
 
+	MCMovetype::MCMovetype(
+                OrigamiSystem& origami_system,
+                RandomGens& random_gens,
+                IdealRandomWalks& ideal_random_walks,
+                vector<OrigamiOutputFile*> config_files,
+                InputParameters& params) :
+
+                m_origami_system {origami_system},
+                m_random_gens {random_gens},
+                m_ideal_random_walks {ideal_random_walks},
+                m_config_files {config_files},
+                m_params {params},
+				m_config_output_freq {params.m_vtf_output_freq},
+                //HACK
+                m_system_bias {*origami_system.get_system_biases()},
+                m_max_total_staples {params.m_max_total_staples},
+                m_max_type_staples {params.m_max_type_staples} {
+	}
+
+
     void MCMovetype::reset_origami() {
         
         // Have to deal with added domains, modified domains, and deleted domains
@@ -183,6 +203,14 @@ namespace Movetypes {
         return false;
     }
 
+    void MCMovetype::write_config() {
+        if (m_config_output_freq != 0 and m_step % m_config_output_freq == 0) {
+            for (auto file: m_config_files) {
+                file->write(0);
+            }
+        }
+    }
+
     void MCMovetype::reset_internal() {
         m_modified_domains.clear();
         m_assigned_domains.clear();
@@ -191,6 +219,14 @@ namespace Movetypes {
         m_prev_ore.clear();
         m_rejected = false;
         m_modifier = 1;
+    }
+
+    int MCMovetype::get_attempts() {
+        return m_general_tracker.attempts;
+    }
+
+    int MCMovetype::get_accepts() {
+        return m_general_tracker.accepts;
     }
 
     double RegrowthMCMovetype::set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old) {
@@ -207,6 +243,7 @@ namespace Movetypes {
         else {
             pair<int, int> key {growth_domain_new.m_c, growth_domain_new.m_d};
             m_assigned_domains.push_back(key);
+            write_config();
         }
 
         return delta_e;
@@ -222,7 +259,9 @@ namespace Movetypes {
         auto first_iter3 {selected_chain.begin() + d_i_index};
         auto last_iter3 {selected_chain.end()};
         vector<Domain*> domains_three_prime {first_iter3, last_iter3};
-        grow_chain(domains_three_prime);
+        if (domains_three_prime.size() > 1) {
+            grow_chain(domains_three_prime);
+        }
         if (m_rejected) {
             return;
         }
@@ -232,7 +271,9 @@ namespace Movetypes {
         auto last_iter5 {selected_chain.begin() + d_i_index + 1};
         vector<Domain*> domains_five_prime {first_iter5, last_iter5};
         std::reverse(domains_five_prime.begin(), domains_five_prime.end());
-        grow_chain(domains_five_prime);
+        if (domains_five_prime.size() > 1) {
+            grow_chain(domains_five_prime);
+        }
         if (m_rejected) {
             return;
         }

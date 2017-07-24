@@ -9,13 +9,12 @@
 #include <unordered_map>
 #include <utility>
 #include <string>
-#include <valarray>
-
-#include "utility.h"
-#include "nearest_neighbour.h"
-#include "hash.h"
+#include <valarray> 
 #include "domain.h"
+#include "hash.h"
+#include "nearest_neighbour.h"
 #include "parser.h"
+#include "utility.h"
 
 // Forward declaration
 
@@ -128,7 +127,7 @@ namespace Origami {
                     VectorThree position,
                     VectorThree orientation);
             virtual void set_domain_orientation(Domain& cd_i, VectorThree ore);
-            void centre();
+            void center(int centering_domain);
             void set_all_domains();
             void set_all_domains(Chains config);
             void set_config(Chains new_config);
