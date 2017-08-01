@@ -3,11 +3,32 @@
 #ifndef PTMC_SIMULATION_H
 #define PTMC_SIMULATION_H
 
+#include <iostream>
+#include <utility>
+#include <vector>
+
+#include <boost/mpi/environment.hpp>
+#include <boost/mpi/communicator.hpp>
+
+#include "bias_functions.h"
+#include "order_params.h"
+#include "origami_system.h"
+#include "parser.h"
 #include "simulation.h"
 
-namespace PTMC {
+namespace ptmc {
 
-    using namespace Simulation;
+    using std::ofstream;
+    using std::pair;
+    using std::vector;
+
+    namespace mpi = boost::mpi;
+
+    using biasFunctions::SystemBiases;
+    using orderParams::SystemOrderParams;
+    using origami::OrigamiSystem;
+    using parser::InputParameters;
+    using simulation::GCMCSimulation;
 
     class PTGCMCSimulation: public GCMCSimulation {
         // Base method for parallel tempering in GC ensemble
@@ -15,6 +36,8 @@ namespace PTMC {
         public:
             PTGCMCSimulation(
                     OrigamiSystem& origami_system,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
                     InputParameters& params);
             ~PTGCMCSimulation();
             void run();
@@ -97,6 +120,8 @@ namespace PTMC {
         public:
             TPTGCMCSimulation(
                     OrigamiSystem& origami_system,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
                     InputParameters& params);
 
         private:
@@ -108,6 +133,8 @@ namespace PTMC {
         public:
             UTPTGCMCSimulation(
                     OrigamiSystem& origami_system,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
                     InputParameters& params);
 
         private:
@@ -119,6 +146,8 @@ namespace PTMC {
         public:
             HUTPTGCMCSimulation(
                     OrigamiSystem& origami_system,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
                     InputParameters& params);
 
         private:

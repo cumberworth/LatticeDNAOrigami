@@ -15,19 +15,19 @@
 #include "random_gens.h"
 #include "utility.h"
 
-namespace TopConstraintPoints {
+namespace topConstraintPoints {
 
     using std::pair;
     using std::set;
     using std::unordered_map;
     using std::vector;
 
-    using DomainContainer::Domain;
-    using IdealRandomWalk::IdealRandomWalks;
-    using Origami::OrigamiSystem;
-    using Parser::InputParameters;
-    using RandomGen::RandomGens;
-    using Utility::VectorThree;
+    using domainContainer::Domain;
+    using idealRandomWalk::IdealRandomWalks;
+    using origami::OrigamiSystem;
+    using parser::InputParameters;
+    using randomGen::RandomGens;
+    using utility::VectorThree;
 
     class Constraintpoints {
         public:
@@ -36,7 +36,9 @@ namespace TopConstraintPoints {
                     IdealRandomWalks& ideal_random_walks);
 
             void reset_internal();
-            void calculate_constraintpoints(vector<Domain*> scaffold_domains);
+            void calculate_constraintpoints(
+                    vector<Domain*> scaffold_domains,
+                    vector<int> excluded_staples);
             inline set<int> staples_to_be_regrown() {return m_regrowth_staples;}
             bool is_growthpoint(Domain* domain);
             void add_active_endpoint(Domain* domain, VectorThree endpoint_pos);
@@ -55,10 +57,14 @@ namespace TopConstraintPoints {
                 return m_inactive_endpoints[domain];}
 
         private:
-            void find_staples_growthpoints_endpoints(vector<Domain*> scaffold_domains);
+            void find_staples_growthpoints_endpoints(
+                    vector<Domain*> scaffold_domains,
+                    vector<int> excluded_staples);
             bool staple_already_checked(Domain* domain, set<int> checked_staples);
             void add_growthpoints(vector<pair<Domain*, Domain*>> potential_growthpoints);
-            void add_regrowth_staples(set<int> participating_chains);
+            void add_regrowth_staples(
+                    set<int> participating_chains,
+                    vector<int> excluded_staples);
             void add_active_endpoints_on_scaffold(
                     set<int> participating_chains,
                     vector<pair<Domain*, Domain*>> potential_growthpoints);
@@ -67,7 +73,8 @@ namespace TopConstraintPoints {
                     set<int>& potential_growthpoints,
                     vector<pair<Domain*, Domain*>>& participating_chains,
                     vector<Domain*>& scaffold_domains,
-                    bool& externally_bound);
+                    bool& externally_bound,
+                    vector<int> excluded_staples);
             int calc_remaining_steps(int endpoint_d_i, Domain* domain, int dir,
                     int step_offset);
 

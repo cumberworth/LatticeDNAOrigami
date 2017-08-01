@@ -1,15 +1,19 @@
 // annealing_simulation.cpp
 
+#include <iostream>
+
 #include "annealing_simulation.h"
 
-namespace Annealing {
+namespace annealing {
 
-    using namespace Simulation;
+    using std::cout;
 
     AnnealingGCMCSimulation::AnnealingGCMCSimulation(
             OrigamiSystem& origami_system,
+            SystemOrderParams& ops,
+            SystemBiases& biases,
             InputParameters& params) :
-            GCMCSimulation(origami_system, params),
+            GCMCSimulation(origami_system, ops, biases, params),
             m_max_temp {params.m_max_temp},
             m_min_temp {params.m_min_temp},
             m_temp_interval {params.m_temp_interval},
@@ -19,7 +23,8 @@ namespace Annealing {
             cout << "Bad temperature interval";
         }
         m_logging_stream = &cout;
-        m_output_files = setup_output_files(params, params.m_output_filebase,
+        m_output_files = simulation::setup_output_files(params,
+                params.m_output_filebase,
                 m_origami_system);
     }
 

@@ -1,14 +1,10 @@
 // orientation_movetype.cpp
 
-#include "utility.h"
-#include "movetypes.h"
 #include "orientation_movetype.h"
-#include "ideal_random_walk.h"
 
-namespace OrientationMovetype {
+namespace movetypes {
 
-    using namespace Movetypes;
-    using namespace Utility;
+    using utility::Occupancy;
 
     bool OrientationRotationMCMovetype::attempt_move(long long int step) {
         m_step = step;

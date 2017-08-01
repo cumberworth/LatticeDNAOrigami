@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "bias_functions.h"
 #include "files.h"
 #include "ideal_random_walk.h"
 #include "domain.h"
@@ -20,7 +21,7 @@
 #include "random_gens.h"
 #include "utility.h"
 
-namespace Movetypes {
+namespace movetypes {
 
     using std::cout;
     using std::ostream;
@@ -31,14 +32,15 @@ namespace Movetypes {
     using std::unordered_map;
     using std::vector;
 
-    using DomainContainer::Domain;
-    using Files::OrigamiOutputFile;
-    using IdealRandomWalk::IdealRandomWalks;
-    using OrderParams::SystemBiases;
-    using Origami::OrigamiSystem;
-    using Parser::InputParameters;
-    using RandomGen::RandomGens;
-    using Utility::VectorThree;
+    using biasFunctions::SystemBiases;
+    using domainContainer::Domain;
+    using files::OrigamiOutputFile;
+    using idealRandomWalk::IdealRandomWalks;
+    using orderParams::SystemOrderParams;
+    using origami::OrigamiSystem;
+    using parser::InputParameters;
+    using randomGen::RandomGens;
+    using utility::VectorThree;
 
     struct MovetypeTracking {
         int attempts;
@@ -52,15 +54,18 @@ namespace Movetypes {
                     RandomGens& random_gens,
                     IdealRandomWalks& ideal_random_walks,
                     vector<OrigamiOutputFile*> config_files,
+                    string label,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
                     InputParameters& params);
             virtual ~MCMovetype() {};
 
             virtual bool attempt_move(long long int step) = 0;
             virtual void reset_origami();
             virtual void reset_internal();
-            virtual string m_label() {return "MCMovetype";};
             virtual void write_log_summary(ostream* log_stream) = 0;
 
+            string get_label();
             int get_attempts();
             int get_accepts();
 
@@ -77,18 +82,17 @@ namespace Movetypes {
             void write_config();
 
             virtual void add_external_bias() = 0;
-            virtual void subtract_external_bias() = 0;
-
 
             OrigamiSystem& m_origami_system;
             RandomGens& m_random_gens;
             IdealRandomWalks& m_ideal_random_walks;
             vector<OrigamiOutputFile*> m_config_files;
+            string m_label;
+            SystemOrderParams& m_ops;
+            SystemBiases& m_biases;
             InputParameters& m_params;
             bool m_rejected {false};
             int m_config_output_freq;
-            //HACK
-            SystemBiases& m_system_bias;
 
             // Staple maxes
             int m_max_total_staples;
@@ -113,16 +117,13 @@ namespace Movetypes {
     class IdentityMCMovetype: public MCMovetype {
         public:
             using MCMovetype::MCMovetype;
-            bool attempt_move() {return true;};
-
-            string m_label() {return "Identity";};
+            bool attempt_move(long long int) {return true;};
     };
 
     class RegrowthMCMovetype: public MCMovetype {
         public:
             using MCMovetype::MCMovetype;
 
-            string m_label() {return "Regrowth";};
         protected:
             virtual double set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old);
             void grow_staple(int d_i_index, vector<Domain*> selected_chain);

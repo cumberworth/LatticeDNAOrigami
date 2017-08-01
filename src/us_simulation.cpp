@@ -3,31 +3,33 @@
 #include <cmath>
 
 #include "json/json.h"
+
+#include "files.h"
 #include "us_simulation.h"
+#include "utility.h"
 
-namespace US {
+namespace us {
 
-    using namespace Simulation;
+    using std::ifstream;
+
+    using files::OrigamiTrajInputFile;
+    using origami::Chains;
+    using utility::SimulationMisuse;
 
     USGCMCSimulation::USGCMCSimulation(
             OrigamiSystem& origami,
+            SystemOrderParams& ops,
+            SystemBiases& biases,
             InputParameters& params) :
-            GCMCSimulation(origami, params),
+            GCMCSimulation(origami, ops, biases, params),
             m_params {params},
             m_max_num_iters {params.m_max_num_iters},
             m_equil_steps {params.m_equil_steps},
             m_iter_steps {params.m_iter_steps},
             m_prod_steps {params.m_prod_steps},
             m_max_rel_P_diff {params.m_max_rel_P_diff},
-            m_system_order_params {origami.get_system_order_params()},
-            m_grid_bias {origami.get_system_biases()->get_grid_bias()},
+            m_grid_bias {biases.get_grid_bias(params.m_us_grid_bias_tag)},
             m_max_D_bias {params.m_max_D_bias} {
-
-        // For now no options for changing the type of order parameters used
-        OrderParam* num_bound_domains {&m_system_order_params->get_num_bound_domains()};
-        OrderParam* num_staples {&m_system_order_params->get_num_staples()};
-        m_grid_params = {num_bound_domains, num_staples};
-        m_grid_bias->set_order_params(m_grid_params);
 
         // Read in weights if specified
         if (params.m_biases_file != "") {
@@ -41,9 +43,6 @@ namespace US {
         if (m_params.m_restart_traj_file != "") {
             set_config_from_traj(m_params.m_restart_traj_file, params.m_restart_step);
         }
-    }
-
-    USGCMCSimulation::~USGCMCSimulation() {
     }
 
     void USGCMCSimulation::run() {
@@ -60,7 +59,8 @@ namespace US {
         // Setup output files
         string postfix {"_iter-equil"};
         string output_filebase {m_params.m_output_filebase + postfix};
-        m_output_files = setup_output_files(m_params, output_filebase, m_origami_system);
+        m_output_files = simulation::setup_output_files(m_params,
+                output_filebase, m_origami_system);
         m_logging_stream = new ofstream {output_filebase + ".out"};
 
         m_steps = m_equil_steps;
@@ -76,7 +76,8 @@ namespace US {
         // Write each iteration's output to a seperate file
         string prefix {"_iter-" + std::to_string(n)};
         string output_filebase {m_params.m_output_filebase + prefix};
-        m_output_files = setup_output_files(m_params, output_filebase, m_origami_system);
+        m_output_files = simulation::setup_output_files(m_params,
+                output_filebase, m_origami_system);
         m_logging_stream = new ofstream {output_filebase + ".out"};
 
         m_steps = m_iter_steps;
@@ -110,7 +111,8 @@ namespace US {
         // Setup output files
         string postfix {"_iter-prod"};
         string output_filebase {m_params.m_output_filebase + postfix};
-        m_output_files = setup_output_files(m_params, output_filebase, m_origami_system);
+        m_output_files = simulation::setup_output_files(m_params,
+                output_filebase, m_origami_system);
         m_logging_stream = new ofstream {output_filebase + ".out"};
 
         m_steps = m_prod_steps;
@@ -195,16 +197,11 @@ namespace US {
     }
 
     int USGCMCSimulation::get_grid_dim() {
-        return m_grid_params.size();
+        return m_grid_bias.get_dim();
     }
 
     void USGCMCSimulation::update_internal(long long int step) {
-        //HACK
-        m_system_order_params->update_params();
-        GridPoint point {};
-        for (auto grid_param: m_grid_params) {
-            point.push_back(grid_param->get_param());
-        }
+        GridPoint point {m_grid_bias.get_point()};
         m_s_i.insert(point);
         m_f_i[point] ++;
 
@@ -218,13 +215,13 @@ namespace US {
         // Average bias weights of iteration
         double ave_bias_weight {0};
         for (auto point: m_s_i) {
-            double point_bias {m_grid_bias->calc_bias(point)};
+            double point_bias {m_grid_bias.calc_bias(point)};
             ave_bias_weight += m_f_i[point] * std::exp(point_bias);
         }
 
         // Calculate for all visited points
         for (auto point: m_s_i) {
-            double point_bias {m_grid_bias->calc_bias(point)};
+            double point_bias {m_grid_bias.calc_bias(point)};
             double p_n_k {m_f_i[point] * std::exp(point_bias) /
                 ave_bias_weight};
             m_p_i[point] = p_n_k;
@@ -261,9 +258,12 @@ namespace US {
         return;
     }
 
-    SimpleUSGCMCSimulation::SimpleUSGCMCSimulation(OrigamiSystem& origami,
+    SimpleUSGCMCSimulation::SimpleUSGCMCSimulation(
+            OrigamiSystem& origami,
+            SystemOrderParams& ops,
+            SystemBiases& biases,
             InputParameters& params):
-            USGCMCSimulation(origami, params) {
+            USGCMCSimulation(origami, ops, biases, params) {
     }
 
     void SimpleUSGCMCSimulation::update_bias(int) {
@@ -297,7 +297,7 @@ namespace US {
 
             m_E_w[point] = updated_bias;
         }
-        m_grid_bias->replace_biases(m_E_w);
+        m_grid_bias.replace_biases(m_E_w);
     }
 
     void SimpleUSGCMCSimulation::update_grids(int) {
@@ -327,13 +327,14 @@ namespace US {
         *m_us_stream << "\n";
     }
 
-    MWUSGCMCSimulation::MWUSGCMCSimulation(OrigamiSystem& origami,
+    MWUSGCMCSimulation::MWUSGCMCSimulation(
+            OrigamiSystem& origami,
+            SystemOrderParams& ops,
+            SystemBiases & biases,
             InputParameters& params) :
-            GCMCSimulation {origami, params},
+            GCMCSimulation {origami, ops, biases, params},
             m_params {params},
-            m_max_num_iters {params.m_max_num_iters},
-            m_system_order_params {origami.get_system_order_params()},
-            m_system_biases {origami.get_system_biases()} {
+            m_max_num_iters {params.m_max_num_iters} {
 
         parse_windows_file(params.m_windows_file);
         setup_window_variables();
@@ -435,7 +436,8 @@ namespace US {
         }
 
         // Create simulation objects
-        m_us_sim = new SimpleUSGCMCSimulation {origami, m_params};
+        m_us_sim = new SimpleUSGCMCSimulation {origami, m_ops, m_biases,
+                m_params};
         m_us_stream = new ofstream {output_filebase + ".out"};
         m_us_sim->set_output_stream(m_us_stream);
         m_grid_dim = m_us_sim->get_grid_dim();

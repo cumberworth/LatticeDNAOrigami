@@ -6,17 +6,18 @@
 #include <string>
 #include <sstream>
 
-#include "json/json.h"
-
 #include "files.h"
-#include "order_params.h"
+#include "utility.h"
 
-namespace Files {
+namespace files {
 
     using std::ifstream;
     using std::vector;
     using std::cout;
-    using namespace OrderParams;
+
+    using utility::FileMisuse;
+    using utility::Occupancy;
+    using utility::VectorThree;
 
     OrigamiInputFile::OrigamiInputFile(string filename) {
         ifstream jsonraw {filename, ifstream::binary};
@@ -171,6 +172,189 @@ namespace Files {
         //}
     }
 
+    OrigamiMovetypeFile::OrigamiMovetypeFile(string filename):
+            m_filename {filename} {
+
+        ifstream jsonraw {filename, ifstream::binary};
+        Json::Value jsonroot;
+        jsonraw >> jsonroot;
+        m_jsonmovetypes = jsonroot["origami"]["movetypes"];
+        for (unsigned int i {0}; i != m_jsonmovetypes.size(); i++) {
+            Json::Value jsonmovetype {m_jsonmovetypes[i]};
+            string type {jsonmovetype["type"].asString()};
+            string label {jsonmovetype["label"].asString()};
+            string freq_raw {jsonmovetype["freq"].asString()};
+            utility::Fraction freq_frac {freq_raw};
+            double freq {freq_frac.to_double()};
+            m_types.push_back(type);
+            m_labels.push_back(label);
+            m_freqs.push_back(freq);
+        }
+    }
+
+    vector<string> OrigamiMovetypeFile::get_types() {
+        return m_types;
+    }
+
+    vector<string> OrigamiMovetypeFile::get_labels() {
+        return m_labels;
+    }
+
+    vector<double> OrigamiMovetypeFile::get_freqs() {
+        return m_freqs;
+    }
+
+    double OrigamiMovetypeFile::get_double_option(int movetype_i, string key) {
+        return m_jsonmovetypes[movetype_i][key].asDouble();
+    }
+
+    string OrigamiMovetypeFile::get_string_option(int movetype_i, string key) {
+        return m_jsonmovetypes[movetype_i][key].asString();
+    }
+
+    int OrigamiMovetypeFile::get_int_option(int movetype_i, string key) {
+        return m_jsonmovetypes[movetype_i][key].asInt();
+    }
+
+    vector<vector<string>> OrigamiLeveledInput::get_types_by_level() {
+        return m_level_to_types;
+    }
+
+    vector<vector<string>> OrigamiLeveledInput::get_labels_by_level() {
+        return m_level_to_labels;
+    }
+
+    vector<vector<string>> OrigamiLeveledInput::get_tags_by_level() {
+        return m_level_to_tags;
+    }
+
+    double OrigamiLeveledInput::get_double_option(int i, int j, string key) {
+        int json_i {m_level_to_indices[i][j]};
+        return m_json_ops[json_i][key].asDouble();
+    }
+
+    string OrigamiLeveledInput::get_string_option(int i, int j, string key) {
+        int json_i {m_level_to_indices[i][j]};
+        return m_json_ops[json_i][key].asString();
+    }
+
+    int OrigamiLeveledInput::get_int_option(int i, int j, string key) {
+        int json_i {m_level_to_indices[i][j]};
+        return m_json_ops[json_i][key].asInt();
+    }
+
+    bool OrigamiLeveledInput::get_bool_option(int i, int j, string key) {
+        int json_i {m_level_to_indices[i][j]};
+        return m_json_ops[json_i][key].asBool();
+    }
+
+    vector<string> OrigamiLeveledInput::get_vector_string_option(int i, int j, string key) {
+        int json_i {m_level_to_indices[i][j]};
+        string raw {m_json_ops[json_i][key].asString()};
+        return utility::string_to_string_vector(raw);
+    }
+
+    OrigamiOrderParamsFile::OrigamiOrderParamsFile(string filename) {
+        m_filename  = filename;
+
+        ifstream jsonraw {filename, ifstream::binary};
+        Json::Value jsonroot;
+        jsonraw >> jsonroot;
+        m_json_ops = jsonroot["origami"]["order_params"];
+        int max_level {0};
+        vector<string> types {};
+        vector<string> labels {};
+        vector<string> tags {};
+        vector<int> levels {};
+        for (unsigned int i {0}; i != m_json_ops.size(); i++) {
+            Json::Value json_op {m_json_ops[i]};
+            string type {json_op["type"].asString()};
+            string label {json_op["label"].asString()};
+            string tag {json_op["tag"].asString()};
+            int level {json_op["level"].asInt()};
+            if (level > max_level) {
+                max_level = level;
+            }
+            types.push_back(type);
+            labels.push_back(label);
+            tags.push_back(tag);
+            levels.push_back(level);
+        }
+
+        for (int i {0}; i != max_level; i++) {
+            m_level_to_types.push_back({});
+            m_level_to_labels.push_back({});
+            m_level_to_tags.push_back({});
+            m_level_to_indices.push_back({});
+        }
+        for (unsigned int i {0}; i != m_json_ops.size(); i++) {
+            m_level_to_types[levels[i]].push_back(types[i]);
+            m_level_to_labels[levels[i]].push_back(labels[i]);
+            m_level_to_tags[levels[i]].push_back(tags[i]);
+            m_level_to_indices[levels[i]].push_back(i);
+        }
+    }
+
+
+    OrigamiBiasFunctionsFile::OrigamiBiasFunctionsFile(string filename) {
+        m_filename  = filename;
+
+        ifstream jsonraw {filename, ifstream::binary};
+        Json::Value jsonroot;
+        jsonraw >> jsonroot;
+        m_json_ops = jsonroot["origami"]["bias_functions"];
+        int max_level {0};
+        vector<string> types {};
+        vector<string> labels {};
+        vector<string> tags {};
+        vector<int> levels {};
+        vector<vector<string>> op_tags {};
+        vector<vector<string>> d_biases_tags {};
+        for (unsigned int i {0}; i != m_json_ops.size(); i++) {
+            Json::Value json_op {m_json_ops[i]};
+            string type {json_op["type"].asString()};
+            string label {json_op["label"].asString()};
+            string tag {json_op["tag"].asString()};
+            int level {json_op["level"].asInt()};
+            string ops_raw {m_json_ops[i]["ops"].asString()};
+            string d_biases_raw {m_json_ops[i]["bias_funcs"].asString()};
+            if (level > max_level) {
+                max_level = level;
+            }
+            types.push_back(type);
+            labels.push_back(label);
+            tags.push_back(tag);
+            levels.push_back(level);
+            op_tags.push_back(utility::string_to_string_vector(ops_raw));
+            d_biases_tags.push_back(utility::string_to_string_vector(d_biases_raw));
+        }
+
+        for (int i {0}; i != max_level; i++) {
+            m_level_to_types.push_back({});
+            m_level_to_labels.push_back({});
+            m_level_to_tags.push_back({});
+            m_level_to_indices.push_back({});
+            m_level_to_ops.push_back({});
+            m_level_to_d_biases.push_back({});
+        }
+        for (unsigned int i {0}; i != m_json_ops.size(); i++) {
+            m_level_to_types[levels[i]].push_back(types[i]);
+            m_level_to_labels[levels[i]].push_back(labels[i]);
+            m_level_to_tags[levels[i]].push_back(tags[i]);
+            m_level_to_indices[levels[i]].push_back(i);
+            m_level_to_ops[levels[i]].push_back(op_tags[i]);
+            m_level_to_d_biases[levels[i]].push_back(d_biases_tags[i]);
+        }
+    }
+
+    vector<vector<vector<string>>> OrigamiBiasFunctionsFile::get_ops_by_level() {
+        return m_level_to_ops;
+    }
+
+    vector<vector<vector<string>>> OrigamiBiasFunctionsFile::get_d_biases_by_level() {
+        return m_level_to_d_biases;
+    }
+
     OrigamiOutputFile::OrigamiOutputFile(
             string filename,
             int write_freq,
@@ -283,7 +467,7 @@ namespace Files {
         }
         int num_doms {m_origami_system.num_domains()};
         for (int dom_i {num_doms}; dom_i != m_max_num_domains; dom_i++) {
-            m_file << "0 ";
+            m_file << "-1 ";
         }
                 
         m_file << "\n";

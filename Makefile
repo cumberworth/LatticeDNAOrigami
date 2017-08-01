@@ -17,7 +17,7 @@ OBJECTS := $(subst .cpp,.o,$(SOURCES))
 OBJECTS := $(subst $(SRCDIR),$(BUILDDIR),$(OBJECTS))
 
 CPP = mpicxx
-CPPFLAGS = -Iinclude $(OPTLEVEL) -std=c++11
+CPPFLAGS = -std=c++11 -Iinclude $(OPTLEVEL)
 LDFLAGS = -lboost_program_options -lboost_mpi -lboost_serialization -lboost_system -lboost_filesystem $(OPTLEVEL)
 
 # For compiling on Dexter (using local Boost installation (I think that's why this is needed))

@@ -1,12 +1,19 @@
 // constant_temp_simulation.cpp
 
+#include <iostream>
+
 #include "constant_temp_simulation.h"
 
-namespace ConstantTemp {
+namespace constantTemp {
 
-    ConstantTGCMCSimulation::ConstantTGCMCSimulation(OrigamiSystem& origami_system,
+    using std::cout;
+
+    ConstantTGCMCSimulation::ConstantTGCMCSimulation(
+            OrigamiSystem& origami_system,
+            SystemOrderParams& ops,
+            SystemBiases& biases,
             InputParameters& params) :
-            GCMCSimulation(origami_system, params),
+            GCMCSimulation(origami_system, ops, biases, params),
             m_steps {params.m_steps} {
 
         m_logging_stream = &cout;

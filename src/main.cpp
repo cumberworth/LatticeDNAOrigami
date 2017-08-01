@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include "bias_functions.h"
 #include "parser.h"
 #include "nearest_neighbour.h"
 #include "domain.h"
@@ -16,50 +17,42 @@
 int main(int argc, char* argv[]) {
 
     using std::cout;
-    using namespace Parser;
-    using namespace Utility;
-    using namespace Files;
-    using namespace Origami;
-    using namespace DomainContainer;
-    using namespace Simulation;
-    using namespace ConstantTemp;
-    using namespace Annealing;
-    using namespace PTMC;
-    using namespace US;
-    using namespace Movetypes;
-    using namespace Enumerator;
 
-    InputParameters params {argc, argv};
-    OrigamiSystem* origami {setup_origami(params)};
+    parser::InputParameters params {argc, argv};
+    origami::OrigamiSystem* origami {origami::setup_origami(params)};
+    orderParams::SystemOrderParams& ops {origami->get_system_order_params()};
+    biasFunctions::SystemOrderParams& biases {origami->get_system_biases()};
 
     // Enumerate or simulate
     if (params.m_simulation_type == "enumerate") {
-        enumerate_main(*origami, params);
+        enumerator::enumerate_main(*origami, biases, params);
     }
     else {
 
         // Select simulation type
-        GCMCSimulation* sim;
+        simulation::GCMCSimulation* sim;
         if (params.m_simulation_type == "constant_temp") {
-            sim = new ConstantTGCMCSimulation {*origami, params};
+            sim = new constantTemp::ConstantTGCMCSimulation {*origami, ops,
+                    biases, params};
         }
         else if (params.m_simulation_type == "annealing") {
-            sim = new AnnealingGCMCSimulation {*origami, params};
+            sim = new annealing::AnnealingGCMCSimulation {*origami, ops, biases,
+                    params};
         }
         else if (params.m_simulation_type == "t_parallel_tempering") {
-            sim = new TPTGCMCSimulation {*origami, params};
+            sim = new ptmc::TPTGCMCSimulation {*origami, ops, biases, params};
         }
         else if (params.m_simulation_type == "ut_parallel_tempering") {
-            sim = new UTPTGCMCSimulation {*origami, params};
+            sim = new ptmc::UTPTGCMCSimulation {*origami, ops, biases, params};
         }
         else if (params.m_simulation_type == "hut_parallel_tempering") {
-            sim = new HUTPTGCMCSimulation {*origami, params};
+            sim = new ptmc::HUTPTGCMCSimulation {*origami, ops, biases, params};
         }
         else if (params.m_simulation_type == "umbrella_sampling") {
-            sim = new SimpleUSGCMCSimulation {*origami, params};
+            sim = new us::SimpleUSGCMCSimulation {*origami, ops, biases, params};
         }
         else if (params.m_simulation_type == "mw_umbrella_sampling") {
-            sim = new MWUSGCMCSimulation {*origami, params};
+            sim = new us::MWUSGCMCSimulation {*origami, params, ops, biases};
         }
         else {
             cout << "No such simulation type.\n";

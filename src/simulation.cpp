@@ -8,6 +8,7 @@
 #include <cmath>
 #include <iostream>
 #include <sstream>
+#include <utility>
 
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
@@ -24,24 +25,22 @@
 
 #include "random_gens.h"
 
-namespace Simulation {
+namespace simulation {
 
     using std::cout;
     using std::min;
+    using std::pair;
     using std::pow;
     using std::setw;
 
     namespace mpi = boost::mpi;
     namespace bp = boost::process;
 
-    using namespace Movetypes;
-    using namespace OrientationMovetype;
-    using namespace MetMovetypes;
-    using namespace CBMovetypes;
-    using namespace Utility;
-    using namespace RandomGen;
-    using namespace Files;
-    using namespace RandomGen;
+    using files::OrigamiMovetypeFile;
+    using files::OrigamiTrajOutputFile;
+    using files::OrigamiCountsOutputFile;
+    using files::OrigamiEnergiesOutputFile;
+    using files::OrigamiOrderParamsOutputFile;
 
     vector<OrigamiOutputFile*> setup_output_files(
             InputParameters& params, string output_filebase,
@@ -108,9 +107,14 @@ namespace Simulation {
         files.push_back(config_out);
     }
 
-    GCMCSimulation::GCMCSimulation(OrigamiSystem& origami_system,
+    GCMCSimulation::GCMCSimulation(
+            OrigamiSystem& origami_system,
+            SystemOrderParams& ops,
+            SystemBiases& biases,
             InputParameters& params) :
             m_origami_system {origami_system},
+            m_ops {ops},
+            m_biases {biases},
             m_params {params} {
 
         m_logging_freq = params.m_logging_freq;
@@ -136,7 +140,7 @@ namespace Simulation {
         // Create cumulative probability array
         double cum_prob {0};
         for (size_t i {0}; i != m_movetypes.size(); i++) {
-            cum_prob += params.m_movetype_probs[i];
+            cum_prob += m_movetype_freqs[i];
             m_cumulative_probs.push_back(cum_prob);
         }
 
@@ -157,54 +161,98 @@ namespace Simulation {
     }
 
     void GCMCSimulation::construct_movetypes(InputParameters& params) {
-        for (auto movetype_id: params.m_movetypes) {
-            shared_ptr<MCMovetype> movetype;
-            if (movetype_id == MovetypeID::OrientationRotation) {
-                movetype.reset(new OrientationRotationMCMovetype {
-                        m_origami_system, m_random_gens, m_ideal_random_walks,
-                        m_config_per_move_files, params});
+        OrigamiMovetypeFile movetypes_file {params.m_movetype_filename};
+        vector<string> types {movetypes_file.get_types()};
+        vector<string> labels {movetypes_file.get_labels()};
+        m_movetype_freqs = movetypes_file.get_freqs();
+        for (size_t i {0}; i != types.size(); i++) {
+            MCMovetype* movetype;
+            string label {labels[i]};
+
+            // This is still sort of ugly. What if I end up wanting to share
+            // options between all CB moves, or between scaffold regrowth and
+            // scaffold transform, for example?
+            string type {types[i]};
+                if (type == "OrientationRotation") {
+                    movetype = setup_orientation_move(type);
+                }
+                else if (type == "MetStapleExchange") {
+                    movetype = setup_staple_exchange_move(type);
+                }
+                else if (type == "MetStapleRegrowth" or
+                        type == "CBStapleRegrowth") {
+                    movetype = setup_staple_regrowth_move(type);
+                }
+                else if (type == "CTCBScaffoldRegrowth") {
+                    movetype = setup_scaffold_regrowth_move(type);
+                }
+                else if (type == "CTCBLinkerRegrowth" or
+                        type == "ClusteredCTCBLinkerRegrowth") {
+                    movetype = setup_scaffold_transform_move(type);
+                }
             }
-            else if (movetype_id == MovetypeID::MetStapleExchange) {
-                movetype.reset(new MetStapleExchangeMCMovetype {
-                        m_origami_system, m_random_gens, m_ideal_random_walks,
-                        m_config_per_move_files, params});
-            }
-            else if (movetype_id == MovetypeID::MetStapleRegrowth) {
-                movetype.reset(new MetStapleRegrowthMCMovetype {
-                        m_origami_system, m_random_gens, m_ideal_random_walks,
-                        m_config_per_move_files, params});
-            }
-            else if (movetype_id == MovetypeID::CBStapleRegrowth) {
-                movetype.reset(new CBStapleRegrowthMCMovetype {
-                        m_origami_system, m_random_gens, m_ideal_random_walks,
-                        m_config_per_move_files, params});
-            }
-            else if (movetype_id == MovetypeID::CTCBScaffoldRegrowth) {
-                movetype.reset(new CTCBScaffoldRegrowthMCMovetype {
-                        m_origami_system, m_random_gens, m_ideal_random_walks,
-                        m_config_per_move_files, params});
-            }
-            else if (movetype_id == MovetypeID::CTCBLinkerRegrowth) {
-                movetype.reset(new CTCBLinkerRegrowthMCMovetype {
-                        m_origami_system, m_random_gens, m_ideal_random_walks,
-                        m_config_per_move_files, params});
-            }
-            m_movetypes.push_back(movetype);
+            m_movetypes.emplace_back(movetype);
         }
     }
+
+                    movetype = new movetypes::OrientationRotationMCMovetype {
+                            m_origami_system, m_random_gens,
+                            m_ideal_random_walks, m_config_per_move_files,
+                            label, params};
+
+                    double exchange_mult {m_movetypes_file.get_double_option(i,
+                            "exchange_mult")};
+                    movetype = new movetypes::MetStapleExchangeMCMovetype {
+                            m_origami_system, m_random_gens,
+                            m_ideal_random_walks, m_config_per_move_files,
+                            label, params, exchange_mult};
+
+                    movetype = new movetypes::MetStapleRegrowthMCMovetype {
+                            m_origami_system, m_random_gens,
+                            m_ideal_random_walks, m_config_per_move_files,
+                            label, params};
+
+                    movetype = new movetypes::CBStapleRegrowthMCMovetype {
+                            m_origami_system, m_random_gens,
+                            m_ideal_random_walks, m_config_per_move_files,
+                            label, params};
+
+                    int excluded_staples {movetypes_file.get_int_option(i,
+                            "num_excluded_staples")};
+                    movetype = new movetypes::CTCBScaffoldRegrowthMCMovetype {
+                            m_origami_system, m_random_gens,
+                            m_ideal_random_walks, m_config_per_move_files,
+                            label, params, excluded_staples};
+
+                    int excluded_staples {movetypes_file.get_int_option(i,
+                            "num_excluded_staples")};
+                    int max_disp {movetypes_file.get_int_option(i, "max_disp")};
+                    int max_turns {movetypes_file.get_int_option(i,
+                            "max_turns")};
+                    movetype = new movetypes::CTCBLinkerRegrowthMCMovetype {
+                            m_origami_system, m_random_gens, m_ideal_random_walks,
+                            m_config_per_move_files, label, params,
+                            excluded_staples, max_disp, max_turns};
+
+                    movetype = new movetypes::ClusteredCTCBLinkerRegrowth {
+                            m_origami_system, m_random_gens, m_ideal_random_walks,
+                            m_config_per_move_files, label, params,
+                            excluded_staples, max_disp, max_turns};
 
     void GCMCSimulation::simulate(long long int steps, long long int start_step) {
 
         for (long long int step {start_step + 1}; step != (steps + start_step + 1); step ++) {
             
             // Pick movetype and apply
-            shared_ptr<MCMovetype> movetype {select_movetype()};
+            MCMovetype& movetype {select_movetype()};
             bool accepted;
-            accepted = movetype->attempt_move(step);
+            accepted = movetype.attempt_move(step);
             if (not accepted) {
-                movetype->reset_origami();
+                movetype.reset_origami();
+                m_ops.update_move_params();
+                m_biases.calc_move();
             }
-            movetype->reset_internal();
+            movetype.reset_internal();
 
             // Center and check constraints
             if (m_centering_freq != 0 and step % m_centering_freq == 0) {
@@ -216,7 +264,7 @@ namespace Simulation {
 
             // Write log entry to standard out
             if (m_logging_freq !=0 and step % m_logging_freq == 0) {
-                write_log_entry(step, accepted, *movetype);
+                write_log_entry(step, accepted, movetype);
             }
 
             // VMD pipe
@@ -237,16 +285,16 @@ namespace Simulation {
         write_log_summary();
     }
 
-    shared_ptr<MCMovetype> GCMCSimulation::select_movetype() {
-        shared_ptr<MCMovetype> movetype;
+    MCMovetype& GCMCSimulation::select_movetype() {
         double prob {m_random_gens.uniform_real()};
-        for (size_t i {0}; i != m_cumulative_probs.size(); i++) {
+        size_t i;
+        for (i = 0; i != m_cumulative_probs.size(); i++) {
             if (prob < m_cumulative_probs[i]) {
-                movetype = m_movetypes[i];
                 break;
             }
         }
-        return movetype;
+
+        return *m_movetypes[i];
     }
 
     void GCMCSimulation::write_log_entry(
@@ -261,7 +309,7 @@ namespace Simulation {
         *m_logging_stream << "Fully bound domain pairs: " << m_origami_system.num_fully_bound_domain_pairs() << "\n";
         *m_logging_stream << "System energy: " << m_origami_system.energy() << "\n";
         *m_logging_stream << "External bias: " << m_origami_system.bias() << "\n";
-        *m_logging_stream << "Movetype: " << movetype.m_label() << "\n";
+        *m_logging_stream << "Movetype: " << movetype.get_label() << "\n";
         *m_logging_stream << "Accepted: " << std::boolalpha << accepted << "\n";
         *m_logging_stream << "\n";
     }
@@ -271,8 +319,8 @@ namespace Simulation {
         ofstream* movetype_sum_stream;
         movetype_sum_stream = new ofstream {m_params.m_output_filebase +
                 ".moves"};
-        for (auto movetype: m_movetypes) {
-            *m_logging_stream << "Movetype: " << movetype->m_label() << "\n";
+        for (auto &movetype: m_movetypes) {
+            *m_logging_stream << "Movetype: " << movetype->get_label() << "\n";
             int attempts {movetype->get_attempts()};
             int accepts {movetype->get_accepts()};
             double freq {static_cast<double>(accepts) / attempts};

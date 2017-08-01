@@ -13,30 +13,28 @@
 #include "movetypes.h"
 #include "utility.h"
 
-namespace MetMovetypes {
+namespace movetypes {
 
     using std::ostream;
     using std::string;
     using std::unordered_map;
     using std::vector;
 
-    using DomainContainer::Domain;
-    using Movetypes::MovetypeTracking;
-    using Movetypes::RegrowthMCMovetype;
-    using Utility::StapleExchangeTracking;
-    using Utility::StapleRegrowthTracking;
+    using domainContainer::Domain;
+    using movetypes::MovetypeTracking;
+    using movetypes::RegrowthMCMovetype;
+    using utility::StapleExchangeTracking;
+    using utility::StapleRegrowthTracking;
 
     class MetMCMovetype: public RegrowthMCMovetype {
         public:
             using RegrowthMCMovetype::RegrowthMCMovetype;
 
             void reset_internal() override;
-            string m_label() override {return "Met";};
 
         protected:
             void grow_chain(vector<Domain*> domains) override;
             void add_external_bias() override;
-            void subtract_external_bias() override;
             void unassign_domains(vector<Domain*> domains);
 
             double m_delta_e {0};
@@ -44,11 +42,19 @@ namespace MetMovetypes {
 
     class MetStapleExchangeMCMovetype: public MetMCMovetype {
         public:
-            using MetMCMovetype::MetMCMovetype;
+            MetStapleExchangeMCMovetype(
+                    OrigamiSystem& origami_system,
+                    RandomGens& random_gens,
+                    IdealRandomWalks& ideal_random_walks,
+                    vector<OrigamiOutputFile*> config_files,
+                    string label,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params,
+                    double exchange_mult);
 
             bool attempt_move(long long int step) override;
             void reset_internal() override;
-            string m_label() override final {return "Met staple exchange";}
             void write_log_summary(ostream* log_stream) override final;
 
         protected:
@@ -65,6 +71,8 @@ namespace MetMovetypes {
             bool insert_staple();
             bool delete_staple();
 
+            double m_exchange_mult;
+
             StapleExchangeTracking m_tracker {};
             unordered_map<StapleExchangeTracking, MovetypeTracking> m_tracking {};
     };
@@ -74,7 +82,6 @@ namespace MetMovetypes {
             using MetMCMovetype::MetMCMovetype;
 
             bool attempt_move(long long int step) override final;
-            string m_label() override final {return "Met staple regrowth";}
             void write_log_summary(ostream* log_stream) override final;
 
             StapleRegrowthTracking m_tracker {};

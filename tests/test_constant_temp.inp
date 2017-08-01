@@ -1,5 +1,4 @@
 # System input and parameters
-#origami_input_filename=data/four2_domain_loop.json
 origami_input_filename=data/snodin_unbound.json
 temp=330
 staple_M=1e-6
@@ -7,11 +6,9 @@ cation_M=1
 temp_for_staple_u=330
 staple_u_mult=1
 lattice_site_volume=4e-28
-#energy_filebase=data/snodin
-#energy_filebase=data/four
-#restart_traj_file=outs/test_constant_temp.trj
-#restart_step=0
-vmd_file_dir=../scripts/vmd
+max_total_staples=24
+max_type_staples=2
+simulation_type=constant_temp
 
 # Order parameters
 #distance_pairs=0 3
@@ -25,31 +22,25 @@ vmd_file_dir=../scripts/vmd
 #bias_mult=1
 
 # General simulation parameters
-simulation_type=constant_temp
-steps=100000000
-logging_freq=100000
+movetype_file=movetypes.json
+num_walks_filename=data/num_walks.arch
+restart_traj_file=outs/test_constant_temp_2.trj
+restart_step=300
+#restart_step=3099
+vmd_file_dir=../scripts/vmd
 centering_freq=100000
 constraint_check_freq=100000
-orientation_rotation=1/5
-met_staple_exchange=1/5
-cb_staple_regrowth=1/5
-ctcb_scaffold_regrowth=1/5
-ctcb_linker_regrowth=1/5
-max_displacement=1
-max_turns=3
-#num_walks_filename=data/num_walks.arch
-exchange_mult=1000
-max_total_staples=24
-max_type_staples=2
-#max_total_staples=4
-#max_type_staples=2
+
+# Constant T options
+steps=100000000
 
 # Output options
-output_filebase=outs/test_constant_temp_1
+output_filebase=outs/test_constant_temp_3
+logging_freq=100000
 configs_output_freq=100000
 vtf_output_freq=100000
-#vcf_per_domain=true
+vcf_per_domain=false
 counts_output_freq=100000
 order_params_output_freq=100000
-vmd_pipe_freq=10000
+vmd_pipe_freq=100000
 create_vmd_instance=true

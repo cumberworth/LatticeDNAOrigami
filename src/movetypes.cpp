@@ -5,36 +5,37 @@
 #include <set>
 #include <cmath>
 
-#include "utility.h"
 #include "movetypes.h"
-#include "ideal_random_walk.h"
 
-namespace Movetypes {
+namespace movetypes {
 
     using std::fmin;
     using std::set;
     using std::find;
-    using namespace Utility;
+    using utility::Occupancy;
 
 	MCMovetype::MCMovetype(
                 OrigamiSystem& origami_system,
                 RandomGens& random_gens,
                 IdealRandomWalks& ideal_random_walks,
                 vector<OrigamiOutputFile*> config_files,
+                string label,
+                SystemOrderParams& ops,
+                SystemBiases& biases,
                 InputParameters& params) :
 
                 m_origami_system {origami_system},
                 m_random_gens {random_gens},
                 m_ideal_random_walks {ideal_random_walks},
                 m_config_files {config_files},
+                m_label {label},
+                m_ops {ops},
+                m_biases {biases},
                 m_params {params},
 				m_config_output_freq {params.m_vtf_output_freq},
-                //HACK
-                m_system_bias {*origami_system.get_system_biases()},
                 m_max_total_staples {params.m_max_total_staples},
                 m_max_type_staples {params.m_max_type_staples} {
 	}
-
 
     void MCMovetype::reset_origami() {
         
@@ -104,12 +105,12 @@ namespace Movetypes {
     }
 
     VectorThree MCMovetype::select_random_position(VectorThree p_prev) {
-        VectorThree vec {vectors[m_random_gens.uniform_int(0, 5)]};
+        VectorThree vec {utility::vectors[m_random_gens.uniform_int(0, 5)]};
         return p_prev + vec;
     }
 
     VectorThree MCMovetype::select_random_orientation() {
-        VectorThree vec {vectors[m_random_gens.uniform_int(0, 5)]};
+        VectorThree vec {utility::vectors[m_random_gens.uniform_int(0, 5)]};
         return vec;
     }
 
@@ -219,6 +220,10 @@ namespace Movetypes {
         m_prev_ore.clear();
         m_rejected = false;
         m_modifier = 1;
+    }
+
+    string MCMovetype::get_label() {
+        return m_label;
     }
 
     int MCMovetype::get_attempts() {

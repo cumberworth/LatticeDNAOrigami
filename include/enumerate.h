@@ -3,28 +3,46 @@
 #ifndef ENUMERATOR_H
 #define ENUMERATOR_H
 
-#include "parser.h"
-#include "domain.h"
-#include "origami_system.h"
-#include "files.h"
-#include "order_params.h"
-  
-namespace Enumerator {
+#include <string>
+#include <vector>
+#include <unordered_map>
+#include <utility>
 
-    using namespace Parser;
-    using namespace DomainContainer;
-    using namespace Origami;
-    using namespace Files;
-    using namespace OrderParams;
+#include "bias_functions.h"
+#include "domain.h"
+#include "order_params.h"
+#include "origami_system.h"
+#include "parser.h"
+#include "utility.h"
+  
+namespace enumerator {
+
+    using std::pair;
+    using std::string;
+    using std::vector;
+    using std::unordered_map;
+
+    using biasFunctions::SystemBiases;
+    using domainContainer::Domain;
+    using orderParams::SystemOrderParams;
+    using origami::OrigamiSystem;
+    using parser::InputParameters;
+    using utility::VectorThree;
 
     void print_matrix(vector<vector<long double>> matrix, string filename);
 
-    void enumerate_main(OrigamiSystem& origami, InputParameters& params);
+    void enumerate_main(
+            OrigamiSystem& origami,
+            SystemOrderParams& ops,
+            SystemBiases& biases,
+            InputParameters& params);
 
     class ConformationalEnumerator {
         public:
             ConformationalEnumerator(
-                    OrigamiSystem& origami_system);
+                    OrigamiSystem& origami_system,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases);
             virtual ~ConformationalEnumerator() {};
             virtual void enumerate();
             void add_staple(int staple);
@@ -65,6 +83,8 @@ namespace Enumerator {
             void add_weight_matrix_entry();
   
             OrigamiSystem& m_origami_system;
+            SystemOrderParams& m_ops;
+            SystemBiases& m_biases;
   
             // Identity to unique indices
             unordered_map<int, vector<int>> m_identity_to_indices {};

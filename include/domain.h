@@ -5,10 +5,10 @@
 
 #include "utility.h"
 
-namespace DomainContainer{
+namespace domainContainer{
 
-    using Utility::Occupancy;
-    using Utility::VectorThree;
+    using utility::Occupancy;
+    using utility::VectorThree;
 
     class Domain {
         // DNA origami binding domain

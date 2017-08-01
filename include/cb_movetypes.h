@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "domain.h"
+#include "files.h"
 #include "hash.h"
 #include "ideal_random_walk.h"
 #include "movetypes.h"
@@ -21,7 +22,7 @@
 #include "utility.h"
 
 /*  Movetypes involving configuration bias */
-namespace CBMovetypes {
+namespace movetypes {
 
     using std::ostream;
     using std::pair;
@@ -30,20 +31,22 @@ namespace CBMovetypes {
     using std::unordered_map;
     using std::vector;
 
-    using DomainContainer::Domain;
-    using IdealRandomWalk::IdealRandomWalks;
-    using Movetypes::MovetypeTracking;
-    using Movetypes::RegrowthMCMovetype;
-    using Movetypes::add_tracker;
-    using Origami::OrigamiSystem;
-    using Parser::InputParameters;
-    using RandomGen::RandomGens;
-    using TopConstraintPoints::Constraintpoints;
-    using Utility::VectorThree;
-    using Utility::StapleRegrowthTracking;
-    using Utility::CTCBScaffoldRegrowthTracking;
-    using Utility::CTCBLinkerRegrowthTracking;
-    using Utility::VectorThree;
+    using domainContainer::Domain;
+    using files::OrigamiInputFile;
+    using files::OrigamiOutputFile;
+    using idealRandomWalk::IdealRandomWalks;
+    using movetypes::MovetypeTracking;
+    using movetypes::RegrowthMCMovetype;
+    using movetypes::add_tracker;
+    using origami::OrigamiSystem;
+    using parser::InputParameters;
+    using randomGen::RandomGens;
+    using topConstraintPoints::Constraintpoints;
+    using utility::VectorThree;
+    using utility::StapleRegrowthTracking;
+    using utility::CTCBScaffoldRegrowthTracking;
+    using utility::CTCBLinkerRegrowthTracking;
+    using utility::VectorThree;
 
     typedef vector<pair<VectorThree, VectorThree>> configsT;
     typedef pair<Domain*, Domain*> domainPairT;
@@ -55,7 +58,6 @@ namespace CBMovetypes {
             using RegrowthMCMovetype::RegrowthMCMovetype;
 
             virtual void reset_internal() override;
-            virtual string m_label() override {return "CB";};
 
         protected:
 
@@ -125,7 +127,7 @@ namespace CBMovetypes {
 
             /*  Include external bias on whole configuration in Rosenbluth */
             void add_external_bias() override;
-            void subtract_external_bias() override;
+            void update_external_bias();
 
             long double m_bias {1}; // Rosenbluth-type weight
             long double m_new_bias {1}; // Storage for new config's Rosenbluth
@@ -141,7 +143,6 @@ namespace CBMovetypes {
             using CBMCMovetype::CBMCMovetype;
 
             bool attempt_move(long long int step) override;
-            string m_label() final override {return "CB staple regrowth";}
             void write_log_summary(ostream* log_entry) override;
 
         private:
@@ -169,10 +170,18 @@ namespace CBMovetypes {
     /*  Base for CTCB regrowth moves */
     class CTCBRegrowthMCMovetype: public CBMCMovetype {
         public:
-            using CBMCMovetype::CBMCMovetype;
+            CTCBRegrowthMCMovetype(
+                    OrigamiSystem& origami_system,
+                    RandomGens& random_gens,
+                    IdealRandomWalks& ideal_random_walks,
+                    vector<OrigamiOutputFile*> config_files,
+                    string label,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params,
+                    int num_excluded_staples);
 
             void reset_internal() override;
-            string m_label() override {return "CTCB regrowth";};
 
         protected:
 
@@ -188,9 +197,10 @@ namespace CBMovetypes {
             void grow_chain(vector<Domain*> domains) final override;
 
             /*  Select endpoints of a chain segment of given length */
-            domainPairT select_endpoints(
-                    const vector<Domain*> domains,
-                    const int min_size);
+            pair<int, int> select_endpoints(
+                    const int array_size,
+                    const int mar, // Number of elements to exclude at ends
+                    const int min_size); // Minimum size of selection (excluding endpoints)
 
             /*  Return segment of linear domains given endpoints */
             vector<Domain*> select_cyclic_segment(
@@ -212,6 +222,8 @@ namespace CBMovetypes {
             Constraintpoints m_constraintpoints {m_origami_system,
                     m_ideal_random_walks}; // For fixed end biases
             int m_dir; // Direction of regrowth (should remove)
+            vector<int> m_excluded_staples;
+            int m_num_excluded_staples;
     };
 
     /*  CTCB regrowth of scaffold segments and bound staples */
@@ -220,7 +232,6 @@ namespace CBMovetypes {
             using CTCBRegrowthMCMovetype::CTCBRegrowthMCMovetype;
 
             virtual bool attempt_move(long long int step) final override;
-            string m_label() final override {return "CTCB scaffold regrowth";}
             void write_log_summary(ostream* log_entry) override;
 
         private:
@@ -235,14 +246,24 @@ namespace CBMovetypes {
     /*  Transformation of a segment and regrowth of its linkers */
     class CTCBLinkerRegrowthMCMovetype: public CTCBRegrowthMCMovetype {
         public:
-            using CTCBRegrowthMCMovetype::CTCBRegrowthMCMovetype;
+            CTCBLinkerRegrowthMCMovetype(
+                    OrigamiSystem& origami_system,
+                    RandomGens& random_gens,
+                    IdealRandomWalks& ideal_random_walks,
+                    vector<OrigamiOutputFile*> config_files,
+                    string label,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params,
+                    int num_excluded_staples,
+                    int max_disp,
+                    int max_turns);
 
-            bool attempt_move(long long int step) final override;
-            string m_label() final override {return "CTCB linker regrowth";}
+            bool attempt_move(long long int step) override;
             void write_log_summary(ostream* log_entry) override;
             void reset_internal() override;
 
-        private:
+        protected:
 
             /*  Unasssign domains reset arrays for resetting */
             void reset_segment(vector<Domain*> segment, size_t last_di);
@@ -256,6 +277,9 @@ namespace CBMovetypes {
                     vector<Domain*>& linker1,
                     vector<Domain*>& linker2,
                     vector<Domain*>& central_segment);
+
+            virtual pair<int, int> select_internal_endpoints(
+                    vector<Domain*> domains);
 
             /*  Setup constraints for fixed end biases
 
@@ -294,9 +318,21 @@ namespace CBMovetypes {
 
             void revert_transformation(vector<Domain*> central_domains);
 
+            int m_max_disp;
+            int m_max_turns;
+
             CTCBLinkerRegrowthTracking m_tracker {};
             unordered_map<CTCBLinkerRegrowthTracking, MovetypeTracking> m_tracking {};
             vector<Domain*> m_linker_endpoints;
+    };
+
+    class ClusteredCTCBLinkerRegrowth: public CTCBLinkerRegrowthMCMovetype {
+        public:
+            using CTCBLinkerRegrowthMCMovetype::CTCBLinkerRegrowthMCMovetype;
+
+        private:
+            pair<int, int> select_internal_endpoints(
+                    vector<Domain*> domains) override;
     };
 }
 

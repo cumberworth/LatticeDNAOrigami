@@ -3,13 +3,14 @@
 #ifndef ORIGAMI_SYSTEM_H
 #define ORIGAMI_SYSTEM_H
 
-#include <vector>
-#include <set>
 #include <map>
+#include <set>
+#include <string>
 #include <unordered_map>
 #include <utility>
-#include <string>
 #include <valarray> 
+#include <vector>
+
 #include "domain.h"
 #include "hash.h"
 #include "nearest_neighbour.h"
@@ -18,24 +19,28 @@
 
 // Forward declaration
 
-namespace OrderParams {
+namespace orderParams {
     class SystemOrderParams;
+}
+namespace biasFunctions {
     class SystemBiases;
 }
 
-namespace Origami {
+namespace origami {
 
     using std::vector;
     using std::set;
     using std::pair;
+    using std::unique_ptr;
     using std::unordered_map;
     using std::string;
     using std::valarray;
 
-    using namespace Utility;
-    using namespace DomainContainer;
-    using namespace NearestNeighbour;
-    using namespace Parser;
+    using domainContainer::Domain;
+    using nearestNeighbour::ThermoOfHybrid;
+    using parser::InputParameters;
+    using utility::Occupancy;
+    using utility::VectorThree;
 
     // For passing information between file objects and origami system
     struct Chain {
@@ -56,6 +61,7 @@ namespace Origami {
                     const vector<vector<int>>& identities,
                     const vector<vector<string>>& sequences,
                     const Chains& chains,
+                    bool cyclic,
                     double volume,
                     double staple_u,
                     InputParameters& params);
@@ -77,9 +83,9 @@ namespace Origami {
             const bool m_cyclic; // Cyclic scaffold
             const int c_scaffold {0}; // Unique chain index of scaffold
     
-            // Configuration properties CONTAIN SOME AS ORDER PARAMS?
-            OrderParams::SystemOrderParams* get_system_order_params();
-            OrderParams::SystemBiases* get_system_biases();
+            // Configuration properties
+            orderParams::SystemOrderParams& get_system_order_params();
+            biasFunctions::SystemBiases& get_system_biases();
             vector<Domain*> get_chain(int c_i);
             vector<vector<Domain*>> get_chains();
             vector<Domain*> get_last_chain();
@@ -99,7 +105,7 @@ namespace Origami {
             Domain* unbound_domain_at(VectorThree pos) const;
             bool check_domains_complementary(Domain& cd_i, Domain& cd_j);
             double energy() const;
-            virtual double bias() const;
+            virtual double get_bias() const;
             ThermoOfHybrid enthalpy_and_entropy();
             bool configuration_fully_set();
             int num_unassigned_domains();
@@ -111,7 +117,6 @@ namespace Origami {
                     VectorThree pos,
                     VectorThree ore);
             void check_distance_constraints();
-            virtual double check_delete_chain(int);
     
             // Configuration modifiers
             virtual double unassign_domain(Domain& cd_i);
@@ -159,8 +164,8 @@ namespace Origami {
             int m_num_self_bound_domain_pairs {0}; // Num self-misbound domain pairs
             int m_num_unassigned_domains {0};
 
-            OrderParams::SystemOrderParams* m_system_order_params;
-            OrderParams::SystemBiases* m_system_biases;
+            unique_ptr<orderParams::SystemOrderParams> m_ops;
+            unique_ptr<biasFunctions::SystemBiases> m_biases;
 
             // CONSIDER CONTAINING ENERGY STUFF IN ANOTHER CLASS
             // ALSO CONSIDER DEFINING TYPE FOR THESE TABLES
@@ -254,17 +259,16 @@ namespace Origami {
                     const vector<vector<int>>& identities,
                     const vector<vector<string>>& sequences,
                     const Chains& chains,
+                    bool cyclic,
                     double volume,
                     double staple_u,
                     InputParameters& params);
-            ~OrigamiSystemWithBias();
 
             // Constraint checkers
             double check_domain_constraints(
                     Domain& cd_i,
                     VectorThree pos,
                     VectorThree ore);
-            double check_delete_chain(int c_i);
     
             // Configuration modifiers
             double unassign_domain(Domain& cd_i);
@@ -281,7 +285,7 @@ namespace Origami {
                     VectorThree position,
                     VectorThree orientation);
             //void set_domain_orientation(Domain& cd_i, VectorThree ore);
-            double bias() const;
+            double get_bias() const;
     };
 
     // Moved from main

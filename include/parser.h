@@ -3,43 +3,17 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include "boost/program_options.hpp"
+
 #include <string>
 #include <vector>
 
-namespace Parser {
+namespace parser {
+
+    namespace po = boost::program_options;
 
     using std::string;
     using std::vector;
-
-    enum class MovetypeID {
-        OrientationRotation,
-        MetStapleExchange,
-        MetStapleRegrowth,
-        CBStapleRegrowth,
-        CTCBScaffoldRegrowth,
-        CTCBLinkerRegrowth
-    };
-
-    // String parsing helper functions
-    vector<int> string_to_int_vector(string string_v);
-    vector<double> string_to_double_vector(string string_v);
-    vector<string> string_to_string_vector(string string_v);
-
-    // These are from a stackexchange answer
-    template<typename Out>
-    void split(const string& s, char delim, Out result);
-
-    vector<string> split(const string& s, char delim);
-
-    class Fraction {
-        public:
-            Fraction(string unparsed_fraction);
-            inline double to_double() const {return m_double_fraction;}
-        private:
-            double m_double_fraction;
-            double m_numerator;
-            double m_denominator;
-    };
 
     class InputParameters {
         public:
@@ -56,9 +30,19 @@ namespace Parser {
             double m_temp_for_staple_u; // K
             double m_staple_u_mult;
             double m_lattice_site_volume; // L
-            bool m_cyclic;
             bool m_no_misbinding;
+            int m_max_total_staples;
+            int m_max_type_staples;
+            bool m_domain_update_biases_present;
+            string m_ops_filename;
+            string m_bias_funcs_filename;
+            double m_bias_funcs_mult;
             string m_energy_filebase;
+            string m_simulation_type;
+
+            // General simulation parameters
+            string m_movetype_filename;
+            string m_num_walks_filename;
             string m_restart_traj_file;
             vector<string> m_restart_traj_files {};
             string m_restart_traj_filebase;
@@ -66,40 +50,13 @@ namespace Parser {
             int m_restart_step;
             vector<int> m_restart_steps;
             string m_vmd_file_dir;
-
-            // Order parameters
-            bool m_distance_sum;
-            vector<int> m_distance_pairs {};
-            bool m_grid_bias;
-
-            // Bias functions
-            bool m_biases_present {false};
-            bool m_distance_bias;
-            int m_min_dist;
-            int m_max_dist;
-            double m_max_bias;
-            double m_bias_mult;
-            bool m_square_well_bias;
-            int m_max_well_param;
-            int m_min_well_param;
-            double m_well_bias;
-            double m_outside_bias;
-
-            // General simulation parameters
-            string m_simulation_type;
-            long long int m_steps;
             int m_logging_freq;
             int m_centering_freq;
             int m_centering_domain;
             int m_constraint_check_freq;
-            vector<MovetypeID> m_movetypes {};
-            vector<double> m_movetype_probs {};
-            int m_max_displacement;
-            int m_max_turns;
-            string m_num_walks_filename;
-            int m_exchange_mult;
-            int m_max_total_staples;
-            int m_max_type_staples;
+
+            // Constant temperature parameters
+            long long int m_ct_steps;
 
             // Enumerator parameters
             bool m_enumerate_staples_only;
@@ -114,13 +71,14 @@ namespace Parser {
             vector<double> m_temps {};
             int m_num_reps;
             int m_exchange_interval;
+            long long int m_pt_steps;
             bool m_constant_staple_M;
             vector<double> m_bias_mults {};
             vector<double> m_chem_pot_mults {};
             string m_restart_swap_file;
 
             // Umbrella sampling simulation parameters
-            vector<string> m_order_params {};
+            string m_us_grid_bias_tag;
             int m_max_num_iters;
             double m_max_D_bias;
             long long int m_equil_steps;
@@ -145,6 +103,7 @@ namespace Parser {
 
         private:
             void set_default_sim_options();
+            void process_custom_types(po::variables_map vm);
     };
 }
 

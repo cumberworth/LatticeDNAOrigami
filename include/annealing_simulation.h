@@ -3,16 +3,25 @@
 #ifndef ANNEALING_SIMULATION_H
 #define ANNEALING_SIMULATION_H
 
+#include "bias_functions.h"
+#include "order_params.h"
+#include "origami_system.h"
 #include "simulation.h"
 
-namespace Annealing {
+namespace annealing {
 
-    using namespace Simulation;
+    using biasFunctions::SystemBiases;
+    using orderParams::SystemOrderParams;
+    using origami::OrigamiSystem;
+    using parser::InputParameters;
+    using simulation::GCMCSimulation;
 
     class AnnealingGCMCSimulation: public GCMCSimulation {
         public:
             AnnealingGCMCSimulation(
                     OrigamiSystem& origami_system,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
                     InputParameters& params);
             void run();
         private:

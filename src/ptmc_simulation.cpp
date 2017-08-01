@@ -1,17 +1,27 @@
 // ptmc_simulation.cpp
 
 #include <sstream>
+#include <string>
 
+#include "files.h"
 #include "ptmc_simulation.h"
 
-namespace PTMC {
+namespace ptmc {
 
+    using std::cout;
     using std::min;
-    using namespace Simulation;
+    using std::pair;
+    using std::string;
 
-    PTGCMCSimulation::PTGCMCSimulation(OrigamiSystem& origami_system,
+    using files::OrigamiTrajInputFile;
+    using origami::Chains;
+
+    PTGCMCSimulation::PTGCMCSimulation(
+            OrigamiSystem& origami_system,
+            SystemOrderParams& ops,
+            SystemBiases& biases,
             InputParameters& params) :
-            GCMCSimulation(origami_system, params),
+            GCMCSimulation(origami_system, ops, biases, params),
             m_num_reps {params.m_num_reps},
             m_exchange_interval {params.m_exchange_interval} {
         cout << "WARNING: DOES NOT APPEAR TO OBEY BALANCE";
@@ -28,7 +38,7 @@ namespace PTMC {
         }
 
         string output_filebase {params.m_output_filebase + "-" + string_rank};
-        m_output_files = setup_output_files(params, output_filebase,
+        m_output_files = simulation::setup_output_files(params, output_filebase,
                 m_origami_system);
         m_logging_stream = new ofstream {output_filebase + ".out"};
 
@@ -98,18 +108,20 @@ namespace PTMC {
                 // Calculate chemical potential of each replica if constant [staple]
                 double staple_u;
                 if (m_params.m_constant_staple_M) {
-                    staple_u = molarity_to_chempot(m_params.m_staple_M, params.m_temps[i],
+                    staple_u = origami::molarity_to_chempot(m_params.m_staple_M,
+                            params.m_temps[i],
                             params.m_lattice_site_volume);
                 }
                 else {
-                    staple_u = molarity_to_chempot(m_params.m_staple_M,
+                    staple_u = origami::molarity_to_chempot(m_params.m_staple_M,
                             params.m_temp_for_staple_u,
                     params.m_lattice_site_volume);
                     staple_u *= m_params.m_chem_pot_mults[i];
                 }
                 m_control_qs[m_staple_u_i].push_back(staple_u);
 
-                double volume {chempot_to_volume(staple_u, params.m_temps[i])};
+                double volume {origami::chempot_to_volume(staple_u,
+                        params.m_temps[i])};
                 m_control_qs[m_volume_i].push_back(volume);
             }
 
@@ -126,12 +138,13 @@ namespace PTMC {
                 // Update chemical potential of each replica if constant [staple]
                 // Recalculating for each node rather than sending from master
                 if (m_params.m_constant_staple_M) {
-                    m_replica_control_qs[m_staple_u_i] = molarity_to_chempot(
+                    m_replica_control_qs[m_staple_u_i] = origami::molarity_to_chempot(
                             m_params.m_staple_M, m_replica_control_qs[m_temp_i],
                             params.m_lattice_site_volume);
                 }
                 else {
-                    double staple_u {molarity_to_chempot(m_params.m_staple_M,
+                    double staple_u {origami::molarity_to_chempot(
+                            m_params.m_staple_M,
                             params.m_temp_for_staple_u,
                             params.m_lattice_site_volume)};
                     staple_u *= m_params.m_chem_pot_mults[i];
@@ -357,24 +370,33 @@ namespace PTMC {
         cout << "\n";
     }
 
-    TPTGCMCSimulation::TPTGCMCSimulation(OrigamiSystem& origami_system,
+    TPTGCMCSimulation::TPTGCMCSimulation(
+            OrigamiSystem& origami_system,
+            SystemOrderParams& ops, 
+            SystemBiases& biases,
             InputParameters& params) :
-            PTGCMCSimulation(origami_system, params) {
+            PTGCMCSimulation(origami_system, ops, biases, params) {
         m_exchange_q_is.push_back(m_temp_i);
         initialize_swap_file(params);
     }
 
-    UTPTGCMCSimulation::UTPTGCMCSimulation(OrigamiSystem& origami_system,
+    UTPTGCMCSimulation::UTPTGCMCSimulation(
+            OrigamiSystem& origami_system,
+            SystemOrderParams& ops, 
+            SystemBiases& biases,
             InputParameters& params) :
-            PTGCMCSimulation(origami_system, params) {
+            PTGCMCSimulation(origami_system, ops, biases, params) {
         m_exchange_q_is.push_back(m_temp_i);
         m_exchange_q_is.push_back(m_staple_u_i);
         initialize_swap_file(params);
     }
 
-    HUTPTGCMCSimulation::HUTPTGCMCSimulation(OrigamiSystem& origami_system,
+    HUTPTGCMCSimulation::HUTPTGCMCSimulation(
+            OrigamiSystem& origami_system,
+            SystemOrderParams& ops, 
+            SystemBiases& biases,
             InputParameters& params) :
-            PTGCMCSimulation(origami_system, params) {
+            PTGCMCSimulation(origami_system, ops, biases, params) {
         m_exchange_q_is.push_back(m_temp_i);
         m_exchange_q_is.push_back(m_staple_u_i);
         m_exchange_q_is.push_back(m_bias_mult_i);

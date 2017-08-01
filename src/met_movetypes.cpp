@@ -6,14 +6,11 @@
 
 #include "met_movetypes.h"
 
-namespace MetMovetypes {
+namespace movetypes {
 
     using std::map;
     using std::pair;
     using std::set;
-
-    using Movetypes::add_tracker;
-    using Utility::VectorThree;
 
     void MetMCMovetype::reset_internal() {
         MCMovetype::reset_internal();
@@ -50,24 +47,32 @@ namespace MetMovetypes {
     }
 
     void MetMCMovetype::add_external_bias() {
-        double total_bias {m_system_bias.calc_bias()};
-        m_delta_e += total_bias;
+        m_ops.update_move_params();
+        double ex_bias {m_biases.calc_move()};
+        m_delta_e += ex_bias;
 
         return;
     }
 
-    void MetMCMovetype::subtract_external_bias() {
-        double total_bias {m_system_bias.calc_bias()};
-        m_delta_e -= total_bias;
-
-        return;
+    MetStapleExchangeMCMovetype::MetStapleExchangeMCMovetype(
+            OrigamiSystem& origami_system,
+            RandomGens& random_gens,
+            IdealRandomWalks& ideal_random_walks,
+            vector<OrigamiOutputFile*> config_files,
+            string label,
+            SystemOrderParams& ops,
+            SystemBiases& biases,
+            InputParameters& params,
+            double exchange_mult):
+            MetMCMovetype(origami_system, random_gens, ideal_random_walks,
+                    config_files, label, ops, biases, params),
+            m_exchange_mult {exchange_mult} {
     }
 
     bool MetStapleExchangeMCMovetype::attempt_move(long long int step) {
         m_step = step;
         write_config();
         m_general_tracker.attempts++;
-        subtract_external_bias();
 
         // Select inertion or deletion with equal frequency
         bool accept;
@@ -145,16 +150,13 @@ namespace MetMovetypes {
         m_modifier *= staple_length;
 
         // Exchange probability multiplier
-        m_modifier *= m_params.m_exchange_mult;
+        m_modifier *= m_exchange_mult;
 
         return test_acceptance(ratio);
     }
 
     bool MetStapleExchangeMCMovetype::staple_deletion_accepted(int c_i_ident) {
-        // SUPER HACK
-        double total_bias {m_system_bias.calc_bias_delete_case()};
-        m_delta_e += total_bias;
-
+        add_external_bias();
         double boltz_factor {exp(-m_delta_e)};
         int Ni {m_origami_system.num_staples_of_ident(c_i_ident)};
 
@@ -165,7 +167,7 @@ namespace MetMovetypes {
         double ratio {Ni / extra_states * boltz_factor};
 
         // Exchange probability multiplier
-        m_modifier *= m_params.m_exchange_mult;
+        m_modifier *= m_exchange_mult;
 
         return test_acceptance(ratio);
     }
@@ -235,7 +237,7 @@ namespace MetMovetypes {
 
         // Unassign domains and test acceptance
         unassign_domains(staple);
-        m_delta_e += m_origami_system.check_delete_chain(c_i);
+        // TODO add thing to change the number of bound staples
         accepted = staple_deletion_accepted(c_i_ident);
         add_tracker(m_tracker, m_tracking, accepted);
         m_general_tracker.accepts += accepted;
@@ -251,7 +253,6 @@ namespace MetMovetypes {
         write_config();
         bool accepted {false};
         m_general_tracker.attempts++;
-        subtract_external_bias();
 
         // No staples to regrow
         if (m_origami_system.num_staples() == 0) {

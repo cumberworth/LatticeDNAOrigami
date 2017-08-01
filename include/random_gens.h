@@ -9,7 +9,7 @@
 
 #include "hash.h"
 
-namespace RandomGen {
+namespace randomGen {
 
     using std::pair;
     using std::unordered_map;

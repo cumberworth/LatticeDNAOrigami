@@ -2,94 +2,18 @@
 
 #include <iostream>
 #include <fstream>
-#include <boost/program_options.hpp>
-#include <sstream>
-#include <sstream>
 
 #include "parser.h"
+#include "utility.h"
 
+namespace parser {
 
-namespace Parser {
-
-    namespace po = boost::program_options;
     using std::ifstream;
     using std::cout;
 
-    // Couldn't easily template cause function changes (stoi vs stod)
-    vector<int> string_to_int_vector(string string_v) {
-        string delim {" "};
-        size_t start_pos {0};
-        size_t delim_pos {string_v.find(delim)};
-        vector<int> v {};
-        while (delim_pos != string::npos) {
-            v.push_back(stoi(string_v.substr(start_pos, delim_pos)));
-            start_pos = delim_pos + 1;
-            delim_pos = string_v.find(delim, start_pos);
-        }
-        v.push_back(stod(string_v.substr(start_pos, string_v.size())));
-
-        return v;
-    }
-
-    vector<double> string_to_double_vector(string string_v) {
-        string delim {" "};
-        size_t start_pos {0};
-        size_t delim_pos {string_v.find(delim)};
-        vector<double> v {};
-        while (delim_pos != string::npos) {
-            v.push_back(stod(string_v.substr(start_pos, delim_pos)));
-            start_pos = delim_pos + 1;
-            delim_pos = string_v.find(delim, start_pos);
-        }
-        v.push_back(stod(string_v.substr(start_pos, string_v.size())));
-
-        return v;
-    }
-
-    vector<string> string_to_string_vector(string string_v) {
-        std::stringstream sstream {string_v};
-        vector<string> v {};
-        while (not sstream.eof()) {
-            string ele;
-            sstream >> ele;
-            v.push_back(ele);
-        }
-
-        return v;
-    }
-
-    template<typename Out>
-    void split(const string &s, char delim, Out result) {
-        std::stringstream ss;
-        ss.str(s);
-        string item;
-        while (std::getline(ss, item, delim)) {
-            *(result++) = item;
-        }
-    }
-
-    vector<string> split(const string &s, char delim) {
-        vector<string> elems;
-        Parser::split(s, delim, std::back_inserter(elems));
-        return elems;
-    }
-
-    Fraction::Fraction(string unparsed_fraction) {
-        string delimiter {"/"};
-        auto delim_pos {unparsed_fraction.find(delimiter)};
-
-        // Assume is real number
-        if (delim_pos == string::npos) {
-            m_numerator = stod(unparsed_fraction);
-            m_denominator = 1;
-        }
-        else {
-            auto end_pos {unparsed_fraction.size()};
-            m_numerator = stod(unparsed_fraction.substr(0, delim_pos));
-            m_denominator = stod(unparsed_fraction.substr(delim_pos + 1, end_pos));
-        }
-        m_double_fraction = m_numerator / m_denominator;
-    }
+    using utility::string_to_int_vector;
+    using utility::string_to_double_vector;
+    using utility::string_to_string_vector;
 
     InputParameters::InputParameters(int argc, char* argv[]) {
 
@@ -111,7 +35,7 @@ namespace Parser {
         po::options_description inp_options {"System input and parameters"};
         inp_options.add_options()
             ("origami_input_filename",
-                po::value<string>(&m_origami_input_filename)->default_value(""),
+                po::value<string>(&m_origami_input_filename),
                 "Origami input filename")
             ("temp",
                 po::value<double>(&m_temp)->default_value(300),
@@ -131,15 +55,52 @@ namespace Parser {
             ("lattice_site_volume",
                 po::value<double>(&m_lattice_site_volume)->default_value(1),
                 "Volume per lattice site (L)")
-            ("cyclic",
-                po::value<bool>(&m_cyclic)->default_value(false),
-                "Cyclic scaffold")
             ("no_misbinding",
                 po::value<bool>(&m_no_misbinding)->default_value(false),
                 "Turn off misbinding")
+            ("max_total_staples",
+                po::value<int>(&m_max_total_staples)->default_value(999),
+                "Max number of total staples")
+            ("max_type_staples",
+                po::value<int>(&m_max_type_staples)->default_value(999),
+                "Max number of staples of a given type")
+            ("domain_update_biases_present",
+                po::value<bool>(&m_domain_update_biases_present)->default_value(false),
+                "Max number of staples of a given type")
+            ("order_parameter_file",
+                po::value<string>(&m_ops_filename)->default_value(""),
+                "Order parameter specification file.")
+            ("bias_functions_file",
+                po::value<string>(&m_bias_funcs_filename)->default_value(""),
+                "Bias function specification file.")
+            ("bias_functions_file",
+                po::value<double>(&m_bias_funcs_mult)->default_value(1),
+                "System bias function multiplier.")
             ("energy_filebase",
                 po::value<string>(&m_energy_filebase)->default_value(""),
                 "Filebase for read/write of energies")
+            ("simulation_type",
+                po::value<string>(&m_simulation_type)->default_value("constant_temp"),
+                "constant_temp, annealing, or parallel_tempering")
+            ;
+        displayed_options.add(inp_options);
+
+        po::options_description enum_options {"Enumeration options"};
+        enum_options.add_options()
+            ("enumerate_staples_only",
+                po::value<bool>(&m_enumerate_staples_only)->default_value(false),
+                "Enumerate staples only")
+        ;
+        displayed_options.add(enum_options);
+
+        po::options_description sim_options {"General simulation options"};
+        sim_options.add_options()
+            ("movetype_file",
+                po::value<string>(&m_movetype_filename),
+                "Movetype specificiation file")
+            ("num_walks_filename",
+                po::value<string>(&m_num_walks_filename)->default_value(""),
+                "Precalculated number of ideal random walks archive")
             ("restart_traj_file",
                 po::value<string>(&m_restart_traj_file)->default_value(""),
                 "Trajectory file to restart from")
@@ -161,69 +122,6 @@ namespace Parser {
             ("vmd_file_dir",
                 po::value<string>(&m_vmd_file_dir)->default_value(""),
                 "Directory containing VMD scripts for viewing simulations")
-            ;
-        displayed_options.add(inp_options);
-
-        po::options_description op_options {"Order parameter options"};
-        op_options.add_options()
-            ("distance_pairs",
-                po::value<string>(),
-                "Scaffold domains to restrain")
-            ("distance_sum",
-                po::value<bool>(&m_distance_sum)->default_value(false),
-                "Sum of distance pairs")
-            ;
-        displayed_options.add(op_options);
-
-        po::options_description bias_options {"Bias function options"};
-        bias_options.add_options()
-            ("distance_bias",
-                po::value<bool>(&m_distance_bias)->default_value(false),
-                "Include domain pair distance bias")
-            ("min_dist",
-                po::value<int>(&m_min_dist)->default_value(0),
-                "Distance at which bias switched off")
-            ("max_dist",
-                po::value<int>(&m_max_dist)->default_value(0),
-                "Distance at which bias switched on")
-            ("max_bias",
-                po::value<double>(&m_max_bias)->default_value(0),
-                "Value of bias at dist >= max_dist")
-            ("bias_mult",
-                po::value<double>(&m_bias_mult)->default_value(1),
-                "Total bias multiplier")
-            ("grid_bias",
-                po::value<bool>(&m_grid_bias)->default_value(false),
-                "Include a grid bias")
-            ("square_well_bias",
-                po::value<bool>(&m_square_well_bias)->default_value(false),
-                "Include a square well bias on the number of staples")
-            ("min_well_param",
-                po::value<int>(&m_min_well_param)->default_value(0),
-                "Min number of staples for well bias")
-            ("max_well_param",
-                po::value<int>(&m_max_well_param)->default_value(0),
-                "Max number of staples for well bias ")
-            ("well_bias",
-                po::value<double>(&m_well_bias)->default_value(0),
-                "Well bias")
-            ("outside_bias",
-                po::value<double>(&m_outside_bias)->default_value(0),
-                "Bias outside the well")
-        ;
-        displayed_options.add(bias_options);
-
-        po::options_description sim_options {"General simulation options"};
-        sim_options.add_options()
-            ("simulation_type",
-                po::value<string>(&m_simulation_type)->default_value("constant_temp"),
-                "constant_temp, annealing, or parallel_tempering")
-            ("steps",
-                po::value<long long int>(&m_steps)->default_value(0),
-                "Number of MC steps")
-            ("logging_freq",
-                po::value<int>(&m_logging_freq)->default_value(0),
-                "Logging frequency")
             ("centering_freq",
                 po::value<int>(&m_centering_freq)->default_value(0),
                 "Centering frequency")
@@ -233,55 +131,16 @@ namespace Parser {
             ("constraint_check_freq",
                 po::value<int>(&m_constraint_check_freq)->default_value(0),
                 "Constraint check frequency")
-            ("orientation_rotation",
-                po::value<string>(),
-                "Orientational rotation movetype probability")
-            ("met_staple_exchange",
-                po::value<string>(),
-                "Met staple exchange movetype probability")
-            ("met_staple_regrowth",
-                po::value<string>(),
-                "Met staple regrowth movetype probability")
-            ("cb_staple_exchange",
-                po::value<string>(),
-                "CB staple exchange movetype probability")
-            ("cb_staple_regrowth",
-                po::value<string>(),
-                "CB staple regrowth movetype probability")
-            ("ctcb_scaffold_regrowth",
-                po::value<string>(),
-                "CTCB scaffold regrowth movetype probability")
-            ("ctcb_linker_regrowth",
-                po::value<string>(),
-                "CTCB linker regrowth movetype probability")
-            ("max_displacement",
-                po::value<int>(&m_max_displacement)->default_value(0),
-                "Max displacement of linked region in CTCB linker regrowth")
-            ("max_turns",
-                po::value<int>(&m_max_turns)->default_value(0),
-                "Max number of quarter turns of linked region in CTCB linker regrowth")
-            ("num_walks_filename",
-                po::value<string>(&m_num_walks_filename)->default_value(""),
-                "Precalculated number of ideal random walks archive")
-            ("exchange_mult",
-                po::value<int>(&m_exchange_mult)->default_value(1),
-                "Exchange acceptance probability multiplier")
-            ("max_total_staples",
-                po::value<int>(&m_max_total_staples)->default_value(999),
-                "Max number of total staples")
-            ("max_type_staples",
-                po::value<int>(&m_max_type_staples)->default_value(999),
-                "Max number of staples of a given type")
         ;
         displayed_options.add(sim_options);
 
-        po::options_description enum_options {"Enumeration options"};
-        enum_options.add_options()
-            ("enumerate_staples_only",
-                po::value<bool>(&m_enumerate_staples_only)->default_value(false),
-                "Enumerate staples only")
+        po::options_description cons_t_options {"Constant temperature options"};
+        cons_t_options.add_options()
+            ("ct_steps",
+                po::value<long long int>(&m_ct_steps)->default_value(0),
+                "Number of MC steps")
         ;
-        displayed_options.add(enum_options);
+        displayed_options.add(sim_options);
 
         po::options_description annealing_options {"Annealing simulation options"};
         annealing_options.add_options()
@@ -308,6 +167,9 @@ namespace Parser {
             ("num_reps",
                 po::value<int>(&m_num_reps)->default_value(1),
                 "Number of replicas")
+            ("pt_steps",
+                po::value<long long int>(&m_pt_steps)->default_value(0),
+                "Number of MC steps")
             ("exchange_interval",
                 po::value<int>(&m_exchange_interval)->default_value(0),
                 "Steps between exchange attempts")
@@ -328,9 +190,9 @@ namespace Parser {
 
         po::options_description us_options {"Umbrella sampling simulation options"};
         us_options.add_options()
-            ("order_params",
+            ("us_grid_bias_tag",
                 po::value<string>(),
-                "List of order parameters to apply to")
+                "Tag of grid bias function to use for US")
             ("max_num_iters",
                 po::value<int>(&m_max_num_iters)->default_value(0),
                 "Number of iterations")
@@ -369,6 +231,9 @@ namespace Parser {
             ("output_filebase",
                 po::value<string>(&m_output_filebase)->default_value(""),
                 "Base name for output files")
+            ("logging_freq",
+                po::value<int>(&m_logging_freq)->default_value(0),
+                "Logging frequency")
             ("configs_output_freq",
                 po::value<int>(&m_configs_output_freq)->default_value(0),
                 "Configuration output write frequency")
@@ -416,68 +281,13 @@ namespace Parser {
         po::store(po::parse_config_file(parameter_file, displayed_options), vm);
         po::notify(vm);
 
-        set_default_sim_options();
+        process_custom_types(vm);
+    }
 
-        // Process custom vector and custom types
+    void InputParameters::process_custom_types(po::variables_map vm) {
         if (vm.count("restart_traj_files")) {
             string file_s = vm["restart_traj_files"].as<string>();
             m_restart_traj_files = string_to_string_vector(file_s);
-        }
-        if (vm.count("distance_pairs")) {
-            string distance_pairs_s= vm["distance_pairs"].as<string>();
-            m_distance_pairs = string_to_int_vector(distance_pairs_s);
-        }
-        if (vm.count("distance_bias")) {
-            m_distance_bias = vm["distance_bias"].as<bool>();
-            m_biases_present = true;
-        }
-        if (vm.count("max_bias")) {
-            m_max_bias = vm["max_bias"].as<double>();
-            m_biases_present = true;
-        }
-        if (vm.count("grid_bias")) {
-            m_grid_bias = vm["grid_bias"].as<bool>();
-            m_biases_present = true;
-        }
-        if (vm.count("square_well_bias")) {
-            m_square_well_bias = vm["square_well_bias"].as<bool>();
-            m_biases_present = true;
-        }
-        if (vm.count("orientation_rotation")) {
-            string unparsed_fraction {vm["orientation_rotation"].as<string>()};
-            Fraction prob {unparsed_fraction};
-            m_movetype_probs.push_back(prob.to_double());
-            m_movetypes.push_back(MovetypeID::OrientationRotation);
-        }
-        if (vm.count("met_staple_exchange")) {
-            string unparsed_fraction {vm["met_staple_exchange"].as<string>()};
-            Fraction prob {unparsed_fraction};
-            m_movetype_probs.push_back(prob.to_double());
-            m_movetypes.push_back(MovetypeID::MetStapleExchange);
-        }
-        if (vm.count("met_staple_regrowth")) {
-            string unparsed_fraction {vm["met_staple_regrowth"].as<string>()};
-            Fraction prob {unparsed_fraction};
-            m_movetype_probs.push_back(prob.to_double());
-            m_movetypes.push_back(MovetypeID::MetStapleRegrowth);
-        }
-        if (vm.count("cb_staple_regrowth")) {
-            string unparsed_fraction {vm["cb_staple_regrowth"].as<string>()};
-            Fraction prob {unparsed_fraction};
-            m_movetype_probs.push_back(prob.to_double());
-            m_movetypes.push_back(MovetypeID::CBStapleRegrowth);
-        }
-        if (vm.count("ctcb_scaffold_regrowth")) {
-            string unparsed_fraction {vm["ctcb_scaffold_regrowth"].as<string>()};
-            Fraction prob {unparsed_fraction};
-            m_movetype_probs.push_back(prob.to_double());
-            m_movetypes.push_back(MovetypeID::CTCBScaffoldRegrowth);
-        }
-        if (vm.count("ctcb_linker_regrowth")) {
-            string unparsed_fraction {vm["ctcb_linker_regrowth"].as<string>()};
-            Fraction prob {unparsed_fraction};
-            m_movetype_probs.push_back(prob.to_double());
-            m_movetypes.push_back(MovetypeID::CTCBLinkerRegrowth);
         }
         if (vm.count("temps")) {
             string temps_s = vm["temps"].as<string>();
@@ -490,18 +300,6 @@ namespace Parser {
         if (vm.count("bias_mults")) {
             string bias_mults_s {vm["bias_mults"].as<string>()};
             m_bias_mults = string_to_double_vector(bias_mults_s);
-        }
-        if (vm.count("order_params")) {
-            string order_params_s {vm["order_params"].as<string>()};
-            m_order_params = split(order_params_s, ' ');
-        }
-    }
-
-    void InputParameters::set_default_sim_options() {
-        if (m_simulation_type == "umbrella_sampling" or
-                m_simulation_type == "mw_umbrella_sampling") {
-            m_biases_present = true;
-            m_grid_bias = true;
         }
     }
 }

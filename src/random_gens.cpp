@@ -5,7 +5,7 @@
 
 #include "random_gens.h"
 
-namespace RandomGen {
+namespace randomGen {
 
     using std::cout;
 

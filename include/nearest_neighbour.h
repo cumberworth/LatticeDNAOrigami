@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace NearestNeighbour {
+namespace nearestNeighbour {
 
     using std::pair;
     using std::tuple;

@@ -4,10 +4,11 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
+#include <sstream>
 
 #include "utility.h"
 
-namespace Utility {
+namespace utility {
 
     using std::cout;
     using std::vector;
@@ -203,4 +204,81 @@ namespace Utility {
                 t1.disp_sum == t2.disp_sum and
                 t1.rot_turns == t2.rot_turns);
     }
+
+    // Couldn't easily template cause function changes (stoi vs stod)
+    vector<int> string_to_int_vector(string string_v) {
+        string delim {" "};
+        size_t start_pos {0};
+        size_t delim_pos {string_v.find(delim)};
+        vector<int> v {};
+        while (delim_pos != string::npos) {
+            v.push_back(stoi(string_v.substr(start_pos, delim_pos)));
+            start_pos = delim_pos + 1;
+            delim_pos = string_v.find(delim, start_pos);
+        }
+        v.push_back(stod(string_v.substr(start_pos, string_v.size())));
+
+        return v;
+    }
+
+    vector<double> string_to_double_vector(string string_v) {
+        string delim {" "};
+        size_t start_pos {0};
+        size_t delim_pos {string_v.find(delim)};
+        vector<double> v {};
+        while (delim_pos != string::npos) {
+            v.push_back(stod(string_v.substr(start_pos, delim_pos)));
+            start_pos = delim_pos + 1;
+            delim_pos = string_v.find(delim, start_pos);
+        }
+        v.push_back(stod(string_v.substr(start_pos, string_v.size())));
+
+        return v;
+    }
+
+    vector<string> string_to_string_vector(string string_v) {
+        std::stringstream sstream {string_v};
+        vector<string> v {};
+        while (not sstream.eof()) {
+            string ele;
+            sstream >> ele;
+            v.push_back(ele);
+        }
+
+        return v;
+    }
+
+    template<typename Out>
+    void split(const string &s, char delim, Out result) {
+        std::stringstream ss;
+        ss.str(s);
+        string item;
+        while (std::getline(ss, item, delim)) {
+            *(result++) = item;
+        }
+    }
+
+    vector<string> split(const string &s, char delim) {
+        vector<string> elems;
+        split(s, delim, std::back_inserter(elems));
+        return elems;
+    }
+
+    Fraction::Fraction(string unparsed_fraction) {
+        string delimiter {"/"};
+        auto delim_pos {unparsed_fraction.find(delimiter)};
+
+        // Assume is real number
+        if (delim_pos == string::npos) {
+            m_numerator = stod(unparsed_fraction);
+            m_denominator = 1;
+        }
+        else {
+            auto end_pos {unparsed_fraction.size()};
+            m_numerator = stod(unparsed_fraction.substr(0, delim_pos));
+            m_denominator = stod(unparsed_fraction.substr(delim_pos + 1, end_pos));
+        }
+        m_double_fraction = m_numerator / m_denominator;
+    }
+
 }

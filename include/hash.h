@@ -8,11 +8,11 @@
 
 namespace std {
 
-    using Utility::VectorThree;
-    using Utility::StapleExchangeTracking;
-    using Utility::StapleRegrowthTracking;
-    using Utility::CTCBScaffoldRegrowthTracking;
-    using Utility::CTCBLinkerRegrowthTracking;
+    using utility::VectorThree;
+    using utility::StapleExchangeTracking;
+    using utility::StapleRegrowthTracking;
+    using utility::CTCBScaffoldRegrowthTracking;
+    using utility::CTCBLinkerRegrowthTracking;
 
     /* Copied from a stack exchange question (which is copied from the BOOST
        library) for allowing pairs to be hashed.

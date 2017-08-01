@@ -4,7 +4,7 @@
 
 #include "domain.h"
 
-namespace DomainContainer {
+namespace domainContainer {
 
     using std::cout;
 

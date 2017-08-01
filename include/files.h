@@ -5,22 +5,26 @@
 
 #include <fstream>
 #include <string>
+#include <utility>
 #include <vector>
+
+#include "json/json.h"
 
 #include "origami_system.h"
 #include "order_params.h"
 
-namespace Files {
+namespace files {
 
     using std::ifstream;
     using std::ofstream;
+    using std::pair;
     using std::string;
     using std::vector;
 
-    using Origami::Chain;
-    using Origami::OrigamiSystem;
-    using OrderParams::OrderParam;
-    using OrderParams::SystemOrderParams;
+    using origami::Chain;
+    using origami::OrigamiSystem;
+    using orderParams::OrderParam;
+    using orderParams::SystemOrderParams;
 
     class OrigamiInputFile {
         // Input file for OrigamiSystem configuration and topology
@@ -55,8 +59,69 @@ namespace Files {
 
     };
 
+    class OrigamiMovetypeFile {
+        public:
+            OrigamiMovetypeFile(string filename);
+            vector<string> get_types();
+            vector<string> get_labels();
+            vector<double> get_freqs();
+            double get_double_option(int movetype_i, string key);
+            string get_string_option(int movetype_i, string key);
+            int get_int_option(int movetype_i, string key);
+
+        private:
+            string m_filename;
+            Json::Value m_jsonmovetypes {};
+
+            vector<string> m_types {};
+            vector<string> m_labels {};
+            vector<double> m_freqs {};
+    };
+
+    class OrigamiLeveledInput {
+        public:
+            virtual ~OrigamiLeveledInput();
+
+            vector<vector<string>> get_types_by_level();
+            vector<vector<string>> get_tags_by_level();
+            vector<vector<string>> get_labels_by_level();
+
+            double get_double_option(int i, int j, string key);
+            string get_string_option(int i, int j, string key);
+            int get_int_option(int i, int j, string key);
+            bool get_bool_option(int i, int j, string key);
+            vector<string> get_vector_string_option(int i, int j, string key);
+
+        protected:
+            string m_filename;
+            Json::Value m_json_ops {};
+
+            vector<vector<string>> m_level_to_types {};
+            vector<vector<string>> m_level_to_labels {};
+            vector<vector<string>> m_level_to_tags {};
+            vector<vector<int>> m_level_to_indices {};
+    };
+
+    class OrigamiOrderParamsFile: public OrigamiLeveledInput {
+        public:
+            OrigamiOrderParamsFile(string filename);
+    };
+
+    class OrigamiBiasFunctionsFile: public OrigamiLeveledInput {
+        public:
+            // This repeats most of the code in the above class
+            // Should try and take a more general approach to these json files
+            OrigamiBiasFunctionsFile(string filename);
+
+            vector<vector<vector<string>>> get_ops_by_level();
+            vector<vector<vector<string>>> get_d_biases_by_level();
+
+        private:
+            vector<vector<vector<string>>> m_level_to_ops {};
+            vector<vector<vector<string>>> m_level_to_d_biases {};
+    };
+
     class OrigamiOutputFile {
-        // Output file interface
         public:
             OrigamiOutputFile(
                     string filename,

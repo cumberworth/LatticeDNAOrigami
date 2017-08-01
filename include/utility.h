@@ -7,16 +7,18 @@
 #include <array>
 #include <functional>
 #include <memory>
+#include <string>
 
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 
-namespace Utility {
+namespace utility {
     
     using std::vector;
     using std::array;
     using std::bind;
     using std::pair;
+    using std::string;
     using std::unique_ptr;
 
     // Find index for given element
@@ -78,6 +80,7 @@ namespace Utility {
         bool no_staples;
         int staple_type;
     };
+
     bool operator==(
             const StapleExchangeTracking& t1,
             const StapleExchangeTracking& t2);
@@ -86,6 +89,7 @@ namespace Utility {
         bool no_staples;
         int staple_type;
     };
+
     bool operator==(
             const StapleRegrowthTracking& t1,
             const StapleRegrowthTracking& t2);
@@ -94,6 +98,7 @@ namespace Utility {
         int num_scaffold_domains;
         int num_staples;
     };
+
     bool operator==(
             const CTCBScaffoldRegrowthTracking& t1,
             const CTCBScaffoldRegrowthTracking& t2);
@@ -107,6 +112,7 @@ namespace Utility {
         int disp_sum;
         int rot_turns;
     };
+
     bool operator==(
             const CTCBLinkerRegrowthTracking& t1,
             const CTCBLinkerRegrowthTracking& t2);
@@ -126,6 +132,27 @@ namespace Utility {
             {0, 0, -1}};
 
     const vector<VectorThree> basis_vectors {xhat, yhat, zhat};
+
+    // String parsing helper functions
+    vector<int> string_to_int_vector(string string_v);
+    vector<double> string_to_double_vector(string string_v);
+    vector<string> string_to_string_vector(string string_v);
+
+    // These are from a stackexchange answer
+    template<typename Out>
+    void split(const string& s, char delim, Out result);
+
+    vector<string> split(const string& s, char delim);
+
+    class Fraction {
+        public:
+            Fraction(string unparsed_fraction);
+            inline double to_double() const {return m_double_fraction;}
+        private:
+            double m_double_fraction;
+            double m_numerator;
+            double m_denominator;
+    };
 }
 
 #endif // UTILITY_H

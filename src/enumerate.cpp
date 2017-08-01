@@ -1,34 +1,32 @@
 // enumerate.cpp
 
 #include <iostream>
+#include <fstream>
 
 #include "enumerate.h"
-#include "parser.h"
-#include "domain.h"
-#include "origami_system.h"
-#include "files.h"
 #include "order_params.h"
 
-namespace Enumerator {
+namespace enumerator {
 
-    using namespace Parser;
-    using namespace DomainContainer;
-    using namespace Origami;
-    using namespace Files;
-    using namespace OrderParams;
     using std::cout;
+    using std::ofstream;
 
-    void enumerate_main(OrigamiSystem& origami,
+    using utility::Occupancy;
+
+    void enumerate_main(
+            OrigamiSystem& origami,
+            SystemOrderParams& ops,
+            SystemBiases& biases,
             InputParameters& params) {
         cout << "\nWARNING: Not for staples other than length 2.\n\n";
 
         // Enumerate configurations
         ConformationalEnumerator* conf_enumerator;
         if (params.m_enumerate_staples_only) {
-            conf_enumerator = new StapleConformationalEnumerator {origami};
+            conf_enumerator = new StapleConformationalEnumerator {origami, ops, biases};
         }
         else {
-            conf_enumerator = new ConformationalEnumerator {origami};
+            conf_enumerator = new ConformationalEnumerator {origami, ops, biases};
         }
         GrowthpointEnumerator* growthpoint_enumerator;
         if (params.m_no_misbinding) {
@@ -47,6 +45,7 @@ namespace Enumerator {
         cout << "\n";
         cout << conf_enumerator->average_energy() << "\n";
         cout << conf_enumerator->average_bias() << "\n";
+        delete growthpoint_enumerator;
         delete conf_enumerator;
     }
 
@@ -370,8 +369,13 @@ namespace Enumerator {
         m_growthpoints.pop_back();
     }
 
-    ConformationalEnumerator::ConformationalEnumerator(OrigamiSystem& origami_system) :
-            m_origami_system {origami_system} {
+    ConformationalEnumerator::ConformationalEnumerator(
+            OrigamiSystem& origami_system,
+            SystemOrderParams& ops,
+            SystemBiases& biases) :
+            m_origami_system {origami_system},
+            m_ops {ops},
+            m_biases {biases} {
 
         // Unassign all domains
         vector<vector<Domain*>> all_chains {m_origami_system.get_chains()};
@@ -565,7 +569,7 @@ namespace Enumerator {
         // Recursively enumerate domain vectors
 
         // Iterate through all positions
-        for (auto p_vec: vectors) {
+        for (auto p_vec: utility::vectors) {
             VectorThree p_new = p_prev + p_vec;
 
             // Check if domain will be entering a bound state
@@ -624,7 +628,7 @@ namespace Enumerator {
     void ConformationalEnumerator::set_comp_growthpoint_domains(Domain* domain,
             Domain* bound_domain, VectorThree p_new) {
         // Need to iterate though all vectors because of helical twist constraints
-        for (auto o_new: vectors) {
+        for (auto o_new: utility::vectors) {
             m_energy += m_origami_system.set_domain_config(*domain, p_new, o_new);
             o_new = -o_new;
             m_energy += m_origami_system.set_domain_config(*bound_domain, p_new, o_new);
@@ -700,7 +704,7 @@ namespace Enumerator {
             m_multiplier /= pos_multiplier;
         }
         else {
-            for (auto o_new: vectors) {
+            for (auto o_new: utility::vectors) {
                 m_energy += m_origami_system.set_domain_config(*domain, p_new, o_new);
                 if (m_origami_system.m_constraints_violated) {
                     m_origami_system.m_constraints_violated = false;
@@ -920,7 +924,7 @@ namespace Enumerator {
         // Add entry
         int staples {m_origami_system.num_staples()};
         int domains {m_origami_system.num_fully_bound_domain_pairs()};
-        int dist {m_origami_system.get_system_order_params()->get_dist_sums()[0]->get_param()};
+        int dist {m_ops.get_dist_sums()[0]->get_param()};
         vector<int> key = {staples, domains, dist};
         if (m_state_weights.find(key) != m_state_weights.end()) {
             m_state_weights[key] += weight;

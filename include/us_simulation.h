@@ -3,13 +3,41 @@
 #ifndef US_SIMULATION_H
 #define US_SIMULATION_H
 
+#include <iostream>
+#include <string>
+#include <vector>
+#include <unordered_map>
+#include <utility>
+
+#include "boost/mpi/environment.hpp"
+#include "boost/mpi/communicator.hpp"
 #include "boost/serialization/vector.hpp"
 
+#include "order_params.h"
+#include "origami_system.h"
+#include "parser.h"
 #include "simulation.h"
 
-namespace US {
+namespace us {
 
-    using namespace Simulation;
+    using std::cout;
+    using std::ostream;
+    using std::ofstream;
+    using std::pair;
+    using std::set;
+    using std::string;
+    using std::vector;
+    using std::unordered_map;
+
+    namespace mpi = boost::mpi;
+
+    using biasFunctions::GridBiasFunction;
+    using biasFunctions::SystemBiases;
+    using orderParams::OrderParam;
+    using orderParams::SystemOrderParams;
+    using origami::OrigamiSystem;
+    using parser::InputParameters;
+    using simulation::GCMCSimulation;
 
     using GridPoint = vector<int>;
     using SetOfGridPoints = set<GridPoint>;
@@ -24,8 +52,10 @@ namespace US {
         public:
             USGCMCSimulation(
                     OrigamiSystem& origami_system,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
                     InputParameters& params);
-            virtual ~USGCMCSimulation();
+            virtual ~USGCMCSimulation() {}
             void run();
             void run_equilibration();
             void run_iteration(int n);
@@ -46,9 +76,7 @@ namespace US {
             long long int m_prod_steps;
             long long int m_steps;
             double m_max_rel_P_diff;
-            SystemOrderParams* m_system_order_params;
-            vector<OrderParam*> m_grid_params {};
-            GridBiasFunction* m_grid_bias;
+            GridBiasFunction& m_grid_bias;
             double m_max_D_bias;
             vector<int> m_equil_dif;
 
@@ -82,6 +110,8 @@ namespace US {
         public:
             SimpleUSGCMCSimulation(
                     OrigamiSystem& origami,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
                     InputParameters& params);
             ~SimpleUSGCMCSimulation() {}
             
@@ -97,6 +127,8 @@ namespace US {
         public:
             MWUSGCMCSimulation(
                     OrigamiSystem& origami_system,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
                     InputParameters& params);
             ~MWUSGCMCSimulation();
             void run();
@@ -114,8 +146,6 @@ namespace US {
             long int m_equil_steps;
             long int m_steps;
             long int m_prod_steps;
-            SystemOrderParams* m_system_order_params;
-            SystemBiases* m_system_biases;
 
             ofstream* m_us_stream;
 

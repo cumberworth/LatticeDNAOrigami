@@ -9,7 +9,7 @@
 
 #include "nearest_neighbour.h"
 
-namespace NearestNeighbour {
+namespace nearestNeighbour {
 
     using std::cout;
     using std::tuple;
@@ -18,7 +18,6 @@ namespace NearestNeighbour {
     using std::tie;
     using std::log;
     using std::reverse;
-
 
     double calc_stacking_energy(
             string seq_i,

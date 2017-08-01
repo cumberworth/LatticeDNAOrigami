@@ -7,7 +7,7 @@
 
 #include "ideal_random_walk.h"
 
-namespace IdealRandomWalk {
+namespace idealRandomWalk {
 
     using boost::math::factorial;
 

@@ -5,16 +5,13 @@
 
 #include "movetypes.h"
 
-namespace OrientationMovetype {
-
-    using namespace Movetypes;
+namespace movetypes {
 
     class OrientationRotationMCMovetype: public MCMovetype {
         public:
             using MCMovetype::MCMovetype;
             bool attempt_move(long long int step) override final;
 
-            string m_label() override final {return "Orientation rotation";};
             void write_log_summary(ostream* log_stream) override final;
 
         private:

@@ -14,15 +14,15 @@ vmd_file_dir=../scripts/vmd
 
 # General simulation parameterse
 simulation_type=annealing
-steps=2000000
+steps=0
 logging_freq=100000
 centering_freq=100000
 constraint_check_freq=100000
-orientation_rotation=1/5
-met_staple_exchange=1/5
-cb_staple_regrowth=1/5
-ctcb_scaffold_regrowth=1/5
-ctcb_linker_regrowth=1/5
+orientation_rotation=1/8
+met_staple_exchange=1/2
+cb_staple_regrowth=1/8
+ctcb_scaffold_regrowth=1/8
+ctcb_linker_regrowth=1/8
 max_displacement=1
 max_turns=3
 num_walks_filename=data/num_walks.arch
@@ -31,10 +31,10 @@ max_total_staples=24
 max_type_staples=2
 
 # Annealing options
-max_temp=360
+max_temp=350
 min_temp=320
 temp_interval=1
-steps_per_temp=2000000
+steps_per_temp=10000000
 
 # Output options
 output_filebase=outs/test_annealing

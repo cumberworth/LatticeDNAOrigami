@@ -3,16 +3,26 @@
 #ifndef CONSTANT_TEMP_SIMULATION_H
 #define CONSTANT_TEMP_SIMULATION_H
 
+#include "bias_functions.h"
+#include "order_params.h"
+#include "origami_system.h"
+#include "parser.h"
 #include "simulation.h"
 
-namespace ConstantTemp {
+namespace constantTemp {
 
-    using namespace Simulation;
+    using biasFunctions::SystemBiases;
+    using orderParams::SystemOrderParams;
+    using origami::OrigamiSystem;
+    using parser::InputParameters;
+    using simulation::GCMCSimulation;
 
     class ConstantTGCMCSimulation: public GCMCSimulation {
         public:
             ConstantTGCMCSimulation(
                     OrigamiSystem& origami_system,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
                     InputParameters& params);
             void run() {simulate(m_steps);}
             vector<double> get_energies();

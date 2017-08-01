@@ -16,13 +16,13 @@
 #include "hash.h"
 #include "utility.h"
 
-namespace IdealRandomWalk {
+namespace idealRandomWalk {
 
     using std::unordered_map;
     using std::pair;
     using std::string;
 
-    using Utility::VectorThree;
+    using utility::VectorThree;
 
     class IdealRandomWalks {
         public:
