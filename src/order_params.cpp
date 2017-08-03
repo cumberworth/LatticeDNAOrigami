@@ -3,12 +3,13 @@
 #include <numeric>
 #include <utility>
 
-#include "order_params.h"
 #include "files.h"
+#include "order_params.h"
 
 namespace orderParams {
 
     using std::abs;
+    using std::cout;
     using std::set;
 
     using files::OrigamiOrderParamsFile;
@@ -23,6 +24,10 @@ namespace orderParams {
 
     int OrderParam::get_checked_param() {
         return m_checked_param;
+    }
+
+    bool OrderParam::defined() {
+        return m_defined;
     }
 
     DistOrderParam::DistOrderParam(
@@ -72,7 +77,7 @@ namespace orderParams {
         return m_checked_param;
     }
 
-    SumOrderParam::SumOrderParam(vector<OrderParam*> ops, string label) :
+    SumOrderParam::SumOrderParam(vector<reference_wrapper<OrderParam>> ops, string label) :
             m_ops {ops} {
         m_label = label;
         calc_param();
@@ -84,8 +89,8 @@ namespace orderParams {
         for (auto param: m_ops) {
 
             // All constituent parameters must be defined
-            if (param->defined()) {
-                op_sum += param->get_param();
+            if (param.get().defined()) {
+                op_sum += param.get().get_param();
             }
             else {
                 m_defined = false;
@@ -106,8 +111,8 @@ namespace orderParams {
         for (auto param: m_ops) {
 
             // All constituent parameters must be defined
-            if (param->defined()) {
-                op_sum += param->get_checked_param();
+            if (param.get().defined()) {
+                op_sum += param.get().get_checked_param();
             }
             else {
                 m_defined = false;
@@ -191,7 +196,16 @@ namespace orderParams {
             }
         }
 
-        OrigamiOrderParamsFile ops_file {params.m_ops_filename};
+        if (params.m_ops_filename != "") {
+            setup_ops(params.m_ops_filename, keys);
+        }
+    }
+
+    void SystemOrderParams::setup_ops(
+            string ops_filename,
+            vector<pair<int, int>> keys) {
+
+        OrigamiOrderParamsFile ops_file {ops_filename};
         vector<vector<string>> level_to_types {ops_file.get_types_by_level()};
         vector<vector<string>> level_to_tags {ops_file.get_tags_by_level()};
         vector<vector<string>> level_to_labels {ops_file.get_labels_by_level()};
@@ -203,8 +217,10 @@ namespace orderParams {
                 m_domain_update_ops[key].push_back({});
             }
 
+            bool update_per_domain {false};
             for (size_t j {0}; j != level_to_types[i].size(); j++) {
-                unique_ptr<OrderParam> op;
+                OrderParam* op;
+            	set<pair<int, int>> d_domains {};
                 string type {level_to_types[i][j]};
                 string tag {level_to_tags[i][j]};
                 string label {level_to_labels[i][j]};
@@ -214,66 +230,61 @@ namespace orderParams {
                     int d1i {ops_file.get_int_option(i, j, "domain1")};
                     int c2i {ops_file.get_int_option(i, j, "chain2")};
                     int d2i {ops_file.get_int_option(i, j, "domain2")};
+					d_domains.insert({c1i, d1i});
+					d_domains.insert({c2i, d2i});
                     Domain& d1 {*m_origami.get_domain(c1i, d1i)};
                     Domain& d2 {*m_origami.get_domain(c2i, d2i)};
-                    op = std::make_unique<DistOrderParam>(d1, d2, label);
-                    if (ops_file.get_bool_option(i, j, "update_per_domain")) {
-                        pair<int, int> key1 {c1i, d1i};
-                        pair<int, int> key2 {c2i, d2i};
-                        m_domain_update_ops[key1][i].emplace_back(op);
-                        m_tag_to_domains[tag].push_back(key1);
-                        m_tag_to_domains[tag].push_back(key2);
-                    }
-                    else {
-                        m_move_update_ops[i].emplace_back(op);
-                    }
+                    op = new DistOrderParam {d1, d2, label};
+                    update_per_domain = ops_file.get_bool_option(i, j,
+                            "update_per_domain");
                 }
                 else if (type == "Sum") {
                     vector<string> op_tags_to_sum {
                         ops_file.get_vector_string_option(i, j, "ops")};
-                    set<pair<int, int>> d_domains {};
                     vector<reference_wrapper<OrderParam>> d_ops {};
-                    bool update_per_domain {true};
+                    update_per_domain = true;
                     for (auto d_tag: op_tags_to_sum) {
-                        vector<pair<int, int>> vd_domains {m_tag_to_domains[tag]};
+                        vector<pair<int, int>> vd_domains {m_tag_to_domains[d_tag]};
                         if (vd_domains.size() == 0) {
                             update_per_domain = false;
-                            break;
                         }
                         for (auto d_domain: vd_domains) {
                             d_domains.insert(d_domain);
                         }
-                        d_ops.push_back(m_tag_to_op[tag]);
+                        reference_wrapper<OrderParam> d_op {m_tag_to_op.at(d_tag)};
+                        d_ops.push_back(d_op);
                     }
-                    op = std::make_unique<SumOrderParam>(d_ops, label);
-                    if (not update_per_domain) {
-                        m_move_update_ops[i].emplace_back(op);
-                    }
-                    else {
-                        for (auto d_domain: d_domains) {
-                            m_domain_update_ops[d_domain][i].emplace_back(op);
-                            m_tag_to_domains[tag].push_back(d_domain);
-                        }
-                    }
+                    op = new SumOrderParam {d_ops, label};
                 }
                 else if (type == "NumStaples")  {
-                    op = std::make_unique<NumStaplesOrderParam>(m_origami,
-                            label);
-                    m_move_update_ops[i].emplace_back(op);
+                    op = new NumStaplesOrderParam {m_origami, label};
                 }
                 else if (type == "NumBoundDomainPairs") {
-                    op = std::make_unique<NumBoundDomainPairsOrderParam>(
-                            m_origami, label);
-                    m_move_update_ops[i].emplace_back(op);
+                    op = new NumBoundDomainPairsOrderParam {
+                            m_origami, label};
                 }
-                m_level_to_ops[i].push_back(op);
-                m_tag_to_op.emplace(tag, op);
+                else {
+                    cout << "Order parameter type does not exist";
+                    throw utility::SimulationMisuse {};
+                }
+                m_level_to_ops[i].emplace_back(op);
+				OrderParam& op_ref {*m_level_to_ops[i].back()};
+                m_tag_to_op.emplace(tag, op_ref);
+                if (not update_per_domain) {
+                    m_move_update_ops[i].emplace_back(op_ref);
+                }
+                else {
+                    for (auto d_domain: d_domains) {
+                        m_domain_update_ops[d_domain][i].emplace_back(op_ref);
+                        m_tag_to_domains[tag].push_back(d_domain);
+                    }
+                }
             }
         }
     }
 
     OrderParam& SystemOrderParams::get_order_param(string tag) {
-        return m_tag_to_op[tag];
+        return m_tag_to_op.at(tag);
     }
 
     vector<pair<int, int>> SystemOrderParams::get_dependent_domains(
@@ -282,8 +293,8 @@ namespace orderParams {
     }
 
     void SystemOrderParams::update_all_params() {
-        for (auto level: m_level_to_ops) {
-            for (auto &op: level) {
+        for (auto& level: m_level_to_ops) {
+            for (auto& op: level) {
                 op->calc_param();
             }
         }

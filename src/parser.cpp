@@ -73,7 +73,7 @@ namespace parser {
             ("bias_functions_file",
                 po::value<string>(&m_bias_funcs_filename)->default_value(""),
                 "Bias function specification file.")
-            ("bias_functions_file",
+            ("bias_functions_mult",
                 po::value<double>(&m_bias_funcs_mult)->default_value(1),
                 "System bias function multiplier.")
             ("energy_filebase",
@@ -140,7 +140,7 @@ namespace parser {
                 po::value<long long int>(&m_ct_steps)->default_value(0),
                 "Number of MC steps")
         ;
-        displayed_options.add(sim_options);
+        displayed_options.add(cons_t_options);
 
         po::options_description annealing_options {"Annealing simulation options"};
         annealing_options.add_options()
@@ -191,7 +191,7 @@ namespace parser {
         po::options_description us_options {"Umbrella sampling simulation options"};
         us_options.add_options()
             ("us_grid_bias_tag",
-                po::value<string>(),
+                po::value<string>(&m_us_grid_bias_tag)->default_value(""),
                 "Tag of grid bias function to use for US")
             ("max_num_iters",
                 po::value<int>(&m_max_num_iters)->default_value(0),
@@ -249,6 +249,9 @@ namespace parser {
             ("energies_output_freq",
                 po::value<int>(&m_energies_output_freq)->default_value(0),
                 "Energies output write frequency")
+            ("ops_to_output",
+                po::value<string>(),
+                "Order parameters to output to file")
             ("order_params_output_freq",
                 po::value<int>(&m_order_params_output_freq)->default_value(0),
                 "Order parameters write frequency")
@@ -300,6 +303,10 @@ namespace parser {
         if (vm.count("bias_mults")) {
             string bias_mults_s {vm["bias_mults"].as<string>()};
             m_bias_mults = string_to_double_vector(bias_mults_s);
+        }
+        if (vm.count("ops_to_output")) {
+            string ops_to_output_s {vm["ops_to_output"].as<string>()};
+            m_ops_to_output = string_to_string_vector(ops_to_output_s);
         }
     }
 }

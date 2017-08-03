@@ -1,47 +1,28 @@
 # System input and parameters
-#origami_input_filename=data/four2_domain_loop.json
 origami_input_filename=data/snodin_unbound.json
 temp=330
 staple_M=1e-6
 cation_M=1
 temp_for_staple_u=330
 lattice_site_volume=4e-28
-#energy_filebase=data/four
-#energy_filebase=data/snodin
-#restart_traj_filebase=outs/test_ptmc
-#restart_step=9
-vmd_file_dir=../scripts/vmd
-
-# Order parameters
-#distance_pairs=0 3
-#distance_sum=true
-
-# Bias functions
-#distance_bias=false
-#min_dist=1
-#max_dist=4
-#max_bias=10
-#bias_mult=1
-
-# General simulation parameters
-simulation_type=ut_parallel_tempering
-steps=1000000
-logging_freq=100000
-centering_freq=1
-#orientation_rotation=1/100
-#met_staple_exchange=97/100
-#cb_staple_regrowth=1/100
-#ctcb_scaffold_regrowth=1/100
-orientation_rotation=1/6
-met_staple_exchange=1/2
-cb_staple_regrowth=1/6
-ctcb_scaffold_regrowth=1/6
-num_walks_filename=data/num_walks.arch
-exchange_mult=1000
 max_total_staples=24
 max_type_staples=2
+domain_update_biases_present=true
+order_parameter_file=order_params.json
+bias_functions_file=bias_functions.json
+bias_functions_mult=1
+#energy_filebase=data/snodin
+simulation_type=ut_parallel_tempering
+
+# General simulation parameters
+movetype_file=movetypes.json
+#num_walks_filename=data/num_walks.arch
+vmd_file_dir=../scripts/vmd
+centering_freq=100000
+constraint_check_freq=100000
 
 # Parallel tempering options
+pt_steps=200000
 temps=330 334
 num_reps=2
 exchange_interval=100000
@@ -52,8 +33,12 @@ bias_mults=1 1
 
 # Output options
 output_filebase=outs/test_ptmc_1
+logging_freq=100000
 configs_output_freq=100000
 vtf_output_freq=100000
+vcf_per_domain=false
 counts_output_freq=100000
+ops_to_output=sd1 sd2 sds
 order_params_output_freq=0
-vmd_pipe_freq=10000
+vmd_pipe_freq=100000
+create_vmd_instance=false

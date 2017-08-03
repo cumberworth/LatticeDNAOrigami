@@ -43,8 +43,11 @@ namespace simulation {
     using files::OrigamiOrderParamsOutputFile;
 
     vector<OrigamiOutputFile*> setup_output_files(
-            InputParameters& params, string output_filebase,
-            OrigamiSystem& origami) {
+            InputParameters& params,
+            string output_filebase,
+            OrigamiSystem& origami,
+            SystemOrderParams& ops,
+            SystemBiases& biases) {
 
         // Hack to get a vsf file
         OrigamiVSFOutputFile vsf_file {
@@ -73,14 +76,14 @@ namespace simulation {
         if (params.m_energies_output_freq != 0) {
             OrigamiOutputFile* energies_out = new OrigamiEnergiesOutputFile {
                     output_filebase + ".ene", params.m_energies_output_freq,
-                    params.m_max_total_staples, origami};
+                    params.m_max_total_staples, origami, biases};
             outs.push_back(energies_out);
         }
         if (params.m_order_params_output_freq != 0) {
             OrigamiOutputFile* order_params_out = new OrigamiOrderParamsOutputFile {
                     output_filebase + ".order_params",
                     params.m_order_params_output_freq, params.m_max_total_staples,
-                    origami};
+                    origami, ops, params.m_ops_to_output};
             outs.push_back(order_params_out);
         }
 
@@ -166,78 +169,141 @@ namespace simulation {
         vector<string> labels {movetypes_file.get_labels()};
         m_movetype_freqs = movetypes_file.get_freqs();
         for (size_t i {0}; i != types.size(); i++) {
-            MCMovetype* movetype;
+            MCMovetype* movetype {nullptr};
             string label {labels[i]};
 
             // This is still sort of ugly. What if I end up wanting to share
             // options between all CB moves, or between scaffold regrowth and
             // scaffold transform, for example?
             string type {types[i]};
-                if (type == "OrientationRotation") {
-                    movetype = setup_orientation_move(type);
-                }
-                else if (type == "MetStapleExchange") {
-                    movetype = setup_staple_exchange_move(type);
-                }
-                else if (type == "MetStapleRegrowth" or
-                        type == "CBStapleRegrowth") {
-                    movetype = setup_staple_regrowth_move(type);
-                }
-                else if (type == "CTCBScaffoldRegrowth") {
-                    movetype = setup_scaffold_regrowth_move(type);
-                }
-                else if (type == "CTCBLinkerRegrowth" or
-                        type == "ClusteredCTCBLinkerRegrowth") {
-                    movetype = setup_scaffold_transform_move(type);
-                }
+            if (type == "OrientationRotation") {
+                movetype = setup_orientation_movetype(i, type, label,
+                        movetypes_file, movetype);
+            }
+            else if (type == "MetStapleExchange") {
+                movetype = setup_staple_exchange_movetype(i, type, label,
+                        movetypes_file, movetype);
+            }
+            else if (type == "MetStapleRegrowth" or
+                    type == "CBStapleRegrowth") {
+                movetype = setup_staple_regrowth_movetype(i, type, label,
+                        movetypes_file, movetype);
+            }
+            else if (type == "CTCBScaffoldRegrowth") {
+                movetype = setup_scaffold_regrowth_movetype(i, type, label,
+                        movetypes_file, movetype);
+            }
+            else if (type == "CTCBLinkerRegrowth" or
+                    type == "ClusteredCTCBLinkerRegrowth") {
+                movetype = setup_scaffold_transform_movetype(i, type, label,
+                        movetypes_file, movetype);
+            }
+            else {
+                cout << "No such movetype";
+                throw utility::SimulationMisuse {};
             }
             m_movetypes.emplace_back(movetype);
         }
     }
 
-                    movetype = new movetypes::OrientationRotationMCMovetype {
-                            m_origami_system, m_random_gens,
-                            m_ideal_random_walks, m_config_per_move_files,
-                            label, params};
+    MCMovetype* GCMCSimulation::setup_orientation_movetype(
+            int,
+            string,
+            string label,
+            OrigamiMovetypeFile&,
+            MCMovetype* movetype) {
 
-                    double exchange_mult {m_movetypes_file.get_double_option(i,
-                            "exchange_mult")};
-                    movetype = new movetypes::MetStapleExchangeMCMovetype {
-                            m_origami_system, m_random_gens,
-                            m_ideal_random_walks, m_config_per_move_files,
-                            label, params, exchange_mult};
+        movetype = new movetypes::OrientationRotationMCMovetype {
+                m_origami_system, m_random_gens,
+                m_ideal_random_walks, m_config_per_move_files,
+                label, m_ops, m_biases, m_params};
 
-                    movetype = new movetypes::MetStapleRegrowthMCMovetype {
-                            m_origami_system, m_random_gens,
-                            m_ideal_random_walks, m_config_per_move_files,
-                            label, params};
+        return movetype;
+    }
 
-                    movetype = new movetypes::CBStapleRegrowthMCMovetype {
-                            m_origami_system, m_random_gens,
-                            m_ideal_random_walks, m_config_per_move_files,
-                            label, params};
+    MCMovetype* GCMCSimulation::setup_staple_exchange_movetype(
+            int i,
+            string,
+            string label,
+            OrigamiMovetypeFile& movetypes_file,
+            MCMovetype* movetype) {
 
-                    int excluded_staples {movetypes_file.get_int_option(i,
-                            "num_excluded_staples")};
-                    movetype = new movetypes::CTCBScaffoldRegrowthMCMovetype {
-                            m_origami_system, m_random_gens,
-                            m_ideal_random_walks, m_config_per_move_files,
-                            label, params, excluded_staples};
+        double exchange_mult {movetypes_file.get_double_option(i,
+                "exchange_mult")};
+        movetype = new movetypes::MetStapleExchangeMCMovetype {
+                m_origami_system, m_random_gens,
+                m_ideal_random_walks, m_config_per_move_files,
+                label, m_ops, m_biases, m_params, exchange_mult};
 
-                    int excluded_staples {movetypes_file.get_int_option(i,
-                            "num_excluded_staples")};
-                    int max_disp {movetypes_file.get_int_option(i, "max_disp")};
-                    int max_turns {movetypes_file.get_int_option(i,
-                            "max_turns")};
-                    movetype = new movetypes::CTCBLinkerRegrowthMCMovetype {
-                            m_origami_system, m_random_gens, m_ideal_random_walks,
-                            m_config_per_move_files, label, params,
-                            excluded_staples, max_disp, max_turns};
+        return movetype;
+    }
 
-                    movetype = new movetypes::ClusteredCTCBLinkerRegrowth {
-                            m_origami_system, m_random_gens, m_ideal_random_walks,
-                            m_config_per_move_files, label, params,
-                            excluded_staples, max_disp, max_turns};
+    MCMovetype* GCMCSimulation::setup_staple_regrowth_movetype(
+            int,
+            string type,
+            string label,
+            OrigamiMovetypeFile&,
+            MCMovetype* movetype) {
+
+        if (type == "MetStapleRegrowth") {
+            movetype = new movetypes::MetStapleRegrowthMCMovetype {
+                    m_origami_system, m_random_gens,
+                    m_ideal_random_walks, m_config_per_move_files,
+                    label, m_ops, m_biases, m_params};
+        }
+        else if (type == "CBStapleRegrowth") {
+            movetype = new movetypes::CBStapleRegrowthMCMovetype {
+                    m_origami_system, m_random_gens,
+                    m_ideal_random_walks, m_config_per_move_files,
+                    label, m_ops, m_biases, m_params};
+        }
+
+        return movetype;
+    }
+
+    MCMovetype* GCMCSimulation::setup_scaffold_regrowth_movetype(
+            int i,
+            string,
+            string label,
+            OrigamiMovetypeFile& movetypes_file,
+            MCMovetype* movetype) {
+
+        int excluded_staples {movetypes_file.get_int_option(i,
+                "num_excluded_staples")};
+        movetype = new movetypes::CTCBScaffoldRegrowthMCMovetype {
+                m_origami_system, m_random_gens,
+                m_ideal_random_walks, m_config_per_move_files,
+                label, m_ops, m_biases, m_params, excluded_staples};
+
+        return movetype;
+    }
+
+    MCMovetype* GCMCSimulation::setup_scaffold_transform_movetype(
+            int i,
+            string type,
+            string label,
+            OrigamiMovetypeFile& movetypes_file,
+            MCMovetype* movetype) {
+
+        int excluded_staples {0};
+        int max_disp {movetypes_file.get_int_option(i, "max_disp")};
+        int max_turns {movetypes_file.get_int_option(i,
+                "max_turns")};
+        if (type == "CTCBLinkerRegrowth") {
+            movetype = new movetypes::CTCBLinkerRegrowthMCMovetype {
+                    m_origami_system, m_random_gens, m_ideal_random_walks,
+                    m_config_per_move_files, label, m_ops, m_biases, m_params,
+                    excluded_staples, max_disp, max_turns};
+        }
+        else if (type == "ClusteredCTCBLinkerRegrowth") {
+            movetype = new movetypes::ClusteredCTCBLinkerRegrowth {
+                    m_origami_system, m_random_gens, m_ideal_random_walks,
+                    m_config_per_move_files, label, m_ops, m_biases, m_params,
+                    excluded_staples, max_disp, max_turns};
+        }
+
+        return movetype;
+    }
 
     void GCMCSimulation::simulate(long long int steps, long long int start_step) {
 
@@ -308,7 +374,9 @@ namespace simulation {
         *m_logging_stream << "Unique bound staples: " << m_origami_system.num_unique_staples() << "\n";
         *m_logging_stream << "Fully bound domain pairs: " << m_origami_system.num_fully_bound_domain_pairs() << "\n";
         *m_logging_stream << "System energy: " << m_origami_system.energy() << "\n";
-        *m_logging_stream << "External bias: " << m_origami_system.bias() << "\n";
+        *m_logging_stream << "Total external bias: " << m_biases.get_total_bias() << "\n";
+        *m_logging_stream << "Domain update external bias: " << m_biases.get_domain_update_bias() << "\n";
+        *m_logging_stream << "Move update external bias: " << m_biases.get_move_update_bias() << "\n";
         *m_logging_stream << "Movetype: " << movetype.get_label() << "\n";
         *m_logging_stream << "Accepted: " << std::boolalpha << accepted << "\n";
         *m_logging_stream << "\n";

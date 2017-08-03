@@ -25,7 +25,7 @@ namespace annealing {
         m_logging_stream = &cout;
         m_output_files = simulation::setup_output_files(params,
                 params.m_output_filebase,
-                m_origami_system);
+                m_origami_system, m_ops, m_biases);
     }
 
     void AnnealingGCMCSimulation::run() {

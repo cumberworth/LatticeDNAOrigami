@@ -4,12 +4,14 @@
 #define FILES_H
 
 #include <fstream>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "json/json.h"
 
+#include "bias_functions.h"
 #include "origami_system.h"
 #include "order_params.h"
 
@@ -18,9 +20,11 @@ namespace files {
     using std::ifstream;
     using std::ofstream;
     using std::pair;
+    using std::reference_wrapper;
     using std::string;
     using std::vector;
 
+    using biasFunctions::SystemBiases;
     using origami::Chain;
     using origami::OrigamiSystem;
     using orderParams::OrderParam;
@@ -80,7 +84,7 @@ namespace files {
 
     class OrigamiLeveledInput {
         public:
-            virtual ~OrigamiLeveledInput();
+            virtual ~OrigamiLeveledInput() {}
 
             vector<vector<string>> get_types_by_level();
             vector<vector<string>> get_tags_by_level();
@@ -183,9 +187,13 @@ namespace files {
                     string filename,
                     int write_freq,
                     int max_num_staples,
-                    OrigamiSystem& origami_system);
+                    OrigamiSystem& origami_system,
+                    SystemBiases& m_biases);
             using OrigamiOutputFile::OrigamiOutputFile;
             void write(long int step);
+
+        private:
+            SystemBiases& m_biases;
     };
 
     class OrigamiCountsOutputFile: public OrigamiOutputFile {
@@ -200,11 +208,14 @@ namespace files {
                     string filename,
                     int write_freq,
                     int max_num_staples,
-                    OrigamiSystem& origami_system);
+                    OrigamiSystem& origami_system,
+                    SystemOrderParams& ops,
+                    vector<string> op_tags);
             void write(long int step);
+
         private:
-            SystemOrderParams* m_system_order_params;
-            vector<OrderParam*> m_order_params;
+            SystemOrderParams& m_ops;
+            vector<reference_wrapper<OrderParam>> m_ops_to_output {};
     };
 
 }

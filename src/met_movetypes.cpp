@@ -156,7 +156,9 @@ namespace movetypes {
     }
 
     bool MetStapleExchangeMCMovetype::staple_deletion_accepted(int c_i_ident) {
+        m_origami_system.temp_reduce_staples_by_one();
         add_external_bias();
+        m_origami_system.undo_reduce_staples_by_one();
         double boltz_factor {exp(-m_delta_e)};
         int Ni {m_origami_system.num_staples_of_ident(c_i_ident)};
 
@@ -237,7 +239,6 @@ namespace movetypes {
 
         // Unassign domains and test acceptance
         unassign_domains(staple);
-        // TODO add thing to change the number of bound staples
         accepted = staple_deletion_accepted(c_i_ident);
         add_tracker(m_tracker, m_tracking, accepted);
         m_general_tracker.accepts += accepted;

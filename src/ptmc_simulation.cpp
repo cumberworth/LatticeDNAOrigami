@@ -25,7 +25,7 @@ namespace ptmc {
             m_num_reps {params.m_num_reps},
             m_exchange_interval {params.m_exchange_interval} {
         cout << "WARNING: DOES NOT APPEAR TO OBEY BALANCE";
-        m_swaps = params.m_steps / m_exchange_interval;
+        m_swaps = params.m_pt_steps / m_exchange_interval;
         string string_rank {std::to_string(m_rank)};
 
         // Update starting configs if restarting
@@ -39,7 +39,7 @@ namespace ptmc {
 
         string output_filebase {params.m_output_filebase + "-" + string_rank};
         m_output_files = simulation::setup_output_files(params, output_filebase,
-                m_origami_system);
+                m_origami_system, m_ops, m_biases);
         m_logging_stream = new ofstream {output_filebase + ".out"};
 
         // Initialize quantity index to replica index vectors
@@ -194,7 +194,7 @@ namespace ptmc {
     void PTGCMCSimulation::update_dependent_qs() {
         double DH {m_origami_system.enthalpy_and_entropy().enthalpy};
         double N {static_cast<double>(m_origami_system.num_staples())};
-        double bias_e {m_origami_system.bias()};
+        double bias_e {m_biases.get_total_bias()};
 
         m_replica_dependent_qs[m_enthalpy_i] = DH;
         m_replica_dependent_qs[m_staples_i] = N;
@@ -249,7 +249,7 @@ namespace ptmc {
             vector<vector<double>>& dependent_qs) {
         double DH {m_origami_system.enthalpy_and_entropy().enthalpy};
         double staples {static_cast<double>(m_origami_system.num_staples())};
-        double bias {m_origami_system.bias()};
+        double bias {m_biases.get_total_bias()};
         dependent_qs[m_enthalpy_i].push_back(DH);
         dependent_qs[m_staples_i].push_back(staples);
         dependent_qs[m_bias_i].push_back(bias);

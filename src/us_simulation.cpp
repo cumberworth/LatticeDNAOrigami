@@ -12,6 +12,7 @@ namespace us {
 
     using std::ifstream;
 
+    using biasFunctions::SquareWellBiasFunction;
     using files::OrigamiTrajInputFile;
     using origami::Chains;
     using utility::SimulationMisuse;
@@ -60,7 +61,7 @@ namespace us {
         string postfix {"_iter-equil"};
         string output_filebase {m_params.m_output_filebase + postfix};
         m_output_files = simulation::setup_output_files(m_params,
-                output_filebase, m_origami_system);
+                output_filebase, m_origami_system, m_ops, m_biases);
         m_logging_stream = new ofstream {output_filebase + ".out"};
 
         m_steps = m_equil_steps;
@@ -77,7 +78,7 @@ namespace us {
         string prefix {"_iter-" + std::to_string(n)};
         string output_filebase {m_params.m_output_filebase + prefix};
         m_output_files = simulation::setup_output_files(m_params,
-                output_filebase, m_origami_system);
+                output_filebase, m_origami_system, m_ops, m_biases);
         m_logging_stream = new ofstream {output_filebase + ".out"};
 
         m_steps = m_iter_steps;
@@ -112,7 +113,7 @@ namespace us {
         string postfix {"_iter-prod"};
         string output_filebase {m_params.m_output_filebase + postfix};
         m_output_files = simulation::setup_output_files(m_params,
-                output_filebase, m_origami_system);
+                output_filebase, m_origami_system, m_ops, m_biases);
         m_logging_stream = new ofstream {output_filebase + ".out"};
 
         m_steps = m_prod_steps;
@@ -152,7 +153,7 @@ namespace us {
         string filename {m_params.m_output_filebase + ".biases"};
         ofstream weights_file {filename};
         weights_file << "{\n";
-        weights_file << "    \"biases\": [\n";
+        weights_file << "    \"biases\": [";
         for (auto iter = m_S_n.begin(); iter != m_S_n.end(); iter++) {
             
             // Last comma shit
@@ -182,7 +183,7 @@ namespace us {
             weights_file << "\n";
             weights_file << "        }";
         }
-        weights_file << "    ]\n";
+        weights_file << "\n    ]\n";
         weights_file << "}\n";
     }
 
@@ -394,18 +395,16 @@ namespace us {
     void MWUSGCMCSimulation::setup_window_restraints() {
         GridPoint window_min {m_window_mins[m_rank]};
         GridPoint window_max {m_window_maxs[m_rank]};
-        OrderParam* n_staples {&m_system_order_params->get_num_staples()};
-        OrderParam* n_domains {&m_system_order_params->get_num_bound_domains()};
 
-        // Hard coded which ops are used
-        int domain_min {window_min[0]};
-        int domain_max {window_max[0]};
-        m_system_biases->add_square_well_bias(n_domains, domain_min, domain_max,
-                    m_params.m_well_bias, m_params.m_outside_bias);
-        int staple_min {window_min[1]};
-        int staple_max {window_max[1]};
-        m_system_biases->add_square_well_bias(n_staples, staple_min, staple_max,
-                    m_params.m_well_bias, m_params.m_outside_bias);
+        for (size_t i {0}; i != m_window_bias_tags.size(); i++) {
+            string bias_tag {m_window_bias_tags[i]};
+            SquareWellBiasFunction& bias_f {m_biases.get_square_well_bias(
+                    bias_tag)};
+            int op_min {window_min[i]};
+            int op_max {window_max[i]};
+            bias_f.set_min_op(op_min);
+            bias_f.set_max_op(op_max);
+        }
     }
 
     void MWUSGCMCSimulation::setup_window_sims(OrigamiSystem& origami) {
@@ -570,6 +569,18 @@ namespace us {
     void MWUSGCMCSimulation::parse_windows_file(string filename) {
         ifstream file {filename};
         string window_raw;
+
+        // Get op tags
+        string window_bias_tags_raw;
+        std::getline(file, window_bias_tags_raw);
+        std::istringstream tags_stream {window_bias_tags_raw};
+        while (not tags_stream.eof()) {
+            string tag;
+            tags_stream >> tag;
+            m_window_bias_tags.push_back(tag);
+        }
+
+        // Get mins and maxes
         while (std::getline(file, window_raw)) {
             std::istringstream window_stream {window_raw};
             string window_min_raw;

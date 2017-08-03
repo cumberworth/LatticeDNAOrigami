@@ -21,11 +21,11 @@ int main(int argc, char* argv[]) {
     parser::InputParameters params {argc, argv};
     origami::OrigamiSystem* origami {origami::setup_origami(params)};
     orderParams::SystemOrderParams& ops {origami->get_system_order_params()};
-    biasFunctions::SystemOrderParams& biases {origami->get_system_biases()};
+    biasFunctions::SystemBiases& biases {origami->get_system_biases()};
 
     // Enumerate or simulate
     if (params.m_simulation_type == "enumerate") {
-        enumerator::enumerate_main(*origami, biases, params);
+        enumerator::enumerate_main(*origami, ops, biases, params);
     }
     else {
 
@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
             sim = new us::SimpleUSGCMCSimulation {*origami, ops, biases, params};
         }
         else if (params.m_simulation_type == "mw_umbrella_sampling") {
-            sim = new us::MWUSGCMCSimulation {*origami, params, ops, biases};
+            sim = new us::MWUSGCMCSimulation {*origami, ops, biases, params};
         }
         else {
             cout << "No such simulation type.\n";

@@ -915,7 +915,9 @@ namespace enumerator {
         m_num_configs += m_multiplier;
 
         // Calculate bias contribution
-        double conf_bias {m_origami_system.bias()};
+        double conf_d_bias {m_biases.get_domain_update_bias()};
+        double conf_m_bias {m_biases.get_move_update_bias()};
+        double conf_bias {conf_d_bias + conf_m_bias};
         long double weight {m_prefix * exp(-m_energy - conf_bias) * m_multiplier};
         m_average_energy += m_energy * weight;
         m_average_bias += conf_bias * weight;
@@ -924,8 +926,7 @@ namespace enumerator {
         // Add entry
         int staples {m_origami_system.num_staples()};
         int domains {m_origami_system.num_fully_bound_domain_pairs()};
-        int dist {m_ops.get_dist_sums()[0]->get_param()};
-        vector<int> key = {staples, domains, dist};
+        vector<int> key = {staples, domains};
         if (m_state_weights.find(key) != m_state_weights.end()) {
             m_state_weights[key] += weight;
         }

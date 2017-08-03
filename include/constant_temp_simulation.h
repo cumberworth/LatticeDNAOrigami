@@ -3,6 +3,8 @@
 #ifndef CONSTANT_TEMP_SIMULATION_H
 #define CONSTANT_TEMP_SIMULATION_H
 
+#include <vector>
+
 #include "bias_functions.h"
 #include "order_params.h"
 #include "origami_system.h"
@@ -10,6 +12,8 @@
 #include "simulation.h"
 
 namespace constantTemp {
+
+    using std::vector;
 
     using biasFunctions::SystemBiases;
     using orderParams::SystemOrderParams;

@@ -87,7 +87,7 @@ namespace origami {
     }
 
     int OrigamiSystem::num_staples() const {
-        return m_domains.size() - 1;
+        return m_num_staples;
     }
 
     int OrigamiSystem::num_domains() {
@@ -129,10 +129,6 @@ namespace origami {
 
     double OrigamiSystem::energy() const {
         return m_energy;
-    }
-
-    double OrigamiSystem::get_bias() const {
-        return m_biases->get_bias();
     }
 
     SystemOrderParams& OrigamiSystem::get_system_order_params() {
@@ -339,6 +335,7 @@ namespace origami {
 
         int chain_length {static_cast<int>(m_identities[c_i_ident].size())};
         m_domains.push_back({});
+        m_num_staples++;
         Domain* prev_domain {nullptr};
         for (int d_i {0}; d_i != chain_length; d_i++) {
             int d_i_ident {m_identities[c_i_ident][d_i]};
@@ -382,11 +379,20 @@ namespace origami {
         m_chain_indices.erase(m_chain_indices.begin() + c_i_index);
         m_chain_identities.erase(m_chain_identities.begin() + c_i_index);
         m_num_domains -= m_domains[c_i_index].size();
+        m_num_staples--;
         for (auto domain: m_domains[c_i_index]) {
             delete domain;
             m_num_unassigned_domains--;
         }
         m_domains.erase(m_domains.begin() + c_i_index);
+    }
+
+    void OrigamiSystem::temp_reduce_staples_by_one() {
+        m_num_staples--;
+    }
+
+    void OrigamiSystem::undo_reduce_staples_by_one() {
+        m_num_staples++;
     }
 
     double OrigamiSystem::set_checked_domain_config(
@@ -664,6 +670,7 @@ namespace origami {
         int c_i {scaffold_chain.index};
         int c_i_ident {scaffold_chain.identity};
         add_chain(c_i_ident, c_i);
+        m_num_staples--;
 
         // Make scaffold chain domains modular if cyclic
         if (m_cyclic) {
@@ -1343,10 +1350,6 @@ namespace origami {
     //    m_ops->update_one_domain(cd_i);
     //    delta_e += m_biases->calc_one_domain(cd_i);
     //}
-
-    double OrigamiSystemWithBias::get_bias() const {
-        return m_biases->get_bias();
-    }
 
     double molarity_to_lattice_volume(double molarity, double lattice_site_volume) {
         // Given a molarity, calculate the volume that cancels the fugacity.

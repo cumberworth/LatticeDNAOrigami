@@ -16,7 +16,6 @@ namespace movetypes {
 
         private:
             void add_external_bias() override final {}
-            void subtract_external_bias() override final {}
     };
 }
 

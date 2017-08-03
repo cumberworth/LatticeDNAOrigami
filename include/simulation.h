@@ -42,6 +42,7 @@ namespace simulation {
     using files::OrigamiVCFOutputFile;
     using files::OrigamiStateOutputFile;
     using files::OrigamiOrientationOutputFile;
+    using files::OrigamiMovetypeFile;
     using movetypes::MCMovetype;
     using orderParams::SystemOrderParams;
     using origami::OrigamiSystem;
@@ -51,7 +52,9 @@ namespace simulation {
     vector<OrigamiOutputFile*> setup_output_files(
             InputParameters& params,
             string output_filebase,
-            OrigamiSystem& origami);
+            OrigamiSystem& origami,
+            SystemOrderParams& ops,
+            SystemBiases& biases);
 
     void setup_config_files(
             const string filebase,
@@ -77,6 +80,36 @@ namespace simulation {
 
             // Shared methods
             void construct_movetypes(InputParameters& params);
+            MCMovetype* setup_orientation_movetype(
+                    int i,
+                    string type,
+                    string label,
+                    OrigamiMovetypeFile& movetypes_file,
+                    MCMovetype* movetype);
+            MCMovetype* setup_staple_exchange_movetype(
+                    int i,
+                    string type,
+                    string label,
+                    OrigamiMovetypeFile& movetypes_file,
+                    MCMovetype* movetype);
+            MCMovetype* setup_staple_regrowth_movetype(
+                    int i,
+                    string type,
+                    string label,
+                    OrigamiMovetypeFile& movetypes_file,
+                    MCMovetype* movetype);
+            MCMovetype* setup_scaffold_regrowth_movetype(
+                    int i,
+                    string type,
+                    string label,
+                    OrigamiMovetypeFile& movetypes_file,
+                    MCMovetype* movetype);
+            MCMovetype* setup_scaffold_transform_movetype(
+                    int i,
+                    string type,
+                    string label,
+                    OrigamiMovetypeFile& movetypes_file,
+                    MCMovetype* movetype);
             void simulate(long long int steps, long long int start_step=0);
             MCMovetype& select_movetype();
             void write_log_entry(

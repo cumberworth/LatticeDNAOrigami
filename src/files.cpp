@@ -250,8 +250,11 @@ namespace files {
 
     vector<string> OrigamiLeveledInput::get_vector_string_option(int i, int j, string key) {
         int json_i {m_level_to_indices[i][j]};
-        string raw {m_json_ops[json_i][key].asString()};
-        return utility::string_to_string_vector(raw);
+        vector<string> sv {};
+        for (unsigned int i {0}; i != m_json_ops[json_i][key].size(); i++) {
+            sv.push_back(m_json_ops[json_i][key][i].asString());
+        }
+        return sv;
     }
 
     OrigamiOrderParamsFile::OrigamiOrderParamsFile(string filename) {
@@ -281,7 +284,7 @@ namespace files {
             levels.push_back(level);
         }
 
-        for (int i {0}; i != max_level; i++) {
+        for (int i {0}; i != max_level + 1; i++) {
             m_level_to_types.push_back({});
             m_level_to_labels.push_back({});
             m_level_to_tags.push_back({});
@@ -294,7 +297,6 @@ namespace files {
             m_level_to_indices[levels[i]].push_back(i);
         }
     }
-
 
     OrigamiBiasFunctionsFile::OrigamiBiasFunctionsFile(string filename) {
         m_filename  = filename;
@@ -316,7 +318,10 @@ namespace files {
             string label {json_op["label"].asString()};
             string tag {json_op["tag"].asString()};
             int level {json_op["level"].asInt()};
-            string ops_raw {m_json_ops[i]["ops"].asString()};
+            vector<string> ops {};
+            for (unsigned int j {0}; j != m_json_ops[i]["ops"].size(); j++) {
+                ops.push_back(m_json_ops[i]["ops"][j].asString());
+            }
             string d_biases_raw {m_json_ops[i]["bias_funcs"].asString()};
             if (level > max_level) {
                 max_level = level;
@@ -325,11 +330,11 @@ namespace files {
             labels.push_back(label);
             tags.push_back(tag);
             levels.push_back(level);
-            op_tags.push_back(utility::string_to_string_vector(ops_raw));
+            op_tags.push_back(ops);
             d_biases_tags.push_back(utility::string_to_string_vector(d_biases_raw));
         }
 
-        for (int i {0}; i != max_level; i++) {
+        for (int i {0}; i != max_level + 1; i++) {
             m_level_to_types.push_back({});
             m_level_to_labels.push_back({});
             m_level_to_tags.push_back({});
@@ -483,9 +488,14 @@ namespace files {
         m_file << "\n";
     }
 
-    OrigamiEnergiesOutputFile::OrigamiEnergiesOutputFile(string filename,
-            int write_freq, int max_num_staples, OrigamiSystem& origami_system) :
-            OrigamiOutputFile {filename, write_freq, max_num_staples, origami_system} {
+    OrigamiEnergiesOutputFile::OrigamiEnergiesOutputFile(
+            string filename,
+            int write_freq,
+            int max_num_staples,
+            OrigamiSystem& origami_system,
+            SystemBiases& biases) :
+            OrigamiOutputFile {filename, write_freq, max_num_staples, origami_system},
+            m_biases {biases} {
 
         m_file << "step energy bias\n";
     }
@@ -493,25 +503,32 @@ namespace files {
     void OrigamiEnergiesOutputFile::write(long int step) {
         m_file << step << " ";
         m_file << m_origami_system.energy() << " ";
-        m_file << m_origami_system.bias() << " ";
+        m_file << m_biases.get_total_bias() << " ";
         m_file << "\n";
     }
 
-    OrigamiOrderParamsOutputFile::OrigamiOrderParamsOutputFile(string filename,
-            int write_freq, int max_num_staples, OrigamiSystem& origami_system) :
+    OrigamiOrderParamsOutputFile::OrigamiOrderParamsOutputFile(
+            string filename,
+            int write_freq,
+            int max_num_staples,
+            OrigamiSystem& origami_system,
+            SystemOrderParams& ops,
+            vector<string> op_tags) :
             OrigamiOutputFile {filename, write_freq, max_num_staples, origami_system},
-            m_system_order_params {origami_system.get_system_order_params()},
-            m_order_params {m_system_order_params->get_order_params()} {
-        for (auto order_param: m_order_params) {
-            m_file << order_param->get_label() << " ";
+            m_ops {ops} {
+
+        for (auto op_tag: op_tags) {
+            OrderParam& op {m_ops.get_order_param(op_tag)};
+            m_file << op.get_label() << ", ";
+            m_ops_to_output.emplace_back(op);
         }
         m_file << "\n";
     }
 
     void OrigamiOrderParamsOutputFile::write(long int step) {
         m_file << step;
-        for (auto order_param: m_order_params) {
-            m_file << " " << order_param->calc_param();
+        for (auto op: m_ops_to_output) {
+            m_file << " " << op.get().calc_param();
         }
         m_file << "\n";
     }

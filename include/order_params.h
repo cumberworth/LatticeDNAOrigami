@@ -23,9 +23,9 @@ namespace orderParams {
     using std::unordered_map;
     using std::vector;
 
-    using parser::InputParameters;
     using domainContainer::Domain;
     using origami::OrigamiSystem;
+    using parser::InputParameters;
     using utility::VectorThree;
     using utility::Occupancy;
 
@@ -71,7 +71,7 @@ namespace orderParams {
     class SumOrderParam: public OrderParam {
         public:
             SumOrderParam(
-                    vector<OrderParam*> ops,
+                    vector<reference_wrapper<OrderParam>> ops,
                     string label);
 
             int calc_param() override final;
@@ -82,7 +82,7 @@ namespace orderParams {
                     Occupancy) override final;
 
         private:
-            vector<OrderParam*> m_ops {};
+            vector<reference_wrapper<OrderParam>> m_ops {};
     };
 
     class NumStaplesOrderParam: public OrderParam {
@@ -116,7 +116,6 @@ namespace orderParams {
     class SystemOrderParams {
         public:
             SystemOrderParams(InputParameters& params, OrigamiSystem& origami);
-            ~SystemOrderParams();
 
             OrderParam& get_order_param(string tag);
             vector<pair<int, int>> get_dependent_domains(string tag);
@@ -131,6 +130,10 @@ namespace orderParams {
                     Occupancy state);
 
         private:
+            void setup_ops(
+                    string ops_filename,
+                    vector<pair<int, int>> keys);
+
             OrigamiSystem& m_origami;
 
             // Vectors of each type of order param

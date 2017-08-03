@@ -105,7 +105,6 @@ namespace origami {
             Domain* unbound_domain_at(VectorThree pos) const;
             bool check_domains_complementary(Domain& cd_i, Domain& cd_j);
             double energy() const;
-            virtual double get_bias() const;
             ThermoOfHybrid enthalpy_and_entropy();
             bool configuration_fully_set();
             int num_unassigned_domains();
@@ -123,6 +122,8 @@ namespace origami {
             int add_chain(int c_i_ident);
             int add_chain(int c_i_ident, int uc_i);
             virtual void delete_chain(int c_i);
+            void temp_reduce_staples_by_one();
+            void undo_reduce_staples_by_one();
             virtual double set_checked_domain_config(
                     Domain& cd_i,
                     VectorThree pos,
@@ -153,6 +154,7 @@ namespace origami {
             // Bookeeping stuff, could probably organize better
             vector<vector<Domain*>> m_domains {}; // Domains grouped by chain
             int m_num_domains {0}; // Total domains in system
+            int m_num_staples {0};
             vector<vector<int>> m_staple_ident_to_scaffold_ds {}; // Staple ID to comp scaffold domain i
             vector<int> m_chain_indices {}; // Working to unique index
             vector<int> m_chain_identities {}; // Working index to id
@@ -285,7 +287,6 @@ namespace origami {
                     VectorThree position,
                     VectorThree orientation);
             //void set_domain_orientation(Domain& cd_i, VectorThree ore);
-            double get_bias() const;
     };
 
     // Moved from main

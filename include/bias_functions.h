@@ -8,9 +8,9 @@
 #include <utility>
 #include <vector>
 
-#include "order_params.h"
 #include "domain.h"
 #include "hash.h"
+#include "order_params.h"
 #include "origami_system.h"
 #include "parser.h"
 #include "utility.h"
@@ -38,7 +38,8 @@ namespace biasFunctions {
             virtual ~BiasFunction() {};
             virtual double update_bias() = 0;
             virtual double check_bias() = 0;
-            virtual double get_bias() = 0;
+
+            double get_bias();
 
         protected:
             double m_bias {0};
@@ -55,7 +56,6 @@ namespace biasFunctions {
             ~LinearStepBiasFunction() {};
             double update_bias();
             double check_bias();
-            double get_bias();
         private:
             OrderParam& m_order_param;
             int m_min_param;
@@ -78,7 +78,8 @@ namespace biasFunctions {
             ~SquareWellBiasFunction() {};
                 double update_bias();
             double check_bias();
-            double get_bias();
+            void set_min_op(int min_op);
+            void set_max_op(int max_op);
 
         private:
             OrderParam& m_order_param;
@@ -103,7 +104,6 @@ namespace biasFunctions {
 
             double update_bias();
             double check_bias();
-            double get_bias();
             double calc_bias(vector<int> params);
 
         private:
@@ -123,7 +123,9 @@ namespace biasFunctions {
                     SystemOrderParams& system_order_params,
                     InputParameters& params);
 
-            double get_bias();
+            double get_total_bias();
+            double get_domain_update_bias();
+            double get_move_update_bias();
 
             // Bias can be tuned with a multiplier
             void update_bias_mult(double bias_mult);
@@ -149,8 +151,12 @@ namespace biasFunctions {
             double check_one_domain(Domain& domain);
 
             GridBiasFunction& get_grid_bias(string tag);
+            SquareWellBiasFunction& get_square_well_bias(string tag);
 
         private:
+            void setup_biases(
+                    string biases_filename,
+                    vector<pair<int, int>> keys);
             //void add_chain(vector<Domain*> chain);
             //void remove_chain(vector<Domain*> chain);
 
@@ -167,7 +173,8 @@ namespace biasFunctions {
                     m_domain_update_biases {};
             vector<vector<reference_wrapper<BiasFunction>>> m_move_update_biases {};
 
-            double m_total_bias {0};
+            double m_domain_update_bias {0};
+            double m_move_update_bias {0};
             int m_levels;
     };
 }

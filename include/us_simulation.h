@@ -62,8 +62,11 @@ namespace us {
             bool weights_converged();
             void run_production(int n);
             vector<GridPoint> get_points();
+
+            // Probably move these to files and interface with grid bias
             void read_weights(string filename);
             void output_weights();
+
             void set_config_from_traj(string filename, int step);
             void set_output_stream(ostream* out_stream);
             int get_grid_dim();
@@ -134,6 +137,17 @@ namespace us {
             void run();
 
         private:
+            void setup_window_variables();
+            void setup_window_restraints();
+            void setup_window_sims(OrigamiSystem& origami);
+            void output_iter_summary(int n);
+            void update_internal(long long int) {}
+            void parse_windows_file(string filename);
+            void update_master_order_params(int n);
+            void update_master_converged_sims(bool sim_converged, int n);
+            void update_starting_config(int n);
+            void select_starting_configs(int n);
+            void sort_configs_by_ops();
 
             // MPI variables
             mpi::environment m_env;
@@ -152,6 +166,7 @@ namespace us {
             USGCMCSimulation* m_us_sim;
             int m_windows {0};
             int m_grid_dim {0};
+            vector<string> m_window_bias_tags {};
             vector<GridPoint> m_window_mins {};
             vector<GridPoint> m_window_maxs {};
             vector<unsigned int> m_num_points {}; // num grid points per window
@@ -167,18 +182,6 @@ namespace us {
             vector<int> m_current_iters {};
             vector<string> m_starting_files {};
             vector<int> m_starting_steps {};
-
-            void setup_window_variables();
-            void setup_window_restraints();
-            void setup_window_sims(OrigamiSystem& origami);
-            void output_iter_summary(int n);
-            void update_internal(long long int) {}
-            void parse_windows_file(string filename);
-            void update_master_order_params(int n);
-            void update_master_converged_sims(bool sim_converged, int n);
-            void update_starting_config(int n);
-            void select_starting_configs(int n);
-            void sort_configs_by_ops();
     };
 }
 

@@ -1,52 +1,46 @@
 # System input and parameters
-#origami_input_filename=data/snodin_unbound.json
-origami_input_filename=data/four2_domain_loop.json
+origami_input_filename=data/snodin_unbound.json
 temp=330
 staple_M=1e-6
 cation_M=1
 temp_for_staple_u=330
 staple_u_mult=1
 lattice_site_volume=4e-28
-#energy_filebase=data/snodin
-energy_filebase=data/four
-
-# Order parameters
-distance_pairs=0 3
-#distance_pairs=4 7 10 13 16 19
-distance_sum=true
-
-# Bias functions
-square_well_bias=true
-min_well_param=0
-max_well_param=2
-well_bias=0
-outside_bias=99
+max_total_staples=24
+max_type_staples=2
+domain_update_biases_present=false
+order_parameter_file=order_params.json
+bias_functions_file=us_bias_functions.json
+bias_functions_mult=1
+#energy_filebase=
+simulation_type=umbrella_sampling
 
 # General simulation parameters
-simulation_type=umbrella_sampling
-logging_freq=100000
-centering_freq=100000
-orientation_rotation=1/6
-met_staple_exchange=1/2
-cb_staple_regrowth=1/6
-ctcb_scaffold_regrowth=1/6
+movetype_file=movetypes.json
 #num_walks_filename=data/num_walks.arch
-exchange_mult=1000
-max_total_staples=4
-max_type_staples=2
+vmd_file_dir=../scripts/vmd
+centering_freq=100000
+constraint_check_freq=100000
 
 # Umbrella sampling options
-order_params=filler
-max_num_iters=1
+us_grid_bias_tag=grid
+max_num_iters=2
 max_D_bias=1
 equil_steps=0
-iter_steps=1000000
+iter_steps=100000
 prod_steps=0
 max_rel_P_diff=0.1
 #biases_file=outs/test_us.biases
 
 # Output options
 output_filebase=outs/test_us
+logging_freq=100000
 configs_output_freq=100000
+vtf_output_freq=100000
+vcf_per_domain=false
 counts_output_freq=100000
+ops_to_output=sds
+order_params_output_freq=10000
 energies_output_freq=100000
+vmd_pipe_freq=100000
+create_vmd_instance=false
