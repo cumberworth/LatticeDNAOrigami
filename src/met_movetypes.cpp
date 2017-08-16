@@ -36,6 +36,14 @@ namespace movetypes {
         }
     }
 
+    void MetMCMovetype::add_external_bias() {
+        m_ops.update_move_params();
+        double ex_bias {m_biases.calc_move()};
+        m_delta_e += ex_bias;
+
+        return;
+    }
+
     void MetMCMovetype::unassign_domains(vector<Domain*> domains) {
         for (auto domain: domains) {
             pair<int, int> key {domain->m_c, domain->m_d};
@@ -44,14 +52,6 @@ namespace movetypes {
             m_modified_domains.push_back(key);
             m_delta_e += m_origami_system.unassign_domain(*domain);
         }
-    }
-
-    void MetMCMovetype::add_external_bias() {
-        m_ops.update_move_params();
-        double ex_bias {m_biases.calc_move()};
-        m_delta_e += ex_bias;
-
-        return;
     }
 
     MetStapleExchangeMCMovetype::MetStapleExchangeMCMovetype(
@@ -64,28 +64,14 @@ namespace movetypes {
             SystemBiases& biases,
             InputParameters& params,
             double exchange_mult):
-            MetMCMovetype(origami_system, random_gens, ideal_random_walks,
+            MCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
             m_exchange_mult {exchange_mult} {
     }
 
-    bool MetStapleExchangeMCMovetype::attempt_move(long long int step) {
-        m_step = step;
-        write_config();
-        m_general_tracker.attempts++;
-
-        // Select inertion or deletion with equal frequency
-        bool accept;
-        if (m_random_gens.uniform_real() < 0.5) {
-            m_tracker.staple_insertion = true;
-            accept = insert_staple();
-        }
-        else {
-            m_tracker.staple_insertion = false;
-            accept = delete_staple();
-        }
-        
-        return accept;
+    void MetStapleExchangeMCMovetype::reset_internal() {
+        MetMCMovetype::reset_internal();
+        m_insertion_sites = m_origami_system.num_domains();
     }
 
     void MetStapleExchangeMCMovetype::write_log_summary(ostream* log_stream) {
@@ -127,9 +113,24 @@ namespace movetypes {
         }
     }
 
-    void MetStapleExchangeMCMovetype::reset_internal() {
-        MetMCMovetype::reset_internal();
-        m_insertion_sites = m_origami_system.num_domains();
+    bool MetStapleExchangeMCMovetype::internal_attempt_move() {
+        bool accepted {false};
+
+        // Select inertion or deletion with equal frequency
+        if (m_random_gens.uniform_real() < 0.5) {
+            m_tracker.staple_insertion = true;
+            accepted = insert_staple();
+        }
+        else {
+            m_tracker.staple_insertion = false;
+            accepted = delete_staple();
+        }
+        
+        return accepted;
+    }
+
+    void MetStapleExchangeMCMovetype::add_tracker(bool accepted) {
+        movetypes::add_tracker(m_tracker, m_tracking, accepted);
     }
 
     bool MetStapleExchangeMCMovetype::staple_insertion_accepted(int c_i_ident) {
@@ -183,11 +184,9 @@ namespace movetypes {
 
         // Check if number staples exceeds max allowed
         if (m_origami_system.num_staples() == m_max_total_staples) {
-            add_tracker(m_tracker, m_tracking, accepted);
             return accepted;
         }
         if (m_origami_system.num_staples_of_ident(c_i_ident) == m_max_type_staples) {
-            add_tracker(m_tracker, m_tracking, accepted);
             return accepted;
         }
 
@@ -202,19 +201,15 @@ namespace movetypes {
 
         m_delta_e += set_growth_point(*growthpoint.first, *growthpoint.second);
         if (m_rejected) {
-            add_tracker(m_tracker, m_tracking, accepted);
             return accepted;
         }
 
         grow_staple(growthpoint.first->m_d, selected_chain);
         if (m_rejected) {
-            add_tracker(m_tracker, m_tracking, accepted);
             return accepted;
         }
 
         accepted = staple_insertion_accepted(c_i_ident);
-        add_tracker(m_tracker, m_tracking, accepted);
-        m_general_tracker.accepts += accepted;
         return accepted;
     }
 
@@ -226,74 +221,22 @@ namespace movetypes {
         m_tracker.staple_type = c_i_ident;
         int c_i {select_random_staple_of_identity(c_i_ident)};
         if (m_rejected) {
-            add_tracker(m_tracker, m_tracking, accepted);
             return accepted;
         }
 
         // Reject if staple is connector
         vector<Domain*> staple {m_origami_system.get_chain(c_i)};
         if (staple_is_connector(staple)) {
-            add_tracker(m_tracker, m_tracking, accepted);
             return accepted;
         }
 
         // Unassign domains and test acceptance
         unassign_domains(staple);
         accepted = staple_deletion_accepted(c_i_ident);
-        add_tracker(m_tracker, m_tracking, accepted);
-        m_general_tracker.accepts += accepted;
         if (accepted) {
             m_origami_system.delete_chain(c_i);
         }
 
-        return accepted;
-    }
-
-    bool MetStapleRegrowthMCMovetype::attempt_move(long long int step) {
-        m_step = step;
-        write_config();
-        bool accepted {false};
-        m_general_tracker.attempts++;
-
-        // No staples to regrow
-        if (m_origami_system.num_staples() == 0) {
-            add_tracker(m_tracker, m_tracking, accepted);
-            return accepted;
-        }
-
-        // Select a staple to regrow
-        int c_i_index {m_random_gens.uniform_int(1, m_origami_system.num_staples())};
-        vector<Domain*> selected_chain {m_origami_system.get_chains()[c_i_index]};
-        m_tracker.staple_type = selected_chain[0]->m_c_ident;
-
-        // Reject if staple is connector
-        if (staple_is_connector(selected_chain)) {
-            add_tracker(m_tracker, m_tracking, accepted);
-            return accepted;
-        }
-
-        // Select growth points on chains
-        pair<Domain*, Domain*> growthpoint {select_new_growthpoint(selected_chain)};
-
-        unassign_domains(selected_chain);
-
-        // Grow staple
-        m_delta_e += set_growth_point(*growthpoint.first, *growthpoint.second);
-        if (m_rejected) {
-            accepted = false;
-            return accepted;
-        }
-        grow_staple(growthpoint.first->m_d, selected_chain);
-        if (m_rejected) {
-            add_tracker(m_tracker, m_tracking, accepted);
-            return accepted;
-        }
-
-        add_external_bias();
-        double boltz_factor {exp(-(m_delta_e))};
-        accepted = test_acceptance(boltz_factor);
-        m_general_tracker.accepts++;
-        add_tracker(m_tracker, m_tracking, accepted);
         return accepted;
     }
 
@@ -322,5 +265,45 @@ namespace movetypes {
             *log_stream << "        Accepts: " << acs << "\n";
             *log_stream << "        Frequency: " << freq << "\n";
         }
+    }
+
+    bool MetStapleRegrowthMCMovetype::internal_attempt_move() {
+        bool accepted {false};
+
+        // No staples to regrow
+        if (m_origami_system.num_staples() == 0) {
+            return accepted;
+        }
+
+        // Select a staple to regrow
+        int c_i_index {m_random_gens.uniform_int(1, m_origami_system.num_staples())};
+        vector<Domain*> selected_chain {m_origami_system.get_chains()[c_i_index]};
+        m_tracker.staple_type = selected_chain[0]->m_c_ident;
+
+        // Reject if staple is connector
+        if (staple_is_connector(selected_chain)) {
+            return accepted;
+        }
+
+        // Select growth points on chains
+        pair<Domain*, Domain*> growthpoint {select_new_growthpoint(selected_chain)};
+
+        unassign_domains(selected_chain);
+
+        // Grow staple
+        m_delta_e += set_growth_point(*growthpoint.first, *growthpoint.second);
+        if (m_rejected) {
+            accepted = false;
+            return accepted;
+        }
+        grow_staple(growthpoint.first->m_d, selected_chain);
+        if (m_rejected) {
+            return accepted;
+        }
+
+        add_external_bias();
+        double boltz_factor {exp(-(m_delta_e))};
+        accepted = test_acceptance(boltz_factor);
+        return accepted;
     }
 }

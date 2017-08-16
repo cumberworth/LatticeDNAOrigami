@@ -8,12 +8,6 @@
 
 namespace std {
 
-    using utility::VectorThree;
-    using utility::StapleExchangeTracking;
-    using utility::StapleRegrowthTracking;
-    using utility::CTCBScaffoldRegrowthTracking;
-    using utility::CTCBLinkerRegrowthTracking;
-
     /* Copied from a stack exchange question (which is copied from the BOOST
        library) for allowing pairs to be hashed.
     */
@@ -43,8 +37,8 @@ namespace std {
         }
     };
 
-    template<> struct hash<VectorThree> {
-        inline size_t operator()(const VectorThree& v) const {
+    template<> struct hash<utility::VectorThree> {
+        inline size_t operator()(const utility::VectorThree& v) const {
             size_t seed = 0;
             for (size_t i {0}; i != 3; i++) {
                 hash_combine(seed, v.at(i));
@@ -53,8 +47,8 @@ namespace std {
         }
     };
 
-    template<> struct hash<StapleExchangeTracking> {
-        inline size_t operator()(const StapleExchangeTracking& x) const {
+    template<> struct hash<utility::StapleExchangeTracking> {
+        inline size_t operator()(const utility::StapleExchangeTracking& x) const {
             size_t seed = 0;
             hash_combine(seed, x.no_staples);
             hash_combine(seed, x.staple_type);
@@ -62,8 +56,8 @@ namespace std {
         }
     };
 
-    template<> struct hash<StapleRegrowthTracking> {
-        inline size_t operator()(const StapleRegrowthTracking& x) const {
+    template<> struct hash<utility::StapleRegrowthTracking> {
+        inline size_t operator()(const utility::StapleRegrowthTracking& x) const {
             size_t seed = 0;
             hash_combine(seed, x.no_staples);
             hash_combine(seed, x.staple_type);
@@ -71,8 +65,8 @@ namespace std {
         }
     };
 
-    template<> struct hash<CTCBScaffoldRegrowthTracking> {
-        inline size_t operator()(const CTCBScaffoldRegrowthTracking& x) const {
+    template<> struct hash<utility::CTCBScaffoldRegrowthTracking> {
+        inline size_t operator()(const utility::CTCBScaffoldRegrowthTracking& x) const {
             size_t seed = 0;
             hash_combine(seed, x.num_scaffold_domains);
             hash_combine(seed, x.num_staples);
@@ -80,8 +74,8 @@ namespace std {
         }
     };
 
-    template<> struct hash<CTCBLinkerRegrowthTracking> {
-        inline size_t operator()(const CTCBLinkerRegrowthTracking& x) const {
+    template<> struct hash<utility::CTCBLinkerRegrowthTracking> {
+        inline size_t operator()(const utility::CTCBLinkerRegrowthTracking& x) const {
             size_t seed = 0;
             hash_combine(seed, x.central_domains_connected);
             hash_combine(seed, x.num_linker_domains);

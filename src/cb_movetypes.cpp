@@ -25,6 +25,12 @@ namespace movetypes {
         m_old_ore.clear();
     }
 
+    void CBMCMovetype::add_external_bias() {
+        m_ops.update_move_params();
+        double total_bias {m_biases.calc_move()};
+        m_bias *= exp(-total_bias);
+    }
+
     void CBMCMovetype::calc_biases(
             const VectorThree p_prev,
             Domain& domain,
@@ -222,82 +228,9 @@ namespace movetypes {
         return {growth_domain_new, growth_domain_old};
     }
 
-    void CBMCMovetype::add_external_bias() {
-        m_ops.update_move_params();
-        double total_bias {m_biases.calc_move()};
-        m_bias *= exp(-total_bias);
-    }
-
     void CBMCMovetype::update_external_bias() {
         m_ops.update_move_params();
         m_biases.calc_move();
-    }
-
-    bool CBStapleRegrowthMCMovetype::attempt_move(long long int step) {
-        m_step = step;
-        write_config();
-        bool accepted {false};
-        m_general_tracker.attempts++;
-
-        // No staples to regrow
-        if (m_origami_system.num_staples() == 0) {
-            accepted = false;
-            m_tracker.no_staples = true;
-            add_tracker(m_tracker, m_tracking, accepted);
-            return accepted;
-        }
-        else {
-            m_tracker.no_staples = false;
-        }
-
-        // Select a staple to regrow
-        int c_i_index {m_random_gens.uniform_int(1, m_origami_system.num_staples())};
-        vector<Domain*> selected_chain {m_origami_system.get_chains()[c_i_index]};
-        m_tracker.staple_type = selected_chain[0]->m_c_ident;
-
-        // Reject if staple is connector
-        if (staple_is_connector(selected_chain)) {
-            add_tracker(m_tracker, m_tracking, accepted);
-            return accepted;
-        }
-
-        // Select growth points on chains
-        pair<Domain*, Domain*> growthpoint {select_new_growthpoint(selected_chain)};
-
-        auto bound_domains = find_bound_domains(selected_chain);
-        unassign_domains(selected_chain);
-        update_external_bias();
-
-        // Grow staple
-        set_growthpoint_and_grow_staple(growthpoint, selected_chain);
-        if (m_rejected) {
-            add_tracker(m_tracker, m_tracking, accepted);
-            return accepted;
-        }
-
-        add_external_bias();
-
-        // Regrow staple in old conformation
-        setup_for_regrow_old();
-
-        // Select growth point from previously bound domains
-        growthpoint = select_old_growthpoint(bound_domains);
-
-        // Unassign and add to reversion list
-        unassign_domains(selected_chain);
-        update_external_bias();
-
-        // Grow staple
-        set_growthpoint_and_grow_staple(growthpoint, selected_chain);
-
-        // Revert modifier and test acceptance
-        m_modifier = m_new_modifier;
-        add_external_bias();
-        accepted = test_cb_acceptance();
-        add_tracker(m_tracker, m_tracking, accepted);
-        m_general_tracker.accepts += accepted;
-
-        return accepted;
     }
 
     void CBStapleRegrowthMCMovetype::write_log_summary(ostream* log_stream) {
@@ -327,20 +260,67 @@ namespace movetypes {
         }
     }
 
-    void CBStapleRegrowthMCMovetype::set_growthpoint_and_grow_staple(
-            domainPairT growthpoint,
-            vector<Domain*> selected_chain) {
+    bool CBStapleRegrowthMCMovetype::internal_attempt_move() {
+        bool accepted {false};
 
-        if (m_regrow_old) {
-            set_old_growth_point(*growthpoint.first, *growthpoint.second);
+        // No staples to regrow
+        if (m_origami_system.num_staples() == 0) {
+            accepted = false;
+            m_tracker.no_staples = true;
+            return accepted;
         }
         else {
-            double delta_e {set_growth_point(*growthpoint.first, *growthpoint.second)};
-            m_bias *= exp(-delta_e);
+            m_tracker.no_staples = false;
         }
-        if (not m_rejected) {
-            grow_staple(growthpoint.first->m_d, selected_chain);
+
+        // Select a staple to regrow
+        int c_i_index {m_random_gens.uniform_int(1, m_origami_system.num_staples())};
+        vector<Domain*> selected_chain {m_origami_system.get_chains()[c_i_index]};
+        m_tracker.staple_type = selected_chain[0]->m_c_ident;
+
+        // Reject if staple is connector
+        if (staple_is_connector(selected_chain)) {
+            return accepted;
         }
+
+        // Select growth points on chains
+        pair<Domain*, Domain*> growthpoint {select_new_growthpoint(selected_chain)};
+
+        auto bound_domains = find_bound_domains(selected_chain);
+        unassign_domains(selected_chain);
+        update_external_bias();
+
+        // Grow staple
+        set_growthpoint_and_grow_staple(growthpoint, selected_chain);
+        if (m_rejected) {
+            return accepted;
+        }
+
+        add_external_bias();
+
+        // Regrow staple in old conformation
+        setup_for_regrow_old();
+
+        // Select growth point from previously bound domains
+        growthpoint = select_old_growthpoint(bound_domains);
+
+        // Unassign and add to reversion list
+        unassign_domains(selected_chain);
+        update_external_bias();
+
+        // Grow staple
+        set_growthpoint_and_grow_staple(growthpoint, selected_chain);
+
+        // Revert modifier and test acceptance
+        m_modifier = m_new_modifier;
+        add_external_bias();
+        accepted = test_cb_acceptance();
+
+        return accepted;
+    }
+
+    void CBStapleRegrowthMCMovetype::add_tracker(bool accepted) {
+        movetypes::add_tracker(m_tracker, m_tracking, accepted);
     }
 
     void CBStapleRegrowthMCMovetype::grow_chain(vector<Domain*> domains) {
@@ -380,6 +360,22 @@ namespace movetypes {
         return weights;
     }
 
+    void CBStapleRegrowthMCMovetype::set_growthpoint_and_grow_staple(
+            domainPairT growthpoint,
+            vector<Domain*> selected_chain) {
+
+        if (m_regrow_old) {
+            set_old_growth_point(*growthpoint.first, *growthpoint.second);
+        }
+        else {
+            double delta_e {set_growth_point(*growthpoint.first, *growthpoint.second)};
+            m_bias *= exp(-delta_e);
+        }
+        if (not m_rejected) {
+            grow_staple(growthpoint.first->m_d, selected_chain);
+        }
+    }
+
     CTCBRegrowthMCMovetype::CTCBRegrowthMCMovetype(
             OrigamiSystem& origami_system,
             RandomGens& random_gens,
@@ -390,74 +386,16 @@ namespace movetypes {
             SystemBiases& biases,
             InputParameters& params,
             int num_excluded_staples):
-            CBMCMovetype(origami_system, random_gens, ideal_random_walks,
+            MCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
-            m_num_excluded_staples {num_excluded_staples} {
+            CTRegrowthMCMovetype(num_excluded_staples) {
     }
 
     void CTCBRegrowthMCMovetype::reset_internal() {
+        m_regrow_old = false;
         CBMCMovetype::reset_internal();
         m_constraintpoints.reset_internal();
         m_excluded_staples.clear();
-    }
-
-    pair<int, int> CTCBRegrowthMCMovetype::select_endpoints(
-            const int array_size,
-            const int m,
-            const int min_size) {
-
-        int start_i {m_random_gens.uniform_int(m, array_size - 1 - m)};
-        int end_i {m_random_gens.uniform_int(m, array_size - 1 - m)};
-        while (std::abs(start_i - end_i) < min_size) {
-            end_i = m_random_gens.uniform_int(m, array_size - 1 - m);
-        }
-
-        return {start_i, end_i};
-    }
-
-    vector<Domain*> CTCBRegrowthMCMovetype::select_linear_segment(
-            Domain* start_domain,
-            Domain* end_domain) {
-
-        vector<Domain*> scaffold {m_origami_system.get_chain(m_origami_system.c_scaffold)};
-        vector<Domain*> domains {};
-
-        // Find direction of regrowth
-        if (end_domain->m_d > start_domain->m_d) {
-            m_dir = 1;
-        }
-        else {
-            m_dir = -1;
-        }
-        for (int d_i {start_domain->m_d}; d_i != end_domain->m_d + m_dir; d_i += m_dir) {
-            Domain* cur_domain {scaffold[d_i]};
-            domains.push_back(cur_domain);
-        }
-
-        return domains;
-    }
-
-    vector<Domain*> CTCBRegrowthMCMovetype::select_cyclic_segment(
-            Domain* start_domain,
-            Domain* end_domain) {
-
-        vector<Domain*> domains {};
-
-        // Select direction of regrowth MESSY
-        m_dir = m_random_gens.uniform_int(0, 1);
-        if (m_dir == 0) {
-            m_dir = -1;
-        }
-        int d_i {start_domain->m_d};
-        Domain* cur_domain {start_domain};
-        while (d_i != end_domain->m_d) {
-            domains.push_back(cur_domain);
-            cur_domain = (*cur_domain) + m_dir;
-            d_i = cur_domain->m_d;
-        }
-        domains.push_back(end_domain);
-
-        return domains;
     }
 
     void CTCBRegrowthMCMovetype::grow_chain(vector<Domain*> domains) {
@@ -469,7 +407,7 @@ namespace movetypes {
             }
             Domain* domain {domains[i]};
             m_constraintpoints.update_endpoints(domain);
-        
+
             // Grow staple if growth point
             if (m_constraintpoints.is_growthpoint(domain)) {
                 grow_staple_and_update_endpoints(domain);
@@ -477,25 +415,6 @@ namespace movetypes {
                     break;
                 }
             }
-        }
-    }
-
-    void CTCBRegrowthMCMovetype::grow_staple_and_update_endpoints(
-            Domain* growth_d_old) {
-
-        Domain* growth_d_new {m_constraintpoints.get_domain_to_grow(growth_d_old)};
-        int c_i {growth_d_new->m_c};
-        if (m_regrow_old) {
-            set_old_growth_point(*growth_d_new, *growth_d_old);
-        }
-        else {
-            double delta_e {set_growth_point(*growth_d_new, *growth_d_old)};
-            m_bias *= exp(-delta_e);
-        }
-        if (not m_rejected) {
-            m_constraintpoints.update_endpoints(growth_d_new);
-            vector<Domain*> staple {m_origami_system.get_chain(c_i)};
-            grow_staple(growth_d_new->m_d, staple);
         }
     }
 
@@ -559,108 +478,23 @@ namespace movetypes {
         return norm_weights;
     }
 
-    bool CTCBScaffoldRegrowthMCMovetype::attempt_move(long long int step) {
-        m_step = step;
-        write_config();
-        bool accepted {false};
-        m_general_tracker.attempts++;
+    void CTCBRegrowthMCMovetype::grow_staple_and_update_endpoints(
+            Domain* growth_d_old) {
 
-        m_regrow_old = false;
-        vector<Domain*> scaffold {m_origami_system.get_chain(
-                m_origami_system.c_scaffold)};
-        vector<Domain*> scaffold_domains {select_indices(scaffold)};
-        m_tracker.num_scaffold_domains = scaffold_domains.size();
-
-        for (int i {0}; i != m_num_excluded_staples; i++) {
-            if (i == m_origami_system.num_staples()) {
-                break;
-            }
-            bool staple_picked {false};
-            int s_ui;
-            while (not staple_picked)  {
-                int staple_i {m_random_gens.uniform_int(1,
-                        m_origami_system.num_staples())};
-                s_ui = m_origami_system.get_chains()[staple_i][0]->m_c;
-                staple_picked = (find(m_excluded_staples.begin(),
-                        m_excluded_staples.end(), s_ui) ==
-                        m_excluded_staples.end());
-            }
-            m_excluded_staples.push_back(s_ui);
+        Domain* growth_d_new {m_constraintpoints.get_domain_to_grow(growth_d_old)};
+        int c_i {growth_d_new->m_c};
+        if (m_regrow_old) {
+            set_old_growth_point(*growth_d_new, *growth_d_old);
         }
-        m_constraintpoints.calculate_constraintpoints(scaffold_domains, m_excluded_staples);
-        if (not m_origami_system.m_cyclic and scaffold_domains.size() !=
-            m_origami_system.get_chain(0).size()) {
-            m_constraintpoints.remove_active_endpoint(scaffold_domains[0]);
+        else {
+            double delta_e {set_growth_point(*growth_d_new, *growth_d_old)};
+            m_bias *= exp(-delta_e);
         }
-        set<int> staples {m_constraintpoints.staples_to_be_regrown()};
-        m_tracker.num_staples = staples.size();
-
-        // Unassign staples except those directly and indirectly bound to external scaffold domains
-        vector<Domain*> scaffold_domains_to_unassign(scaffold_domains.begin() + 1,
-                scaffold_domains.end());
-        unassign_domains(scaffold_domains_to_unassign);
-        for (auto c_i: staples) {
-            unassign_domains(m_origami_system.get_chain(c_i));
+        if (not m_rejected) {
+            m_constraintpoints.update_endpoints(growth_d_new);
+            vector<Domain*> staple {m_origami_system.get_chain(c_i)};
+            grow_staple(growth_d_new->m_d, staple);
         }
-        update_external_bias();
-
-        // Grow scaffold and staples
-        if (m_constraintpoints.is_growthpoint(scaffold_domains[0])) {
-            grow_staple_and_update_endpoints(scaffold_domains[0]);
-            if (m_rejected) {
-                add_tracker(m_tracker, m_tracking, accepted);
-                return accepted;
-            }
-        }
-        grow_chain(scaffold_domains);
-
-        // Check if excluded staples have become unbound
-        bool bound_to_system {false};
-        for (auto exs_i: m_excluded_staples) {
-            vector<Domain*> exs {m_origami_system.get_chain(exs_i)};
-            for (auto exd: exs) {
-                set<int> dummy_set {};
-                if (scan_for_scaffold_domain(exd, dummy_set)) {
-                    bound_to_system = true;
-                    break;
-                }
-            }
-        }
-        if (m_rejected or not bound_to_system) {
-            add_tracker(m_tracker, m_tracking, accepted);
-            return accepted;
-        }
-
-        add_external_bias();
-        // Regrow in old conformation
-        setup_for_regrow_old();
-        m_constraintpoints.reset_active_endpoints();
-        if (not m_origami_system.m_cyclic and scaffold_domains.size() !=
-            m_origami_system.get_chain(0).size()) {
-            m_constraintpoints.remove_active_endpoint(scaffold_domains[0]);
-        }
-
-        // Unassign staples except those directly and indirectly bound to external scaffold domains
-        unassign_domains(scaffold_domains_to_unassign);
-        for (auto c_i: staples) {
-            unassign_domains(m_origami_system.get_chain(c_i));
-        }
-        update_external_bias();
-
-        // Grow scaffold and staples
-        if (m_constraintpoints.is_growthpoint(scaffold_domains[0])) {
-            grow_staple_and_update_endpoints(scaffold_domains[0]);
-        }
-
-        grow_chain(scaffold_domains);
-
-        // Reset modifier and test acceptance
-        m_modifier = 1;
-        add_external_bias();
-        accepted = test_cb_acceptance();
-        add_tracker(m_tracker, m_tracking, accepted);
-        m_general_tracker.accepts += accepted;
-        return accepted;
     }
 
     void CTCBScaffoldRegrowthMCMovetype::write_log_summary(ostream* log_stream) {
@@ -716,27 +550,79 @@ namespace movetypes {
         }
     }
 
-    vector<Domain*> CTCBScaffoldRegrowthMCMovetype::select_indices(
-            vector<Domain*> segment) {
+    bool CTCBScaffoldRegrowthMCMovetype::internal_attempt_move() {
+        bool accepted {false};
 
-        pair<int, int> endpoints {select_endpoints(segment.size(), 0, 1)};
-        Domain* start_domain {segment[endpoints.first]};
-        Domain* end_domain {segment[endpoints.second]};
-        vector<Domain*> domains {};
-        if (m_origami_system.m_cyclic) {
-            domains = select_cyclic_segment(start_domain, end_domain);
+        m_regrow_old = false;
+        vector<Domain*> scaffold_domains {select_indices(m_scaffold)};
+        m_tracker.num_scaffold_domains = scaffold_domains.size();
+        sel_excluded_staples();
+
+        m_constraintpoints.calculate_constraintpoints(scaffold_domains, m_excluded_staples);
+        if (not m_origami_system.m_cyclic and scaffold_domains.size() !=
+            m_origami_system.get_chain(0).size()) {
+            m_constraintpoints.remove_active_endpoint(scaffold_domains[0]);
         }
-        else {
-            domains = select_linear_segment(start_domain, end_domain);
+        set<int> staples {m_constraintpoints.staples_to_be_regrown()};
+        m_tracker.num_staples = staples.size();
+
+        // Unassign domains to be regrown
+        vector<Domain*> scaffold_domains_to_unassign(scaffold_domains.begin() + 1,
+                scaffold_domains.end());
+        unassign_domains(scaffold_domains_to_unassign);
+        for (auto c_i: staples) {
+            unassign_domains(m_origami_system.get_chain(c_i));
+        }
+        update_external_bias();
+
+        // Grow scaffold and staples
+        if (m_constraintpoints.is_growthpoint(scaffold_domains[0])) {
+            grow_staple_and_update_endpoints(scaffold_domains[0]);
+            if (m_rejected) {
+                return accepted;
+            }
+        }
+        grow_chain(scaffold_domains);
+
+        // Check if excluded staples have become unbound
+        bool bound_to_system {excluded_staples_bound()};
+        if (m_rejected or (m_num_excluded_staples != 0 and
+                    not bound_to_system)) {
+            return accepted;
         }
 
-        // If end domain is end of chain, no endpoint
-        Domain* endpoint_domain {(*end_domain) + m_dir};
-        if (endpoint_domain != nullptr) {
-            m_constraintpoints.add_active_endpoint(endpoint_domain, endpoint_domain->m_pos);
+        add_external_bias();
+        // Regrow in old conformation
+        setup_for_regrow_old();
+        m_constraintpoints.reset_active_endpoints();
+        if (not m_origami_system.m_cyclic and scaffold_domains.size() !=
+            m_origami_system.get_chain(0).size()) {
+            m_constraintpoints.remove_active_endpoint(scaffold_domains[0]);
         }
 
-        return domains;
+        // Unassign staples except those directly and indirectly bound to external scaffold domains
+        unassign_domains(scaffold_domains_to_unassign);
+        for (auto c_i: staples) {
+            unassign_domains(m_origami_system.get_chain(c_i));
+        }
+        update_external_bias();
+
+        // Grow scaffold and staples
+        if (m_constraintpoints.is_growthpoint(scaffold_domains[0])) {
+            grow_staple_and_update_endpoints(scaffold_domains[0]);
+        }
+
+        grow_chain(scaffold_domains);
+
+        // Reset modifier and test acceptance
+        m_modifier = 1;
+        add_external_bias();
+        accepted = test_cb_acceptance();
+        return accepted;
+    }
+
+    void CTCBScaffoldRegrowthMCMovetype::add_tracker(bool accepted) {
+        movetypes::add_tracker(m_tracker, m_tracking, accepted);
     }
 
     CTCBLinkerRegrowthMCMovetype::CTCBLinkerRegrowthMCMovetype(
@@ -751,105 +637,13 @@ namespace movetypes {
             int num_excluded_staples,
             int max_disp,
             int max_turns):
+            MCMovetype(origami_system, random_gens, ideal_random_walks,
+                    config_files, label, ops, biases, params),
+            CTRegrowthMCMovetype(num_excluded_staples),
             CTCBRegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params, num_excluded_staples),
             m_max_disp {max_disp},
             m_max_turns {max_turns} {
-    }
-
-    bool CTCBLinkerRegrowthMCMovetype::attempt_move(long long int step) {
-        m_step = step;
-        write_config();
-        bool accepted {false};
-        m_regrow_old = false;
-        m_general_tracker.attempts++;
-
-        // Select region to be transformed and its linkers
-        vector<Domain*> linker1 {};
-        vector<Domain*> linker2 {};
-        vector<Domain*> central_segment {};
-        set<int> staples {select_and_setup_segments(linker1, linker2,
-                central_segment)};
-        set<int> central_staples {find_staples(central_segment)};
-        vector<Domain*> central_domains {central_segment};
-        for (auto staple: central_staples) {
-            vector<Domain*> staple_domains {m_origami_system.get_chain(staple)};
-            for (auto domain: staple_domains) {
-                central_domains.push_back(domain);
-            }
-        }
-        m_tracker.num_linker_domains = linker1.size() + linker2.size();
-        m_tracker.num_linker_staples = staples.size();
-        m_tracker.num_central_domains = central_segment.size();
-        m_tracker.num_central_staples = central_staples.size();
-
-        // Reject moves that have central region bound externally
-        if (domains_bound_externally(central_segment)) {
-            m_tracker.central_domains_connected = true;
-            add_tracker(m_tracker, m_tracking, accepted);
-            return accepted;
-        }
-
-        // Unassign domains
-        vector<Domain*> linker1_to_unassign(linker1.begin() + 1, linker1.end());
-        unassign_domains(linker1_to_unassign);
-        vector<Domain*> linker2_to_unassign(linker2.begin() + 1, linker2.end());
-        unassign_domains(linker2_to_unassign);
-        for (auto c_i: staples) {
-            unassign_domains(m_origami_system.get_chain(c_i));
-        }
-        unassign_domains(central_domains); // Consider a more efficient method for this
-        update_external_bias();
-
-        transform_segment(linker1, linker2, central_segment, central_domains);
-
-        // Grow linkers
-        for (auto linker: {linker1, linker2}) {
-            if (m_constraintpoints.is_growthpoint(linker[0])) {
-                grow_staple_and_update_endpoints(linker[0]);
-                if (m_rejected) {
-                    add_tracker(m_tracker, m_tracking, accepted);
-                    return accepted;
-                }
-            }
-            grow_chain(linker);
-            if (m_rejected) {
-                add_tracker(m_tracker, m_tracking, accepted);
-                return accepted;
-            }
-        }
-
-        // Regrow in old conformation
-        add_external_bias();
-        setup_for_regrow_old();
-        m_constraintpoints.reset_active_endpoints();
-
-        // Unassign domains
-        unassign_domains(linker1_to_unassign);
-        unassign_domains(linker2_to_unassign);
-        for (auto c_i: staples) {
-            unassign_domains(m_origami_system.get_chain(c_i));
-        }
-        unassign_domains(central_domains); // Consider a more efficient method for this
-        update_external_bias();
-
-        revert_transformation(central_domains);
-
-        // Grow linkers
-        for (auto linker: {linker1, linker2}) {
-            if (m_constraintpoints.is_growthpoint(linker[0])) {
-                grow_staple_and_update_endpoints(linker[0]);
-            }
-            grow_chain(linker);
-        }
-
-        // Reset modifier and test acceptance
-        m_modifier = 1;
-        add_external_bias();
-        accepted = test_cb_acceptance();
-        add_tracker(m_tracker, m_tracking, accepted);
-        m_general_tracker.accepts += accepted;
-        return accepted;
     }
 
     void CTCBLinkerRegrowthMCMovetype::write_log_summary(ostream* log_stream) {
@@ -927,17 +721,115 @@ namespace movetypes {
         m_linker_endpoints.clear();
     }
 
+    bool CTCBLinkerRegrowthMCMovetype::internal_attempt_move() {
+        bool accepted {false};
+
+        // Select region to be transformed and its linkers
+        vector<Domain*> linker1 {};
+        vector<Domain*> linker2 {};
+        vector<Domain*> central_segment {};
+        set<int> staples {select_and_setup_segments(linker1, linker2,
+                central_segment)};
+        set<int> central_staples {find_staples(central_segment)};
+        vector<Domain*> central_domains {central_segment};
+        for (auto staple: central_staples) {
+            vector<Domain*> staple_domains {m_origami_system.get_chain(staple)};
+            for (auto domain: staple_domains) {
+                central_domains.push_back(domain);
+            }
+        }
+        m_tracker.num_linker_domains = linker1.size() + linker2.size();
+        m_tracker.num_linker_staples = staples.size();
+        m_tracker.num_central_domains = central_segment.size();
+        m_tracker.num_central_staples = central_staples.size();
+
+        // Reject moves that have central region bound externally
+        if (domains_bound_externally(central_segment)) {
+            m_tracker.central_domains_connected = true;
+            return accepted;
+        }
+
+        // Unassign domains
+        vector<Domain*> linker1_to_unassign(linker1.begin() + 1, linker1.end());
+        unassign_domains(linker1_to_unassign);
+        vector<Domain*> linker2_to_unassign(linker2.begin() + 1, linker2.end());
+        unassign_domains(linker2_to_unassign);
+        for (auto c_i: staples) {
+            unassign_domains(m_origami_system.get_chain(c_i));
+        }
+        unassign_domains(central_domains); // Consider a more efficient method for this
+        update_external_bias();
+
+        transform_segment(linker1, linker2, central_segment, central_domains);
+
+        // Grow linkers
+        for (auto linker: {linker1, linker2}) {
+            if (m_constraintpoints.is_growthpoint(linker[0])) {
+                grow_staple_and_update_endpoints(linker[0]);
+                if (m_rejected) {
+                    return accepted;
+                }
+            }
+            grow_chain(linker);
+            if (m_rejected) {
+                return accepted;
+            }
+        }
+
+        // Regrow in old conformation
+        add_external_bias();
+        setup_for_regrow_old();
+        m_constraintpoints.reset_active_endpoints();
+
+        // Unassign domains
+        unassign_domains(linker1_to_unassign);
+        unassign_domains(linker2_to_unassign);
+        for (auto c_i: staples) {
+            unassign_domains(m_origami_system.get_chain(c_i));
+        }
+        unassign_domains(central_domains); // Consider a more efficient method for this
+        update_external_bias();
+
+        revert_transformation(central_domains);
+
+        // Grow linkers
+        for (auto linker: {linker1, linker2}) {
+            if (m_constraintpoints.is_growthpoint(linker[0])) {
+                grow_staple_and_update_endpoints(linker[0]);
+            }
+            grow_chain(linker);
+        }
+
+        // Reset modifier and test acceptance
+        m_modifier = 1;
+        add_external_bias();
+        accepted = test_cb_acceptance();
+        return accepted;
+    }
+
+    void CTCBLinkerRegrowthMCMovetype::add_tracker(bool accepted) {
+        movetypes::add_tracker(m_tracker, m_tracking, accepted);
+    }
+
+    void CTCBLinkerRegrowthMCMovetype::reset_segment(vector<Domain*> segment,
+            size_t last_di) {
+
+        for (size_t di {0}; di != last_di; di++) {
+            Domain* domain {segment[di]};
+            m_origami_system.unassign_domain(*domain);
+            m_assigned_domains.pop_back(); // HACK
+        }
+    }
+
     set<int> CTCBLinkerRegrowthMCMovetype::select_and_setup_segments(
             vector<Domain*>& linker1,
             vector<Domain*>& linker2,
             vector<Domain*>& central_segment) {
 
         // Pick region to be modified
-        vector<Domain*> scaffold {m_origami_system.get_chain(
-                m_origami_system.c_scaffold)};
-        pair<int, int> endpoints {select_endpoints(scaffold.size(), 0, 3)};
-        Domain* scaffold_start {scaffold[endpoints.first]};
-        Domain* scaffold_end {scaffold[endpoints.second]};
+        pair<int, int> endpoints {select_endpoints(m_scaffold.size(), 0, 3)};
+        Domain* scaffold_start {m_scaffold[endpoints.first]};
+        Domain* scaffold_end {m_scaffold[endpoints.second]};
         vector<Domain*> scaffold_domains {};
         if (m_origami_system.m_cyclic) {
             scaffold_domains = select_cyclic_segment(scaffold_start, scaffold_end);
@@ -975,6 +867,15 @@ namespace movetypes {
         return setup_fixed_end_biases(linker1, linker2, scaffold_domains);
     }
 
+    pair<int, int> CTCBLinkerRegrowthMCMovetype::select_internal_endpoints(
+            vector<Domain*> domains) {
+
+        pair<int, int> internal_endpoints {select_endpoints(
+                domains.size(), 1, 0)};
+
+        return internal_endpoints;
+    }
+
     set<int> CTCBLinkerRegrowthMCMovetype::setup_fixed_end_biases(
             vector<Domain*>& linker1,
             vector<Domain*>& linker2,
@@ -1000,15 +901,6 @@ namespace movetypes {
         set<int> staples {m_constraintpoints.staples_to_be_regrown()};
 
         return staples;
-    }
-
-    pair<int, int> CTCBLinkerRegrowthMCMovetype::select_internal_endpoints(
-            vector<Domain*> domains) {
-
-        pair<int, int> internal_endpoints {select_endpoints(
-                domains.size(), 1, 0)};
-
-        return internal_endpoints;
     }
 
     bool CTCBLinkerRegrowthMCMovetype::domains_bound_externally(
@@ -1139,16 +1031,6 @@ namespace movetypes {
             }
         }
         write_config();
-    }
-
-    void CTCBLinkerRegrowthMCMovetype::reset_segment(vector<Domain*> segment,
-            size_t last_di) {
-
-        for (size_t di {0}; di != last_di; di++) {
-            Domain* domain {segment[di]};
-            m_origami_system.unassign_domain(*domain);
-            m_assigned_domains.pop_back(); // HACK
-        }
     }
 
     bool CTCBLinkerRegrowthMCMovetype::apply_transformation(

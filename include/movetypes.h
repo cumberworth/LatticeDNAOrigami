@@ -19,6 +19,7 @@
 #include "origami_system.h"
 #include "parser.h"
 #include "random_gens.h"
+#include "top_constraint_points.h"
 #include "utility.h"
 
 namespace movetypes {
@@ -40,13 +41,23 @@ namespace movetypes {
     using origami::OrigamiSystem;
     using parser::InputParameters;
     using randomGen::RandomGens;
+    using topConstraintPoints::Constraintpoints;
     using utility::VectorThree;
 
+    /**
+      * Tracker for general movetype info
+      */
     struct MovetypeTracking {
         int attempts;
         int accepts;
     };
 
+    /**
+      * Parent class of all movetypes
+      * 
+      * It serves both to define the interface and provides some shared
+      * implementation details, including shared data.
+      */
     class MCMovetype {
         public:
             MCMovetype(
@@ -60,9 +71,13 @@ namespace movetypes {
                     InputParameters& params);
             virtual ~MCMovetype() {};
 
-            virtual bool attempt_move(long long int step) = 0;
+            /** Attempt move and return result */
+            bool attempt_move(long long int step);
+
+            /** Reset origami system to state before move attempt */
             virtual void reset_origami();
-            virtual void reset_internal();
+
+            /** Write summary of movetype attempts to file */
             virtual void write_log_summary(ostream* log_stream) = 0;
 
             string get_label();
@@ -70,18 +85,54 @@ namespace movetypes {
             int get_accepts();
 
         protected:
-            Domain* select_random_domain();
-            int select_random_staple_identity();
-            int select_random_staple_of_identity(int c_i_ident);
-            VectorThree select_random_position(VectorThree p_prev);
-            VectorThree select_random_orientation();
-            bool test_acceptance(long double p_ratio);
-            bool staple_is_connector(vector<Domain*> staple);
-            set<int> find_staples(vector<Domain*> domains);
-            bool scan_for_scaffold_domain(Domain*, set<int>& participating_chains);
-            void write_config();
-
+            // Methods requiring definition for all movetypes
             virtual void add_external_bias() = 0;
+            virtual bool internal_attempt_move() = 0;
+            virtual void add_tracker(bool accepted) = 0;
+
+            // Methods that probably need to be overriden
+            virtual void reset_internal();
+
+            // Shared general utility functions
+
+            /** Return a random domain in the system
+              *
+              * Uniform over the set of all domains, rather than uniform over
+              * chains and then over the constituent domains
+              */
+            Domain* select_random_domain();
+
+            /** Return a random staple type */
+            int select_random_staple_identity();
+
+            /** Return index to a random staple staple of given type */
+            int select_random_staple_of_identity(int c_i_ident);
+
+            /** Return a random neighbour lattice site position to given */
+            VectorThree select_random_position(VectorThree p_prev);
+
+            /** Return a random unit orientation vector */
+            VectorThree select_random_orientation();
+
+            /** Test if move accepted with given probality */
+            bool test_acceptance(long double p_ratio);
+
+            /** Test if staple is anchoring other staples to the system
+              *
+              * Connecting staples, or anchor staples, are staples that if
+              * removed would leave the system in a state with staples
+              * unconnected to the scaffold
+              */
+            bool staple_is_connector(vector<Domain*> staple);
+
+            set<int> find_staples(vector<Domain*> domains);
+
+            /** Write the config to move file
+              *
+              * The move file is for recording the configuration as the chains
+              * are grown.
+              */
+            void write_config();
 
             OrigamiSystem& m_origami_system;
             RandomGens& m_random_gens;
@@ -112,25 +163,84 @@ namespace movetypes {
 
             MovetypeTracking m_general_tracker {0, 0};
             long long int m_step {0};
+
+        private:
+            bool scan_for_scaffold_domain(Domain*, set<int>& participating_chains);
     };
 
+    /** For debugging purposes */
     class IdentityMCMovetype: public MCMovetype {
         public:
             using MCMovetype::MCMovetype;
             bool attempt_move(long long int) {return true;};
     };
 
-    class RegrowthMCMovetype: public MCMovetype {
+    /**
+      * Parent class of moves with chain regrowth
+      */
+    class RegrowthMCMovetype:
+        virtual public MCMovetype {
+
         public:
             using MCMovetype::MCMovetype;
 
         protected:
-            virtual double set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old);
-            void grow_staple(int d_i_index, vector<Domain*> selected_chain);
             virtual void grow_chain(vector<Domain*> domains) = 0;
+
+            double set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old);
+            void grow_staple(int d_i_index, vector<Domain*> selected_chain);
             pair<Domain*, Domain*> select_new_growthpoint(vector<Domain*> selected_chain);
     };
 
+    /**
+      * Parent class of moves with constant topology chain regrowth
+      */
+    class CTRegrowthMCMovetype:
+        virtual public RegrowthMCMovetype {
+
+        public:
+            CTRegrowthMCMovetype(int num_excluded_staples);
+
+        protected:
+            void sel_excluded_staples();
+
+            /** Select scaffold segment to be regrown */
+            vector<Domain*> select_indices(vector<Domain*>);
+
+            /** Return segment of linear domains given endpoints */
+            vector<Domain*> select_cyclic_segment(
+                    Domain* start_domain,
+                    Domain* end_domain);
+
+            /**
+              * Return segment of cyclic domains given endpoints
+              *
+              * Selects a direction of regrowth with uniform probability
+              */
+            vector<Domain*> select_linear_segment(
+                    Domain* start_domain,
+                    Domain* end_domain);
+
+            /** Select endpoints of a chain segment of given length */
+            pair<int, int> select_endpoints(
+                    const int array_size,
+                    const int mar, // Number of elements to exclude at ends
+                    const int min_size); // Minimum size of selection (excluding endpoints)
+
+            /** Check if excluded staples are still bound to system */
+            bool excluded_staples_bound();
+
+            int m_dir;
+            int m_num_excluded_staples;
+            vector<int> m_excluded_staples;
+            Constraintpoints m_constraintpoints {m_origami_system,
+                    m_ideal_random_walks}; // For fixed end biases
+            vector<Domain*> m_scaffold {};
+    };
+
+    /**
+      * Template function for updating movetype specific trackers
+      */
     template <typename T>
     void add_tracker(
             T tracker,

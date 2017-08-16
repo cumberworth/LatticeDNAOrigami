@@ -30,10 +30,20 @@ namespace topConstraintPoints {
     void Constraintpoints::calculate_constraintpoints(
             vector<Domain*> scaffold_domains,
             vector<int> excluded_staples) {
+
+        m_d_stack.clear();
         find_staples_growthpoints_endpoints(scaffold_domains, excluded_staples);
 
         // Save initial active endpionts and remaining steps for regrowing old
         m_initial_active_endpoints = m_active_endpoints;
+    }
+
+    set<int> Constraintpoints::staples_to_be_regrown() {
+        return m_regrowth_staples;
+    }
+
+    deque<Domain*> Constraintpoints::domains_to_be_regrown() {
+        return m_d_stack;
     }
 
     bool Constraintpoints::is_growthpoint(Domain* domain) {
@@ -140,31 +150,6 @@ namespace topConstraintPoints {
         return prod_num_walks;
     }
 
-    int Constraintpoints::calc_remaining_steps(int endpoint_d_i, Domain* domain,
-            int dir, int step_offset) {
-        int steps;
-        if (m_origami_system.m_cyclic and domain->m_c == m_origami_system.c_scaffold) {
-            if (dir > 0 and endpoint_d_i < domain->m_d) {
-                steps = m_origami_system.get_chain(0).size() + endpoint_d_i - domain->m_d;
-            }
-            else if (dir < 0 and endpoint_d_i > domain->m_d) {
-                steps = domain->m_d + m_origami_system.get_chain(0).size() - endpoint_d_i;
-            }
-            else if (dir == 0 or endpoint_d_i == domain->m_d) {
-                steps = 0;
-            }
-            else {
-                steps = abs(endpoint_d_i - domain->m_d);
-            }
-        }
-        else {
-            steps = abs(endpoint_d_i - domain->m_d);
-        }
-        steps += step_offset;
-
-        return steps;
-    }
-
     void Constraintpoints::find_staples_growthpoints_endpoints(
             vector<Domain*> scaffold_domains,
             vector<int> excluded_staples) {
@@ -172,10 +157,12 @@ namespace topConstraintPoints {
         // Chain ids of staples that have been checked
         set<int> checked_staples {};
         for (auto domain: scaffold_domains) {
+            m_d_stack.push_back(domain);
 
             // Domains bound in network extending from current scaffold domain
             set<int> participating_chains {m_origami_system.c_scaffold};
             vector<pair<Domain*, Domain*>> potential_growthpoints {};
+            deque<Domain*> potential_d_stack {};
             bool externally_bound {false};
             bool bound {domain->m_bound_domain != nullptr};
 
@@ -191,12 +178,13 @@ namespace topConstraintPoints {
                         excluded_staples.end()};
                 if (not bound_staple_excluded) {
                     potential_growthpoints.push_back({domain, bound_domain});
+                    potential_d_stack.push_back(bound_domain);
                 }
 
                 // Finds network and updates given vectors and sets
                 scan_staple_topology(bound_domain, participating_chains,
-                        potential_growthpoints, scaffold_domains,
-                        externally_bound, excluded_staples);
+                        potential_growthpoints, potential_d_stack,
+                        scaffold_domains, externally_bound, excluded_staples);
 
                 if (externally_bound) {
 
@@ -210,6 +198,7 @@ namespace topConstraintPoints {
                     // Will need to grow network
                     add_growthpoints(potential_growthpoints);
                     add_regrowth_staples(participating_chains, excluded_staples);
+                    add_domains_to_stack(potential_d_stack);
                 }
 
                 // Add to checked staples
@@ -252,6 +241,13 @@ namespace topConstraintPoints {
         }
     }
 
+    void Constraintpoints::add_domains_to_stack(
+            deque<Domain*> potential_d_stack) {
+
+        m_d_stack.insert(m_d_stack.begin(), potential_d_stack.begin(),
+                potential_d_stack.end());
+    }
+
     void Constraintpoints::add_active_endpoints_on_scaffold(
             set<int> participating_chains,
             vector<pair<Domain*, Domain*>> potential_growthpoints) {
@@ -282,6 +278,7 @@ namespace topConstraintPoints {
             Domain* growth_domain,
             set<int>& participating_chains,
             vector<pair<Domain*, Domain*>>& potential_growthpoints,
+            deque<Domain*>& potential_d_stack,
             vector<Domain*>& scaffold_domains,
             bool& externally_bound,
             vector<int> excluded_staples) {
@@ -289,7 +286,11 @@ namespace topConstraintPoints {
         int c_i {growth_domain->m_c};
         participating_chains.insert(c_i);
         vector<Domain*> staple {m_origami_system.get_chain(c_i)};
+
+        // This is fine for 2 domain staples, but should make a stack that
+        // so that I can iterate out from the growthpoint as it would be grown
         for (auto domain: staple) {
+            potential_d_stack.push_back(domain);
             if (growth_domain == domain) {
                 continue;
             }
@@ -335,10 +336,39 @@ namespace topConstraintPoints {
                         potential_growthpoints.push_back({domain, bound_domain});
                     }
                     scan_staple_topology(bound_domain, participating_chains,
-                            potential_growthpoints, scaffold_domains,
-                            externally_bound, excluded_staples);
+                            potential_growthpoints, potential_d_stack,
+                            scaffold_domains, externally_bound,
+                            excluded_staples);
                 }
             }
         }
+ 
+        // First scaffold domain is never regrow so remove from stack
+        m_d_stack.pop_front();
+    }
+
+    int Constraintpoints::calc_remaining_steps(int endpoint_d_i, Domain* domain,
+            int dir, int step_offset) {
+        int steps;
+        if (m_origami_system.m_cyclic and domain->m_c == m_origami_system.c_scaffold) {
+            if (dir > 0 and endpoint_d_i < domain->m_d) {
+                steps = m_origami_system.get_chain(0).size() + endpoint_d_i - domain->m_d;
+            }
+            else if (dir < 0 and endpoint_d_i > domain->m_d) {
+                steps = domain->m_d + m_origami_system.get_chain(0).size() - endpoint_d_i;
+            }
+            else if (dir == 0 or endpoint_d_i == domain->m_d) {
+                steps = 0;
+            }
+            else {
+                steps = abs(endpoint_d_i - domain->m_d);
+            }
+        }
+        else {
+            steps = abs(endpoint_d_i - domain->m_d);
+        }
+        steps += step_offset;
+
+        return steps;
     }
 }

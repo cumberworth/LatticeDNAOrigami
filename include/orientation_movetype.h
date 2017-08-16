@@ -7,15 +7,18 @@
 
 namespace movetypes {
 
-    class OrientationRotationMCMovetype: public MCMovetype {
+    class OrientationRotationMCMovetype:
+        public MCMovetype {
+
         public:
             using MCMovetype::MCMovetype;
-            bool attempt_move(long long int step) override final;
 
             void write_log_summary(ostream* log_stream) override final;
 
         private:
+            bool internal_attempt_move() override;
             void add_external_bias() override final {}
+            void add_tracker(bool accepted) override;
     };
 }
 

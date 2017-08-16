@@ -133,6 +133,19 @@ namespace utility {
 
     const vector<VectorThree> basis_vectors {xhat, yhat, zhat};
 
+    /** Create all possible pairs of a given set (as a vector) */
+    template<typename aT>
+    vector<pair<aT, aT>> all_pairs(vector<aT> v) {
+        vector<pair<aT, aT>> c {};
+        for (auto a: v) {
+            for (auto b: v) {
+                c.emlace_back(a, b);
+            }
+        }
+
+        return c;
+    }
+
     // String parsing helper functions
     vector<int> string_to_int_vector(string string_v);
     vector<double> string_to_double_vector(string string_v);
@@ -147,6 +160,8 @@ namespace utility {
     class Fraction {
         public:
             Fraction(string unparsed_fraction);
+
+            /// test
             inline double to_double() const {return m_double_fraction;}
         private:
             double m_double_fraction;

@@ -26,21 +26,24 @@ namespace movetypes {
     using utility::StapleExchangeTracking;
     using utility::StapleRegrowthTracking;
 
-    class MetMCMovetype: public RegrowthMCMovetype {
-        public:
-            using RegrowthMCMovetype::RegrowthMCMovetype;
+    class MetMCMovetype:
+        virtual public RegrowthMCMovetype {
 
+        public:
             void reset_internal() override;
 
         protected:
             void grow_chain(vector<Domain*> domains) override;
             void add_external_bias() override;
+
             void unassign_domains(vector<Domain*> domains);
 
             double m_delta_e {0};
     };
 
-    class MetStapleExchangeMCMovetype: public MetMCMovetype {
+    class MetStapleExchangeMCMovetype:
+        public MetMCMovetype {
+
         public:
             MetStapleExchangeMCMovetype(
                     OrigamiSystem& origami_system,
@@ -53,36 +56,41 @@ namespace movetypes {
                     InputParameters& params,
                     double exchange_mult);
 
-            bool attempt_move(long long int step) override;
             void reset_internal() override;
-            void write_log_summary(ostream* log_stream) override final;
-
-        protected:
-
-            // These can be overidden for a derived class the excludes misbinding
-            int preconstrained_df {1};
-
-            // I select by domains not by sites, so this is consistent
-            int m_insertion_sites {m_origami_system.num_domains()};
+            void write_log_summary(ostream* log_stream) override;
 
         private:
+            bool internal_attempt_move() override;
+            void add_tracker(bool accepted) override;
+
             bool staple_insertion_accepted(int c_i_ident);
             bool staple_deletion_accepted(int c_i_ident);
             bool insert_staple();
             bool delete_staple();
 
             double m_exchange_mult;
-
             StapleExchangeTracking m_tracker {};
             unordered_map<StapleExchangeTracking, MovetypeTracking> m_tracking {};
+
+            // These need to be changed if misbinding is excluded
+            int preconstrained_df {1};
+
+            // I select by domains not by sites, so this is consistent
+            int m_insertion_sites {m_origami_system.num_domains()};
+
     };
 
-    class MetStapleRegrowthMCMovetype: public MetMCMovetype {
+    class MetStapleRegrowthMCMovetype:
+        public MetMCMovetype {
+
         public:
             using MetMCMovetype::MetMCMovetype;
 
-            bool attempt_move(long long int step) override final;
-            void write_log_summary(ostream* log_stream) override final;
+            void write_log_summary(ostream* log_stream) override;
+
+        private:
+            bool internal_attempt_move() override;
+            void add_tracker(bool accepted) override;
 
             StapleRegrowthTracking m_tracker {};
             unordered_map<StapleRegrowthTracking, MovetypeTracking> m_tracking {};

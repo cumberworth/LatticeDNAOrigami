@@ -24,18 +24,29 @@ namespace movetypes {
                 SystemBiases& biases,
                 InputParameters& params) :
 
-                m_origami_system {origami_system},
-                m_random_gens {random_gens},
-                m_ideal_random_walks {ideal_random_walks},
-                m_config_files {config_files},
-                m_label {label},
-                m_ops {ops},
-                m_biases {biases},
-                m_params {params},
-				m_config_output_freq {params.m_vtf_output_freq},
-                m_max_total_staples {params.m_max_total_staples},
-                m_max_type_staples {params.m_max_type_staples} {
+        m_origami_system {origami_system},
+        m_random_gens {random_gens},
+        m_ideal_random_walks {ideal_random_walks},
+        m_config_files {config_files},
+        m_label {label},
+        m_ops {ops},
+        m_biases {biases},
+        m_params {params},
+        m_config_output_freq {params.m_vtf_output_freq},
+        m_max_total_staples {params.m_max_total_staples},
+        m_max_type_staples {params.m_max_type_staples} {
 	}
+
+    bool MCMovetype::attempt_move(long long int step) {
+        reset_internal();
+        m_step = step;
+        write_config();
+        m_general_tracker.attempts++;
+        bool accepted {internal_attempt_move()};
+        m_general_tracker.accepts++;
+        add_tracker(accepted);
+        return accepted;
+    }
 
     void MCMovetype::reset_origami() {
         
@@ -234,9 +245,10 @@ namespace movetypes {
         return m_general_tracker.accepts;
     }
 
-    double RegrowthMCMovetype::set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old) {
-        //// Set growth point with new orientation
-        //VectorThree o_new {select_random_orientation()};
+    double RegrowthMCMovetype::set_growth_point(
+            Domain& growth_domain_new,
+            Domain& growth_domain_old) {
+
         // Set growth point with complementary orientation
         double delta_e {0};
         VectorThree o_new {-growth_domain_old.m_ore};
@@ -301,4 +313,130 @@ namespace movetypes {
         }
         return {growth_domain_new, growth_domain_old};
     }
+
+
+    CTRegrowthMCMovetype::CTRegrowthMCMovetype(
+            int num_excluded_staples):
+        m_num_excluded_staples {num_excluded_staples} {
+        m_scaffold = m_origami_system.get_chain(m_origami_system.c_scaffold);
+    }
+
+    void CTRegrowthMCMovetype::sel_excluded_staples() {
+        for (int i {0}; i != m_num_excluded_staples; i++) {
+            if (i == m_origami_system.num_staples()) {
+                break;
+            }
+            bool staple_picked {false};
+            int s_ui;
+            while (not staple_picked)  {
+                int staple_i {m_random_gens.uniform_int(1,
+                        m_origami_system.num_staples())};
+                s_ui = m_origami_system.get_chains()[staple_i][0]->m_c;
+                staple_picked = (find(m_excluded_staples.begin(),
+                            m_excluded_staples.end(), s_ui) ==
+                        m_excluded_staples.end());
+            }
+            m_excluded_staples.push_back(s_ui);
+        }
+    }
+
+    vector<Domain*> CTRegrowthMCMovetype::select_indices(
+            vector<Domain*> segment) {
+
+        pair<int, int> endpoints {select_endpoints(segment.size(), 0, 1)};
+        Domain* start_domain {segment[endpoints.first]};
+        Domain* end_domain {segment[endpoints.second]};
+        vector<Domain*> domains {};
+        if (m_origami_system.m_cyclic) {
+            domains = select_cyclic_segment(start_domain, end_domain);
+        }
+        else {
+            domains = select_linear_segment(start_domain, end_domain);
+        }
+
+        // If end domain is end of chain, no endpoint
+        Domain* endpoint_domain {(*end_domain) + m_dir};
+        if (endpoint_domain != nullptr) {
+            m_constraintpoints.add_active_endpoint(endpoint_domain, endpoint_domain->m_pos);
+        }
+
+        return domains;
+    }
+
+    vector<Domain*> CTRegrowthMCMovetype::select_linear_segment(
+            Domain* start_domain,
+            Domain* end_domain) {
+
+        vector<Domain*> scaffold {m_origami_system.get_chain(m_origami_system.c_scaffold)};
+        vector<Domain*> domains {};
+
+        // Find direction of regrowth
+        int dir;
+        if (end_domain->m_d > start_domain->m_d) {
+            dir = 1;
+        }
+        else {
+            dir = -1;
+        }
+        for (int d_i {start_domain->m_d}; d_i != end_domain->m_d + dir; d_i += dir) {
+            Domain* cur_domain {scaffold[d_i]};
+            domains.push_back(cur_domain);
+        }
+
+        return domains;
+    }
+
+    vector<Domain*> CTRegrowthMCMovetype::select_cyclic_segment(
+            Domain* start_domain,
+            Domain* end_domain) {
+
+        vector<Domain*> domains {};
+
+        // Select direction of regrowth
+        int dir {m_random_gens.uniform_int(0, 1)};
+        if (dir == 0) {
+            dir = -1;
+        }
+        int d_i {start_domain->m_d};
+        Domain* cur_domain {start_domain};
+        while (d_i != end_domain->m_d) {
+            domains.push_back(cur_domain);
+            cur_domain = (*cur_domain) + dir;
+            d_i = cur_domain->m_d;
+        }
+        domains.push_back(end_domain);
+
+        return domains;
+    }
+
+    pair<int, int> CTRegrowthMCMovetype::select_endpoints(
+            const int array_size,
+            const int m,
+            const int min_size) {
+
+        int start_i {m_random_gens.uniform_int(m, array_size - 1 - m)};
+        int end_i {m_random_gens.uniform_int(m, array_size - 1 - m)};
+        while (std::abs(start_i - end_i) < min_size) {
+            end_i = m_random_gens.uniform_int(m, array_size - 1 - m);
+        }
+
+        return {start_i, end_i};
+    }
+
+    bool CTRegrowthMCMovetype::excluded_staples_bound() {
+        bool bound_to_system {false};
+        for (auto exs_i: m_excluded_staples) {
+            vector<Domain*> exs {m_origami_system.get_chain(exs_i)};
+            for (auto exd: exs) {
+                set<int> dummy_set {};
+                if (scan_for_scaffold_domain(exd, dummy_set)) {
+                    bound_to_system = true;
+                    break;
+                }
+            }
+        }
+
+        return bound_to_system;
+    }
+
 }
