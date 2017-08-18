@@ -79,10 +79,11 @@ namespace topConstraintPoints {
             /**
               * Return domain stack to be regrown
               *
-              * This does not include the first domain of the scaffold range
-              * given, as this domain is not regrown.
+              * Includes first domain of given scaffold range even thought this
+              * is generally not regrown by the movetypes as it is used as a
+              * reference by the first domain being regrown.
               */
-            deque<Domain*> domains_to_be_regrown();
+            vector<Domain*> domains_to_be_regrown();
 
             /**
               * Test if given domain is used as a growthpoint for another chain
@@ -128,8 +129,12 @@ namespace topConstraintPoints {
               * the number of domains until the endpoint is reached, but an
               * offset can be given for this number.
               */
-            long double calc_num_walks_prod(Domain* domain, VectorThree pos,
-                    vector<Domain*> domains, int dir, int step_offset=0);
+            long double calc_num_walks_prod(
+                    Domain* domain,
+                    VectorThree pos,
+                    vector<Domain*> domains,
+                    int dir,
+                    int offset=0);
 
             // For debugging
             inline vector<pair<int, VectorThree>> get_active_endpoints(int c_i) {
@@ -146,7 +151,7 @@ namespace topConstraintPoints {
             void add_regrowth_staples(
                     set<int> participating_chains,
                     vector<int> excluded_staples);
-            void add_domains_to_stack(deque<Domain*> potential_d_stack);
+            void add_domains_to_stack(vector<Domain*> potential_d_stack);
             void add_active_endpoints_on_scaffold(
                     set<int> participating_chains,
                     vector<pair<Domain*, Domain*>> potential_growthpoints);
@@ -154,7 +159,7 @@ namespace topConstraintPoints {
                     Domain* domain,
                     set<int>& participating_chains,
                     vector<pair<Domain*, Domain*>>& potential_growthpoints,
-                    deque<Domain*>& potential_d_stack,
+                    vector<Domain*>& potential_d_stack,
                     vector<Domain*>& scaffold_domains,
                     bool& externally_bound,
                     vector<int> excluded_staples);
@@ -181,7 +186,7 @@ namespace topConstraintPoints {
             unordered_map<Domain*, Domain*> m_inactive_endpoints {};
 
             // Stack of domains in order for regrowth
-            deque<Domain*> m_d_stack;
+            vector<Domain*> m_d_stack;
 
     };
 }

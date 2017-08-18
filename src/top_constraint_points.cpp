@@ -42,7 +42,7 @@ namespace topConstraintPoints {
         return m_regrowth_staples;
     }
 
-    deque<Domain*> Constraintpoints::domains_to_be_regrown() {
+    vector<Domain*> Constraintpoints::domains_to_be_regrown() {
         return m_d_stack;
     }
 
@@ -110,44 +110,37 @@ namespace topConstraintPoints {
             Domain* domain,
             VectorThree pos,
             vector<Domain*> domains,
-            // Direction of growth (1 for forward, -1 for backward)
             int dir,
-            // For calculating previous position endpoints
-            int step_offset) {
+            int offset) {
 
-        long double prod_num_walks {1};
+        long double prod_nws {1};
+
+        // Loop through all active endpoints on current chain
         for (auto endpoint: m_active_endpoints[domain->m_c]) {
 
-            // Check if endpoint in current stretch of domains being regrown (
-            // staples are grown out from their growth point in two seperate
-            // directions)
-            int endpoint_d_i {endpoint.first};
-            int first_d_i {domains.front()->m_d};
-            int last_d_i {domains.back()->m_d};
-            bool apply_constraint {false};
-            // Why is it not that condition?
-            if (domain->m_c != m_origami_system.c_scaffold) {
-                if ((endpoint_d_i >= first_d_i and endpoint_d_i <= last_d_i) or
-                        (endpoint_d_i >= last_d_i and endpoint_d_i <= first_d_i)) {
-                    apply_constraint = true;
-                }
-            }
-            else {
-                if ((endpoint_d_i >= first_d_i and endpoint_d_i <= (last_d_i + 1)) or
-                        (endpoint_d_i >= (last_d_i - 1) and endpoint_d_i <= (first_d_i))) {
-                    apply_constraint = true;
-                }
-            }
-            if (apply_constraint) {
-                int steps {calc_remaining_steps(endpoint_d_i, domain, dir,
-                        step_offset)};
-                VectorThree endpoint_p {endpoint.second};
-                prod_num_walks *= m_ideal_random_walks.num_walks(pos, endpoint_p,
-                        steps);
+            // Check if the endpoint is in the given stretch of domains.
+            int end_d_i {endpoint.first};
+            if (endpoint_in_range(end_d_i, domains)) {
+                int steps {calc_remaining_steps(end_d_i, domain, dir, offset)};
+                VectorThree end_p {endpoint.second};
+                prod_nws *= m_ideal_random_walks.num_walks(pos, end_p, steps);
             }
         }
 
-        return prod_num_walks;
+        return prod_nws;
+    }
+
+    bool Constraintpoints::endpoint_in_range(
+            Domain* end_d_i,
+            vector<Domain*> domains) {
+
+        bool in_range {false};
+        for (auto d: domains) {
+            if (d->m_d == end_d_i) {
+                in_range = true;
+                break;
+            }
+        }
     }
 
     void Constraintpoints::find_staples_growthpoints_endpoints(
@@ -162,7 +155,7 @@ namespace topConstraintPoints {
             // Domains bound in network extending from current scaffold domain
             set<int> participating_chains {m_origami_system.c_scaffold};
             vector<pair<Domain*, Domain*>> potential_growthpoints {};
-            deque<Domain*> potential_d_stack {};
+            vector<Domain*> potential_d_stack {};
             bool externally_bound {false};
             bool bound {domain->m_bound_domain != nullptr};
 
@@ -242,7 +235,7 @@ namespace topConstraintPoints {
     }
 
     void Constraintpoints::add_domains_to_stack(
-            deque<Domain*> potential_d_stack) {
+            vector<Domain*> potential_d_stack) {
 
         m_d_stack.insert(m_d_stack.begin(), potential_d_stack.begin(),
                 potential_d_stack.end());
@@ -278,7 +271,7 @@ namespace topConstraintPoints {
             Domain* growth_domain,
             set<int>& participating_chains,
             vector<pair<Domain*, Domain*>>& potential_growthpoints,
-            deque<Domain*>& potential_d_stack,
+            vector<Domain*>& potential_d_stack,
             vector<Domain*>& scaffold_domains,
             bool& externally_bound,
             vector<int> excluded_staples) {
@@ -342,9 +335,6 @@ namespace topConstraintPoints {
                 }
             }
         }
- 
-        // First scaffold domain is never regrow so remove from stack
-        m_d_stack.pop_front();
     }
 
     int Constraintpoints::calc_remaining_steps(int endpoint_d_i, Domain* domain,
