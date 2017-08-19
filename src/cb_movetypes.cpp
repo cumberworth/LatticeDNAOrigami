@@ -883,18 +883,18 @@ namespace movetypes {
         int dir {scaffold_domains[1]->m_d - scaffold_domains[0]->m_d};
         Domain* linker1_endpoint {*scaffold_domains[0] + (-dir)};
         Domain* linker2_endpoint {*scaffold_domains.back() + dir};
+        int seg {0};
         for (auto linker_endpoint: {linker1_endpoint, linker2_endpoint}) {
             m_linker_endpoints.push_back(linker_endpoint);
             if (linker_endpoint != nullptr) {
                 m_constraintpoints.add_active_endpoint(linker_endpoint,
-                        linker_endpoint->m_pos);
+                        linker_endpoint->m_pos, seg);
             }
+            seg++;
         }
 
         // Find the rest
-        vector<Domain*> linkers {};
-        linkers.insert(linkers.end(), linker1.begin() + 1, linker1.end());
-        linkers.insert(linkers.end(), linker2.begin() + 1, linker2.end());
+        vector<vector<Domain*>> linkers {linker1, linker2};
         m_constraintpoints.calculate_constraintpoints(linkers, {});
         set<int> staples {m_constraintpoints.staples_to_be_regrown()};
 
