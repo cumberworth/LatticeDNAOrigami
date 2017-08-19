@@ -89,7 +89,7 @@ namespace movetypes {
         vector<pair<VectorThree, VectorThree>> configs {};
         vector<double> bfactors {};
         calc_biases(p_prev, *domain, configs, bfactors);
-        vector<double> weights {calc_bias(bfactors, configs, p_prev, domain, domains)};
+        vector<double> weights {calc_bias(bfactors, configs, p_prev, domain)};
         if (m_rejected) {
             return;
         }
@@ -336,8 +336,7 @@ namespace movetypes {
             const vector<double> bfactors,
             const configsT&,
             const VectorThree,
-            Domain*,
-            vector<Domain*>) {
+            Domain*) {
 
         // Calculate rosenbluth weight
         double rosenbluth_i {0};
@@ -422,8 +421,7 @@ namespace movetypes {
             const vector<double> bfactors,
             const vector<pair<VectorThree, VectorThree>>& configs,
             const VectorThree p_prev,
-            Domain* domain,
-            vector<Domain*> domains) {
+            Domain* domain) {
 
 
         vector<long double> weights(bfactors.begin(), bfactors.end());
@@ -446,12 +444,12 @@ namespace movetypes {
 
             // Bias weights with number of walks
             weights[i] *= m_constraintpoints.calc_num_walks_prod(domain, cur_pos,
-                    domains, m_dir);
+                    m_dir);
         }
 
         // Calculate number of walks for previous position
         long double prod_num_walks {m_constraintpoints.calc_num_walks_prod(domain,
-                p_prev, domains, m_dir, 1)};
+                p_prev, m_dir, 1)};
 
         // Modified Rosenbluth
         long double weights_sum {0};

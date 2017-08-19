@@ -72,8 +72,7 @@ namespace movetypes {
                     const vector<double> bfactors, // Boltzman weights
                     const configsT& configs, // Configs
                     const VectorThree p_prev, // Position of growthpoint domain
-                    Domain* domain, // Domain being regrown
-                    vector<Domain*> domains) = 0; // Domains in segment
+                    Domain* domain) = 0; // Domain being regrown
 
             /**
               * Calculate the Boltzmann weights for all configurations
@@ -167,8 +166,7 @@ namespace movetypes {
                     const vector<double> bfactors, // Boltzman weights
                     const configsT& configs, // Configs
                     const VectorThree p_prev, // Position of growthpoint domain
-                    Domain* domain, // Domain being regrown
-                    vector<Domain*> domains) final override; // Domains in segment
+                    Domain* domain) override; // Domain being regrown
 
             /** Set given growthpoint and grow staple */
             void set_growthpoint_and_grow_staple(
@@ -210,8 +208,7 @@ namespace movetypes {
                     const vector<double> bfactors, // Boltzman weights
                     const configsT& configs, // Configs
                     const VectorThree p_prev, // Position of growthpoint domain
-                    Domain* domain, // Domain being regrown
-                    vector<Domain*> domains) final override; // Domains in segment
+                    Domain* domain) override; // Domain being regrown
 
             /** Grow given staple and update fixed-end biases */
             void grow_staple_and_update_endpoints(
