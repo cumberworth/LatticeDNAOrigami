@@ -188,6 +188,13 @@ namespace topConstraintPoints {
                     int dir,
                     int offset=0);
 
+            /** Return whether there any IRWs */
+            bool walks_remain(
+                    Domain* domain,
+                    VectorThree pos,
+                    int dir,
+                    int offset=0);
+
         private:
             void find_growthpoints_endpoints(
                     vector<Domain*> scaffold_domains,

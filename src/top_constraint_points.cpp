@@ -305,6 +305,28 @@ namespace topConstraintPoints {
         return prod_nws;
     }
 
+    bool Constraintpoints::walks_remain(
+            Domain* domain,
+            VectorThree pos,
+            int dir,
+            int offset) {
+
+        // Loop through all active endpoints on current chain
+        bool w_remain {true};
+        pair<int, int> key {domain->m_c, m_segs[domain]};
+        for (auto endpoint: m_active_endpoints[key]) {
+            int end_d_i {endpoint.first};
+            int steps {calc_remaining_steps(end_d_i, domain, dir, offset)};
+            VectorThree end_p {endpoint.second};
+            if (m_ideal_random_walks.num_walks(pos, end_p, steps) == 0) {
+                w_remain = false;
+                break;
+            }
+        }
+
+        return w_remain;
+    }
+
     void Constraintpoints::find_growthpoints_endpoints(
             vector<Domain*> scaffold_domains,
             vector<int> excluded_staples,
