@@ -11,11 +11,158 @@ namespace topConstraintPoints {
     using std::set;
     using std::find;
 
+    bool domain_included(vector<Domain*> domains, Domain* d) {
+        return find(domains.begin(), domains.end(), d) !=
+            domains.end();
+    }
+
+    bool chain_included(vector<int> staples, int staple) {
+        return find(staples.begin(), staples.end(), staple) !=
+        staples.end();
+    }
+
+    bool chain_included(set<int> staples, int staple) {
+        return staples.find(staple) != staples.end();
+    }
+
+    StapleNetwork::StapleNetwork(OrigamiSystem& origami):
+        m_origami {origami} {
+    }
+
+    void StapleNetwork::scan_network(
+            Domain* d,
+            vector<int> ex_staples) {
+        
+        clear_network();
+        m_ex_staples = ex_staples;
+
+        // Adding the scaffold chain made checks easier
+        m_net_cs.insert(m_origami.c_scaffold);
+
+        // Start recursive scan of network
+        scan_staple_topology(d);
+    }
+
+    set<int> StapleNetwork::get_participating_chains() {
+        return m_net_cs;
+    }
+
+    vector<pair<Domain*, Domain*>> StapleNetwork::get_potential_growthpoints() {
+        return m_pot_gps;
+    }
+
+    vector<pair<Domain*, Domain*>> StapleNetwork::get_potential_inactive_endpoints() {
+        return m_pot_iaes;
+    }
+
+    unordered_map<Domain*, int> StapleNetwork::get_staple_to_segs_map() {
+        return m_segs;
+    }
+
+    bool StapleNetwork::externally_bound() {
+        return m_external;
+    }
+
+    void StapleNetwork::clear_network() {
+        m_external = false;
+        m_net_cs.clear();
+        m_pot_gps.clear();
+        m_pot_ds.clear();
+            
+    }
+
+    void StapleNetwork::scan_staple_topology(Domain* growth_d) {
+
+        int ci {growth_d->m_c}; // Staple chain index
+        m_net_cs.insert(ci);
+        auto ds {make_staple_stack(growth_d, ci)}; // Domains to check
+        for (auto d: ds) {
+            m_pot_ds.push_back(d);
+            Domain* bd {d->m_bound_domain}; // Domain bound to current
+            bool domain_bound {bd != nullptr};
+
+            // Skip if not bound or bound to self
+            if (not domain_bound or (bd->m_c == ci)) {
+                continue;
+            }
+            int bd_ci {bd->m_c}; // Bound domain chain index
+
+            /*
+             * If the staple has not be added to the network, recurse into the
+             * bound staple. Otherwise consider adding potential endpoints
+             */
+            bool bs_excluded {chain_included(m_ex_staples, bd_ci)};
+            bool in_network {chain_included(m_net_cs, bd_ci)};
+            if (in_network) {
+
+                /*
+                 * If the bound domain is on the scaffold and in the range being
+                 * regrown or on another staple, and nothing is excluded the
+                 * domans are potential endpoints. Otherwise the network is
+                 * externally bound
+                 */
+                bool d_excluded {false};
+                if (bd_ci == 0) {
+                    m_external = not domain_included(m_scaffold_ds, bd);
+                }
+                else {
+                    d_excluded = chain_included(m_ex_staples, ci);
+                }
+                if (not m_external and not (bs_excluded and d_excluded)) {
+                    add_potential_inactive_endpoint(d, bd);
+
+                }
+            }
+            else {
+
+                /*
+                 * Add domain to potential growthpoints if bound domain if not
+                 * on an excluded staple
+                 */
+                if (not bs_excluded) {
+                    m_pot_gps.push_back({d, bd});
+                }
+                scan_staple_topology(bd);
+            }
+        }
+    }
+
+    vector<Domain*> StapleNetwork::make_staple_stack(Domain* d, int ci) {
+        vector<Domain*> ds {};
+        vector<Domain*> staple {m_origami.get_chain(ci)};
+
+        // Iterate through domains in three prime direction
+        int seg {0};
+        m_segs[d] = seg;
+        for (size_t di = d->m_d + 1; di != staple.size(); di++) {
+            Domain* d_loop {staple[di]};
+            ds.push_back(d_loop);
+            m_segs[d_loop] = seg;
+        }
+
+        // Add domains in five prime direction
+        for (int di {d->m_d - 1}; di != -1; di--) {
+            ds.push_back(staple[di]);
+        }
+        
+        return ds;
+    }
+
+    void StapleNetwork::add_potential_inactive_endpoint(Domain* d, Domain* bd) {
+        if (domain_included(m_pot_ds, bd)) {
+            m_pot_iaes.push_back({bd, d});
+        }
+        else {
+            m_pot_iaes.push_back({d, bd});
+        }
+    }
+
     Constraintpoints::Constraintpoints(
             OrigamiSystem& origami_system,
             IdealRandomWalks& ideal_random_walks) :
             m_origami_system {origami_system},
-            m_ideal_random_walks {ideal_random_walks} {
+            m_ideal_random_walks {ideal_random_walks},
+            m_staple_network {origami_system} {
     }
 
     void Constraintpoints::reset_internal() {
@@ -25,14 +172,29 @@ namespace topConstraintPoints {
         m_active_endpoints.clear();
         m_initial_active_endpoints.clear();
         m_inactive_endpoints.clear();
+        m_d_stack.clear();
+        m_segs.clear();
     }
 
     void Constraintpoints::calculate_constraintpoints(
             vector<Domain*> scaffold_domains,
             vector<int> excluded_staples) {
 
-        m_d_stack.clear();
-        find_staples_growthpoints_endpoints(scaffold_domains, excluded_staples);
+        find_growthpoints_endpoints(scaffold_domains, excluded_staples, 0);
+
+        // Save initial active endpionts and remaining steps for regrowing old
+        m_initial_active_endpoints = m_active_endpoints;
+    }
+
+    void Constraintpoints::calculate_constraintpoints(
+            vector<vector<Domain*>> scaffold_segments,
+            vector<int> excluded_staples) {
+
+        int seg {0};
+        for (auto scaffold_domains: scaffold_segments) {
+            find_growthpoints_endpoints(scaffold_domains, excluded_staples, seg);
+            seg++;
+        }
 
         // Save initial active endpionts and remaining steps for regrowing old
         m_initial_active_endpoints = m_active_endpoints;
@@ -50,8 +212,22 @@ namespace topConstraintPoints {
         return (m_growthpoints.count(domain) > 0);
     }
 
-    void Constraintpoints::add_active_endpoint(Domain* domain, VectorThree pos) {
-        m_active_endpoints[domain->m_c].push_back({domain->m_d, pos});
+    void Constraintpoints::add_active_endpoint(
+            Domain* d,
+            VectorThree pos) {
+
+        auto seg = m_segs[d];
+        pair<int, int> key {d->m_c, seg};
+        m_active_endpoints[key].push_back({d->m_d, pos});
+    }
+
+    void Constraintpoints::add_active_endpoint(
+            Domain* domain,
+            VectorThree pos,
+            int seg) {
+
+        pair<int, int> key {domain->m_c, seg};
+        m_active_endpoints[key].push_back({domain->m_d, pos});
     }
 
     void Constraintpoints::reset_active_endpoints() {
@@ -62,9 +238,11 @@ namespace topConstraintPoints {
 
         // Remove endpoint if reached
         int c_i {domain->m_c};
+        auto seg = m_segs[domain];
+        pair<int, int> key {c_i, seg};
         vector<int> endpoints_to_erase {};
-        for (size_t j {0}; j != m_active_endpoints[c_i].size(); j++) {
-            pair<int, VectorThree> endpoint {m_active_endpoints[c_i][j]};
+        for (size_t j {0}; j != m_active_endpoints[key].size(); j++) {
+            pair<int, VectorThree> endpoint {m_active_endpoints[key][j]};
             if (endpoint.first == domain->m_d) {
                 endpoints_to_erase.push_back(j);
             }
@@ -73,7 +251,7 @@ namespace topConstraintPoints {
         // Removing in reverse means the indices are not changing as I do it
         std::reverse(endpoints_to_erase.begin(), endpoints_to_erase.end());
         for (auto j: endpoints_to_erase) {
-            m_active_endpoints[c_i].erase(m_active_endpoints[c_i].begin() + j);
+            m_active_endpoints[key].erase(m_active_endpoints[key].begin() + j);
         }
     }
 
@@ -81,11 +259,10 @@ namespace topConstraintPoints {
         remove_active_endpoint(domain);
 
         // Copy inactive endpoints to active endpoints
-        bool inactive_endpoint_present {m_inactive_endpoints.count(domain) > 0};
-        if (inactive_endpoint_present) {
+        bool endpoint_present {m_inactive_endpoints.count(domain) > 0};
+        if (endpoint_present) {
             Domain* endpoint_domain {m_inactive_endpoints[domain]};
             add_active_endpoint(endpoint_domain, domain->m_pos);
-            // pretty sure it's fine not to erase the inverse inactive endpoint
         }
     }
 
@@ -95,7 +272,9 @@ namespace topConstraintPoints {
 
     bool Constraintpoints::endpoint_reached(Domain* domain, VectorThree pos) {
         bool reached {false};
-        for (auto endpoint: m_active_endpoints[domain->m_c]) {
+        auto seg = m_segs[domain];
+        pair<int, int> key {domain->m_c, seg};
+        for (auto endpoint: m_active_endpoints[key]) {
             bool endpoint_domain_reached {domain->m_d == endpoint.first};
             bool endpoint_pos_reached {pos == endpoint.second};
             if (endpoint_domain_reached and endpoint_pos_reached) {
@@ -109,106 +288,64 @@ namespace topConstraintPoints {
     long double Constraintpoints::calc_num_walks_prod(
             Domain* domain,
             VectorThree pos,
-            vector<Domain*> domains,
             int dir,
             int offset) {
 
-        long double prod_nws {1};
+        long double prod_nws {1}; // Product of num ideal walks
 
         // Loop through all active endpoints on current chain
-        for (auto endpoint: m_active_endpoints[domain->m_c]) {
-
-            // Check if the endpoint is in the given stretch of domains.
+        pair<int, int> key {domain->m_c, m_segs[domain]};
+        for (auto endpoint: m_active_endpoints[key]) {
             int end_d_i {endpoint.first};
-            if (endpoint_in_range(end_d_i, domains)) {
-                int steps {calc_remaining_steps(end_d_i, domain, dir, offset)};
-                VectorThree end_p {endpoint.second};
-                prod_nws *= m_ideal_random_walks.num_walks(pos, end_p, steps);
-            }
+            int steps {calc_remaining_steps(end_d_i, domain, dir, offset)};
+            VectorThree end_p {endpoint.second};
+            prod_nws *= m_ideal_random_walks.num_walks(pos, end_p, steps);
         }
 
         return prod_nws;
     }
 
-    bool Constraintpoints::endpoint_in_range(
-            Domain* end_d_i,
-            vector<Domain*> domains) {
-
-        bool in_range {false};
-        for (auto d: domains) {
-            if (d->m_d == end_d_i) {
-                in_range = true;
-                break;
-            }
-        }
-    }
-
-    void Constraintpoints::find_staples_growthpoints_endpoints(
+    void Constraintpoints::find_growthpoints_endpoints(
             vector<Domain*> scaffold_domains,
-            vector<int> excluded_staples) {
+            vector<int> excluded_staples,
+            int seg) {
         
-        // Chain ids of staples that have been checked
-        set<int> checked_staples {};
-        for (auto domain: scaffold_domains) {
-            m_d_stack.push_back(domain);
-
-            // Domains bound in network extending from current scaffold domain
-            set<int> participating_chains {m_origami_system.c_scaffold};
-            vector<pair<Domain*, Domain*>> potential_growthpoints {};
-            vector<Domain*> potential_d_stack {};
-            bool externally_bound {false};
-            bool bound {domain->m_bound_domain != nullptr};
+        for (auto d: scaffold_domains) {
+            m_d_stack.push_back(d);
+            m_segs[d] = seg;
 
             // Skip if not bound, bound to self or already checked
-            if (not bound or (domain->m_bound_domain->m_c == domain->m_c) or
-                    staple_already_checked(domain, checked_staples)) {
+            bool bound {d->m_bound_domain != nullptr};
+            if (not bound or
+                    bound_to_self(d) or
+                    chain_included(m_checked_staples, d->m_bound_domain->m_c)) {
                 continue;
             }
+
+            m_staple_network.scan_network(d, excluded_staples);
+            auto net_cs = m_staple_network.get_participating_chains();
+            auto pot_gps = m_staple_network.get_potential_growthpoints();
+            auto pot_iaes = m_staple_network.get_potential_inactive_endpoints();
+            auto pot_ds = m_staple_network.get_potential_domain_stack();
+            auto s_seg_map = m_staple_network.get_staple_to_segs_map();
+            if (m_staple_network.externally_bound()) {
+                add_active_endpoints_on_scaffold(pot_gps, pot_iaes, seg);
+            }
             else {
-                Domain* bound_domain {domain->m_bound_domain};
-                bool bound_staple_excluded {find(excluded_staples.begin(),
-                        excluded_staples.end(), bound_domain->m_c) !=
-                        excluded_staples.end()};
-                if (not bound_staple_excluded) {
-                    potential_growthpoints.push_back({domain, bound_domain});
-                    potential_d_stack.push_back(bound_domain);
-                }
-
-                // Finds network and updates given vectors and sets
-                scan_staple_topology(bound_domain, participating_chains,
-                        potential_growthpoints, potential_d_stack,
-                        scaffold_domains, externally_bound, excluded_staples);
-
-                if (externally_bound) {
-
-                    // Network will not be regrown
-                    // Convert inactive endpoints on scaffold to active
-                    add_active_endpoints_on_scaffold(participating_chains,
-                            potential_growthpoints);
-                }
-                else {
-
-                    // Will need to grow network
-                    add_growthpoints(potential_growthpoints);
-                    add_regrowth_staples(participating_chains, excluded_staples);
-                    add_domains_to_stack(potential_d_stack);
-                }
-
-                // Add to checked staples
-                for (auto c_i: participating_chains) {
-                    checked_staples.insert(c_i);
-                }
+                add_growthpoints(pot_gps);
+                add_inactive_endpoints(pot_iaes);
+                add_regrowth_staples(net_cs, excluded_staples);
+                add_domains_to_stack(pot_ds);
+                add_staple_to_segs_maps(s_seg_map);
+            }
+            for (auto ci: net_cs) {
+                m_checked_staples.insert(ci);
             }
         }
     }
 
-    bool Constraintpoints::staple_already_checked(
-            Domain* domain,
-            set<int> checked_staples) {
-        Domain* bound_domain {domain->m_bound_domain};
-        bool staple_checked {find(checked_staples.begin(), checked_staples.end(),
-                bound_domain->m_c) != checked_staples.end()};
-        return staple_checked;
+    bool Constraintpoints::bound_to_self(Domain* d) {
+        return d->m_bound_domain->m_c == d->m_c;
     }
 
     void Constraintpoints::add_growthpoints(
@@ -219,16 +356,24 @@ namespace topConstraintPoints {
         }
     }
 
+    void Constraintpoints::add_inactive_endpoints(
+            vector<pair<Domain*, Domain*>> pot_iaes) {
+
+        for (auto pot_iae: pot_iaes) {
+            m_inactive_endpoints[pot_iae.first] = pot_iae.second;
+        }
+    }
+
     void Constraintpoints::add_regrowth_staples(
             set<int> participating_chains,
-            vector<int> excluded_staples) {
+            vector<int> ex_staples) {
 
         for (auto c_i: participating_chains) {
             if (c_i == 0) {
                 continue;
             }
-            if (find(excluded_staples.begin(), excluded_staples.end(),
-                    c_i) == excluded_staples.end()) {
+            bool staple_excluded {chain_included(ex_staples, c_i)};
+            if (staple_excluded) {
                 m_regrowth_staples.insert(c_i);
             }
         }
@@ -242,99 +387,30 @@ namespace topConstraintPoints {
     }
 
     void Constraintpoints::add_active_endpoints_on_scaffold(
-            set<int> participating_chains,
-            vector<pair<Domain*, Domain*>> potential_growthpoints) {
+            vector<pair<Domain*, Domain*>> pot_growthpoints,
+            vector<pair<Domain*, Domain*>> pot_inactive_endpoints,
+            int seg) {
 
-        // Extract those from inactive endpoints
-        for (auto c_i: participating_chains) {
-            for (auto domain: m_origami_system.get_chain(c_i)) {
-                if (m_inactive_endpoints.count(domain) > 0) {
-                    Domain* endpoint_domain {m_inactive_endpoints[domain]};
-                    if (endpoint_domain->m_c == 0) {
-                        add_active_endpoint(endpoint_domain, endpoint_domain->m_pos);
-                    }
-                // else delete endpoint (but unnecessary so don't bother)
-                }
+        // Extract those from potential growthpoints
+        for (auto growth_pair: pot_growthpoints) {
+            Domain* growth_domain {growth_pair.first};
+            if (growth_domain->m_c == 0) {
+                add_active_endpoint(growth_domain, growth_domain->m_pos, seg);
             }
         }
 
-        // Extract those from potential growthpoints
-        for (auto growth_pair: potential_growthpoints) {
-            Domain* growth_domain {growth_pair.first};
-            if (growth_domain->m_c == 0) {
-                add_active_endpoint(growth_domain, growth_domain->m_pos);
+        // Extract those from inactive endpoints
+        for (auto pot_iae: pot_inactive_endpoints) {
+            if (pot_iae.second->m_c == m_origami_system.c_scaffold) {
+                add_active_endpoint(pot_iae.first, pot_iae.second->m_pos, seg);
             }
         }
     }
 
-    void Constraintpoints::scan_staple_topology(
-            Domain* growth_domain,
-            set<int>& participating_chains,
-            vector<pair<Domain*, Domain*>>& potential_growthpoints,
-            vector<Domain*>& potential_d_stack,
-            vector<Domain*>& scaffold_domains,
-            bool& externally_bound,
-            vector<int> excluded_staples) {
+    void Constraintpoints::add_staple_to_segs_maps(
+            unordered_map<Domain*, int> s_seg_map) {
 
-        int c_i {growth_domain->m_c};
-        participating_chains.insert(c_i);
-        vector<Domain*> staple {m_origami_system.get_chain(c_i)};
-
-        // This is fine for 2 domain staples, but should make a stack that
-        // so that I can iterate out from the growthpoint as it would be grown
-        for (auto domain: staple) {
-            potential_d_stack.push_back(domain);
-            if (growth_domain == domain) {
-                continue;
-            }
-            Domain* bound_domain {domain->m_bound_domain};
-            bool domain_bound {bound_domain != nullptr};
-
-            // Skip if not bound or bound to self
-            if (not domain_bound or (bound_domain->m_c == c_i)) {
-                continue;
-            }
-            else {
-                int bound_c_i {bound_domain->m_c};
-                bool bound_staple_excluded {find(excluded_staples.begin(),
-                        excluded_staples.end(), bound_c_i) !=
-                        excluded_staples.end()};
-                bool in_network {participating_chains.count(bound_c_i) > 0};
-                if (in_network) {
-
-                    // Add domain to endpoints
-                    bool domain_in_range {true};
-                    if (bound_c_i == 0) {
-                        domain_in_range = find(scaffold_domains.begin(),
-                                scaffold_domains.end(),
-                                bound_domain) != scaffold_domains.end();
-                    }
-                    if (not domain_in_range) {
-                        externally_bound = true;
-                    }
-                    else {
-                        bool staple_excluded {find(excluded_staples.begin(),
-                                excluded_staples.end(), bound_c_i) !=
-                                excluded_staples.end()};
-                        if (not staple_excluded and not bound_staple_excluded) {
-                            m_inactive_endpoints[domain] = bound_domain;
-                            m_inactive_endpoints[bound_domain] = domain;
-                        }
-                    }
-                }
-                else {
-
-                    // Add domain to potential growthpoints and scan the chain
-                    if (not bound_staple_excluded) {
-                        potential_growthpoints.push_back({domain, bound_domain});
-                    }
-                    scan_staple_topology(bound_domain, participating_chains,
-                            potential_growthpoints, potential_d_stack,
-                            scaffold_domains, externally_bound,
-                            excluded_staples);
-                }
-            }
-        }
+        m_segs.insert(s_seg_map.begin(), s_seg_map.end());
     }
 
     int Constraintpoints::calc_remaining_steps(int endpoint_d_i, Domain* domain,
