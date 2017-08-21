@@ -3,23 +3,26 @@
 #ifndef UTILITY_H
 #define UTILITY_H
 
-#include <vector>
 #include <array>
+#include <list>
 #include <functional>
 #include <memory>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 
 namespace utility {
     
-    using std::vector;
     using std::array;
     using std::bind;
     using std::pair;
     using std::string;
     using std::unique_ptr;
+    using std::unordered_map;
+    using std::vector;
 
     // Find index for given element
     int index(vector<int> container, int element);
@@ -139,8 +142,25 @@ namespace utility {
         vector<pair<aT, aT>> c {};
         for (auto a: v) {
             for (auto b: v) {
-                c.emlace_back(a, b);
+                c.emplace_back(a, b);
             }
+        }
+
+        return c;
+    }
+
+    template<typename aT>
+    /**
+      * Create map from pair to index
+      *
+      * For use alongsie the all_pairs method
+      */
+    unordered_map<pair<aT, aT>, int> pair_to_index(vector<pair<aT, aT>> v) {
+        unordered_map<pair<aT, aT>, int> c {};
+        int i {0};
+        for (auto a: v) {
+            c[a] = i;
+            i++;
         }
 
         return c;

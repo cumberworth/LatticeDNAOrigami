@@ -34,7 +34,7 @@ POSTCOMPILE = @mv -f $(DEPDIR)/$*.Td $(DEPDIR)/$*.d && touch $@
 all: $(TARGETDIR)/$(TARGET)
 
 $(TARGETDIR)/$(TARGET): $(OBJECTS)
-	$(CPP) $(LDFLAGS) -o $@ $^ 
+	$(CPP) $(LDFLAGS) -o $@ $^ -v
 
 $(BUILDDIR)/%.o: %.cpp
 $(BUILDDIR)/%.o: %.cpp $(DEPDIR)/%.d

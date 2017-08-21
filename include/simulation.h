@@ -110,6 +110,12 @@ namespace simulation {
                     string label,
                     OrigamiMovetypeFile& movetypes_file,
                     MCMovetype* movetype);
+            MCMovetype* setup_rg_movetype(
+                    int i,
+                    string type,
+                    string label,
+                    OrigamiMovetypeFile& movetypes_file,
+                    MCMovetype* movetype);
             void simulate(long long int steps, long long int start_step=0);
             MCMovetype& select_movetype();
             void write_log_entry(

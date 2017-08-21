@@ -66,6 +66,8 @@ namespace movetypes {
             double exchange_mult):
             MCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
+            MetMCMovetype(origami_system, random_gens, ideal_random_walks,
+                    config_files, label, ops, biases, params),
             m_exchange_mult {exchange_mult} {
     }
 

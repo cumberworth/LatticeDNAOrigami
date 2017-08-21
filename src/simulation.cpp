@@ -20,6 +20,7 @@
 #include "orientation_movetype.h"
 #include "met_movetypes.h"
 #include "cb_movetypes.h"
+#include "rg_movetypes.h"
 #include "simulation.h"
 #include "files.h"
 
@@ -198,6 +199,10 @@ namespace simulation {
                 movetype = setup_scaffold_transform_movetype(i, type, label,
                         movetypes_file, movetype);
             }
+            else if (type == "RGScaffoldRegrowth") {
+                movetype = setup_rg_movetype(i, type, label,
+                        movetypes_file, movetype);
+            }
             else {
                 cout << "No such movetype";
                 throw utility::SimulationMisuse {};
@@ -305,6 +310,25 @@ namespace simulation {
         return movetype;
     }
 
+    MCMovetype* GCMCSimulation::setup_rg_movetype(
+            int i,
+            string,
+            string label,
+            OrigamiMovetypeFile& movetypes_file,
+            MCMovetype* movetype) {
+
+        int excluded_staples {movetypes_file.get_int_option(i,
+                "num_excluded_staples")};
+        int max_num_recoils {movetypes_file.get_int_option(i, "max_num_recoils")};
+        movetype = new movetypes::CTScaffoldRG {
+                m_origami_system, m_random_gens,
+                m_ideal_random_walks, m_config_per_move_files,
+                label, m_ops, m_biases, m_params, excluded_staples,
+                max_num_recoils};
+
+        return movetype;
+    }
+
     void GCMCSimulation::simulate(long long int steps, long long int start_step) {
 
         for (long long int step {start_step + 1}; step != (steps + start_step + 1); step ++) {
@@ -318,7 +342,6 @@ namespace simulation {
                 m_ops.update_move_params();
                 m_biases.calc_move();
             }
-            movetype.reset_internal();
 
             // Center and check constraints
             if (m_centering_freq != 0 and step % m_centering_freq == 0) {

@@ -182,6 +182,7 @@ namespace movetypes {
       */
     class CTCBRegrowthMCMovetype:
         virtual public CBMCMovetype,
+        virtual public RegrowthMCMovetype,
         virtual public CTRegrowthMCMovetype {
 
         public:
@@ -219,10 +220,19 @@ namespace movetypes {
       * CTCB regrowth of scaffold segments and bound staples
       */
     class CTCBScaffoldRegrowthMCMovetype:
-        virtual public CTCBRegrowthMCMovetype {
+        public CTCBRegrowthMCMovetype {
 
         public:
-            using CTCBRegrowthMCMovetype::CTCBRegrowthMCMovetype;
+            CTCBScaffoldRegrowthMCMovetype(
+                    OrigamiSystem& origami_system,
+                    RandomGens& random_gens,
+                    IdealRandomWalks& ideal_random_walks,
+                    vector<OrigamiOutputFile*> config_files,
+                    string label,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params,
+                    int num_excluded_staples);
 
             void write_log_summary(ostream* log_entry) override;
 
@@ -238,7 +248,7 @@ namespace movetypes {
       * Transformation of a segment and regrowth of its linkers
       */
     class CTCBLinkerRegrowthMCMovetype:
-        virtual  public CTCBRegrowthMCMovetype {
+        public CTCBRegrowthMCMovetype {
 
         public:
             CTCBLinkerRegrowthMCMovetype(
@@ -334,7 +344,18 @@ namespace movetypes {
         public CTCBLinkerRegrowthMCMovetype {
 
         public:
-            using CTCBLinkerRegrowthMCMovetype::CTCBLinkerRegrowthMCMovetype;
+            ClusteredCTCBLinkerRegrowth(
+                    OrigamiSystem& origami_system,
+                    RandomGens& random_gens,
+                    IdealRandomWalks& ideal_random_walks,
+                    vector<OrigamiOutputFile*> config_files,
+                    string label,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params,
+                    int num_excluded_staples,
+                    int max_disp,
+                    int max_turns);
 
         private:
             pair<int, int> select_internal_endpoints(

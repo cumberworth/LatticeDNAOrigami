@@ -30,6 +30,7 @@ namespace movetypes {
         virtual public RegrowthMCMovetype {
 
         public:
+            using RegrowthMCMovetype::RegrowthMCMovetype;
             void reset_internal() override;
 
         protected:

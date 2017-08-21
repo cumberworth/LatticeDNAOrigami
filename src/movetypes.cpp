@@ -316,7 +316,17 @@ namespace movetypes {
 
 
     CTRegrowthMCMovetype::CTRegrowthMCMovetype(
-            int num_excluded_staples):
+                OrigamiSystem& origami_system,
+                RandomGens& random_gens,
+                IdealRandomWalks& ideal_random_walks,
+                vector<OrigamiOutputFile*> config_files,
+                string label,
+                SystemOrderParams& ops,
+                SystemBiases& biases,
+                InputParameters& params,
+                int num_excluded_staples) :
+        MCMovetype(origami_system, random_gens, ideal_random_walks,
+                config_files, label, ops, biases, params),
         m_num_excluded_staples {num_excluded_staples} {
         m_scaffold = m_origami_system.get_chain(m_origami_system.c_scaffold);
     }

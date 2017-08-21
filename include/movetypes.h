@@ -164,8 +164,10 @@ namespace movetypes {
             MovetypeTracking m_general_tracker {0, 0};
             long long int m_step {0};
 
-        private:
-            bool scan_for_scaffold_domain(Domain*, set<int>& participating_chains);
+            // Check if scaffold domain bound to network of given staple
+            bool scan_for_scaffold_domain(
+                    Domain* domain,
+                    set<int>& participating_chains);
     };
 
     /** For debugging purposes */
@@ -183,6 +185,7 @@ namespace movetypes {
 
         public:
             using MCMovetype::MCMovetype;
+            RegrowthMCMovetype() {};
 
         protected:
             virtual void grow_chain(vector<Domain*> domains) = 0;
@@ -196,11 +199,19 @@ namespace movetypes {
       * Parent class of moves with constant topology chain regrowth
       */
     class CTRegrowthMCMovetype:
-        virtual public RegrowthMCMovetype {
+        virtual public MCMovetype {
 
         public:
-            CTRegrowthMCMovetype(int num_excluded_staples);
-
+            CTRegrowthMCMovetype(
+                    OrigamiSystem& origami_system,
+                    RandomGens& random_gens,
+                    IdealRandomWalks& ideal_random_walks,
+                    vector<OrigamiOutputFile*> config_files,
+                    string label,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params,
+                    int num_excluded_staples);
         protected:
             void sel_excluded_staples();
 
