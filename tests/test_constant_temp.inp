@@ -23,14 +23,14 @@ movetype_file=movetypes.json
 #restart_step=3099
 vmd_file_dir=../scripts/vmd
 centering_freq=100000
-constraint_check_freq=100000
+constraint_check_freq=1
 
 # Constant T options
 ct_steps=100000000
 
 # Output options
 output_filebase=outs/test_constant_temp_3
-logging_freq=100000
+logging_freq=1
 configs_output_freq=100000
 vtf_output_freq=100000
 vcf_per_domain=false

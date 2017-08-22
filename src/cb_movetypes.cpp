@@ -429,6 +429,7 @@ namespace movetypes {
 
         vector<long double> weights(bfactors.begin(), bfactors.end());
         for (size_t i {0}; i != configs.size(); i++) {
+            cout << i << "\n";
             VectorThree cur_pos {configs[i].first};
 
             // Set weights of positions involving non-self binding to 0 unless endpoint reached
@@ -442,12 +443,17 @@ namespace movetypes {
                         m_excluded_staples.end()};
                 if (not (binding_same_chain or endpoint or excluded_staple)) {
                     weights[i] = 0;
+                    cout << "set to 0\n";
                 }
             }
 
             // Bias weights with number of walks
-            weights[i] *= m_constraintpoints.calc_num_walks_prod(domain, cur_pos,
+            //weights[i] *= m_constraintpoints.calc_num_walks_prod(domain, cur_pos,
+            //        m_dir);
+            long long int walks = m_constraintpoints.calc_num_walks_prod(domain, cur_pos,
                     m_dir);
+            cout << "walks: " << walks << "\n";
+            weights[i] *= walks;
         }
 
         // Calculate number of walks for previous position
@@ -612,8 +618,8 @@ namespace movetypes {
                     not bound_to_system)) {
             return accepted;
         }
-
         add_external_bias();
+
         // Regrow in old conformation
         setup_for_regrow_old();
         m_constraintpoints.reset_active_endpoints();
@@ -801,6 +807,8 @@ namespace movetypes {
 
         // Regrow in old conformation
         add_external_bias();
+        // DEBUG
+        m_origami_system.check_all_constraints();
         setup_for_regrow_old();
         m_constraintpoints.reset_active_endpoints();
 
@@ -826,7 +834,11 @@ namespace movetypes {
         // Reset modifier and test acceptance
         m_modifier = 1;
         add_external_bias();
+        // DEBUG
+        m_origami_system.check_all_constraints();
         accepted = test_cb_acceptance();
+        // DEBUG
+        m_origami_system.check_all_constraints();
         return accepted;
     }
 
@@ -919,7 +931,8 @@ namespace movetypes {
         }
 
         // Find the rest
-        vector<vector<Domain*>> linkers {linker1, linker2};
+        vector<vector<Domain*>> linkers {{linker1.begin() + 1, linker1.end()},
+            {linker2.begin() + 1, linker2.end()}};
         m_constraintpoints.calculate_constraintpoints(linkers, {});
         set<int> staples {m_constraintpoints.staples_to_be_regrown()};
 
@@ -929,11 +942,18 @@ namespace movetypes {
     bool CTCBLinkerRegrowthMCMovetype::domains_bound_externally(
             vector<Domain*> domains) {
 
+        /*
+         * This currently breaks detailed balance, as I am not allowed to pick
+         * central segments where the scaffold is misbound to itself externally,
+         * but such misbinding when performing the transformation is not excluded.
+         * I need to TODO TODO TODO prevent misbinding like this or allow it to be
+         * move here when it is misbound to the external scaffold. Why not allow it?
+         */
         bool externally_bound {false};
         for (auto domain: domains) {
             if (domain->m_state != Occupancy::unbound) {
                 Domain* bound_domain {domain->m_bound_domain};
-                if (bound_domain->m_c == m_origami_system.c_scaffold) {
+                /*if (bound_domain->m_c == m_origami_system.c_scaffold) {
                     bool domain_in_range {find(domains.begin(), domains.end(),
                             bound_domain) != domains.end()};
                     if (not domain_in_range) {
@@ -943,14 +963,11 @@ namespace movetypes {
                     else {
                         continue;
                     }
-                }
+                }*/
 
                 set<int> participating_chains {domain->m_c};
-                if (not scan_for_external_scaffold_domain(bound_domain, domains,
+                if (scan_for_external_scaffold_domain(bound_domain, domains,
                             participating_chains)) {
-                    externally_bound = false;
-                }
-                else {
                     externally_bound = true;
                     break;
                 }
@@ -1002,6 +1019,9 @@ namespace movetypes {
                 else {
                     externally_bound = scan_for_external_scaffold_domain(
                             bound_domain, domains, participating_chains);
+                    if (externally_bound) {
+                        break;
+                    }
                 }
             }
         }

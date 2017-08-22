@@ -49,7 +49,9 @@ namespace topConstraintPoints {
               * segment being considered, and is involved in determining whether
               * the network is considered external.
               */
-            void scan_network(Domain* d, vector<int> excluded_staples);
+            void set_excluded_staples(vector<int> excluded_staples);
+            void set_scaffold_domains(vector<Domain*> scaffold_domains);
+            void scan_network(Domain* d);
             set<int> get_participating_chains();
             vector<pair<Domain*, Domain*>> get_potential_growthpoints();
             vector<pair<Domain*, Domain*>> get_potential_inactive_endpoints();

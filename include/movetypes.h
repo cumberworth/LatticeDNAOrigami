@@ -216,7 +216,7 @@ namespace movetypes {
             void sel_excluded_staples();
 
             /** Select scaffold segment to be regrown */
-            vector<Domain*> select_indices(vector<Domain*>);
+            vector<Domain*> select_indices(vector<Domain*> d, int seg=0);
 
             /** Return segment of linear domains given endpoints */
             vector<Domain*> select_cyclic_segment(

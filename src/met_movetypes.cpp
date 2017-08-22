@@ -308,4 +308,8 @@ namespace movetypes {
         accepted = test_acceptance(boltz_factor);
         return accepted;
     }
+
+    void MetStapleRegrowthMCMovetype::add_tracker(bool accepted) {
+        movetypes::add_tracker(m_tracker, m_tracking, accepted);
+    }
 }

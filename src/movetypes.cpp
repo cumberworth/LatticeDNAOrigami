@@ -45,6 +45,7 @@ namespace movetypes {
         bool accepted {internal_attempt_move()};
         m_general_tracker.accepts++;
         add_tracker(accepted);
+
         return accepted;
     }
 
@@ -351,7 +352,7 @@ namespace movetypes {
     }
 
     vector<Domain*> CTRegrowthMCMovetype::select_indices(
-            vector<Domain*> segment) {
+            vector<Domain*> segment, int seg) {
 
         pair<int, int> endpoints {select_endpoints(segment.size(), 0, 1)};
         Domain* start_domain {segment[endpoints.first]};
@@ -367,7 +368,8 @@ namespace movetypes {
         // If end domain is end of chain, no endpoint
         Domain* endpoint_domain {(*end_domain) + m_dir};
         if (endpoint_domain != nullptr) {
-            m_constraintpoints.add_active_endpoint(endpoint_domain, endpoint_domain->m_pos);
+            m_constraintpoints.add_active_endpoint(endpoint_domain,
+                    endpoint_domain->m_pos, seg);
         }
 
         return domains;
@@ -381,14 +383,14 @@ namespace movetypes {
         vector<Domain*> domains {};
 
         // Find direction of regrowth
-        int dir;
         if (end_domain->m_d > start_domain->m_d) {
-            dir = 1;
+            m_dir = 1;
         }
         else {
-            dir = -1;
+            m_dir = -1;
         }
-        for (int d_i {start_domain->m_d}; d_i != end_domain->m_d + dir; d_i += dir) {
+        for (int d_i {start_domain->m_d}; d_i != end_domain->m_d + m_dir; d_i +=
+                m_dir) {
             Domain* cur_domain {scaffold[d_i]};
             domains.push_back(cur_domain);
         }
@@ -403,15 +405,15 @@ namespace movetypes {
         vector<Domain*> domains {};
 
         // Select direction of regrowth
-        int dir {m_random_gens.uniform_int(0, 1)};
-        if (dir == 0) {
-            dir = -1;
+        m_dir = m_random_gens.uniform_int(0, 1);
+        if (m_dir == 0) {
+            m_dir = -1;
         }
         int d_i {start_domain->m_d};
         Domain* cur_domain {start_domain};
         while (d_i != end_domain->m_d) {
             domains.push_back(cur_domain);
-            cur_domain = (*cur_domain) + dir;
+            cur_domain = (*cur_domain) + m_dir;
             d_i = cur_domain->m_d;
         }
         domains.push_back(end_domain);

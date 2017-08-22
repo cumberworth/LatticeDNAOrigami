@@ -1,7 +1,7 @@
 # Autodependency recipe from
 # http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
 
-OPTLEVEL = -O3
+OPTLEVEL = -g
 BUILDDIR = build
 PREFIX = ../../bin/latticeDNAOrigami
 TARGET = latticeDNAOrigami
@@ -34,7 +34,7 @@ POSTCOMPILE = @mv -f $(DEPDIR)/$*.Td $(DEPDIR)/$*.d && touch $@
 all: $(TARGETDIR)/$(TARGET)
 
 $(TARGETDIR)/$(TARGET): $(OBJECTS)
-	$(CPP) $(LDFLAGS) -o $@ $^ -v
+	$(CPP) $(LDFLAGS) -o $@ $^
 
 $(BUILDDIR)/%.o: %.cpp
 $(BUILDDIR)/%.o: %.cpp $(DEPDIR)/%.d
