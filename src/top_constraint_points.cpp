@@ -461,7 +461,7 @@ namespace topConstraintPoints {
     void Constraintpoints::add_domains_to_stack(
             vector<Domain*> potential_d_stack) {
 
-        m_d_stack.insert(m_d_stack.begin(), potential_d_stack.begin(),
+        m_d_stack.insert(m_d_stack.end(), potential_d_stack.begin(),
                 potential_d_stack.end());
     }
 
