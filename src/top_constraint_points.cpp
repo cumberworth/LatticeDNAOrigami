@@ -182,6 +182,10 @@ namespace topConstraintPoints {
             m_staple_network {origami_system} {
     }
 
+    vector<VectorThree> Constraintpoints::get_erased_endpoints() {
+        return m_erased_endpoints;
+    }
+
     void Constraintpoints::reset_internal() {
         m_scaffold_domains.clear();
         m_regrowth_staples.clear();
@@ -264,6 +268,7 @@ namespace topConstraintPoints {
     void Constraintpoints::remove_active_endpoint(Domain* domain) {
 
         // Remove endpoint if reached
+        m_erased_endpoints.clear();
         int c_i {domain->m_c};
         auto seg = m_segs.at(domain);
         pair<int, int> key {c_i, seg};
@@ -272,6 +277,7 @@ namespace topConstraintPoints {
             pair<int, VectorThree> endpoint {m_active_endpoints[key][j]};
             if (endpoint.first == domain->m_d) {
                 endpoints_to_erase.push_back(j);
+                m_erased_endpoints.push_back(endpoint.second);
             }
         }
 
@@ -327,7 +333,8 @@ namespace topConstraintPoints {
             int steps {calc_remaining_steps(end_d_i, domain, dir, offset)};
             VectorThree end_p {endpoint.second};
             prod_nws *= m_ideal_random_walks.num_walks(pos, end_p, steps);
-            std::cout << domain->m_d  << " " << end_d_i << " "  << steps << " "  << prod_nws << "\n";
+            // DEBUG
+//            std::cout << domain->m_d  << " " << end_d_i << " "  << steps << " "  << prod_nws << "\n";
         }
 
         return prod_nws;

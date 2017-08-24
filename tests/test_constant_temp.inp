@@ -16,7 +16,7 @@ bias_functions_mult=1
 simulation_type=constant_temp
 
 # General simulation parameters
-movetype_file=movetypes.json
+movetype_file=movetypes2.json
 #num_walks_filename=data/num_walks.arch
 #restart_traj_file=outs/test_constant_temp_2.trj
 #restart_step=300

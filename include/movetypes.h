@@ -213,6 +213,8 @@ namespace movetypes {
                     InputParameters& params,
                     int num_excluded_staples);
         protected:
+            void reset_internal() override;
+
             void sel_excluded_staples();
 
             /** Select scaffold segment to be regrown */

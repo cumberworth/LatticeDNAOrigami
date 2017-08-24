@@ -101,6 +101,11 @@ namespace topConstraintPoints {
                     OrigamiSystem& origami_system,
                     IdealRandomWalks& ideal_random_walks);
 
+            /**
+              * Return endpoint positions erased from most recent update
+              */
+            vector<VectorThree> get_erased_endpoints();
+
             void reset_internal();
 
             /**
@@ -229,6 +234,7 @@ namespace topConstraintPoints {
             set<int> m_regrowth_staples; // Staples to be regrown
             vector<Domain*> m_d_stack; // Stack of domains in order for regrowth
             set<int> m_checked_staples; // Chain ids of checked staples
+            vector<VectorThree> m_erased_endpoints;
 
             // Map from domain to segment
             unordered_map<Domain*, int> m_segs {};

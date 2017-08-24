@@ -320,11 +320,12 @@ namespace simulation {
         int excluded_staples {movetypes_file.get_int_option(i,
                 "num_excluded_staples")};
         int max_num_recoils {movetypes_file.get_int_option(i, "max_num_recoils")};
+        int max_c_attempts {movetypes_file.get_int_option(i, "max_c_attempts")};
         movetype = new movetypes::CTScaffoldRG {
                 m_origami_system, m_random_gens,
                 m_ideal_random_walks, m_config_per_move_files,
                 label, m_ops, m_biases, m_params, excluded_staples,
-                max_num_recoils};
+                max_num_recoils, max_c_attempts};
 
         return movetype;
     }

@@ -396,8 +396,7 @@ namespace movetypes {
     void CTCBRegrowthMCMovetype::reset_internal() {
         m_regrow_old = false;
         CBMCMovetype::reset_internal();
-        m_constraintpoints.reset_internal();
-        m_excluded_staples.clear();
+        CTRegrowthMCMovetype::reset_internal();
     }
 
     void CTCBRegrowthMCMovetype::grow_chain(vector<Domain*> domains) {
@@ -429,7 +428,6 @@ namespace movetypes {
 
         vector<long double> weights(bfactors.begin(), bfactors.end());
         for (size_t i {0}; i != configs.size(); i++) {
-            cout << i << "\n";
             VectorThree cur_pos {configs[i].first};
 
             // Set weights of positions involving non-self binding to 0 unless endpoint reached
@@ -448,12 +446,8 @@ namespace movetypes {
             }
 
             // Bias weights with number of walks
-            //weights[i] *= m_constraintpoints.calc_num_walks_prod(domain, cur_pos,
-            //        m_dir);
-            long long int walks = m_constraintpoints.calc_num_walks_prod(domain, cur_pos,
+            weights[i] *= m_constraintpoints.calc_num_walks_prod(domain, cur_pos,
                     m_dir);
-            cout << "walks: " << walks << "\n";
-            weights[i] *= walks;
         }
 
         // Calculate number of walks for previous position

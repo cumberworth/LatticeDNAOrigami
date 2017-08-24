@@ -332,6 +332,11 @@ namespace movetypes {
         m_scaffold = m_origami_system.get_chain(m_origami_system.c_scaffold);
     }
 
+    void CTRegrowthMCMovetype::reset_internal() {
+        m_constraintpoints.reset_internal();
+        m_excluded_staples.clear();
+    }
+
     void CTRegrowthMCMovetype::sel_excluded_staples() {
         for (int i {0}; i != m_num_excluded_staples; i++) {
             if (i == m_origami_system.num_staples()) {

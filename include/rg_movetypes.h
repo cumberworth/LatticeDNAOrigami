@@ -31,7 +31,8 @@ namespace movetypes {
                     SystemBiases& biases,
                     InputParameters& params,
                     int num_excluded_staples,
-                    int max_num_recoils);
+                    int max_num_recoils,
+                    int max_c_attempts);
 
             void write_log_summary(ostream* log_entry) override;
             void reset_internal() override;
@@ -53,6 +54,7 @@ namespace movetypes {
             void set_config(Domain* d, configT c);
             void prepare_for_growth();
             void prepare_for_regrowth();
+            void restore_endpoints();
             configT select_trial_config();
             double calc_p_config_open(configT c);
             bool test_config_open(double p_c_open);
@@ -79,6 +81,8 @@ namespace movetypes {
             vector<double> m_c_opens; // Configuration open probability
             unordered_map<pair<int, int>, VectorThree> m_old_pos {};
             unordered_map<pair<int, int>, VectorThree> m_old_ore {};
+            vector<vector<VectorThree>> m_erased_endpoints_q {};
+
             double m_delta_e; // Energy change
             double m_delta_e_new; // Energy change of new config
             double m_weight; // RG weight
