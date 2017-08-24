@@ -43,7 +43,7 @@ namespace movetypes {
         write_config();
         m_general_tracker.attempts++;
         bool accepted {internal_attempt_move()};
-        m_general_tracker.accepts++;
+        m_general_tracker.accepts += accepted;
         add_tracker(accepted);
 
         return accepted;
