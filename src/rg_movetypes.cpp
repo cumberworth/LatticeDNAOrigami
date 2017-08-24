@@ -204,7 +204,7 @@ namespace movetypes {
     void CTScaffoldRG::recoil_regrow() {
         m_di = 0;
         m_d = m_regrow_ds[m_di];
-        m_dir = m_regrow_ds[1]->m_d - m_regrow_ds[0]->m_d;
+        m_dir = m_constraintpoints.get_dir(m_d);
         m_c_attempts_q.resize(m_regrow_ds.size());
         m_avail_cis_q.resize(m_regrow_ds.size());
         m_c_opens.resize(m_regrow_ds.size());
@@ -269,6 +269,7 @@ namespace movetypes {
         m_prev_gp = m_constraintpoints.is_growthpoint(m_d);
         m_di++;
         m_d = m_regrow_ds[m_di];
+        m_dir = m_constraintpoints.get_dir(m_d);
         m_c_attempts = 0;
         if (m_prev_gp) {
             m_d_max_c_attempts = 1;
@@ -281,13 +282,13 @@ namespace movetypes {
             m_ref_d = (*m_d + (-m_dir));
         }
         if (m_d->m_c != m_regrow_ds[m_di - 1]->m_c) {
-            m_dir = m_d->m_d - m_regrow_ds[m_di - 1]->m_d;
         }
     }
 
     void CTScaffoldRG::prepare_for_regrowth() {
         m_di--;
         m_d = m_regrow_ds[m_di];
+        m_dir = m_constraintpoints.get_dir(m_d);
         m_origami_system.unassign_domain(*m_d);
         m_assigned_domains.pop_back();
         restore_endpoints();
@@ -306,7 +307,6 @@ namespace movetypes {
             m_ref_d = (*m_d + (-m_dir));
         }
         if (m_d->m_c != m_regrow_ds[m_di + 1]->m_c) {
-            m_dir = m_d->m_d - m_regrow_ds[m_di - 1]->m_d;
         }
     }
 
@@ -390,14 +390,10 @@ namespace movetypes {
             m_prev_gp = m_constraintpoints.is_growthpoint(m_d);
             m_di++;
             m_d = m_regrow_ds[m_di];
-
-            // Already found the only avail config
-            if (m_d->m_c != m_regrow_ds[m_di - 1]->m_c) {
-                m_dir = m_d->m_d - m_regrow_ds[m_di - 1]->m_d;
-            }
+            m_dir = m_constraintpoints.get_dir(m_d);
 
             // Calculate the number of available configurations.
-            else {
+            if (not m_prev_gp) {
                 m_ref_d = (*m_d + (-m_dir));
                 int c_attempts {m_c_attempts_wq[m_di]};
                 m_avail_cis = m_avail_cis_wq[m_di];
@@ -411,7 +407,7 @@ namespace movetypes {
                                 c.first, c.second);
                         m_constraintpoints.update_endpoints(m_d);
                         auto erased_endpoints =
-                                m_constraintpoints.get_erased_endpoints();
+                            m_constraintpoints.get_erased_endpoints();
                         m_erased_endpoints_q.push_back(erased_endpoints);
                         write_config();
                         avail_cs += test_config_avail();

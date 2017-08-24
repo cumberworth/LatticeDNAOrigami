@@ -57,6 +57,7 @@ namespace topConstraintPoints {
             vector<pair<Domain*, Domain*>> get_potential_inactive_endpoints();
             vector<Domain*> get_potential_domain_stack();
             unordered_map<Domain*, int> get_staple_to_segs_map();
+            unordered_map<pair<int, int>, int> get_dirs();
             bool externally_bound();
 
         private:
@@ -75,6 +76,10 @@ namespace topConstraintPoints {
             vector<Domain*> m_pot_ds {}; // Potential domain stack
             vector<pair<Domain*, Domain*>> m_pot_iaes; // Potential inactive endpoints
             unordered_map<Domain*, int> m_segs {}; // Map from domain to segment
+
+            // Map from domain and segment to regrowth direction
+            unordered_map<pair<int, int>, int> m_domain_to_dir {};
+
     };
 
     /**
@@ -100,6 +105,9 @@ namespace topConstraintPoints {
             Constraintpoints(
                     OrigamiSystem& origami_system,
                     IdealRandomWalks& ideal_random_walks);
+
+            /** Get direction of growth in current segment of current chain */
+            int get_dir(Domain* d);
 
             /**
               * Return endpoint positions erased from most recent update
@@ -222,6 +230,7 @@ namespace topConstraintPoints {
                     vector<pair<Domain*, Domain*>> potential_inactive_endpoints,
                     int seg);
             void add_staple_to_segs_maps(unordered_map<Domain*, int> s_seg_map);
+            void add_dirs(unordered_map<pair<int, int>, int> domain_to_dirs);
             int calc_remaining_steps(int endpoint_d_i, Domain* domain, int dir,
                     int step_offset);
 
@@ -238,6 +247,9 @@ namespace topConstraintPoints {
 
             // Map from domain to segment
             unordered_map<Domain*, int> m_segs {};
+
+            // Map from domain and segment to regrowth direction
+            unordered_map<pair<int, int>, int> m_domain_to_dir {};
 
             // Map from growthpoint domain to domain to grow
             unordered_map<Domain*, Domain*> m_growthpoints {};

@@ -67,6 +67,10 @@ namespace topConstraintPoints {
         return m_segs;
     }
 
+    unordered_map<pair<int, int>, int> StapleNetwork::get_dirs() {
+        return m_domain_to_dir;
+    }
+
     bool StapleNetwork::externally_bound() {
         return m_external;
     }
@@ -149,6 +153,8 @@ namespace topConstraintPoints {
         // Iterate through domains in three prime direction
         int seg {0};
         m_segs[d] = seg;
+        pair<int, int> key {ci, seg};
+        m_domain_to_dir[key] = 1;
         for (size_t di = d->m_d + 1; di != staple.size(); di++) {
             Domain* d_loop {staple[di]};
             ds.push_back(d_loop);
@@ -156,6 +162,9 @@ namespace topConstraintPoints {
         }
 
         // Add domains in five prime direction
+        seg++;
+        key = {ci, seg};
+        m_domain_to_dir[key] = -1;
         for (int di {d->m_d - 1}; di != -1; di--) {
             Domain* d_loop {staple[di]};
             ds.push_back(d_loop);
@@ -180,6 +189,12 @@ namespace topConstraintPoints {
             m_origami_system {origami_system},
             m_ideal_random_walks {ideal_random_walks},
             m_staple_network {origami_system} {
+    }
+
+    int Constraintpoints::get_dir(Domain* d) {
+        auto seg = m_segs[d];
+        pair<int, int> key {d->m_c, seg};
+        return m_domain_to_dir[key];
     }
 
     vector<VectorThree> Constraintpoints::get_erased_endpoints() {
@@ -367,6 +382,9 @@ namespace topConstraintPoints {
             vector<int> excluded_staples,
             int seg) {
         
+        pair<int, int> key {scaffold_domains[0]->m_c, seg};
+        m_domain_to_dir[key] = scaffold_domains[1]->m_d -
+                scaffold_domains[0]->m_d;
         for (auto d: scaffold_domains) {
             m_d_stack.push_back(d);
             m_segs[d] = seg;
@@ -387,6 +405,7 @@ namespace topConstraintPoints {
             auto pot_iaes = m_staple_network.get_potential_inactive_endpoints();
             auto pot_ds = m_staple_network.get_potential_domain_stack();
             auto s_seg_map = m_staple_network.get_staple_to_segs_map();
+            auto domain_to_dirs = m_staple_network.get_dirs();
             if (m_staple_network.externally_bound()) {
                 add_active_endpoints_on_scaffold(pot_gps, pot_iaes, seg);
             }
@@ -396,6 +415,7 @@ namespace topConstraintPoints {
                 add_regrowth_staples(net_cs, excluded_staples);
                 add_domains_to_stack(pot_ds);
                 add_staple_to_segs_maps(s_seg_map);
+                add_dirs(domain_to_dirs);
             }
             for (auto ci: net_cs) {
                 m_checked_staples.insert(ci);
@@ -470,6 +490,10 @@ namespace topConstraintPoints {
             unordered_map<Domain*, int> s_seg_map) {
 
         m_segs.insert(s_seg_map.begin(), s_seg_map.end());
+    }
+
+    void Constraintpoints::add_dirs(unordered_map<pair<int, int>, int> dirs) {
+        m_domain_to_dir.insert(dirs.begin(), dirs.end());
     }
 
     int Constraintpoints::calc_remaining_steps(int endpoint_d_i, Domain* domain,
