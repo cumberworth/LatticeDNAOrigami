@@ -1,7 +1,7 @@
 # Autodependency recipe from
 # http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
 
-OPTLEVEL = -g
+OPTLEVEL = -O3
 BUILDDIR = build
 PREFIX = ../../bin/latticeDNAOrigami
 TARGET = latticeDNAOrigami

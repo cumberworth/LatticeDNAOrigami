@@ -177,6 +177,9 @@ namespace topConstraintPoints {
             /** Remove all active endpoints on the given domain */
             void remove_active_endpoint(Domain* domain);
 
+            /** Remove all endpoints activated on the given domain */
+            void remove_activated_endpoint(Domain* domain);
+
             /**
               * Remove reached active endpoints and activate inactive ones
               */
@@ -209,6 +212,10 @@ namespace topConstraintPoints {
                     VectorThree pos,
                     int dir,
                     int offset=0);
+
+            // DEBUG
+            vector<pair<int, VectorThree>> get_active_endpoints(int c_i, int seg);
+            Domain* get_inactive_endpoints(Domain* domain);
 
         private:
             void find_growthpoints_endpoints(

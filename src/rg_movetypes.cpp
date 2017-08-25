@@ -69,8 +69,7 @@ namespace movetypes {
         m_sel_scaf_doms = select_indices(m_scaffold);
         sel_excluded_staples();
 
-        m_constraintpoints.calculate_constraintpoints(m_sel_scaf_doms,
-                m_excluded_staples);
+        setup_constraints();
         m_regrow_ds = m_constraintpoints.domains_to_be_regrown();
         //m_tracker.num_staples = staples.size();
 
@@ -90,33 +89,23 @@ namespace movetypes {
             accepted = false;
             return accepted;
         }
-        //DEBUG
-        m_origami_system.check_all_constraints();
         add_external_bias();
 
         // Calculate new weights
         setup_for_calc_new_weights();
         unassign_and_save_domains();
         calc_weights();
-        //DEBUG
-        m_origami_system.check_all_constraints();
 
         // Calculate old weights
         unassign_domains();
         calc_old_c_opens();
         add_external_bias();
-        //DEBUG
-        m_origami_system.check_all_constraints();
         setup_for_calc_old_weights();
         unassign_and_save_domains();
         calc_weights();
 
         // Test acceptance
-        //DEBUG
-        m_origami_system.check_all_constraints();
         accepted = test_rg_acceptance();
-        //DEBUG
-        m_origami_system.check_all_constraints();
 
         return accepted;
     }
@@ -185,6 +174,8 @@ namespace movetypes {
         m_weight = 1;
         m_c_attempts_wq = m_c_attempts_q;
         m_avail_cis_wq = m_avail_cis_q;
+        m_new_pos = m_prev_pos;
+        m_new_ore = m_prev_ore;
         m_modified_domains.clear();
     }
 
@@ -209,6 +200,9 @@ namespace movetypes {
         m_avail_cis_q.resize(m_regrow_ds.size());
         m_c_opens.resize(m_regrow_ds.size());
         prepare_for_growth();
+        // DEBUG
+//        vector<bool> found_old_c(false, m_regrow_ds.size());
+//        found_old_c[0] = true;
 
         // Stop growing when all domains done or max num recoils reached
         int recoils {0}; // Current number of recoil steps that have been taken
@@ -219,6 +213,22 @@ namespace movetypes {
             while (not c_open and m_c_attempts != m_d_max_c_attempts) {
                 m_c_attempts++;
                 c = select_trial_config();
+                //cout << m_c_attempts << " " << m_avail_cis.size() << "\n";
+                //DEBUG
+ //               pair<int, int> key {m_d->m_c, m_d->m_d};
+  //              if (c.first == m_prev_pos[key] and c.second == m_prev_ore[key]) {
+   //                 found_old_c[m_di] = true;
+    //                bool found_old_cs {true};
+     //               for (unsigned int i {1}; i != m_di; i++) {
+      //                  if (not found_old_c[i]) {
+       //                     found_old_cs = false;
+        //                    break;
+         //               }
+          //          }
+           //         if (found_old_cs) {
+            //            cout << "Regrowing old\n";
+             //       }
+              //  }
                 m_c_opens[m_di] = c_open;
                 p_c_open = calc_p_config_open(c);
                 c_open = test_config_open(p_c_open); 
@@ -306,11 +316,10 @@ namespace movetypes {
             m_avail_cis = m_avail_cis_q[m_di];
             m_ref_d = (*m_d + (-m_dir));
         }
-        if (m_d->m_c != m_regrow_ds[m_di + 1]->m_c) {
-        }
     }
 
-     void CTScaffoldRG::restore_endpoints() {
+    void CTScaffoldRG::restore_endpoints() {
+        m_constraintpoints.remove_activated_endpoint(m_d);
         auto erased_endpoints = m_erased_endpoints_q.back();
         m_erased_endpoints_q.pop_back();
         for (auto pos: erased_endpoints) {
@@ -318,7 +327,7 @@ namespace movetypes {
         }
     }
 
-   configT CTScaffoldRG::select_trial_config() {
+    configT CTScaffoldRG::select_trial_config() {
         configT c;
         int ci;
         if (m_prev_gp) {
@@ -348,7 +357,7 @@ namespace movetypes {
         }
 
         // Consider putting this check into the constraintpoints class
-        // It's repated in the CTCB code
+        // It's repated (except growthpoint check) in the CTCB code
         Occupancy pos_occ {m_origami_system.position_occupancy(c.first)};
         if (pos_occ == Occupancy::unbound) {
             Domain* occ_domain {m_origami_system.unbound_domain_at(c.first)};
@@ -357,7 +366,8 @@ namespace movetypes {
             bool excluded_staple {find(m_excluded_staples.begin(),
                     m_excluded_staples.end(), occ_domain->m_c) !=
                 m_excluded_staples.end()};
-            if (not (binding_same_chain or endpoint or excluded_staple)) {
+            if (not (binding_same_chain or endpoint or m_prev_gp or
+                        excluded_staple)) {
                 return 0;
             }
         }
@@ -386,6 +396,7 @@ namespace movetypes {
     void CTScaffoldRG::calc_weights() {
 
         m_di = 0;
+        m_d = m_regrow_ds[m_di];
         while (m_di != m_regrow_ds.size() - 1) {
             m_prev_gp = m_constraintpoints.is_growthpoint(m_d);
             m_di++;
@@ -410,7 +421,9 @@ namespace movetypes {
                             m_constraintpoints.get_erased_endpoints();
                         m_erased_endpoints_q.push_back(erased_endpoints);
                         write_config();
+                        auto avail_cis = m_avail_cis;
                         avail_cs += test_config_avail();
+                        m_avail_cis = avail_cis;
                         m_origami_system.unassign_domain(*m_d);
                         restore_endpoints();
                     }
@@ -512,9 +525,11 @@ namespace movetypes {
             m_prev_gp = m_constraintpoints.is_growthpoint(
                     m_regrow_ds[m_di - 1]);
             if (m_prev_gp) {
-                m_avail_cis_q = {};
+                m_avail_cis_q[m_di] = {};
             }
             else {
+                m_avail_cis_q[m_di] = m_all_cis;
+                m_dir = m_constraintpoints.get_dir(m_d);
                 m_ref_d = (*m_d + (-m_dir));
                 pair<int, int> refkey {m_ref_d->m_c, m_ref_d->m_d};
                 VectorThree pref {m_old_pos[refkey]};
@@ -530,6 +545,8 @@ namespace movetypes {
         long double ratio {m_weight_new / m_weight * std::exp(-delta_e)};
         bool accepted {false};
         if (test_acceptance(ratio)) {
+            m_prev_pos = m_new_pos;
+            m_prev_ore = m_new_ore;
             reset_origami();
             accepted = true;
         }

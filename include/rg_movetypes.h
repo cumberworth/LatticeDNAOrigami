@@ -81,6 +81,8 @@ namespace movetypes {
             vector<double> m_c_opens; // Configuration open probability
             unordered_map<pair<int, int>, VectorThree> m_old_pos {};
             unordered_map<pair<int, int>, VectorThree> m_old_ore {};
+            unordered_map<pair<int, int>, VectorThree> m_new_pos {};
+            unordered_map<pair<int, int>, VectorThree> m_new_ore {};
             vector<vector<VectorThree>> m_erased_endpoints_q {};
 
             double m_delta_e; // Energy change

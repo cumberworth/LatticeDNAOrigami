@@ -303,6 +303,23 @@ namespace topConstraintPoints {
         }
     }
 
+    void Constraintpoints::remove_activated_endpoint(Domain* domain) {
+        bool endpoint_present {m_inactive_endpoints.count(domain) > 0};
+        if (endpoint_present) {
+            Domain* edomain {m_inactive_endpoints[domain]};
+            int c_i {edomain->m_c};
+            auto seg = m_segs.at(edomain);
+            pair<int, int> key {c_i, seg};
+            for (size_t j {0}; j != m_active_endpoints[key].size(); j++) {
+                pair<int, VectorThree> endpoint {m_active_endpoints[key][j]};
+                if (endpoint.first == edomain->m_d) {
+                    m_active_endpoints[key].erase(m_active_endpoints[key].begin() + j);
+                    break;
+                }
+            }
+        }
+    }
+
     void Constraintpoints::update_endpoints(Domain* domain) {
         remove_active_endpoint(domain);
 
@@ -348,8 +365,6 @@ namespace topConstraintPoints {
             int steps {calc_remaining_steps(end_d_i, domain, dir, offset)};
             VectorThree end_p {endpoint.second};
             prod_nws *= m_ideal_random_walks.num_walks(pos, end_p, steps);
-            // DEBUG
-//            std::cout << domain->m_d  << " " << end_d_i << " "  << steps << " "  << prod_nws << "\n";
         }
 
         return prod_nws;
@@ -377,14 +392,30 @@ namespace topConstraintPoints {
         return w_remain;
     }
 
+    vector<pair<int, VectorThree>> Constraintpoints::get_active_endpoints(int c_i, int seg) {
+        return m_active_endpoints[{c_i, seg}];
+    }
+
+    Domain* Constraintpoints::get_inactive_endpoints(Domain* domain) {
+        return m_inactive_endpoints[domain];
+    }
+
     void Constraintpoints::find_growthpoints_endpoints(
             vector<Domain*> scaffold_domains,
             vector<int> excluded_staples,
             int seg) {
         
         pair<int, int> key {scaffold_domains[0]->m_c, seg};
-        m_domain_to_dir[key] = scaffold_domains[1]->m_d -
+        int dir;
+        if (scaffold_domains.size() == 1) {
+            // HACK TODO HACK TODO
+            dir = 0;
+        }
+        else {
+            dir =  scaffold_domains[1]->m_d -
                 scaffold_domains[0]->m_d;
+        }
+        m_domain_to_dir[key] = dir;
         for (auto d: scaffold_domains) {
             m_d_stack.push_back(d);
             m_segs[d] = seg;

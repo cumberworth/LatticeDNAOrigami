@@ -441,7 +441,6 @@ namespace movetypes {
                         m_excluded_staples.end()};
                 if (not (binding_same_chain or endpoint or excluded_staple)) {
                     weights[i] = 0;
-                    cout << "set to 0\n";
                 }
             }
 
@@ -801,8 +800,6 @@ namespace movetypes {
 
         // Regrow in old conformation
         add_external_bias();
-        // DEBUG
-        m_origami_system.check_all_constraints();
         setup_for_regrow_old();
         m_constraintpoints.reset_active_endpoints();
 
@@ -828,11 +825,7 @@ namespace movetypes {
         // Reset modifier and test acceptance
         m_modifier = 1;
         add_external_bias();
-        // DEBUG
-        m_origami_system.check_all_constraints();
         accepted = test_cb_acceptance();
-        // DEBUG
-        m_origami_system.check_all_constraints();
         return accepted;
     }
 
@@ -926,7 +919,7 @@ namespace movetypes {
 
         // Find the rest
         vector<vector<Domain*>> linkers {{linker1.begin() + 1, linker1.end()},
-            {linker2.begin() + 1, linker2.end()}};
+                {linker2.begin() + 1, linker2.end()}};
         m_constraintpoints.calculate_constraintpoints(linkers, {});
         set<int> staples {m_constraintpoints.staples_to_be_regrown()};
 
