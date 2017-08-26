@@ -1,31 +1,23 @@
-Simulation package for lattice models of the self-assembly of DNA origami. The models are intended to include only the most important details for allowing an explicit representation of the geometry of the system. Simulations are run in the grand cannonical ensemble, with constant temperature, annealing, and temperature parallel tempering variants available. Output is in simple text files, and visulation is accomplished with tikz/pgfplots scripts.
+Simulation package for lattice models of the self-assembly of DNA origami. The models are intended to include only the most important details for allowing an explicit representation of the geometry of the system. Simulations are run in the grand canonical ensemble, with annealing, Hamiltonian parallel tempering, and umbrella sampling variants available and configurable through a plain text input parameter file. Relatively general facilities are available for defining order parameters and associated bias functions in JSON formatted files. Output is in simple plain text file and JSON formats, and real-time visualization is possible with VMD via the bundled TCL scripts.
 
-Implementation is with C++11.
+The core simulation package is implemented with C++14.
 
-Dependencies:
+Core dependencies:
 
-    Libraries:
-        boost
-        JsonCpp
-        openmpi (other backends may be used by the boost mpi wrapper)
-
-    Standalone programs:
-        latex
-
-    Latex packages:
-        pgf/tikz
-        tikz-3d-plot
+* boost
+* JsonCpp
+* openmpi (other backends may be used by the boost mpi wrapper)
 
 Running simulations:
 
-An example scripts are given as tests/*.inp. To run a serial simulation:
+Example scripts can be found in `scripts/simulation_examples/*.inp`. To see all configuration options, run
 
-latticeDNAOrigami -i [simulation script] > [log file]
+`latticeDNAOrigami -h`
 
-To run a parallel simulation:
+ To run a simulation, enter
 
-mpirun -np [procs] latticeDNAOrigami -i [simulation script] > [log file]
+latticeDNAOrigami -i [configuration file] > [log file]
 
-Visualizing simulations:
+To run a parallel simulation, enter
 
-Analyzing simulations:
+mpirun -np [procs] latticeDNAOrigami -i [configuration file] > [log file]
