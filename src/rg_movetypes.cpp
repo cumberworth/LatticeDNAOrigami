@@ -200,9 +200,6 @@ namespace movetypes {
         m_avail_cis_q.resize(m_regrow_ds.size());
         m_c_opens.resize(m_regrow_ds.size());
         prepare_for_growth();
-        // DEBUG
-//        vector<bool> found_old_c(false, m_regrow_ds.size());
-//        found_old_c[0] = true;
 
         // Stop growing when all domains done or max num recoils reached
         int recoils {0}; // Current number of recoil steps that have been taken
@@ -213,22 +210,6 @@ namespace movetypes {
             while (not c_open and m_c_attempts != m_d_max_c_attempts) {
                 m_c_attempts++;
                 c = select_trial_config();
-                //cout << m_c_attempts << " " << m_avail_cis.size() << "\n";
-                //DEBUG
- //               pair<int, int> key {m_d->m_c, m_d->m_d};
-  //              if (c.first == m_prev_pos[key] and c.second == m_prev_ore[key]) {
-   //                 found_old_c[m_di] = true;
-    //                bool found_old_cs {true};
-     //               for (unsigned int i {1}; i != m_di; i++) {
-      //                  if (not found_old_c[i]) {
-       //                     found_old_cs = false;
-        //                    break;
-         //               }
-          //          }
-           //         if (found_old_cs) {
-            //            cout << "Regrowing old\n";
-             //       }
-              //  }
                 m_c_opens[m_di] = c_open;
                 p_c_open = calc_p_config_open(c);
                 c_open = test_config_open(p_c_open); 
