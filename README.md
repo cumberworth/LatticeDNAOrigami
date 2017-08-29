@@ -16,8 +16,8 @@ Example scripts can be found in `scripts/simulation_examples/*.inp`. To see all 
 
  To run a simulation, enter
 
-latticeDNAOrigami -i [configuration file] > [log file]
+`latticeDNAOrigami -i [configuration file] > [log file]`
 
 To run a parallel simulation, enter
 
-mpirun -np [procs] latticeDNAOrigami -i [configuration file] > [log file]
+`mpirun -np [procs] latticeDNAOrigami -i [configuration file] > [log file]`
