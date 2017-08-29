@@ -1,27 +1,32 @@
 #!/bin/bash
 
+# Script to create input files for constant temperature runs from template
+
+# Note the variables being added to the array must be in quotes,
+# otherwise it will add nothing
+
 fields=()
 vars=()
 
 echo "System:"; read system
 #system=
 fields+=(SYSTEM)
-vars+=($system)
+vars+=("$system")
 
 echo "State (unbound or assembled):"; read state
 #state=
 fields+=(STATE)
-vars+=($state)
+vars+=("$state")
 
 echo "Variant:"; read variant
 #variant=
 fields+=(VARIANT)
-vars+=($variant)
+vars+=("$variant")
 
 echo "Run number:"; read run
 #run=
 fields+=(RUN)
-vars+=($run)
+vars+=("$run")
 
 echo "Reps:"; read reps
 #reps=
@@ -33,17 +38,17 @@ temps=($temps)
 echo "Queue:"; read queue
 #queue=
 fields+=(QUEUE)
-vars+=($queue)
+vars+=("$queue")
 
 echo "Walltime hours:"; read walltime
 #walltime=
 fields+=(WALLTIME)
-vars+=($walltime)
+vars+=("$walltime")
 
 echo "Output file directory:"; read outputfiledir
 #outputfiledir=/scratch/amc226
 fields+=(OUTPUTFILEDIR)
-vars+=($outputfiledir)
+vars+=("$outputfiledir")
 
 echo "Sceduler (pbs or slurm):"; read ; ched
 #sched=
@@ -51,52 +56,52 @@ echo "Sceduler (pbs or slurm):"; read ; ched
 echo "Staple concentration (mol/L):"; read staplem
 #staplem=1e-6
 fields+=(STAPLEM)
-vars+=($staplem)
+vars+=("$staplem")
 
 echo "Cation concentration (mol/L):"; read cationm
 #cationm=1
 fields+=(CATIONM)
-vars+=($cationm)
+vars+=("$cationm")
 
 echo "Maximum number of total staples:"; read maxstaples
 #maxstaples=
 fields+=(MAXSTAPLES)
-vars+=($maxstaples)
+vars+=("$maxstaples")
 
-echo "Maximum number of staples of given type:"; read maxstaplestype
-#maxstaplestype=
-fields+=(MAXSTAPLESTYPE)
-vars+=($maxstaplestype)
+echo "Maximum number of staples of given type:"; read maxtypestaples
+#maxtypestaples=
+fields+=(MAXTYPESTAPLES)
+vars+=("$maxtypestaples")
 
 echo "Domain level biases present?"; read domainbiases
 #domainbiases=
 fields+=(DOMAINBIASES)
-vars+=($domainbiases)
+vars+=("$domainbiases")
 
 echo "Order parameter file:"; read opfile
 #opfile=
 fields+=(OPFILE)
-vars+=($opfile)
+vars+=("$opfile")
 
 echo "Bias function file:"; read biasfile
 #biasfile=
 fields+=(BIASFILE)
-vars+=($biasfile)
+vars+=("$biasfile")
 
 echo "Movetype file:"; read movetypefile
 #movetypefile=
 fields+=(MOVETYPEFILE)
-vars+=($movetypefile)
+vars+=("$movetypefile")
 
 echo "Restart file:"; read restartfile
 #restartfile=
 fields+=(RESTARTFILE)
-vars+=($restartfile)
+vars+=("$restartfile")
 
 echo "Restart step:"; read restartstep
 #restartstep=
 fields+=(RESTARTSTEP)
-vars+=($restartstep)
+vars+=("$restartstep")
 
 echo "Default check/center/write/etc freq:"; read defaultint
 #defaultint=1000000
@@ -104,51 +109,54 @@ echo "Default check/center/write/etc freq:"; read defaultint
 echo "Centering freq:"; read centeringfreq
 #centeringfreq=$defaultint
 fields+=(CENTERINGFREQ)
-vars+=($centeringfreq)
+vars+=("$centeringfreq")
 
 echo "Constraint check freq:"; read concheckfreq
 #concheckfreq=$defaultint
 fields+=(CONCHECKFREQ)
-vars+=($concheckfreq)
+vars+=("$concheckfreq")
 
 echo "Steps:"; read steps
 #steps=
 fields+=(STEPS)
-vars+=($steps)
+vars+=("$steps")
 
 echo "Logging freq:"; read loggingfreq
 #loggingfreq=$defaultint
 fields+=(LOGGINGFREQ)
-vars+=($loggingfreq)
+vars+=("$loggingfreq")
 
 echo "Config write freq (all formats):"; read configsfreq
 #configsfreq=$defaultint
 fields+=(CONFIGSFREQ)
-vars+=($configsfreq)
+vars+=("$configsfreq")
 
 echo "Counts write freq:"; read countsfreq
 #countsfreq=$defaultint
 fields+=(COUNTSFREQ)
-vars+=($countsfreq)
+vars+=("$countsfreq")
 
 echo "Tags of order parameters to output"; read ops
 #ops=
 fields+=(OPS)
-vars+=($ops)
+vars+=("$ops")
 
-echo "Order parameter write freq:"; read opsfreq
+echo "Order parameter write freq:"; read opfreq
 #opsfreq=$defaultint
-fields+=(OPSFREQ)
-vars+=($opsfreq)
+fields+=(OPFREQ)
+vars+=("$opfreq")
 
-outputfilebase=%SYSTEM-%VARIANT_run-%RUN_rep-%REP-%TEMP
+numfields=${#fields[@]}
 fields+=(OUTPUTFILEBASE)
-vars+=($outputfilebase)
-
+fields+=(TEMP)
 for ((rep=0; $rep<$reps; rep += 1))
 do
-    for temp in {$temps[@]}
+    for temp in ${temps[@]}
     do
+        outputfilebase=${system}-${variant}_run-${run}_rep-${rep}-${temp}
+        vars[$numfields]=$outputfilebase
+        vars[$(numfields + 1)]=$temp
+
         sedcommand=""
         for i in ${!fields[@]}
         do

@@ -7,7 +7,7 @@ temp_for_staple_u=%TEMP
 staple_u_mult=1
 lattice_site_volume=4e-28
 max_total_staples=%MAXSTAPLES
-max_type_staples=%MAXSTAPLESTYPE
+max_type_staples=%MAXTYPESTAPLES
 domain_update_biases_present=%DOMAINBIASES
 order_parameter_file=%OPFILE
 bias_functions_file=%BIASFILE
@@ -28,7 +28,7 @@ constraint_check_freq=%CONCHECKFREQ
 ct_steps=%STEPS
 
 # Output options
-output_filebase=%OUTPUTDIRFILE/%OUTPUTFILEBASE
+output_filebase=%OUTPUTFILEDIR/%OUTPUTFILEBASE
 logging_freq=%LOGGINGFREQ
 configs_output_freq=%CONFIGSFREQ
 vtf_output_freq=%CONFIGSFREQ
