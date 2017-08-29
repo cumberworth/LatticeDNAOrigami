@@ -1,0 +1,40 @@
+# System input and parameters
+origami_input_filename=%SYSTEM_%STATE.json
+temp=%TEMP
+staple_M=%STAPLEM
+cation_M=%CATIONM
+temp_for_staple_u=%TEMP
+staple_u_mult=1
+lattice_site_volume=4e-28
+max_total_staples=%MAXSTAPLES
+max_type_staples=%MAXSTAPLESTYPE
+domain_update_biases_present=%DOMAINBIASES
+order_parameter_file=%OPFILE
+bias_functions_file=%BIASFILE
+bias_functions_mult=1
+energy_filebase=%SYSTEM
+simulation_type=constant_temp
+
+# General simulation parameters
+movetype_file=%MOVETYPEFILE
+num_walks_filename=num_walks.arch
+restart_traj_file=%RESTARTFILE
+restart_step=%RESTARTSTEP
+vmd_file_dir=
+centering_freq=%CENTERINGFREQ
+constraint_check_freq=%CONCHECKFREQ
+
+# Constant T options
+ct_steps=%STEPS
+
+# Output options
+output_filebase=%OUTPUTDIRFILE/%OUTPUTFILEBASE
+logging_freq=%LOGGINGFREQ
+configs_output_freq=%CONFIGSFREQ
+vtf_output_freq=%CONFIGSFREQ
+vcf_per_domain=false
+counts_output_freq=%COUNTSFREQ
+ops_to_output=%OPS
+order_params_output_freq=%OPFREQ
+vmd_pipe_freq=
+create_vmd_instance=false
