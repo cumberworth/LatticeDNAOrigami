@@ -6,6 +6,19 @@ namespace movetypes {
 
     using utility::Occupancy;
 
+	OrientationRotationMCMovetype::OrientationRotationMCMovetype(
+                OrigamiSystem& origami_system,
+                RandomGens& random_gens,
+                IdealRandomWalks& ideal_random_walks,
+                vector<OrigamiOutputFile*> config_files,
+                string label,
+                SystemOrderParams& ops,
+                SystemBiases& biases,
+                InputParameters& params) :
+        MCMovetype(origami_system, random_gens, ideal_random_walks,
+                config_files, label, ops, biases, params) {
+	}
+
     void OrientationRotationMCMovetype::write_log_summary(ostream*) {
     }
 

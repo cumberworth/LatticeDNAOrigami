@@ -122,6 +122,8 @@ namespace biasFunctions {
                     OrigamiSystem& origami,
                     SystemOrderParams& system_order_params,
                     InputParameters& params);
+            SystemBiases(const SystemBiases&) = delete;
+            SystemBiases& operator=(const SystemBiases&) = delete;
 
             double get_total_bias();
             double get_domain_update_bias();

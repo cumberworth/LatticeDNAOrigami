@@ -246,6 +246,32 @@ namespace movetypes {
         return m_general_tracker.accepts;
     }
 
+	IdentityMCMovetype::IdentityMCMovetype(
+                OrigamiSystem& origami_system,
+                RandomGens& random_gens,
+                IdealRandomWalks& ideal_random_walks,
+                vector<OrigamiOutputFile*> config_files,
+                string label,
+                SystemOrderParams& ops,
+                SystemBiases& biases,
+                InputParameters& params) :
+        MCMovetype(origami_system, random_gens, ideal_random_walks,
+                config_files, label, ops, biases, params) {
+	}
+
+	RegrowthMCMovetype::RegrowthMCMovetype(
+                OrigamiSystem& origami_system,
+                RandomGens& random_gens,
+                IdealRandomWalks& ideal_random_walks,
+                vector<OrigamiOutputFile*> config_files,
+                string label,
+                SystemOrderParams& ops,
+                SystemBiases& biases,
+                InputParameters& params) :
+        MCMovetype(origami_system, random_gens, ideal_random_walks,
+                config_files, label, ops, biases, params) {
+	}
+
     double RegrowthMCMovetype::set_growth_point(
             Domain& growth_domain_new,
             Domain& growth_domain_old) {
@@ -314,7 +340,6 @@ namespace movetypes {
         }
         return {growth_domain_new, growth_domain_old};
     }
-
 
     CTRegrowthMCMovetype::CTRegrowthMCMovetype(
                 OrigamiSystem& origami_system,

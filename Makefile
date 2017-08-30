@@ -50,6 +50,7 @@ include $(wildcard $(patsubst %,$(DEPDIR)/%.d,$(basename $(sources))))
 .PHONY: clean install
 clean:
 	rm $(BUILDDIR)/*.o
+	rm .d/*.d
 
 install:
 	cp $(TARGET) $(PREFIX)

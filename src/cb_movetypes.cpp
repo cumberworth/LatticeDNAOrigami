@@ -15,6 +15,21 @@ namespace movetypes {
     using utility::Occupancy;
     using utility::OrigamiMisuse;
 
+	CBMCMovetype::CBMCMovetype(
+                OrigamiSystem& origami_system,
+                RandomGens& random_gens,
+                IdealRandomWalks& ideal_random_walks,
+                vector<OrigamiOutputFile*> config_files,
+                string label,
+                SystemOrderParams& ops,
+                SystemBiases& biases,
+                InputParameters& params) :
+        MCMovetype(origami_system, random_gens, ideal_random_walks,
+                config_files, label, ops, biases, params),
+        RegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
+                config_files, label, ops, biases, params) {
+	}
+
     void CBMCMovetype::reset_internal() {
         MCMovetype::reset_internal();
         m_bias = 1;
@@ -233,6 +248,23 @@ namespace movetypes {
         m_biases.calc_move();
     }
 
+	CBStapleRegrowthMCMovetype::CBStapleRegrowthMCMovetype(
+                OrigamiSystem& origami_system,
+                RandomGens& random_gens,
+                IdealRandomWalks& ideal_random_walks,
+                vector<OrigamiOutputFile*> config_files,
+                string label,
+                SystemOrderParams& ops,
+                SystemBiases& biases,
+                InputParameters& params) :
+        MCMovetype(origami_system, random_gens, ideal_random_walks,
+                config_files, label, ops, biases, params),
+        RegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
+                config_files, label, ops, biases, params),
+        CBMCMovetype(origami_system, random_gens, ideal_random_walks,
+                config_files, label, ops, biases, params) {
+	}
+
     void CBStapleRegrowthMCMovetype::write_log_summary(ostream* log_stream) {
 
         // Insertion of each staple type
@@ -387,8 +419,10 @@ namespace movetypes {
             int num_excluded_staples):
             MCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
-            RegrowthMCMovetype(),
-            CBMCMovetype(),
+            RegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
+                    config_files, label, ops, biases, params),
+            CBMCMovetype(origami_system, random_gens, ideal_random_walks,
+                    config_files, label, ops, biases, params),
             CTRegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params, num_excluded_staples) {
     }
@@ -509,8 +543,10 @@ namespace movetypes {
             int num_excluded_staples):
             MCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
-            RegrowthMCMovetype(),
-            CBMCMovetype(),
+            RegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
+                    config_files, label, ops, biases, params),
+            CBMCMovetype(origami_system, random_gens, ideal_random_walks,
+                    config_files, label, ops, biases, params),
             CTRegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params, num_excluded_staples),
             CTCBRegrowthMCMovetype(origami_system, random_gens,
@@ -659,6 +695,10 @@ namespace movetypes {
             int max_disp,
             int max_turns):
             MCMovetype(origami_system, random_gens, ideal_random_walks,
+                    config_files, label, ops, biases, params),
+            RegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
+                    config_files, label, ops, biases, params),
+            CBMCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
             CTRegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params, num_excluded_staples),
@@ -1156,6 +1196,10 @@ namespace movetypes {
             int max_disp,
             int max_turns):
             MCMovetype(origami_system, random_gens, ideal_random_walks,
+                    config_files, label, ops, biases, params),
+            RegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
+                    config_files, label, ops, biases, params),
+            CBMCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
             CTRegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params, num_excluded_staples),

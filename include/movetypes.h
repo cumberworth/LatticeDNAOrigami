@@ -69,6 +69,8 @@ namespace movetypes {
                     SystemOrderParams& ops,
                     SystemBiases& biases,
                     InputParameters& params);
+            MCMovetype(const MCMovetype&) = delete;
+            MCMovetype& operator=(const MCMovetype&) = delete;
             virtual ~MCMovetype() {};
 
             /** Attempt move and return result */
@@ -173,7 +175,17 @@ namespace movetypes {
     /** For debugging purposes */
     class IdentityMCMovetype: public MCMovetype {
         public:
-            using MCMovetype::MCMovetype;
+            IdentityMCMovetype(
+                    OrigamiSystem& origami_system,
+                    RandomGens& random_gens,
+                    IdealRandomWalks& ideal_random_walks,
+                    vector<OrigamiOutputFile*> config_files,
+                    string label,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params);
+            IdentityMCMovetype(const IdentityMCMovetype&) = delete;
+            IdentityMCMovetype& operator=(const IdentityMCMovetype&) = delete;
             bool attempt_move(long long int) {return true;};
     };
 
@@ -184,7 +196,17 @@ namespace movetypes {
         virtual public MCMovetype {
 
         public:
-            using MCMovetype::MCMovetype;
+            RegrowthMCMovetype(
+                    OrigamiSystem& origami_system,
+                    RandomGens& random_gens,
+                    IdealRandomWalks& ideal_random_walks,
+                    vector<OrigamiOutputFile*> config_files,
+                    string label,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params);
+            RegrowthMCMovetype(const RegrowthMCMovetype&) = delete;
+            RegrowthMCMovetype& operator=(const RegrowthMCMovetype&) = delete;
             RegrowthMCMovetype() {};
 
         protected:
@@ -212,6 +234,9 @@ namespace movetypes {
                     SystemBiases& biases,
                     InputParameters& params,
                     int num_excluded_staples);
+            CTRegrowthMCMovetype(const CTRegrowthMCMovetype&) = delete;
+            CTRegrowthMCMovetype& operator=(const CTRegrowthMCMovetype&) = delete;
+
         protected:
             void reset_internal() override;
 

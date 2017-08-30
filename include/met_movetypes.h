@@ -30,7 +30,17 @@ namespace movetypes {
         virtual public RegrowthMCMovetype {
 
         public:
-            using RegrowthMCMovetype::RegrowthMCMovetype;
+            MetMCMovetype(
+                    OrigamiSystem& origami_system,
+                    RandomGens& random_gens,
+                    IdealRandomWalks& ideal_random_walks,
+                    vector<OrigamiOutputFile*> config_files,
+                    string label,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params);
+            MetMCMovetype(const MetMCMovetype&) = delete;
+            MetMCMovetype& operator=(const MetMCMovetype&) = delete;
             void reset_internal() override;
 
         protected:
@@ -56,6 +66,10 @@ namespace movetypes {
                     SystemBiases& biases,
                     InputParameters& params,
                     double exchange_mult);
+            MetStapleExchangeMCMovetype(const
+                    MetStapleExchangeMCMovetype&) = delete;
+            MetStapleExchangeMCMovetype& operator=(const
+                    MetStapleExchangeMCMovetype&) = delete;
 
             void reset_internal() override;
             void write_log_summary(ostream* log_stream) override;
@@ -85,7 +99,19 @@ namespace movetypes {
         public MetMCMovetype {
 
         public:
-            using MetMCMovetype::MetMCMovetype;
+            MetStapleRegrowthMCMovetype(
+                    OrigamiSystem& origami_system,
+                    RandomGens& random_gens,
+                    IdealRandomWalks& ideal_random_walks,
+                    vector<OrigamiOutputFile*> config_files,
+                    string label,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params);
+            MetStapleRegrowthMCMovetype(const
+                    MetStapleRegrowthMCMovetype&) = delete;
+            MetStapleRegrowthMCMovetype& operator=(const
+                    MetStapleRegrowthMCMovetype&) = delete;
 
             void write_log_summary(ostream* log_stream) override;
 

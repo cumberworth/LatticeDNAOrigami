@@ -58,7 +58,17 @@ namespace movetypes {
         virtual public RegrowthMCMovetype {
 
         public:
-            using RegrowthMCMovetype::RegrowthMCMovetype;
+            CBMCMovetype(
+                    OrigamiSystem& origami_system,
+                    RandomGens& random_gens,
+                    IdealRandomWalks& ideal_random_walks,
+                    vector<OrigamiOutputFile*> config_files,
+                    string label,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params);
+            CBMCMovetype(const CBMCMovetype&) = delete;
+            CBMCMovetype& operator=(const CBMCMovetype&) = delete;
 
             virtual void reset_internal() override;
 
@@ -150,7 +160,19 @@ namespace movetypes {
         public CBMCMovetype {
 
         public:
-            using CBMCMovetype::CBMCMovetype;
+            CBStapleRegrowthMCMovetype(
+                    OrigamiSystem& origami_system,
+                    RandomGens& random_gens,
+                    IdealRandomWalks& ideal_random_walks,
+                    vector<OrigamiOutputFile*> config_files,
+                    string label,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params);
+            CBStapleRegrowthMCMovetype(const
+                    CBStapleRegrowthMCMovetype&) = delete;
+            CBStapleRegrowthMCMovetype& operator=(const
+                    CBStapleRegrowthMCMovetype&) = delete;
 
             void write_log_summary(ostream* log_entry) override;
 
@@ -182,7 +204,6 @@ namespace movetypes {
       */
     class CTCBRegrowthMCMovetype:
         virtual public CBMCMovetype,
-        virtual public RegrowthMCMovetype,
         virtual public CTRegrowthMCMovetype {
 
         public:
@@ -196,6 +217,10 @@ namespace movetypes {
                     SystemBiases& biases,
                     InputParameters& params,
                     int num_excluded_staples);
+            CTCBRegrowthMCMovetype(const
+                    CTCBRegrowthMCMovetype&) = delete;
+            CTCBRegrowthMCMovetype& operator=(const
+                    CTCBRegrowthMCMovetype&) = delete;
 
             void reset_internal() override;
 
@@ -233,6 +258,10 @@ namespace movetypes {
                     SystemBiases& biases,
                     InputParameters& params,
                     int num_excluded_staples);
+            CTCBScaffoldRegrowthMCMovetype(const
+                    CTCBScaffoldRegrowthMCMovetype&) = delete;
+            CTCBScaffoldRegrowthMCMovetype& operator=(const
+                    CTCBScaffoldRegrowthMCMovetype&) = delete;
 
             void write_log_summary(ostream* log_entry) override;
 
@@ -263,6 +292,10 @@ namespace movetypes {
                     int num_excluded_staples,
                     int max_disp,
                     int max_turns);
+            CTCBLinkerRegrowthMCMovetype(const
+                    CTCBLinkerRegrowthMCMovetype&) = delete;
+            CTCBLinkerRegrowthMCMovetype& operator=(const
+                    CTCBLinkerRegrowthMCMovetype&) = delete;
 
             void write_log_summary(ostream* log_entry) override;
             void reset_internal() override;
@@ -356,6 +389,10 @@ namespace movetypes {
                     int num_excluded_staples,
                     int max_disp,
                     int max_turns);
+            ClusteredCTCBLinkerRegrowth(const
+                    ClusteredCTCBLinkerRegrowth&) = delete;
+            ClusteredCTCBLinkerRegrowth& operator=(const
+                    ClusteredCTCBLinkerRegrowth&) = delete;
 
         private:
             pair<int, int> select_internal_endpoints(

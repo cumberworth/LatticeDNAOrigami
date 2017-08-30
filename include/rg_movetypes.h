@@ -33,6 +33,8 @@ namespace movetypes {
                     int num_excluded_staples,
                     int max_num_recoils,
                     int max_c_attempts);
+            CTScaffoldRG(const CTScaffoldRG&) = delete;
+            CTScaffoldRG& operator=(const CTScaffoldRG&) = delete;
 
             void write_log_summary(ostream* log_entry) override;
             void reset_internal() override;

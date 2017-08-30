@@ -11,7 +11,19 @@ namespace movetypes {
         public MCMovetype {
 
         public:
-            using MCMovetype::MCMovetype;
+            OrientationRotationMCMovetype(
+                    OrigamiSystem& origami_system,
+                    RandomGens& random_gens,
+                    IdealRandomWalks& ideal_random_walks,
+                    vector<OrigamiOutputFile*> config_files,
+                    string label,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params);
+            OrientationRotationMCMovetype(const
+                    OrientationRotationMCMovetype&) = delete;
+            OrientationRotationMCMovetype& operator=(const
+                    OrientationRotationMCMovetype&) = delete;
 
             void write_log_summary(ostream* log_stream) override final;
 

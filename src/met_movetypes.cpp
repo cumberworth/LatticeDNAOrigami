@@ -12,6 +12,21 @@ namespace movetypes {
     using std::pair;
     using std::set;
 
+	MetMCMovetype::MetMCMovetype(
+                OrigamiSystem& origami_system,
+                RandomGens& random_gens,
+                IdealRandomWalks& ideal_random_walks,
+                vector<OrigamiOutputFile*> config_files,
+                string label,
+                SystemOrderParams& ops,
+                SystemBiases& biases,
+                InputParameters& params) :
+        MCMovetype(origami_system, random_gens, ideal_random_walks,
+                config_files, label, ops, biases, params),
+        RegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
+                config_files, label, ops, biases, params) {
+	}
+
     void MetMCMovetype::reset_internal() {
         MCMovetype::reset_internal();
         m_delta_e = 0;
@@ -65,6 +80,8 @@ namespace movetypes {
             InputParameters& params,
             double exchange_mult):
             MCMovetype(origami_system, random_gens, ideal_random_walks,
+                    config_files, label, ops, biases, params),
+            RegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
             MetMCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
@@ -240,6 +257,23 @@ namespace movetypes {
         }
 
         return accepted;
+    }
+
+    MetStapleRegrowthMCMovetype::MetStapleRegrowthMCMovetype(
+            OrigamiSystem& origami_system,
+            RandomGens& random_gens,
+            IdealRandomWalks& ideal_random_walks,
+            vector<OrigamiOutputFile*> config_files,
+            string label,
+            SystemOrderParams& ops,
+            SystemBiases& biases,
+            InputParameters& params):
+            MCMovetype(origami_system, random_gens, ideal_random_walks,
+                    config_files, label, ops, biases, params),
+            RegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
+                    config_files, label, ops, biases, params),
+            MetMCMovetype(origami_system, random_gens, ideal_random_walks,
+                    config_files, label, ops, biases, params) {
     }
 
     void MetStapleRegrowthMCMovetype::write_log_summary(ostream* log_stream) {

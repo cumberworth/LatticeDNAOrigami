@@ -116,6 +116,8 @@ namespace orderParams {
     class SystemOrderParams {
         public:
             SystemOrderParams(InputParameters& params, OrigamiSystem& origami);
+            SystemOrderParams(const SystemOrderParams&) = delete;
+            SystemOrderParams& operator=(const SystemOrderParams&) = delete;
 
             OrderParam& get_order_param(string tag);
             vector<pair<int, int>> get_dependent_domains(string tag);
