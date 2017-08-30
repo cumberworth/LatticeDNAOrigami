@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script to create input files for constant temperature runs from template
+# Script to create input files for enumeration runs from template
 
 # Note the variables being added to the array must be in quotes,
 # otherwise it will add nothing
@@ -31,14 +31,6 @@ echo "Variant:"; read variant
 #variant=
 fields+=(VARIANT)
 vars+=("$variant")
-
-echo "Run number:"; read run
-#run=
-fields+=(RUN)
-vars+=("$run")
-
-echo "Reps:"; read reps
-#reps=
 
 echo "Temps (seperate with spaces:"; read temps
 #temps
@@ -107,86 +99,25 @@ else
     vars+=("$inpdir/$biasfile")
 fi
 
-echo "Movetype file:"; read movetypefile
-#movetypefile=
-fields+=(MOVETYPEFILE)
-vars+=("$inpdir/$movetypefile")
-
-echo "Restart file:"; read restartfile
-#restartfile=
-fields+=(RESTARTFILE)
-if [ -z $restartfile ]
-then
-    vars+=("")
-else
-    vars+=("$inpdir/$restartfile")
-fi
-
-echo "Restart step:"; read restartstep
-#restartstep=
-fields+=(RESTARTSTEP)
-vars+=("$restartstep")
-
-echo "Default check/center/write/etc freq:"; read defaultint
-#defaultint=1000000
-
-echo "Centering freq:"; read centeringfreq
-#centeringfreq=$defaultint
-fields+=(CENTERINGFREQ)
-vars+=("$centeringfreq")
-
-echo "Constraint check freq:"; read concheckfreq
-#concheckfreq=$defaultint
-fields+=(CONCHECKFREQ)
-vars+=("$concheckfreq")
-
-echo "Steps:"; read steps
-#steps=
-fields+=(STEPS)
-vars+=("$steps")
-
-echo "Logging freq:"; read loggingfreq
-#loggingfreq=$defaultint
-fields+=(LOGGINGFREQ)
-vars+=("$loggingfreq")
-
-echo "Config write freq (all formats):"; read configsfreq
-#configsfreq=$defaultint
-fields+=(CONFIGSFREQ)
-vars+=("$configsfreq")
-
-echo "Counts write freq:"; read countsfreq
-#countsfreq=$defaultint
-fields+=(COUNTSFREQ)
-vars+=("$countsfreq")
-
 echo "Tags of order parameters to output"; read ops
 #ops=
 fields+=(OPS)
 vars+=("$ops")
 
-echo "Order parameter write freq:"; read opfreq
-#opsfreq=$defaultint
-fields+=(OPFREQ)
-vars+=("$opfreq")
-
 numfields=${#fields[@]}
 fields+=(OUTPUTFILEBASE)
 fields+=(TEMP)
-for ((rep=0; $rep<$reps; rep += 1))
+for temp in ${temps[@]}
 do
-    for temp in ${temps[@]}
-    do
-        outputfilebase=${system}-${variant}_run-${run}_rep-${rep}-${temp}
-        vars[$numfields]=$outputfilebase
-        vars[$numfields + 1]=$temp
+    outputfilebase=${system}-${variant}_temp-${temp}
+    vars[$numfields]=$outputfilebase
+    vars[$(numfields + 1)]=$temp
 
-        sedcommand=""
-        for i in ${!fields[@]}
-        do
-            sedcommand+="s:%${fields[i]}:${vars[i]}:g;"
-        done
-        sed "$sedcommand" serial_template_${sched}.sh > $inpdir/$outputfilebase.sh
-        sed "$sedcommand" constantT_template.inp > $inpdir/$outputfilebase.inp
+    sedcommand=""
+    for i in ${!fields[@]}
+    do
+        sedcommand+="s:%${fields[i]}:${vars[i]}:g;"
     done
+    sed "$sedcommand" serial_template_${sched}.sh > $inpdir/$outputfilebase.sh
+    sed "$sedcommand" enumerate_template.inp > $inpdir/$outputfilebase.inp
 done

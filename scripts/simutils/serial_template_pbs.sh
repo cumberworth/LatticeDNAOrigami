@@ -11,10 +11,9 @@
 #PBS -l walltime=%WALLTIME:00:00
 
 # Standard error and out files
-#PBS -o %OUTPUTFILEBASE.o
-#PBS -e %OUTPUTFILEBASE.e
+#PBS -o outs/%OUTPUTFILEBASE.o
+#PBS -e outs/%OUTPUTFILEBASE.e
 
-# Environment setup
 cd ${PBS_O_WORKDIR}
 module unload gcc
 module load gcc/6.2.0
@@ -32,7 +31,9 @@ export PATH=~/bin/$PATH
 latticeDNAOrigami -i %INPDIR/%OUTPUTFILEBASE.inp > %OUTPUTFILEDIR/%OUTPUTFILEBASE.out
 
 # Copy results to slowscratch mirror
-cp %OUTPUTFILEDIR/%OUTPUTFILEBASE.* /sharedscratch/amc226/projects/origami/calculations/17-03-29_us-validation
+targetdir=$(pwd | sed "s:home:sharedscratch:")/outs/
+mkdir -p $targetdir
+cp %OUTPUTFILEDIR/%OUTPUTFILEBASE.* $targetdir/
 
 echo
 echo "Job finished. PBS details are:"

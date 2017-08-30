@@ -1,0 +1,22 @@
+# System input and parameters
+origami_input_filename=%SYSFILE
+temp=%TEMP
+staple_M=%STAPLEM
+cation_M=%CATIONM
+temp_for_staple_u=%TEMP
+staple_u_mult=1
+lattice_site_volume=4e-28
+max_total_staples=%MAXSTAPLES
+max_type_staples=%MAXTYPESTAPLES
+domain_update_biases_present=%DOMAINBIASES
+order_parameter_file=%OPFILE
+bias_functions_file=%BIASFILE
+bias_functions_mult=1
+energy_filebase=%INPDIR/%SYSTEM
+simulation_type=enumerate
+
+# Enumeration parameters
+enumerate_staples_only=false
+
+# Output options
+output_filebase=%OUTPUTFILEDIR/%OUTPUTFILEBASE
