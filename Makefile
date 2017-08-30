@@ -21,8 +21,8 @@ CPPFLAGS = -std=c++14 -Iinclude $(OPTLEVEL)
 LDFLAGS = -lboost_program_options -lboost_mpi -lboost_serialization -lboost_system -lboost_filesystem $(OPTLEVEL)
 
 # For compiling on clusters with local Boost installation
-#CPPFLAGS = -I/home/amc226/include -Iinclude -lboost_system -lboost_filesystem $(OPTLEVEL)
-#LDFLAGS = -L/home/amc226/lib -lboost_program_options -lboost_mpi -lboost_serialization $(OPTLEVEL)
+#CPPFLAGS = -I/home/amc226/include -Iinclude (OPTLEVEL)
+#LDFLAGS = -L/home/amc226/lib -lboost_program_options -lboost_mpi -lboost_serialization -lboost_system -lboost_filesystem $(OPTLEVEL)
 
 DEPDIR = .d
 $(shell mkdir -p $(DEPDIR) >/dev/null)
