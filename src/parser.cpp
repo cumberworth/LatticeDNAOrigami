@@ -306,7 +306,9 @@ namespace parser {
         }
         if (vm.count("ops_to_output")) {
             string ops_to_output_s {vm["ops_to_output"].as<string>()};
-            m_ops_to_output = string_to_string_vector(ops_to_output_s);
+            if (ops_to_output_s != "") {
+                m_ops_to_output = string_to_string_vector(ops_to_output_s);
+            }
         }
     }
 }

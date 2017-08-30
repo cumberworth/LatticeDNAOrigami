@@ -1206,7 +1206,6 @@ namespace movetypes {
             CTCBLinkerRegrowthMCMovetype(origami_system, random_gens,
                     ideal_random_walks, config_files, label, ops, biases,
                     params, num_excluded_staples, max_disp, max_turns) {
-
     }
 
     pair<int, int> ClusteredCTCBLinkerRegrowth::select_internal_endpoints(
