@@ -207,7 +207,6 @@ namespace movetypes {
                     InputParameters& params);
             RegrowthMCMovetype(const RegrowthMCMovetype&) = delete;
             RegrowthMCMovetype& operator=(const RegrowthMCMovetype&) = delete;
-            RegrowthMCMovetype() {};
 
         protected:
             virtual void grow_chain(vector<Domain*> domains) = 0;
