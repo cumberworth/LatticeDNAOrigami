@@ -1,5 +1,5 @@
 # System input and parameters
-origami_input_filename=%SYSTEM_%STATE.json
+origami_input_filename=%SYSFILE
 temp=%TEMP
 staple_M=%STAPLEM
 cation_M=%CATIONM
@@ -12,15 +12,15 @@ domain_update_biases_present=%DOMAINBIASES
 order_parameter_file=%OPFILE
 bias_functions_file=%BIASFILE
 bias_functions_mult=1
-energy_filebase=%SYSTEM
+energy_filebase=%INPDIR/%SYSTEM
 simulation_type=constant_temp
 
 # General simulation parameters
 movetype_file=%MOVETYPEFILE
-num_walks_filename=num_walks.arch
+num_walks_filename=%INPDIR/num_walks.arch
 restart_traj_file=%RESTARTFILE
 restart_step=%RESTARTSTEP
-vmd_file_dir=
+#vmd_file_dir=
 centering_freq=%CENTERINGFREQ
 constraint_check_freq=%CONCHECKFREQ
 
@@ -36,5 +36,5 @@ vcf_per_domain=false
 counts_output_freq=%COUNTSFREQ
 ops_to_output=%OPS
 order_params_output_freq=%OPFREQ
-vmd_pipe_freq=
+#vmd_pipe_freq=
 create_vmd_instance=false

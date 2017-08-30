@@ -1,0 +1,47 @@
+{
+    "origami": {
+        "movetypes": [
+            {
+                "label": "Orientation rotation",
+                "type": "OrientationRotation",
+                "freq": "1/8"
+            }, {
+                "label": "Met staple exchange",
+                "type": "MetStapleExchange",
+                "freq": "1/8",
+                "exchange_mult": 1000
+            }, {
+                "label": "Met staple regrowth",
+                "type": "MetStapleExchange",
+                "freq": "1/8"
+            }, {
+                "label": "CB staple regrowth",
+                "type": "CBStapleRegrowth",
+                "freq": "1/8"
+            }, {
+                "label": "CTCB scaffold regrowth",
+                "type": "CTCBScaffoldRegrowth",
+                "freq": "1/8",
+                "num_excluded_staples": 0
+            }, {
+                "label": "CTCB scaffold transform",
+                "type": "CTCBLinkerRegrowth",
+                "freq": "1/8",
+                "max_disp": 1,
+                "max_turns": 3
+            }, {
+                "label": "CTCB scaffold clustered transform",
+                "type": "ClusteredCTCBLinkerRegrowth",
+                "freq": "1/8",
+                "max_disp": 1,
+                "max_turns": 3
+            }, {
+                "label": "RG",
+                "type": "RGScaffoldRegrowth",
+                "freq": "1/8",
+                "max_num_recoils": 3,
+                "max_c_attempts":36 
+           }
+        ]
+    }
+}

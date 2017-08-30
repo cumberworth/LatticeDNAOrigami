@@ -8,6 +8,11 @@
 fields=()
 vars=()
 
+echo "Input directory:"; read inpdir
+#inpdir=
+fields+=(INPDIR)
+vars+=("$inpdir")
+
 echo "System:"; read system
 #system=
 fields+=(SYSTEM)
@@ -22,6 +27,10 @@ echo "Variant:"; read variant
 #variant=
 fields+=(VARIANT)
 vars+=("$variant")
+
+sysfile=$inpdir/${system}_${state}.json
+fields+=(SYSFILE)
+vars+=("$sysfile")
 
 echo "Run number:"; read run
 #run=
@@ -81,22 +90,37 @@ vars+=("$domainbiases")
 echo "Order parameter file:"; read opfile
 #opfile=
 fields+=(OPFILE)
-vars+=("$opfile")
+if [ -z $opfile ]
+then
+    vars+=("")
+else
+    vars+=("$inpdir/$opfile")
+fi
 
 echo "Bias function file:"; read biasfile
 #biasfile=
 fields+=(BIASFILE)
-vars+=("$biasfile")
+if [ -z $biasfile ]
+then
+    vars+=("")
+else
+    vars+=("$inpdir/$biasfile")
+fi
 
 echo "Movetype file:"; read movetypefile
 #movetypefile=
 fields+=(MOVETYPEFILE)
-vars+=("$movetypefile")
+vars+=("$inpdir/$movetypefile")
 
 echo "Restart file:"; read restartfile
 #restartfile=
 fields+=(RESTARTFILE)
-vars+=("$restartfile")
+if [ -z $restartfile ]
+then
+    vars+=("")
+else
+    vars+=("$inpdir/$restartfile")
+fi
 
 echo "Restart step:"; read restartstep
 #restartstep=
@@ -162,7 +186,7 @@ do
         do
             sedcommand+="s:%${fields[i]}:${vars[i]}:g;"
         done
-        sed "$sedcommand" constantT_template_${sched}.sh > $outputfilebase.sh
-        sed "$sedcommand" constantT_template.inp > $outputfilebase.inp
+        sed "$sedcommand" constantT_template_${sched}.sh > $inpdir/$outputfilebase.sh
+        sed "$sedcommand" constantT_template.inp > $inpdir/$outputfilebase.inp
     done
 done

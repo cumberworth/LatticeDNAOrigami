@@ -29,7 +29,7 @@ export LD_LIBRARY_PATH=~/lib:$LD_LIBRARY_PATH
 export PATH=~/bin/$PATH
 
 # Main job
-latticeDNAOrigami -i %OUTPUTFILEBASE.inp > %OUTPUTFILEDIR/%OUTPUTFILEBASE.out
+latticeDNAOrigami -i %INPDIR/%OUTPUTFILEBASE.inp > %OUTPUTFILEDIR/%OUTPUTFILEBASE.out
 
 # Copy results to slowscratch mirror
 cp %OUTPUTFILEDIR/%OUTPUTFILEBASE.* /sharedscratch/amc226/projects/origami/calculations/17-03-29_us-validation
