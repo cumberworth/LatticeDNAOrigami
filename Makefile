@@ -20,8 +20,8 @@ CPP = mpicxx
 CPPFLAGS = -std=c++14 -Iinclude $(OPTLEVEL)
 LDFLAGS = -lboost_program_options -lboost_mpi -lboost_serialization -lboost_system -lboost_filesystem $(OPTLEVEL)
 
-# For compiling on Dexter (using local Boost installation (I think that's why this is needed))
-#CPPFLAGS = -I/home/amc226/include -Iinclude $(OPTLEVEL)
+# For compiling on clusters with local Boost installation
+#CPPFLAGS = -I/home/amc226/include -Iinclude -lboost_system -lboost_filesystem $(OPTLEVEL)
 #LDFLAGS = -L/home/amc226/lib -lboost_program_options -lboost_mpi -lboost_serialization $(OPTLEVEL)
 
 DEPDIR = .d
@@ -53,4 +53,4 @@ clean:
 	rm .d/*.d
 
 install:
-	cp $(TARGET) $(PREFIX)
+	cp $(TARGETDIR)/$(TARGET) $(PREFIX)
