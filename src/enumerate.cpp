@@ -23,10 +23,12 @@ namespace enumerator {
         // Enumerate configurations
         ConformationalEnumerator* conf_enumerator;
         if (params.m_enumerate_staples_only) {
-            conf_enumerator = new StapleConformationalEnumerator {origami, ops, biases};
+            conf_enumerator = new StapleConformationalEnumerator {origami, ops,
+               biases, params.m_ops_to_output};
         }
         else {
-            conf_enumerator = new ConformationalEnumerator {origami, ops, biases};
+            conf_enumerator = new ConformationalEnumerator {origami, ops,
+                biases, params.m_ops_to_output};
         }
         GrowthpointEnumerator* growthpoint_enumerator;
         if (params.m_no_misbinding) {
@@ -372,10 +374,16 @@ namespace enumerator {
     ConformationalEnumerator::ConformationalEnumerator(
             OrigamiSystem& origami_system,
             SystemOrderParams& ops,
-            SystemBiases& biases) :
+            SystemBiases& biases,
+            vector<string> optags) :
             m_origami_system {origami_system},
             m_ops {ops},
-            m_biases {biases} {
+            m_biases {biases},
+            m_optags {optags} {
+
+        for (auto tag: optags) {
+            m_ops_to_output.emplace_back(m_ops.get_order_param(tag));
+        }
 
         // Unassign all domains
         vector<vector<Domain*>> all_chains {m_origami_system.get_chains()};
@@ -554,7 +562,10 @@ namespace enumerator {
 
     void ConformationalEnumerator::print_weights(string filename) {
         ofstream output {filename};
-        output << "staples domain dist\n";
+        for (auto tag: m_optags) {
+            output << tag << " ";
+        }
+        output << "\n";
         for (auto ele: m_normalized_weights) {
             output << "(" << ele.first[0];
             for (size_t i {1}; i != ele.first.size(); i++) {
@@ -915,6 +926,8 @@ namespace enumerator {
         m_num_configs += m_multiplier;
 
         // Calculate bias contribution
+        m_ops.update_move_params();
+        m_biases.calc_move();
         double conf_d_bias {m_biases.get_domain_update_bias()};
         double conf_m_bias {m_biases.get_move_update_bias()};
         double conf_bias {conf_d_bias + conf_m_bias};
@@ -924,9 +937,10 @@ namespace enumerator {
         m_partition_f += weight;
 
         // Add entry
-        int staples {m_origami_system.num_staples()};
-        int domains {m_origami_system.num_fully_bound_domain_pairs()};
-        vector<int> key = {staples, domains};
+        vector<int> key = {};
+        for (auto op: m_ops_to_output) {
+            key.push_back(op.get().get_param());
+        }
         if (m_state_weights.find(key) != m_state_weights.end()) {
             m_state_weights[key] += weight;
         }

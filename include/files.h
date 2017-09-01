@@ -42,6 +42,8 @@ namespace files {
             bool is_cyclic();
 
         private:
+            void read_file(string filename);
+
             vector<vector<int>> m_identities;
             vector<vector<string>> m_sequences;
             vector<Chain> m_chains;
@@ -56,6 +58,7 @@ namespace files {
             vector<Chain> read_config(int step);
 
         private:
+            vector<Chain> internal_read_config(int step);
             string m_filename;
             ifstream m_file;
 
@@ -74,6 +77,8 @@ namespace files {
             int get_int_option(int movetype_i, string key);
 
         private:
+            void read_file(string filename);
+
             string m_filename;
             Json::Value m_jsonmovetypes {};
 
@@ -109,6 +114,10 @@ namespace files {
     class OrigamiOrderParamsFile: public OrigamiLeveledInput {
         public:
             OrigamiOrderParamsFile(string filename);
+
+        private:
+            void read_file(string filename);
+
     };
 
     class OrigamiBiasFunctionsFile: public OrigamiLeveledInput {
@@ -121,6 +130,8 @@ namespace files {
             vector<vector<vector<string>>> get_d_biases_by_level();
 
         private:
+            void read_file(string filename);
+
             vector<vector<vector<string>>> m_level_to_ops {};
             vector<vector<vector<string>>> m_level_to_d_biases {};
     };

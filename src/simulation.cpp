@@ -82,7 +82,7 @@ namespace simulation {
         }
         if (params.m_order_params_output_freq != 0) {
             OrigamiOutputFile* order_params_out = new OrigamiOrderParamsOutputFile {
-                    output_filebase + ".order_params",
+                    output_filebase + ".ops",
                     params.m_order_params_output_freq, params.m_max_total_staples,
                     origami, ops, params.m_ops_to_output};
             outs.push_back(order_params_out);

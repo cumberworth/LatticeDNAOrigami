@@ -3,6 +3,7 @@
 #ifndef ENUMERATOR_H
 #define ENUMERATOR_H
 
+#include <memory>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -17,6 +18,7 @@
   
 namespace enumerator {
 
+    using std::reference_wrapper;
     using std::pair;
     using std::string;
     using std::vector;
@@ -25,6 +27,7 @@ namespace enumerator {
     using biasFunctions::SystemBiases;
     using domainContainer::Domain;
     using orderParams::SystemOrderParams;
+    using orderParams::OrderParam;
     using origami::OrigamiSystem;
     using parser::InputParameters;
     using utility::VectorThree;
@@ -42,7 +45,8 @@ namespace enumerator {
             ConformationalEnumerator(
                     OrigamiSystem& origami_system,
                     SystemOrderParams& ops,
-                    SystemBiases& biases);
+                    SystemBiases& biases,
+                    vector<string> optags);
             virtual ~ConformationalEnumerator() {};
             virtual void enumerate();
             void add_staple(int staple);
@@ -85,6 +89,10 @@ namespace enumerator {
             OrigamiSystem& m_origami_system;
             SystemOrderParams& m_ops;
             SystemBiases& m_biases;
+
+            // Order parameters to record and output
+            vector<string> m_optags;
+            vector<reference_wrapper<OrderParam>> m_ops_to_output;
   
             // Identity to unique indices
             unordered_map<int, vector<int>> m_identity_to_indices {};
@@ -111,7 +119,9 @@ namespace enumerator {
             unordered_map<int, int> m_identities_to_num_unassigned {};
     };
   
-    class StapleConformationalEnumerator: public ConformationalEnumerator  {
+    class StapleConformationalEnumerator:
+            public ConformationalEnumerator  {
+
         public:
             using ConformationalEnumerator::ConformationalEnumerator;
             void enumerate();
@@ -218,11 +228,6 @@ namespace enumerator {
                     int cur_num_staples_i);
 
     };
-
-  
-    ConformationalEnumerator enumerate_two_domain_scaffold(OrigamiSystem& origami);
-    ConformationalEnumerator enumerate_four_domain_scaffold(OrigamiSystem& origami);
-
 }
 
 #endif // ENUMERATOR_H

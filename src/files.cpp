@@ -19,6 +19,16 @@ namespace files {
     using utility::VectorThree;
 
     OrigamiInputFile::OrigamiInputFile(string filename) {
+        try {
+            read_file(filename);
+        }
+        catch (Json::RuntimeError) {
+            cout << "Problem reading origami system file\n";
+            throw;
+        }
+    }
+
+    void OrigamiInputFile::read_file(string filename) {
         ifstream jsonraw {filename, ifstream::binary};
         Json::Value jsonroot;
         jsonraw >> jsonroot;
@@ -91,8 +101,18 @@ namespace files {
             m_filename {filename} {
         m_file.open(m_filename);
     }
-
+    
     vector<Chain> OrigamiTrajInputFile::read_config(int step) {
+        try {
+            return internal_read_config(step);
+        }
+        catch (Json::RuntimeError) {
+            cout << "Problem reading trajectory file config\n";
+            throw;
+        }
+    }
+
+    vector<Chain> OrigamiTrajInputFile::internal_read_config(int step) {
         vector<Chain> step_chains {};
         go_to_step(step);
         while (true) {
@@ -174,6 +194,16 @@ namespace files {
     OrigamiMovetypeFile::OrigamiMovetypeFile(string filename):
             m_filename {filename} {
 
+        try {
+            read_file(filename);
+        }
+        catch (Json::RuntimeError) {
+            cout << "Problem reading movetype file\n";
+            throw;
+        }
+    }
+
+    void OrigamiMovetypeFile::read_file(string filename) {
         ifstream jsonraw {filename, ifstream::binary};
         Json::Value jsonroot;
         jsonraw >> jsonroot;
@@ -258,7 +288,16 @@ namespace files {
 
     OrigamiOrderParamsFile::OrigamiOrderParamsFile(string filename) {
         m_filename  = filename;
+        try {
+            read_file(filename);
+        }
+        catch (Json::RuntimeError) {
+            cout << "Problem reading order parameter file\n";
+            throw;
+        }
+    }
 
+    void OrigamiOrderParamsFile::read_file(string filename) {
         ifstream jsonraw {filename, ifstream::binary};
         Json::Value jsonroot;
         jsonraw >> jsonroot;
@@ -299,7 +338,16 @@ namespace files {
 
     OrigamiBiasFunctionsFile::OrigamiBiasFunctionsFile(string filename) {
         m_filename  = filename;
+        try {
+            read_file(filename);
+        }
+        catch (Json::RuntimeError) {
+            cout << "Problem reading bias function file\n";
+            throw;
+        }
+    }
 
+    void OrigamiBiasFunctionsFile::read_file(string filename) {
         ifstream jsonraw {filename, ifstream::binary};
         Json::Value jsonroot;
         jsonraw >> jsonroot;
@@ -518,7 +566,7 @@ namespace files {
 
         for (auto op_tag: op_tags) {
             OrderParam& op {m_ops.get_order_param(op_tag)};
-            m_file << op.get_label() << ", ";
+            m_file << op_tag << ", ";
             m_ops_to_output.emplace_back(op);
         }
         m_file << "\n";
