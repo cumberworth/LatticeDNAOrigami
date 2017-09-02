@@ -10,7 +10,7 @@ Core dependencies:
 
 Running simulations:
 
-Example scripts can be found in `scripts/simulation_examples/*.inp`. To see all configuration options, run
+Templates for running simulations and scripts for creating instances of input files can be found in `scripts/simutils/`. To see all configuration options, run
 
 `latticeDNAOrigami -h`
 
@@ -21,3 +21,22 @@ Example scripts can be found in `scripts/simulation_examples/*.inp`. To see all 
 To run a parallel simulation, enter
 
 `mpirun -np [procs] latticeDNAOrigami -i [configuration file] > [log file]`
+
+A python package for analyzing the results of simulations (origamipy) is also provided. Example scripts using the package are located in
+
+`scripts/analysis/`
+
+Analysis dependencies:
+* python3
+* python-numpy
+* python-scipy
+* python-matplotlib
+* python-pymbar (for analysis of umbrella sampling simulations)
+
+Configurations can be visualized in two ways. For vector based graphics, latex scripts using pgf/tikz library are provided in
+
+`scripts/tikz/`
+
+Alternatively, VMD may be used with the scripts provided in
+
+`scripts/vmd/`
