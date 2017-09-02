@@ -1,0 +1,34 @@
+{
+    "origami": {
+        "order_params": [
+            {
+                "label": "Scaffold distance (x - y)",
+                "tag": "sd1",
+                "type": "Dist",
+                "level": 0,
+                "chain1": 0,
+                "domain1": 4,
+                "chain2": 0,
+                "domain2": 7,
+                "update_per_domain": false
+            }, {
+                "label": "Scaffold distance sum (all)",
+                "tag": "sds",
+                "type": "Sum",
+                "level": 1,
+                "ops": ["sd1"]
+            }, {
+                "label": "Number of bound staples",
+                "tag": "numstaples",
+                "type": "NumStaples",
+                "level": 0
+            }, {
+                "label": "Number of fully bound domain pairs",
+                "tag": "numdomains",
+                "type": "NumBoundDomainPairs",
+                "level": 0
+            }
+        ]
+    }
+}
+

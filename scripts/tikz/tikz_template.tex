@@ -1,0 +1,77 @@
+\documentclass[border=10pt,tikz=true]{standalone}
+
+\usepackage{tikz}
+\usepackage{tikz-3dplot}
+\usepackage{xcolor}
+
+% Set colours
+
+
+\newcommand{\drawAxes}{
+
+    % Draw axes
+    \newcommand{\axesSize}{10}
+    \foreach \coor in {(-\axesSize, 0, 0),
+        (\axesSize, 0, 0),
+        (0, -\axesSize, 0),
+        (0, \axesSize, 0),
+        (0, 0, -\axesSize),
+        (0, 0, \axesSize)
+    }{
+        \draw[gray,thin,->,>=stealth] (0, 0, 0) -- \coor;
+    }
+}
+
+\newcommand{\drawGrid}{
+
+    % Draw grid
+    \newcommand{\gridSize}{1}
+    \foreach \i in {-\gridSize, 0, ..., \gridSize}{
+        \foreach \j in {-\gridSize, 0, ..., \gridSize}{
+            \draw (\i, -\gridSize, \j) -- (\i, \gridSize, \j);
+            \draw (-\gridSize, \i, \j) -- (\gridSize, \i, \j);
+            \draw (\i, \j, -\gridSize) -- (\i, \j, \gridSize);
+        }
+    }
+}
+
+\newcommand{\drawDomain}[3]{
+
+    % Draw a domain.
+    %
+    % 1 -- x coordinate
+    % 2 -- y coordinate
+    % 3 -- z coordinate
+    \tdplottransformmainscreen{#1}{#2}{#3}
+    \fill[tdplot_screen_coords, opacity=0.8] (\tdplotresx, \tdplotresy) circle (0.2);
+}
+
+\begin{document}
+
+% Set viewing angle
+\tdplotsetmaincoords{40}{110}
+
+\begin{tikzpicture}[tdplot_main_coords, scale=1.5,
+    %
+    % Styles
+    domainVector/.style={red, line width=1, ->, >=stealth},
+    fivePrimeVector/.style={blue, line width=1, ->, >=stealth}]
+
+    \drawAxes
+
+    \foreach \rix / \riy / \riz / \aix / \aiy / \aiz / \bix / \biy / \biz in {$tikz_list}{
+
+    % Next domain vector
+    \draw[domainVector] (\rix, \riy, \riz) -- (\rix + \aix, \riy + \aiy, \riz + \aiz);
+
+    % Five prime vector
+    \draw[fivePrimeVector] (\rix, \riy, \riz) -- (\rix + \bix, \riy + \biy, \riz + \biz);
+
+    % Domain position
+    \drawDomain{\rix}{\riy}{\riz}
+
+    }
+
+\end{tikzpicture}
+
+\end{document}

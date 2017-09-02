@@ -20,3 +20,4 @@ enumerate_staples_only=false
 
 # Output options
 output_filebase=%OUTPUTFILEDIR/%OUTPUTFILEBASE
+ops_to_output=%OPS
