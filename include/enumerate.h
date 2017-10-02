@@ -123,7 +123,11 @@ namespace enumerator {
             public ConformationalEnumerator  {
 
         public:
-            using ConformationalEnumerator::ConformationalEnumerator;
+            StapleConformationalEnumerator(
+                    OrigamiSystem& origami_system,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    vector<string> optags);
             void enumerate();
 
         private:
@@ -208,14 +212,19 @@ namespace enumerator {
             StapleEnumerator(
                     GrowthpointEnumerator& m_growthpoint_enumerator,
                     ConformationalEnumerator& conformational_enumerator,
-                    OrigamiSystem& origami_system);
-            void enumerate(int max_total_staples, int max_type_staples);
+                    OrigamiSystem& origami_system,
+                    vector<int> excluded_staples);
+            void enumerate(
+                    int min_total_staples,
+                    int max_total_staples,
+                    int max_type_staples);
 
         private:
             GrowthpointEnumerator& m_growthpoint_enumerator;
             ConformationalEnumerator& m_conf_enumerator;
             OrigamiSystem& m_origami_system;
 
+            vector<int> m_excluded_staples;
             int m_num_staple_types;
 
             int m_num_staple_combos {0};

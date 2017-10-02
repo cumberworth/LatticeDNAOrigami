@@ -58,12 +58,18 @@ namespace parser {
             ("no_misbinding",
                 po::value<bool>(&m_no_misbinding)->default_value(false),
                 "Turn off misbinding")
+            ("min_total_staples",
+                po::value<int>(&m_min_total_staples)->default_value(0),
+                "Min number of total staples")
             ("max_total_staples",
                 po::value<int>(&m_max_total_staples)->default_value(999),
                 "Max number of total staples")
             ("max_type_staples",
                 po::value<int>(&m_max_type_staples)->default_value(999),
                 "Max number of staples of a given type")
+            ("excluded_staples",
+                po::value<string>(),
+                "Staple types to exclude")
             ("domain_update_biases_present",
                 po::value<bool>(&m_domain_update_biases_present)->default_value(false),
                 "Max number of staples of a given type")
@@ -288,6 +294,10 @@ namespace parser {
     }
 
     void InputParameters::process_custom_types(po::variables_map vm) {
+        if (vm.count("excluded_staples")) {
+            string excluded_staples_s {vm["excluded_staples"].as<string>()};
+            m_excluded_staples = string_to_int_vector(excluded_staples_s);
+        }
         if (vm.count("restart_traj_files")) {
             string file_s = vm["restart_traj_files"].as<string>();
             m_restart_traj_files = string_to_string_vector(file_s);
