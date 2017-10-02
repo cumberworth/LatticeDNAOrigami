@@ -933,7 +933,7 @@ namespace movetypes {
             vector<Domain*> domains) {
 
         pair<int, int> internal_endpoints {select_endpoints(
-                domains.size(), 1, 0)};
+                domains.size(), 1, 1)};
 
         return internal_endpoints;
     }

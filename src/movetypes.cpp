@@ -384,7 +384,7 @@ namespace movetypes {
     vector<Domain*> CTRegrowthMCMovetype::select_indices(
             vector<Domain*> segment, int seg) {
 
-        pair<int, int> endpoints {select_endpoints(segment.size(), 0, 1)};
+        pair<int, int> endpoints {select_endpoints(segment.size(), 0, 2)};
         Domain* start_domain {segment[endpoints.first]};
         Domain* end_domain {segment[endpoints.second]};
         vector<Domain*> domains {};
@@ -458,7 +458,7 @@ namespace movetypes {
 
         int start_i {m_random_gens.uniform_int(m, array_size - 1 - m)};
         int end_i {m_random_gens.uniform_int(m, array_size - 1 - m)};
-        while (std::abs(start_i - end_i) < min_size) {
+        while (std::abs(start_i - end_i) + 1 < min_size) {
             end_i = m_random_gens.uniform_int(m, array_size - 1 - m);
         }
 
