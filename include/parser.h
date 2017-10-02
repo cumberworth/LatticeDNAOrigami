@@ -31,8 +31,10 @@ namespace parser {
             double m_staple_u_mult;
             double m_lattice_site_volume; // L
             bool m_no_misbinding;
+            int m_min_total_staples;
             int m_max_total_staples;
             int m_max_type_staples;
+            vector<int> m_excluded_staples {};
             bool m_domain_update_biases_present;
             string m_ops_filename;
             string m_bias_funcs_filename;
