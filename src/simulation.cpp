@@ -1,12 +1,12 @@
 // simulation.cpp
 
-#include <random>
-#include <iostream>
-#include <set>
 #include <algorithm>
-#include <numeric>
 #include <cmath>
+#include <chrono>
 #include <iostream>
+#include <numeric>
+#include <random>
+#include <set>
 #include <sstream>
 #include <utility>
 
@@ -33,6 +33,7 @@ namespace simulation {
     using std::pair;
     using std::pow;
     using std::setw;
+    using std::chrono::steady_clock;
 
     namespace mpi = boost::mpi;
     namespace bp = boost::process;
@@ -126,6 +127,7 @@ namespace simulation {
         m_centering_domain = params.m_centering_domain;
         m_constraint_check_freq = params.m_constraint_check_freq;
         m_vmd_pipe_freq = params.m_vmd_pipe_freq;
+        m_max_duration = params.m_max_duration;
 
         if (m_vmd_pipe_freq != 0) {
             setup_vmd_pipe();
@@ -332,7 +334,9 @@ namespace simulation {
 
     void GCMCSimulation::simulate(long long int steps, long long int start_step) {
 
-        for (long long int step {start_step + 1}; step != (steps + start_step + 1); step ++) {
+        auto start = steady_clock::now();
+        for (long long int step {start_step + 1}; step != (steps + start_step +
+                    1); step ++) {
             
             // Pick movetype and apply
             MCMovetype& movetype {select_movetype()};
@@ -348,8 +352,17 @@ namespace simulation {
             if (m_centering_freq != 0 and step % m_centering_freq == 0) {
                 m_origami_system.center(m_centering_domain);
             }
-            if (m_constraint_check_freq != 0 and step % m_constraint_check_freq == 0) {
+            if (m_constraint_check_freq != 0 and step % m_constraint_check_freq
+                    == 0) {
                 m_origami_system.check_all_constraints();
+            }
+
+            // TODO make this work for simulations that call this multiple times
+            std::chrono::duration<double> dt {(steady_clock::now() -
+                    start)};
+            if (dt.count() > m_max_duration) {
+                cout << "Maximum time allowed reached\n";
+                break;
             }
 
             // Write log entry to standard out
@@ -367,7 +380,8 @@ namespace simulation {
 
             // Write system properties to file
             for (auto output_file: m_output_files) {
-                if (output_file->m_write_freq != 0 and step % output_file->m_write_freq == 0) {
+                if (output_file->m_write_freq != 0 and step %
+                        output_file->m_write_freq == 0) {
                     output_file->write(step);
                 }
             }

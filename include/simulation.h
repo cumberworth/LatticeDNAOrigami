@@ -3,13 +3,13 @@
 #ifndef SIMULATION_H
 #define SIMULATION_H
 
-#include <vector>
+#include <iostream>
 #include <memory>
 #include <map>
-#include <iostream>
-#include <utility>
 #include <set>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include <boost/process.hpp>
 
@@ -138,6 +138,7 @@ namespace simulation {
             int m_centering_domain;
             int m_constraint_check_freq;
             int m_vmd_pipe_freq;
+            double m_max_duration;
             InputParameters& m_params;
             vector <OrigamiOutputFile*> m_output_files {};
             vector <OrigamiOutputFile*> m_config_per_move_files {};

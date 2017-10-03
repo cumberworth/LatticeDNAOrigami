@@ -145,6 +145,9 @@ namespace parser {
             ("ct_steps",
                 po::value<long long int>(&m_ct_steps)->default_value(0),
                 "Number of MC steps")
+            ("max_duration",
+                po::value<double>(&m_max_duration)->default_value(10e9),
+                "Maximum duration of simulation (s)")
         ;
         displayed_options.add(cons_t_options);
 

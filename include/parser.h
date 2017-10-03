@@ -59,6 +59,7 @@ namespace parser {
 
             // Constant temperature parameters
             long long int m_ct_steps;
+            double m_max_duration;
 
             // Enumerator parameters
             bool m_enumerate_staples_only;
