@@ -65,6 +65,14 @@ namespace std {
         }
     };
 
+    template<> struct hash<utility::ScaffoldRGRegrowthTracking> {
+        inline size_t operator()(const utility::ScaffoldRGRegrowthTracking& x) const {
+            size_t seed = 0;
+            hash_combine(seed, x.num_scaffold_domains);
+            return seed;
+        }
+    };
+
     template<> struct hash<utility::CTCBScaffoldRegrowthTracking> {
         inline size_t operator()(const utility::CTCBScaffoldRegrowthTracking& x) const {
             size_t seed = 0;

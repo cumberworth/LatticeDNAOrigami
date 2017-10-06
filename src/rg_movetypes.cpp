@@ -1,9 +1,12 @@
 // rg_movetypes.cpp
 
-#include <rg_movetypes.h>
+#include <map>
+
+#include "rg_movetypes.h"
 
 namespace movetypes {
 
+    using std::map;
     using utility::all_pairs;
     using utility::pair_to_index;
     using utility::Occupancy;
@@ -34,7 +37,38 @@ namespace movetypes {
         std::iota(m_all_cis.begin(), m_all_cis.end(), 0);
     }
 
-    void CTScaffoldRG::write_log_summary(ostream*) {
+    void CTScaffoldRG::write_log_summary(ostream* log_stream) {
+        // Insertion of each staple type
+        map<int, int> length_attempts {};
+        map<int, int> length_accepts {};
+        map<int, int> staple_attempts {};
+        map<int, int> staple_accepts {};
+        set<int> lengths {};
+        set<int> staples {};
+        for (auto tracker: m_tracking) {
+            auto info = tracker.first;
+            auto counts = tracker.second;
+            int length {info.num_scaffold_domains};
+            lengths.insert(length);
+            if (lengths.find(length) == lengths.end()) {
+                length_attempts[length] = counts.attempts;
+                length_accepts[length] = counts.accepts;
+            }
+            else {
+                length_attempts[length] += counts.attempts;
+                length_accepts[length] += counts.accepts;
+            }
+        }
+        for (auto l: lengths) {
+            *log_stream << "    Number of scaffold domains: " << l << "\n";
+            int ats {length_attempts[l]};
+            int acs {length_accepts[l]};
+            double freq {static_cast<double>(acs) / ats};
+            *log_stream << "        Attempts: " << ats << "\n";
+            *log_stream << "        Accepts: " << acs << "\n";
+            *log_stream << "        Frequency: " << freq << "\n";
+        }
+        *log_stream << "\n";
     }
 
     void CTScaffoldRG::reset_internal() {
@@ -67,11 +101,11 @@ namespace movetypes {
 
         // Select scaffold indices and excluded staples
         m_sel_scaf_doms = select_indices(m_scaffold);
+        m_tracker.num_scaffold_domains = m_sel_scaf_doms.size();
         sel_excluded_staples();
 
         setup_constraints();
         m_regrow_ds = m_constraintpoints.domains_to_be_regrown();
-        //m_tracker.num_staples = staples.size();
 
         // Recoil regrow
         unassign_and_save_domains();
@@ -110,7 +144,8 @@ namespace movetypes {
         return accepted;
     }
 
-    void CTScaffoldRG::add_tracker(bool) {
+    void CTScaffoldRG::add_tracker(bool accepted) {
+        movetypes::add_tracker(m_tracker, m_tracking, accepted);
     }
 
     void CTScaffoldRG::unassign_and_save_domains() {

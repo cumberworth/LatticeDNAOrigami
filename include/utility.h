@@ -106,6 +106,14 @@ namespace utility {
             const CTCBScaffoldRegrowthTracking& t1,
             const CTCBScaffoldRegrowthTracking& t2);
 
+    struct ScaffoldRGRegrowthTracking {
+        int num_scaffold_domains;
+    };
+
+    bool operator==(
+            const ScaffoldRGRegrowthTracking& t1,
+            const ScaffoldRGRegrowthTracking& t2);
+
     struct CTCBLinkerRegrowthTracking {
         bool central_domains_connected;
         int num_linker_domains;

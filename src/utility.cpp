@@ -193,6 +193,13 @@ namespace utility {
     }
 
     bool operator==(
+            const ScaffoldRGRegrowthTracking& t1,
+            const ScaffoldRGRegrowthTracking& t2) {
+
+        return t1.num_scaffold_domains == t2.num_scaffold_domains;
+    }
+
+    bool operator==(
             const CTCBLinkerRegrowthTracking& t1,
             const CTCBLinkerRegrowthTracking& t2) {
 

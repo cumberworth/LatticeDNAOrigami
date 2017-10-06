@@ -11,6 +11,7 @@ namespace movetypes {
 
     using std::deque;
     using std::list;
+    using utility::ScaffoldRGRegrowthTracking;
 
     typedef pair<VectorThree, VectorThree> configT;
 
@@ -64,6 +65,9 @@ namespace movetypes {
             bool test_config_avail();
             void calc_old_c_opens();
             bool test_rg_acceptance();
+
+            ScaffoldRGRegrowthTracking m_tracker {};
+            unordered_map<ScaffoldRGRegrowthTracking, MovetypeTracking> m_tracking {};
 
             const vector<configT> m_all_configs;
             const unordered_map<configT, int> m_config_to_i;
