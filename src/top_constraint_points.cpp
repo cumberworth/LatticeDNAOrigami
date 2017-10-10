@@ -238,7 +238,10 @@ namespace topConstraintPoints {
         m_staple_network.set_excluded_staples(excluded_staples);
         int seg {0};
         for (auto scaffold_domains: scaffold_segments) {
-            find_growthpoints_endpoints(scaffold_domains, excluded_staples, seg);
+            if (scaffold_domains.size() != 0) {
+                find_growthpoints_endpoints(scaffold_domains, excluded_staples,
+                        seg);
+            }
             seg++;
         }
 

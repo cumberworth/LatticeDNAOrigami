@@ -197,7 +197,8 @@ namespace simulation {
                         movetypes_file, movetype);
             }
             else if (type == "CTCBLinkerRegrowth" or
-                    type == "ClusteredCTCBLinkerRegrowth") {
+                    type == "ClusteredCTCBLinkerRegrowth" or
+                    type == "Clustered2CTCBLinkerRegrowth") {
                 movetype = setup_scaffold_transform_movetype(i, type, label,
                         movetypes_file, movetype);
             }
@@ -304,6 +305,12 @@ namespace simulation {
         }
         else if (type == "ClusteredCTCBLinkerRegrowth") {
             movetype = new movetypes::ClusteredCTCBLinkerRegrowth {
+                    m_origami_system, m_random_gens, m_ideal_random_walks,
+                    m_config_per_move_files, label, m_ops, m_biases, m_params,
+                    excluded_staples, max_disp, max_turns};
+        }
+        else if (type == "Clustered2CTCBLinkerRegrowth") {
+            movetype = new movetypes::Clustered2CTCBLinkerRegrowth {
                     m_origami_system, m_random_gens, m_ideal_random_walks,
                     m_config_per_move_files, label, m_ops, m_biases, m_params,
                     excluded_staples, max_disp, max_turns};

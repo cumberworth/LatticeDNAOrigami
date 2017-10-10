@@ -15,7 +15,7 @@ namespace movetypes {
     using utility::Occupancy;
     using utility::OrigamiMisuse;
 
-	CBMCMovetype::CBMCMovetype(
+    CBMCMovetype::CBMCMovetype(
                 OrigamiSystem& origami_system,
                 RandomGens& random_gens,
                 IdealRandomWalks& ideal_random_walks,
@@ -434,6 +434,9 @@ namespace movetypes {
     }
 
     void CTCBRegrowthMCMovetype::grow_chain(vector<Domain*> domains) {
+        if (domains.size() <= 1) {
+            return;
+        }
         m_dir = domains[1]->m_d - domains[0]->m_d;
         for (size_t i {1}; i != domains.size(); i++) {
             select_and_set_config(i, domains);
@@ -923,7 +926,7 @@ namespace movetypes {
             }
         }
 
-        // Growing from external to central, order needs to reflect this
+        // Growing from central to external, order needs to reflect this
         std::reverse(linker1.begin(), linker1.end());
 
         return setup_fixed_end_biases(linker1, linker2, scaffold_domains);
@@ -1211,21 +1214,29 @@ namespace movetypes {
     pair<int, int> ClusteredCTCBLinkerRegrowth::select_internal_endpoints(
             vector<Domain*> domains) {
 
+        // Find a bound domain in the segment and set central cluster to be all
+        // contiguous bound domains
         int kernel {m_random_gens.uniform_int(1, domains.size() - 2)};
         int num_domains {static_cast<int>(domains.size())};
         bool segment_started {false};
-        int start_di {1};
-        int end_di {static_cast<int>(domains.size()) - 2};
+        // HACK SHOULD BE 1
+        int start_di {0};
+        // WARNING THIS IS A HACK THAT BREAKS THIS FOR CLUSTERED2
+        // SHOULD BE domains.size() - 2 FOR CLUSTERED
+        int end_di {static_cast<int>(domains.size()) - 1};
         if (domains[kernel]->m_state == Occupancy::bound) {
             segment_started = true;
-            for (int i {kernel - 1}; i != 0; i--) {
+            // HACK SHOULD BE i != 0
+            for (int i {kernel - 1}; i > 0; i--) {
                 if (domains[i]->m_state != Occupancy::bound) {
                     start_di = i + 1;
                     break;
                 }
             }
         }
-        for (int i {kernel + 1}; i != num_domains - 1; i++) {
+        // WARNING THIS IS A HACK THAT BREAKS THIS FOR CLUSTERED2
+        // SHOULD BE num_domains - 1 FOR CLUSTERED
+        for (int i {kernel + 1}; i != num_domains; i++) {
             if (domains[i]->m_state == Occupancy::bound and not segment_started) {
                 segment_started = true;
                 start_di = i;
@@ -1235,6 +1246,8 @@ namespace movetypes {
                 break;
             }
         }
+
+        // No bound segment to use so do random segment selection
         pair<int, int> endpoints {start_di, end_di};
         if (not segment_started) {
             endpoints = CTCBLinkerRegrowthMCMovetype::select_internal_endpoints(
@@ -1243,4 +1256,89 @@ namespace movetypes {
 
         return endpoints;
     }
+
+    Clustered2CTCBLinkerRegrowth::Clustered2CTCBLinkerRegrowth(
+            OrigamiSystem& origami_system,
+            RandomGens& random_gens,
+            IdealRandomWalks& ideal_random_walks,
+            vector<OrigamiOutputFile*> config_files,
+            string label,
+            SystemOrderParams& ops,
+            SystemBiases& biases,
+            InputParameters& params,
+            int num_excluded_staples,
+            int max_disp,
+            int max_turns):
+            MCMovetype(origami_system, random_gens, ideal_random_walks,
+                    config_files, label, ops, biases, params),
+            RegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
+                    config_files, label, ops, biases, params),
+            CBMCMovetype(origami_system, random_gens, ideal_random_walks,
+                    config_files, label, ops, biases, params),
+            CTRegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
+                    config_files, label, ops, biases, params, num_excluded_staples),
+            ClusteredCTCBLinkerRegrowth(origami_system, random_gens,
+                    ideal_random_walks, config_files, label, ops, biases,
+                    params, num_excluded_staples, max_disp, max_turns) {
+    }
+
+    set<int> Clustered2CTCBLinkerRegrowth::select_and_setup_segments(
+            vector<Domain*>& linker1,
+            vector<Domain*>& linker2,
+            vector<Domain*>& central_segment) {
+
+        // Select a domain on the scaffold that is bound and then make central
+        // region be all contiguously bound segments
+        auto internal_endpoints = select_internal_endpoints(m_scaffold);
+
+        int start_di {internal_endpoints.first};
+        int end_di {internal_endpoints.second};
+        if (end_di < start_di) {
+            std::swap(start_di, end_di);
+        }
+        
+        // Get linker domains
+        int i {start_di - 1};
+        linker1.push_back(m_scaffold[start_di]);
+        int mod_start {start_di};
+        while (i >= 0) {
+            auto d = m_scaffold[i];
+            if (d->m_state != Occupancy::bound) {
+                linker1.push_back(d);
+                mod_start = i;
+            }
+            else {
+                break;
+            }
+            i--;
+        }
+        auto j = static_cast<size_t>(end_di + 1);
+        linker2.push_back(m_scaffold[end_di]);
+        int mod_end {end_di};
+        while (j < m_scaffold.size()) {
+            auto d = m_scaffold[j];
+            if (d->m_state != Occupancy::bound) {
+                linker2.push_back(d);
+                mod_end = j;
+            }
+            else {
+                break;
+            }
+            j++;
+        }
+
+        i = start_di;
+        while (i <= end_di) {
+            central_segment.push_back(m_scaffold[i]);
+            i++;
+        }
+
+        vector<Domain*> modified_segment {};
+        for (int i {mod_start}; i <= mod_end; i++) {
+            modified_segment.push_back(m_scaffold[i]);
+        }
+
+        return setup_fixed_end_biases(linker1, linker2, modified_segment);
+    }
+
 }

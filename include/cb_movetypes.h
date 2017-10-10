@@ -313,7 +313,7 @@ namespace movetypes {
               * Returns staples to be regrown. Also sets up the constraints for
               * the fixed end biases.
               */
-            set<int> select_and_setup_segments(
+            virtual set<int> select_and_setup_segments(
                     vector<Domain*>& linker1,
                     vector<Domain*>& linker2,
                     vector<Domain*>& central_segment);
@@ -394,9 +394,43 @@ namespace movetypes {
             ClusteredCTCBLinkerRegrowth& operator=(const
                     ClusteredCTCBLinkerRegrowth&) = delete;
 
-        private:
+        protected:
             pair<int, int> select_internal_endpoints(
                     vector<Domain*> domains) override;
+    };
+
+    /**
+      * Transformation of a segment and regrowth of its linkers
+      *
+      * Constrasts with parent in selection of segment to be transformed. Will
+      * select domains that are contiguously bound out from the seed domain.
+      */
+    class Clustered2CTCBLinkerRegrowth:
+        public ClusteredCTCBLinkerRegrowth {
+
+        public:
+            Clustered2CTCBLinkerRegrowth(
+                    OrigamiSystem& origami_system,
+                    RandomGens& random_gens,
+                    IdealRandomWalks& ideal_random_walks,
+                    vector<OrigamiOutputFile*> config_files,
+                    string label,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params,
+                    int num_excluded_staples,
+                    int max_disp,
+                    int max_turns);
+            Clustered2CTCBLinkerRegrowth(const
+                    ClusteredCTCBLinkerRegrowth&) = delete;
+            Clustered2CTCBLinkerRegrowth& operator=(const
+                    ClusteredCTCBLinkerRegrowth&) = delete;
+
+        private:
+            set<int> select_and_setup_segments(
+                    vector<Domain*>& linker1,
+                    vector<Domain*>& linker2,
+                    vector<Domain*>& central_segment) override;
     };
 }
 
