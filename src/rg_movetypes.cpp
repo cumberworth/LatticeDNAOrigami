@@ -437,9 +437,15 @@ namespace movetypes {
                             m_constraintpoints.get_erased_endpoints();
                         m_erased_endpoints_q.push_back(erased_endpoints);
                         write_config();
+                        auto dir = m_dir;
+                        auto ref_d = m_ref_d;
+                        auto prev_gp = m_prev_gp;
                         auto avail_cis = m_avail_cis;
                         avail_cs += test_config_avail();
                         m_avail_cis = avail_cis;
+                        m_prev_gp = prev_gp;
+                        m_ref_d = ref_d;
+                        m_dir = dir;
                         m_origami_system.unassign_domain(*m_d);
                         restore_endpoints();
                     }

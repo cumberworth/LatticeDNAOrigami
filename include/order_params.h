@@ -68,6 +68,26 @@ namespace orderParams {
             Domain& m_domain_2;
     };
 
+    class AdjacentSiteOrderParam: public OrderParam {
+        // If given domain pair occupies adjacent lattice sites
+        public:
+            AdjacentSiteOrderParam(
+                    Domain& domain_1,
+                    Domain& domain_2,
+                    string label);
+
+            int calc_param() override final;
+            int check_param(
+                    Domain& domain,
+                    VectorThree new_pos,
+                    VectorThree,
+                    Occupancy) override final;
+
+        private:
+            Domain& m_domain_1;
+            Domain& m_domain_2;
+    };
+
     class SumOrderParam: public OrderParam {
         public:
             SumOrderParam(

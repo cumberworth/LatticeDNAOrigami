@@ -90,6 +90,7 @@ namespace origami {
             vector<vector<Domain*>> get_chains();
             vector<Domain*> get_last_chain();
             Domain* get_domain(int c_i, int d_i);
+            vector<int> get_staple_counts();
             int num_staples() const;
             int num_unique_staples() const;
             int num_domains();

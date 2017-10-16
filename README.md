@@ -2,13 +2,13 @@ Simulation package for lattice models of the self-assembly of DNA origami. The m
 
 The core simulation package is implemented with C++14.
 
-Core dependencies:
+## Core dependencies:
 
 * boost
 * JsonCpp
 * openmpi (other backends may be used by the boost mpi wrapper)
 
-Running simulations:
+## Running simulations:
 
 Templates for running simulations and scripts for creating instances of input files can be found in `scripts/simutils/`. To see all configuration options, run
 
@@ -21,6 +21,8 @@ Templates for running simulations and scripts for creating instances of input fi
 To run a parallel simulation, enter
 
 `mpirun -np [procs] latticeDNAOrigami -i [configuration file] > [log file]`
+
+## Analysis
 
 A python package for analyzing the results of simulations (origamipy) is also provided. Example scripts using the package are located in
 

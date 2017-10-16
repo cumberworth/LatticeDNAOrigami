@@ -148,6 +148,16 @@ namespace origami {
         return get_chain(c_i)[d_i];
     }
 
+    vector<int> OrigamiSystem::get_staple_counts() {
+        vector<int> staple_counts(m_identities.size() - 1, 0);
+        for (size_t c_i {1}; c_i != m_domains.size(); c_i++) {
+            int c_ident {m_domains[c_i][0]->m_c_ident};
+            staple_counts[c_ident - 1]++;
+        }
+
+        return staple_counts;
+    }
+
     int OrigamiSystem::num_unique_staples() const {
         int unique_staple_count {0};
         for (auto indices: m_identity_to_index) {

@@ -129,6 +129,10 @@ namespace simulation {
         m_vmd_pipe_freq = params.m_vmd_pipe_freq;
         m_max_duration = params.m_max_duration;
 
+        if (m_params.m_random_seed != -1) {
+            m_random_gens.set_seed(m_params.m_random_seed);
+        }
+
         if (m_vmd_pipe_freq != 0) {
             setup_vmd_pipe();
         }
@@ -418,6 +422,11 @@ namespace simulation {
         *m_logging_stream << "Bound staples: " << m_origami_system.num_staples() << "\n";
         *m_logging_stream << "Unique bound staples: " << m_origami_system.num_unique_staples() << "\n";
         *m_logging_stream << "Fully bound domain pairs: " << m_origami_system.num_fully_bound_domain_pairs() << "\n";
+        *m_logging_stream << "Staple counts: ";
+        for (auto staple_count: m_origami_system.get_staple_counts()) {
+            *m_logging_stream << staple_count << " ";
+        }
+        *m_logging_stream << "\n";
         *m_logging_stream << "System energy: " << m_origami_system.energy() << "\n";
         *m_logging_stream << "Total external bias: " << m_biases.get_total_bias() << "\n";
         *m_logging_stream << "Domain update external bias: " << m_biases.get_domain_update_bias() << "\n";

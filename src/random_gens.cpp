@@ -23,6 +23,14 @@ namespace randomGen {
         }
     }
 
+    void RandomGens::set_seed(int seed) {
+        m_random_engine.seed(seed); 
+    }
+
+    double RandomGens::uniform_real() {
+        return m_uniform_real_dist(m_random_engine);
+    }
+
     int RandomGens::uniform_int(int lower, int upper) {
 
         // Check if distribution used previously

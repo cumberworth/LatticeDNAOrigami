@@ -101,6 +101,9 @@ namespace parser {
 
         po::options_description sim_options {"General simulation options"};
         sim_options.add_options()
+            ("random_seed",
+                po::value<int>(&m_random_seed)->default_value(-1),
+                "Seed for random number generator")
             ("movetype_file",
                 po::value<string>(&m_movetype_filename),
                 "Movetype specificiation file")
@@ -163,7 +166,7 @@ namespace parser {
                 po::value<double>(&m_temp_interval)->default_value(1),
                 "Temperature interval for annealing")
             ("steps_per_temp",
-                po::value<int>(&m_steps_per_temp)->default_value(0),
+                po::value<long long int>(&m_steps_per_temp)->default_value(0),
                 "Steps per temperature in annealing")
         ;
         displayed_options.add(annealing_options);

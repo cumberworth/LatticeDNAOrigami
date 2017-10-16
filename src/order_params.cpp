@@ -77,6 +77,66 @@ namespace orderParams {
         return m_checked_param;
     }
 
+    AdjacentSiteOrderParam::AdjacentSiteOrderParam(
+            Domain& domain_1,
+            Domain& domain_2,
+            string label) :
+            m_domain_1 {domain_1},
+            m_domain_2 {domain_2} {
+
+        m_label = label;
+        calc_param();
+    }
+
+    int AdjacentSiteOrderParam::calc_param() {
+        if (m_domain_1.m_state != Occupancy::unassigned and
+                m_domain_2.m_state != Occupancy::unassigned) {
+
+            m_defined = true;
+            VectorThree diff_vec {m_domain_2.m_pos - m_domain_1.m_pos};
+            auto dist = diff_vec.abssum();
+            if (dist == 1) {
+                m_param = 1;
+            }
+            else {
+                m_param = 0;
+            }
+            m_checked_param = m_param;
+        }
+        else {
+            m_defined = false;
+        }
+
+        return m_param;
+    }
+
+    int AdjacentSiteOrderParam::check_param(Domain& domain, VectorThree new_pos, VectorThree,
+            Occupancy state) {
+        Domain* unmodded_domain {&m_domain_1};
+        if (domain.m_d == m_domain_1.m_d) {
+            unmodded_domain = &m_domain_2;
+        }
+        if (unmodded_domain->m_state != Occupancy::unassigned and
+                state != Occupancy::unassigned) {
+            // Will be defined for configurations where that domain is unassigned
+            // Consider using a check defined variable instead
+            auto dist = (new_pos - unmodded_domain->m_pos).abssum();
+            if (dist == 1) {
+            m_checked_param = 1;
+            }
+            else {
+            m_checked_param = 0;
+            }
+            m_checked_param = 
+            m_defined = true;
+        }
+        else {
+            m_defined = false;
+        }
+
+        return m_checked_param;
+    }
+
     SumOrderParam::SumOrderParam(vector<reference_wrapper<OrderParam>> ops, string label) :
             m_ops {ops} {
         m_label = label;
@@ -225,7 +285,7 @@ namespace orderParams {
                 string tag {level_to_tags[i][j]};
                 string label {level_to_labels[i][j]};
                 m_tag_to_domains[tag] = {};
-                if (type == "Dist") {
+                if (type == "Dist" or type == "AdjacentSite") {
                     int c1i {ops_file.get_int_option(i, j, "chain1")};
                     int d1i {ops_file.get_int_option(i, j, "domain1")};
                     int c2i {ops_file.get_int_option(i, j, "chain2")};
@@ -234,7 +294,13 @@ namespace orderParams {
 					d_domains.insert({c2i, d2i});
                     Domain& d1 {*m_origami.get_domain(c1i, d1i)};
                     Domain& d2 {*m_origami.get_domain(c2i, d2i)};
-                    op = new DistOrderParam {d1, d2, label};
+                    if (type == "Dist") {
+                        op = new DistOrderParam {d1, d2, label};
+                    }
+                    else if (type == "AdjacentSite") {
+                        op = new AdjacentSiteOrderParam {d1, d2, label};
+                    }
+
                     update_per_domain = ops_file.get_bool_option(i, j,
                             "update_per_domain");
                 }

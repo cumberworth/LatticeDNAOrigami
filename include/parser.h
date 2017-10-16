@@ -43,6 +43,7 @@ namespace parser {
             string m_simulation_type;
 
             // General simulation parameters
+            int m_random_seed;
             string m_movetype_filename;
             string m_num_walks_filename;
             string m_restart_traj_file;
@@ -68,7 +69,7 @@ namespace parser {
             double m_max_temp;
             double m_min_temp;
             double m_temp_interval;
-            int m_steps_per_temp;
+            long long int m_steps_per_temp;
 
             // Parallel tempering simulation parameters
             vector<double> m_temps {};
