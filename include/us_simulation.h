@@ -145,6 +145,7 @@ namespace us {
             void parse_windows_file(string filename);
             void update_master_order_params(int n);
             void update_master_converged_sims(bool sim_converged, int n);
+            void copy_files_to_central_dir(int n);
             void update_starting_config(int n);
             void select_starting_configs(int n);
             void sort_configs_by_ops();
@@ -157,9 +158,8 @@ namespace us {
 
             InputParameters& m_params;
             long int m_max_num_iters;
-            long int m_equil_steps;
-            long int m_steps;
-            long int m_prod_steps;
+            string m_local_dir;
+            string m_central_dir;
 
             ofstream* m_us_stream;
 

@@ -93,6 +93,8 @@ namespace parser {
             string m_biases_filebase;
             bool m_multi_window;
             string m_windows_file;
+            string m_local_dir;
+            string m_central_dir;
 
             // Output options
             string m_output_filebase;

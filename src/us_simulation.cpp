@@ -1,6 +1,7 @@
 // us_simulation.cpp
 
 #include <cmath>
+#include <cstdlib>
 
 #include "json/json.h"
 
@@ -335,7 +336,9 @@ namespace us {
             InputParameters& params) :
             GCMCSimulation {origami, ops, biases, params},
             m_params {params},
-            m_max_num_iters {params.m_max_num_iters} {
+            m_max_num_iters {params.m_max_num_iters},
+            m_local_dir {params.m_local_dir},
+            m_central_dir {params.m_central_dir} {
 
         parse_windows_file(params.m_windows_file);
         setup_window_variables();
@@ -354,6 +357,7 @@ namespace us {
         for (n = 0; n != m_max_num_iters; n++) {
             m_us_sim->run_iteration(n);
             update_master_order_params(n);
+            copy_files_to_central_dir(n);
             update_starting_config(n);
             if (m_rank == m_master_node) {
                 output_iter_summary(n);
@@ -380,7 +384,8 @@ namespace us {
                 window_postfix += std::to_string(j);
             }
             m_window_postfixes.push_back(window_postfix);
-            string output_filebase {m_params.m_output_filebase + window_postfix};
+            string output_filebase {m_params.m_output_filebase +
+                    window_postfix};
             m_output_filebases.push_back(output_filebase);
 
             // Calculate number of grid points in the window
@@ -411,12 +416,13 @@ namespace us {
 
         // US sims reads filebase names from params object, so update
         string window_postfix {m_window_postfixes[m_rank]};
-        string output_filebase {m_output_filebases[m_rank]};
+        string output_filebase {m_local_dir + "/" + m_output_filebases[m_rank]};
         m_params.m_output_filebase = output_filebase;
 
         // If available read modify filename for input biases
         if (m_params.m_biases_filebase != "") {
-            m_params.m_biases_file = m_params.m_biases_filebase + window_postfix;
+            m_params.m_biases_file = m_params.m_biases_filebase +
+                    window_postfix;
             m_params.m_biases_file += ".biases";
         }
 
@@ -430,7 +436,8 @@ namespace us {
 
         // Names invididually specified in param file
         if (not m_params.m_restart_traj_files.empty()) {
-            m_params.m_restart_traj_file = m_params.m_restart_traj_files[m_rank];
+            m_params.m_restart_traj_file =
+                    m_params.m_restart_traj_files[m_rank];
             m_params.m_restart_step = m_params.m_restart_steps[m_rank];
         }
 
@@ -480,6 +487,23 @@ namespace us {
         }
     }
 
+    void MWUSGCMCSimulation::copy_files_to_central_dir(int n) {
+
+        // Move most recent iteration's files to central dir
+        string filebase_cur {m_output_filebases[m_rank] +
+                "_iter-" + std::to_string(n)};
+        string move_command {"mv " + m_local_dir + "/" + filebase_cur +
+            "* " + m_central_dir + "/"};
+        std::system(move_command.c_str());
+
+        // Remove previous iteration files from central dir
+        string filebase_prev {m_output_filebases[m_rank] +
+                "_iter-" + std::to_string(n - 1)};
+        string del_command {"rm " + m_central_dir + "/" + filebase_prev +
+            "*"};
+        std::system(del_command.c_str());
+    }
+
     void MWUSGCMCSimulation::update_starting_config(int n) {
         if (m_rank == m_master_node) {
             select_starting_configs(n);
@@ -512,11 +536,12 @@ namespace us {
             while (not point_sampled) {
                 point.clear();
 
-                // Uniformly draw without replacement a point in the window's domain
+                // Uniformly draw without replacement point in window's domain
                 for (size_t j {0}; j != m_window_mins[0].size(); j++) {
                     int min_comp {m_window_mins[i][j]};
                     int max_comp {m_window_maxs[i][j]};
-                    point.push_back(m_random_gens.uniform_int(min_comp, max_comp));
+                    point.push_back(m_random_gens.uniform_int(min_comp,
+                            max_comp));
                 }
                 point_sampled = (m_order_param_to_configs.find(point) !=
                         m_order_param_to_configs.end());
@@ -534,11 +559,14 @@ namespace us {
             }
 
             // Uniformly select one of the configs with the selected op set
-            vector<pair<int, int>> possible_configs {m_order_param_to_configs[point]};
-            int sel_i {m_random_gens.uniform_int(0, possible_configs.size() - 1)};
+            vector<pair<int, int>> possible_configs {
+                    m_order_param_to_configs[point]};
+            int sel_i {m_random_gens.uniform_int(0, possible_configs.size() -
+                    1)};
             pair<int, int> selected_config {possible_configs[sel_i]};
-            string filename {m_output_filebases[selected_config.first] + "_iter-" +
-                    std::to_string(n) + ".trj"};
+            string filename {m_central_dir +
+                    m_output_filebases[selected_config.first] +
+                    "_iter-" + std::to_string(n) + ".trj"};
             m_starting_files[i] = filename;
             m_starting_steps[i] = selected_config.second;
         }
@@ -551,7 +579,7 @@ namespace us {
         for (int i {0}; i != m_windows; i++) {
             for (size_t step {0}; step != m_points[i].size(); step++) {
 
-                // Would need to modify at this point to allow the use of a subset
+                // Would need to modify to allow the use of a subset of
                 // the ops collected during the simulation
                 GridPoint point {m_points[i][step]};
                 bool point_sampled {m_order_param_to_configs.find(point) !=

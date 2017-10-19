@@ -235,6 +235,12 @@ namespace parser {
             ("windows_file",
                 po::value<string>(&m_windows_file)->default_value(""),
                 "File containing windows as min/max pairs of tuples")
+            ("local_dir",
+                po::value<string>(&m_local_dir)->default_value(""),
+                "Directory for local writes")
+            ("central_dir",
+                po::value<string>(&m_central_dir)->default_value(""),
+                "Directory to get trajectories for starting steps")
         ;
         displayed_options.add(us_options);
 
