@@ -40,9 +40,30 @@ vars+=("$run")
 echo "Reps:"; read reps
 #reps=
 
-echo "Temps (seperate with spaces:"; read temps
-#temps
-temps=($temps)
+echo "Max temp:"; read maxt
+#maxt=
+fields+=(MAXT)
+vars=("$maxt")
+
+echo "Min temp:"; read mint
+#mint=
+fields+=(MINT)
+vars=("$mint")
+
+echo "Temperature interval:"; read tint
+#tint=
+fields+=(TINT)
+vars=("$tint")
+
+echo "Steps per interval:"; read steps
+#steps=
+fields+=(STEPS)
+vars+=("$steps")
+
+echo "Max time per interval: (s)"; read maxdur
+#maxdur=
+fields+=(MAXDUR)
+vars+=("$maxdur")
 
 echo "Queue:"; read queue
 #queue=
@@ -59,7 +80,7 @@ echo "Output file directory:"; read outputfiledir
 fields+=(OUTPUTFILEDIR)
 vars+=("$outputfiledir")
 
-echo "Sceduler (pbs or slurm):"; read ; sched
+echo "Sceduler (pbs or slurm):"; read sched
 #sched=
 
 echo "Staple concentration (mol/L):"; read staplem
@@ -140,16 +161,6 @@ echo "Constraint check freq:"; read concheckfreq
 fields+=(CONCHECKFREQ)
 vars+=("$concheckfreq")
 
-echo "Steps:"; read steps
-#steps=
-fields+=(STEPS)
-vars+=("$steps")
-
-echo "Maximum duration (s):"; read maxdur
-#maxdur=
-fields+=(MAXDUR)
-vars+=("$maxdur")
-
 echo "Logging freq:"; read loggingfreq
 #loggingfreq=$defaultint
 fields+=(LOGGINGFREQ)
@@ -177,21 +188,16 @@ vars+=("$opfreq")
 
 numfields=${#fields[@]}
 fields+=(OUTPUTFILEBASE)
-fields+=(TEMP)
 for ((rep=0; $rep<$reps; rep += 1))
 do
-    for temp in ${temps[@]}
-    do
-        outputfilebase=${system}-${variant}_run-${run}_rep-${rep}-${temp}
-        vars[$numfields]=$outputfilebase
-        vars[$numfields + 1]=$temp
+    outputfilebase=${system}-${variant}_run-${run}_rep-${rep}
+    vars[$numfields]=$outputfilebase
 
-        sedcommand=""
-        for i in ${!fields[@]}
-        do
-            sedcommand+="s:%${fields[i]}:${vars[i]}:g;"
-        done
-        sed "$sedcommand" serial_template_${sched}.sh > $inpdir/$outputfilebase.sh
-        sed "$sedcommand" constantT_template.inp > $inpdir/$outputfilebase.inp
+    sedcommand=""
+    for i in ${!fields[@]}
+    do
+        sedcommand+="s:%${fields[i]}:${vars[i]}:g;"
     done
+    sed "$sedcommand" serial_template_${sched}.sh > $inpdir/$outputfilebase.sh
+    sed "$sedcommand" annealing_template.inp > $inpdir/$outputfilebase.inp
 done

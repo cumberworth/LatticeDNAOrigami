@@ -1,9 +1,9 @@
 # System input and parameters
 origami_input_filename=%SYSFILE
-temp=%TEMP
+temp=330
 staple_M=%STAPLEM
 cation_M=%CATIONM
-temp_for_staple_u=%TEMP
+temp_for_staple_u=330
 staple_u_mult=1
 lattice_site_volume=4e-28
 max_total_staples=%MAXSTAPLES
@@ -24,8 +24,11 @@ restart_step=%RESTARTSTEP
 centering_freq=%CENTERINGFREQ
 constraint_check_freq=%CONCHECKFREQ
 
-# Constant T options
-ct_steps=%STEPS
+# Annealing options
+max_temp=%MAXT
+min_temp=%MINT
+temp_interval=%TINT
+steps_per_temp=%STEPS
 max_duration=%MAXDUR
 
 # Output options
