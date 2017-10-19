@@ -972,29 +972,13 @@ namespace movetypes {
     bool CTCBLinkerRegrowthMCMovetype::domains_bound_externally(
             vector<Domain*> domains) {
 
-        /*
-         * This currently breaks detailed balance, as I am not allowed to pick
-         * central segments where the scaffold is misbound to itself externally,
-         * but such misbinding when performing the transformation is not excluded.
-         * I need to TODO TODO TODO prevent misbinding like this or allow it to be
-         * move here when it is misbound to the external scaffold. Why not allow it?
-         */
         bool externally_bound {false};
         for (auto domain: domains) {
             if (domain->m_state != Occupancy::unbound) {
                 Domain* bound_domain {domain->m_bound_domain};
-                /*if (bound_domain->m_c == m_origami_system.c_scaffold) {
-                    bool domain_in_range {find(domains.begin(), domains.end(),
-                            bound_domain) != domains.end()};
-                    if (not domain_in_range) {
-                        externally_bound = true;
-                        break;
-                    }
-                    else {
-                        continue;
-                    }
-                }*/
-
+                if (bound_domain->m_c == m_origami_system.c_scaffold) {
+                    continue;
+                }
                 set<int> participating_chains {domain->m_c};
                 if (scan_for_external_scaffold_domain(bound_domain, domains,
                             participating_chains)) {
@@ -1128,6 +1112,7 @@ namespace movetypes {
             ore = ore.rotate({0, 0, 0}, axis, turns);
 
             // If position occupied by external domain, try again
+            // what about scaffold misbinding?
             if (m_origami_system.position_occupancy(pos) == Occupancy::bound or
                     m_origami_system.position_occupancy(pos) == Occupancy::misbound) {
                 reset_segment(central_domains, di);
@@ -1227,8 +1212,9 @@ namespace movetypes {
         if (domains[kernel]->m_state == Occupancy::bound) {
             segment_started = true;
             // HACK SHOULD BE i != 0
-            for (int i {kernel - 1}; i > 0; i--) {
-                if (domains[i]->m_state != Occupancy::bound) {
+            for (int i {kernel - 1}; i >= 0; i--) {
+                auto state = domains[i]->m_state;
+                if (state != Occupancy::bound) {
                     start_di = i + 1;
                     break;
                 }
@@ -1237,13 +1223,29 @@ namespace movetypes {
         // WARNING THIS IS A HACK THAT BREAKS THIS FOR CLUSTERED2
         // SHOULD BE num_domains - 1 FOR CLUSTERED
         for (int i {kernel + 1}; i != num_domains; i++) {
-            if (domains[i]->m_state == Occupancy::bound and not segment_started) {
+            if (domains[i]->m_state == Occupancy::bound and not
+                    segment_started) {
                 segment_started = true;
                 start_di = i;
             }
-            else if (domains[i]->m_state != Occupancy::bound and segment_started) {
+            else if (domains[i]->m_state != Occupancy::bound and
+                    segment_started) {
                 end_di = i - 1;
                 break;
+            }
+        }
+        if (segment_started == false) {
+            for (int i {kernel - 1}; i >= 0; i--) {
+                if (domains[i]->m_state == Occupancy::bound and not
+                        segment_started) {
+                    segment_started = true;
+                    end_di = i;
+                }
+                else if (domains[i]->m_state != Occupancy::bound and
+                        segment_started) {
+                    start_di = i + 1;
+                    break;
+                }
             }
         }
 
@@ -1301,6 +1303,7 @@ namespace movetypes {
         int i {start_di - 1};
         linker1.push_back(m_scaffold[start_di]);
         int mod_start {start_di};
+        // bound vs misbound
         while (i >= 0) {
             auto d = m_scaffold[i];
             if (d->m_state != Occupancy::bound) {
@@ -1340,5 +1343,4 @@ namespace movetypes {
 
         return setup_fixed_end_biases(linker1, linker2, modified_segment);
     }
-
 }
