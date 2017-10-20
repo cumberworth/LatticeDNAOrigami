@@ -218,6 +218,10 @@ namespace simulation {
         }
     }
 
+    void GCMCSimulation::set_max_dur(long long int dur) {
+        m_max_duration = dur;
+    }
+
     MCMovetype* GCMCSimulation::setup_orientation_movetype(
             int,
             string,
@@ -343,11 +347,12 @@ namespace simulation {
         return movetype;
     }
 
-    void GCMCSimulation::simulate(long long int steps, long long int start_step) {
+    long long int GCMCSimulation::simulate(long long int steps,
+            long long int start_step) {
 
         auto start = steady_clock::now();
-        for (long long int step {start_step + 1}; step != (steps + start_step +
-                    1); step ++) {
+        long long int step {start_step + 1};
+        for (; step != (steps + start_step + 1); step ++) {
             
             // Pick movetype and apply
             MCMovetype& movetype {select_movetype()};
@@ -398,6 +403,8 @@ namespace simulation {
             }
         }
         write_log_summary();
+
+        return step;
     }
 
     MCMovetype& GCMCSimulation::select_movetype() {

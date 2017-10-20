@@ -75,8 +75,11 @@ namespace us {
             InputParameters& m_params;
             long int m_max_num_iters;
             long long int m_equil_steps;
+            long long int m_max_equil_dur;
             long long int m_iter_steps;
+            long long int m_max_iter_dur;
             long long int m_prod_steps;
+            long long int m_max_prod_dur;
             long long int m_steps;
             double m_max_rel_P_diff;
             GridBiasFunction& m_grid_bias;

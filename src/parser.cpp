@@ -140,6 +140,9 @@ namespace parser {
             ("constraint_check_freq",
                 po::value<int>(&m_constraint_check_freq)->default_value(0),
                 "Constraint check frequency")
+            ("max_duration",
+                po::value<double>(&m_max_duration)->default_value(10e9),
+                "Maximum duration of simulation (s)")
         ;
         displayed_options.add(sim_options);
 
@@ -148,9 +151,6 @@ namespace parser {
             ("ct_steps",
                 po::value<long long int>(&m_ct_steps)->default_value(0),
                 "Number of MC steps")
-            ("max_duration",
-                po::value<double>(&m_max_duration)->default_value(10e9),
-                "Maximum duration of simulation (s)")
         ;
         displayed_options.add(cons_t_options);
 
@@ -214,12 +214,21 @@ namespace parser {
             ("equil_steps",
                 po::value<long long int>(&m_equil_steps)->default_value(0),
                 "Number of equilibration steps")
+            ("max_equil_dur",
+                po::value<long long int>(&m_max_equil_dur)->default_value(0),
+                "Maximum duration of equilibration (s)")
             ("iter_steps",
                 po::value<long long int>(&m_iter_steps)->default_value(0),
                 "Number of steps per iteration")
+            ("max_iter_dur",
+                po::value<long long int>(&m_max_iter_dur)->default_value(0),
+                "Maximum duration of each iteration (s)")
             ("prod_steps",
                 po::value<long long int>(&m_prod_steps)->default_value(0),
                 "Number of production steps")
+            ("max_prod_dur",
+                po::value<long long int>(&m_max_prod_dur)->default_value(0),
+                "Maximum duration of production (s)")
             ("max_rel_P_diff",
                 po::value<double>(&m_max_rel_P_diff)->default_value(0.1),
                 "Maximum allowed change in P for convergence")

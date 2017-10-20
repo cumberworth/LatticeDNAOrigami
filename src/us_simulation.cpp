@@ -27,8 +27,11 @@ namespace us {
             m_params {params},
             m_max_num_iters {params.m_max_num_iters},
             m_equil_steps {params.m_equil_steps},
+            m_max_equil_dur {params.m_max_equil_dur},
             m_iter_steps {params.m_iter_steps},
+            m_max_iter_dur {params.m_max_iter_dur},
             m_prod_steps {params.m_prod_steps},
+            m_max_prod_dur {params.m_max_prod_dur},
             m_max_rel_P_diff {params.m_max_rel_P_diff},
             m_grid_bias {biases.get_grid_bias(params.m_us_grid_bias_tag)},
             m_max_D_bias {params.m_max_D_bias} {
@@ -57,6 +60,7 @@ namespace us {
     }
 
     void USGCMCSimulation::run_equilibration() {
+        set_max_dur(m_max_equil_dur);
 
         // Setup output files
         string postfix {"_iter-equil"};
@@ -66,7 +70,7 @@ namespace us {
         m_logging_stream = new ofstream {output_filebase + ".out"};
 
         m_steps = m_equil_steps;
-        simulate(m_steps);
+        m_steps = simulate(m_steps);
 
         // Cleanup
         close_output_files();
@@ -74,6 +78,7 @@ namespace us {
     }
 
     void USGCMCSimulation::run_iteration(int n) {
+        set_max_dur(m_max_iter_dur);
 
         // Write each iteration's output to a seperate file
         string prefix {"_iter-" + std::to_string(n)};
@@ -84,7 +89,7 @@ namespace us {
 
         m_steps = m_iter_steps;
         clear_grids();
-        simulate(m_steps);
+        m_steps = simulate(m_steps);
         fill_grid_sets();
         m_S_n.insert(m_s_i.begin(), m_s_i.end());
         estimate_current_weights();
@@ -109,6 +114,7 @@ namespace us {
     }
 
     void USGCMCSimulation::run_production(int n) {
+        set_max_dur(m_max_prod_dur);
 
         // Setup output files
         string postfix {"_iter-prod"};
@@ -119,7 +125,7 @@ namespace us {
 
         m_steps = m_prod_steps;
         clear_grids();
-        simulate(m_steps);
+        m_steps = simulate(m_steps);
         fill_grid_sets();
         m_S_n.insert(m_s_i.begin(), m_s_i.end());
         estimate_current_weights();
@@ -499,7 +505,7 @@ namespace us {
         // Remove previous iteration files from central dir
         string filebase_prev {m_output_filebases[m_rank] +
                 "_iter-" + std::to_string(n - 1)};
-        string del_command {"rm " + m_central_dir + "/" + filebase_prev +
+        string del_command {"rm -f " + m_central_dir + "/" + filebase_prev +
             "*"};
         std::system(del_command.c_str());
     }
@@ -564,7 +570,7 @@ namespace us {
             int sel_i {m_random_gens.uniform_int(0, possible_configs.size() -
                     1)};
             pair<int, int> selected_config {possible_configs[sel_i]};
-            string filename {m_central_dir +
+            string filename {m_central_dir + "/" +
                     m_output_filebases[selected_config.first] +
                     "_iter-" + std::to_string(n) + ".trj"};
             m_starting_files[i] = filename;
