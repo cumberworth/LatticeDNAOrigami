@@ -66,6 +66,59 @@ namespace biasFunctions {
         return checked_bias;
     }
 
+    LinearStepWellBiasFunction::LinearStepWellBiasFunction(
+            OrderParam& order_param, int min_param, int max_param,
+            double well_bias, double min_bias, double slope) :
+            m_order_param {order_param},
+            m_min_param {min_param},
+            m_max_param {max_param},
+            m_well_bias {well_bias},
+            m_min_bias {min_bias},
+            m_slope {slope} {
+
+        update_bias();
+    }
+
+    double LinearStepWellBiasFunction::update_bias() {
+        double new_bias;
+        int param {m_order_param.get_param()};
+        if (m_order_param.defined()) {
+            new_bias = calc_bias(param);
+        }
+        else {
+            new_bias = 0;
+        }
+        m_bias = new_bias;
+        
+        return new_bias;
+    }
+
+    double LinearStepWellBiasFunction::calc_bias(int param) {
+        double new_bias {0};
+        if (param < m_min_param) {
+            new_bias = m_slope * (m_min_param - param - 1) + m_min_bias;
+        }
+        else if (param > m_max_param) {
+            new_bias = m_slope * (param - m_max_param - 1) + m_min_bias;
+        }
+        else {
+            new_bias = m_well_bias;
+        }
+        return new_bias;
+    }
+
+    double LinearStepWellBiasFunction::check_bias() {
+        double checked_bias;
+        int param {m_order_param.get_checked_param()};
+        if (m_order_param.defined()) {
+            checked_bias = calc_bias(param);
+        }
+        else {
+            checked_bias = 0;
+        }
+        return checked_bias;
+    }
+
     SquareWellBiasFunction::SquareWellBiasFunction(OrderParam& order_param,
             int min_param, int max_param, double well_bias, double outside_bias) :
             m_order_param {order_param},
@@ -275,6 +328,16 @@ namespace biasFunctions {
                     double max_bias {biases_file.get_double_option(i, j, "max_bias")};
                     bias_f = new LinearStepBiasFunction {op, min_op,
                         max_op, max_bias};
+                }
+                if (type == "LinearStepWell") {
+                    OrderParam& op {m_system_order_params.get_order_param(op_tags[0])};
+                    int min_op {biases_file.get_int_option(i, j, "min_op")};
+                    int max_op {biases_file.get_int_option(i, j, "max_op")};
+                    double well_bias {biases_file.get_double_option(i, j, "well_bias")};
+                    double min_bias {biases_file.get_double_option(i, j, "min_bias")};
+                    double slope {biases_file.get_double_option(i, j, "slope")};
+                    bias_f = new LinearStepWellBiasFunction {op, min_op,
+                        max_op, well_bias, min_bias, slope};
                 }
                 else if (type == "SquareWell") {
                     OrderParam& op {m_system_order_params.get_order_param(op_tags[0])};

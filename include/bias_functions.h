@@ -66,6 +66,30 @@ namespace biasFunctions {
             double calc_bias(int param);
     };
 
+    class LinearStepWellBiasFunction: public BiasFunction {
+        // Constant between two values and linearly increasing outside
+        public:
+            LinearStepWellBiasFunction(
+                    OrderParam& order_param,
+                    int min_param,
+                    int max_param,
+                    double well_bias,
+                    double min_bias,
+                    double slop);
+            ~LinearStepWellBiasFunction() {};
+            double update_bias();
+            double check_bias();
+        private:
+            OrderParam& m_order_param;
+            int m_min_param;
+            int m_max_param;
+            double m_well_bias;
+            double m_min_bias;
+            double m_slope;
+
+            double calc_bias(int param);
+    };
+
     class SquareWellBiasFunction: public BiasFunction {
         // a between and including min and max values of given parameter, b otherwise
         public:
