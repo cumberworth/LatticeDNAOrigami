@@ -1089,7 +1089,7 @@ namespace origami {
         return domain_orientations_opposing;
     }
 
-    bool OrigamiSystem::check_linear_helix(VectorThree ndr_1,Domain& cd_2) {
+    bool OrigamiSystem::check_linear_helix(VectorThree ndr_1, Domain& cd_2) {
         bool linear_if_helix {true};
         Domain* cd_3 {cd_2 + 1};
         if (cd_3 == nullptr) {

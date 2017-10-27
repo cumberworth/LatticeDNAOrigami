@@ -65,7 +65,7 @@ namespace simulation {
             outs.push_back(config_out);
         }
         if (params.m_vtf_output_freq != 0) {
-            setup_config_files(params.m_output_filebase,
+            setup_config_files(output_filebase,
                     params.m_max_total_staples, params.m_vtf_output_freq,
                     origami, outs);
         }
