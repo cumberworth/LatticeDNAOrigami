@@ -45,7 +45,7 @@ namespace movetypes {
             bool internal_attempt_move() override;
             void add_tracker(bool accepted) override;
 
-            void unassign_and_save_domains();
+            double unassign_and_save_domains();
             void unassign_domains();
 
             /** Update the external bias without adding */
@@ -53,10 +53,10 @@ namespace movetypes {
             void setup_constraints();
             void setup_for_calc_new_weights();
             void setup_for_calc_old_weights();
-            void recoil_regrow();
-            void set_config(Domain* d, configT c);
+            double recoil_regrow();
+            double set_config(Domain* d, configT c);
             void prepare_for_growth();
-            void prepare_for_regrowth();
+            double prepare_for_regrowth();
             void restore_endpoints();
             configT select_trial_config();
             double calc_p_config_open(configT c);
@@ -92,7 +92,6 @@ namespace movetypes {
             vector<vector<VectorThree>> m_erased_endpoints_q {};
 
             double m_delta_e; // Energy change
-            double m_delta_e_new; // Energy change of new config
             double m_weight; // RG weight
             double m_weight_new; // RG weight of new config
 

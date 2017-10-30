@@ -86,7 +86,6 @@ namespace movetypes {
         m_erased_endpoints_q.clear();
 
         m_delta_e = 0;
-        m_delta_e_new = 0;
         m_weight = 1;
         m_weight_new = 1;
     }
@@ -108,8 +107,8 @@ namespace movetypes {
         m_regrow_ds = m_constraintpoints.domains_to_be_regrown();
 
         // Recoil regrow
-        unassign_and_save_domains();
-        recoil_regrow();
+        m_delta_e += unassign_and_save_domains();
+        m_delta_e += recoil_regrow();
 
         // Reject if constraints disobeyed
         if (m_rejected) {
@@ -133,7 +132,6 @@ namespace movetypes {
         // Calculate old weights
         unassign_domains();
         calc_old_c_opens();
-        add_external_bias();
         setup_for_calc_old_weights();
         unassign_and_save_domains();
         calc_weights();
@@ -148,7 +146,8 @@ namespace movetypes {
         movetypes::add_tracker(m_tracker, m_tracking, accepted);
     }
 
-    void CTScaffoldRG::unassign_and_save_domains() {
+    double CTScaffoldRG::unassign_and_save_domains() {
+        double delta_e {0};
         auto domain = m_regrow_ds[0];
         pair<int, int> key {domain->m_c, domain->m_d};
         m_prev_pos[key] = domain->m_pos;
@@ -159,11 +158,12 @@ namespace movetypes {
             m_prev_pos[key] = domain->m_pos;
             m_prev_ore[key] = domain->m_ore;
             m_modified_domains.push_back(key);
-            m_origami_system.unassign_domain(*domain);
+            delta_e += m_origami_system.unassign_domain(*domain);
         }
         m_erased_endpoints_q.clear();
         write_config();
-        update_external_bias();
+
+        return delta_e;
     }
 
     void CTScaffoldRG::unassign_domains() {
@@ -172,13 +172,7 @@ namespace movetypes {
             m_origami_system.unassign_domain(*domain);
         }
         write_config();
-        update_external_bias();
         m_erased_endpoints_q.clear();
-    }
-
-    void CTScaffoldRG::update_external_bias() {
-        m_ops.update_move_params();
-        m_biases.calc_move();
     }
 
     void CTScaffoldRG::setup_constraints() {
@@ -203,8 +197,6 @@ namespace movetypes {
     }
 
     void CTScaffoldRG::setup_for_calc_old_weights() {
-        m_delta_e_new = m_delta_e;
-        m_delta_e = 0;
         m_weight_new = m_weight;
         m_weight = 1;
         m_c_attempts_wq = m_c_attempts_q;
@@ -227,7 +219,8 @@ namespace movetypes {
      * regrowth stack. Otherwise, the reference config is the adjacent
      * domain in the reverse direction of growth.
      */
-    void CTScaffoldRG::recoil_regrow() {
+    double CTScaffoldRG::recoil_regrow() {
+        double delta_e {0};
         m_di = 0;
         m_d = m_regrow_ds[m_di];
         m_dir = m_constraintpoints.get_dir(m_d);
@@ -255,7 +248,7 @@ namespace movetypes {
                 if (recoils != 0) {
                     recoils--;
                 }
-                set_config(m_d, c);
+                delta_e += set_config(m_d, c);
                 m_c_attempts_q[m_di] = m_c_attempts;
                 m_avail_cis_q[m_di] = m_avail_cis;
                 m_c_opens[m_di] = p_c_open;
@@ -274,21 +267,25 @@ namespace movetypes {
                 }
                 else {
                     recoils++;
-                    prepare_for_regrowth();
+                    delta_e += prepare_for_regrowth();
                 }
             }
         }
+
+        return delta_e;
     }
 
-    void CTScaffoldRG::set_config(Domain* d, configT c) {
-        m_delta_e += m_origami_system.set_checked_domain_config(*d, c.first,
-                c.second);
+    double CTScaffoldRG::set_config(Domain* d, configT c) {
+        double delta_e {m_origami_system.set_checked_domain_config(*d, c.first,
+                c.second)};
         pair<int, int> key {d->m_c, d->m_d};
         m_assigned_domains.push_back(key);
         m_constraintpoints.update_endpoints(m_d);
         auto erased_endpoints = m_constraintpoints.get_erased_endpoints();
         m_erased_endpoints_q.push_back(erased_endpoints);
         write_config();
+
+        return delta_e;
     }
 
     void CTScaffoldRG::prepare_for_growth() {
@@ -311,11 +308,11 @@ namespace movetypes {
         }
     }
 
-    void CTScaffoldRG::prepare_for_regrowth() {
+    double CTScaffoldRG::prepare_for_regrowth() {
         m_di--;
         m_d = m_regrow_ds[m_di];
         m_dir = m_constraintpoints.get_dir(m_d);
-        m_origami_system.unassign_domain(*m_d);
+        double delta_e {m_origami_system.unassign_domain(*m_d)};
         m_assigned_domains.pop_back();
         restore_endpoints();
         m_prev_gp = m_constraintpoints.is_growthpoint(
@@ -332,6 +329,8 @@ namespace movetypes {
             m_avail_cis = m_avail_cis_q[m_di];
             m_ref_d = (*m_d + (-m_dir));
         }
+
+        return delta_e;
     }
 
     void CTScaffoldRG::restore_endpoints() {
@@ -563,21 +562,22 @@ namespace movetypes {
     }
 
     bool CTScaffoldRG::test_rg_acceptance() {
-        double delta_e {m_delta_e_new = m_delta_e};
-        long double ratio {m_weight_new / m_weight * std::exp(-delta_e)};
+        long double ratio {m_weight_new / m_weight * std::exp(-m_delta_e)};
         bool accepted {false};
         if (test_acceptance(ratio)) {
             m_prev_pos = m_new_pos;
             m_prev_ore = m_new_ore;
             reset_origami();
-            m_ops.update_move_params();
-            m_biases.calc_move();
             accepted = true;
         }
         else {
             m_modified_domains.clear();
             m_assigned_domains.clear();
             accepted = false;
+        }
+        auto poo = m_biases.get_move_update_bias();
+        if (poo != 0 and accepted) {
+            cout << "um\n";
         }
 
         return accepted;
