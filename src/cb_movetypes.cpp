@@ -245,11 +245,6 @@ namespace movetypes {
         return {growth_domain_new, growth_domain_old};
     }
 
-    void CBMCMovetype::update_external_bias() {
-        m_ops.update_move_params();
-        m_biases.calc_move();
-    }
-
 	CBStapleRegrowthMCMovetype::CBStapleRegrowthMCMovetype(
                 OrigamiSystem& origami_system,
                 RandomGens& random_gens,
@@ -322,7 +317,6 @@ namespace movetypes {
 
         auto bound_domains = find_bound_domains(selected_chain);
         unassign_domains(selected_chain);
-        update_external_bias();
 
         // Grow staple
         set_growthpoint_and_grow_staple(growthpoint, selected_chain);
@@ -340,14 +334,12 @@ namespace movetypes {
 
         // Unassign and add to reversion list
         unassign_domains(selected_chain);
-        update_external_bias();
 
         // Grow staple
         set_growthpoint_and_grow_staple(growthpoint, selected_chain);
 
         // Revert modifier and test acceptance
         m_modifier = m_new_modifier;
-        add_external_bias();
         accepted = test_cb_acceptance();
 
         return accepted;
@@ -635,7 +627,6 @@ namespace movetypes {
         for (auto c_i: staples) {
             unassign_domains(m_origami_system.get_chain(c_i));
         }
-        update_external_bias();
 
         // Grow scaffold and staples
         if (m_constraintpoints.is_growthpoint(scaffold_domains[0])) {
@@ -667,7 +658,6 @@ namespace movetypes {
         for (auto c_i: staples) {
             unassign_domains(m_origami_system.get_chain(c_i));
         }
-        update_external_bias();
 
         // Grow scaffold and staples
         if (m_constraintpoints.is_growthpoint(scaffold_domains[0])) {
@@ -678,7 +668,6 @@ namespace movetypes {
 
         // Reset modifier and test acceptance
         m_modifier = 1;
-        add_external_bias();
         accepted = test_cb_acceptance();
         return accepted;
     }
@@ -825,7 +814,6 @@ namespace movetypes {
             unassign_domains(m_origami_system.get_chain(c_i));
         }
         unassign_domains(central_domains); // Consider a more efficient method for this
-        update_external_bias();
 
         transform_segment(linker1, linker2, central_segment, central_domains);
 
@@ -855,7 +843,6 @@ namespace movetypes {
             unassign_domains(m_origami_system.get_chain(c_i));
         }
         unassign_domains(central_domains); // Consider a more efficient method for this
-        update_external_bias();
 
         revert_transformation(central_domains);
 
@@ -869,7 +856,6 @@ namespace movetypes {
 
         // Reset modifier and test acceptance
         m_modifier = 1;
-        add_external_bias();
         accepted = test_cb_acceptance();
         return accepted;
     }
