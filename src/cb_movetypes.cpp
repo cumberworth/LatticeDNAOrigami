@@ -177,6 +177,8 @@ namespace movetypes {
         bool accepted;
         if (test_acceptance(ratio)) {
             reset_origami();
+            m_ops.update_move_params();
+            m_biases.calc_move();
             accepted = true;
         }
         else {

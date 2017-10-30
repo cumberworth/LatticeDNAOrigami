@@ -570,6 +570,8 @@ namespace movetypes {
             m_prev_pos = m_new_pos;
             m_prev_ore = m_new_ore;
             reset_origami();
+            m_ops.update_move_params();
+            m_biases.calc_move();
             accepted = true;
         }
         else {
