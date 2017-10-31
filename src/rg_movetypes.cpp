@@ -575,10 +575,6 @@ namespace movetypes {
             m_assigned_domains.clear();
             accepted = false;
         }
-        auto poo = m_biases.get_move_update_bias();
-        if (poo != 0 and accepted) {
-            cout << "um\n";
-        }
 
         return accepted;
     }

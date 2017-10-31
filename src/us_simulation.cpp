@@ -362,8 +362,8 @@ namespace us {
         m_us_sim->run_equilibration();
         for (n = 0; n != m_max_num_iters; n++) {
             m_us_sim->run_iteration(n);
-            update_master_order_params(n);
             copy_files_to_central_dir(n);
+            update_master_order_params(n);
             update_starting_config(n);
             if (m_rank == m_master_node) {
                 output_iter_summary(n);
