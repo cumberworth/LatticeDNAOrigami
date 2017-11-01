@@ -242,7 +242,7 @@ namespace orderParams {
         return m_checked_param;
     }
 
-    NumMisBoundDomainPairsOrderParam::NumMisBoundDomainPairsOrderParam(
+    NumMisboundDomainPairsOrderParam::NumMisboundDomainPairsOrderParam(
             OrigamiSystem& origami,
             string label) :
             m_origami {origami} {
@@ -258,7 +258,7 @@ namespace orderParams {
         return m_param;
     }
 
-    int NumMisBoundDomainPairsOrderParam::check_param(Domain&, VectorThree,
+    int NumMisboundDomainPairsOrderParam::check_param(Domain&, VectorThree,
             VectorThree, Occupancy state) {
         
         if (state != Occupancy::unassigned) {
@@ -362,8 +362,8 @@ namespace orderParams {
                     op = new NumBoundDomainPairsOrderParam {
                             m_origami, label};
                 }
-                else if (type == "NumMisBoundDomainPairs") {
-                    op = new NumMisBoundDomainPairsOrderParam {
+                else if (type == "NumMisboundDomainPairs") {
+                    op = new NumMisboundDomainPairsOrderParam {
                             m_origami, label};
                 }
                 else {
