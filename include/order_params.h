@@ -133,6 +133,20 @@ namespace orderParams {
             OrigamiSystem& m_origami;
     };
 
+    class NumMisBoundDomainPairsOrderParam: public OrderParam {
+        public:
+            NumMisBoundDomainPairsOrderParam(OrigamiSystem& origami, string label);
+            int calc_param() override final;
+            int check_param(
+                    Domain& domain,
+                    VectorThree new_pos,
+                    VectorThree,
+                    Occupancy) override final;
+
+        private:
+            OrigamiSystem& m_origami;
+    };
+
     class SystemOrderParams {
         public:
             SystemOrderParams(InputParameters& params, OrigamiSystem& origami);

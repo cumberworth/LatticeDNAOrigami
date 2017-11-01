@@ -225,13 +225,46 @@ namespace orderParams {
         return m_param;
     }
 
-    int NumBoundDomainPairsOrderParam::check_param(Domain&, VectorThree , VectorThree,
-            Occupancy state) {
+    int NumBoundDomainPairsOrderParam::check_param(Domain&, VectorThree,
+            VectorThree, Occupancy state) {
         
         if (state != Occupancy::unassigned) {
             m_defined = true;
             int num_domain_pairs = m_origami.num_fully_bound_domain_pairs();
             if (state == Occupancy::bound) {
+                m_checked_param = num_domain_pairs + 1;
+            }
+            else {
+                m_checked_param = num_domain_pairs;
+            }
+        }
+
+        return m_checked_param;
+    }
+
+    NumMisBoundDomainPairsOrderParam::NumMisBoundDomainPairsOrderParam(
+            OrigamiSystem& origami,
+            string label) :
+            m_origami {origami} {
+
+        m_label = label;
+        calc_param();
+        m_defined = true;
+    }
+
+    int NumMisBoundDomainPairsOrderParam::calc_param() {
+        m_param = m_origami.num_misbound_domain_pairs();
+
+        return m_param;
+    }
+
+    int NumMisBoundDomainPairsOrderParam::check_param(Domain&, VectorThree,
+            VectorThree, Occupancy state) {
+        
+        if (state != Occupancy::unassigned) {
+            m_defined = true;
+            int num_domain_pairs = m_origami.num_misbound_domain_pairs();
+            if (state == Occupancy::misbound) {
                 m_checked_param = num_domain_pairs + 1;
             }
             else {
@@ -327,6 +360,10 @@ namespace orderParams {
                 }
                 else if (type == "NumBoundDomainPairs") {
                     op = new NumBoundDomainPairsOrderParam {
+                            m_origami, label};
+                }
+                else if (type == "NumMisBoundDomainPairs") {
+                    op = new NumMisBoundDomainPairsOrderParam {
                             m_origami, label};
                 }
                 else {
