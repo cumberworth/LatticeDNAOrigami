@@ -252,7 +252,7 @@ namespace orderParams {
         m_defined = true;
     }
 
-    int NumMisBoundDomainPairsOrderParam::calc_param() {
+    int NumMisboundDomainPairsOrderParam::calc_param() {
         m_param = m_origami.num_misbound_domain_pairs();
 
         return m_param;
