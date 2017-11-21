@@ -233,8 +233,22 @@ namespace files {
         return m_freqs;
     }
 
+    bool OrigamiMovetypeFile::get_bool_option(int movetype_i, string key) {
+        return m_jsonmovetypes[movetype_i][key].asBool();
+    }
+     
     double OrigamiMovetypeFile::get_double_option(int movetype_i, string key) {
         return m_jsonmovetypes[movetype_i][key].asDouble();
+    }
+     
+    vector<double> OrigamiMovetypeFile::get_double_vector_option(int movetype_i,
+            string key) {
+        vector<double> dv {};
+        for (unsigned int i {0}; i != m_jsonmovetypes[movetype_i][key].size(); i++) {
+            dv.push_back(m_jsonmovetypes[movetype_i][key][i].asDouble());
+        }
+
+        return dv;
     }
 
     string OrigamiMovetypeFile::get_string_option(int movetype_i, string key) {

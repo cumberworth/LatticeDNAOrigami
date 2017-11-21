@@ -244,12 +244,15 @@ namespace simulation {
             OrigamiMovetypeFile& movetypes_file,
             MCMovetype* movetype) {
 
-        double exchange_mult {movetypes_file.get_double_option(i,
-                "exchange_mult")};
+        vector<double> exchange_mults {movetypes_file.get_double_vector_option(
+                i, "exchange_mults")};
+        bool adaptive_exchange {movetypes_file.get_bool_option(i,
+                "adaptive_exchange")};
         movetype = new movetypes::MetStapleExchangeMCMovetype {
                 m_origami_system, m_random_gens,
                 m_ideal_random_walks, m_config_per_move_files,
-                label, m_ops, m_biases, m_params, exchange_mult};
+                label, m_ops, m_biases, m_params, exchange_mults,
+                adaptive_exchange};
 
         return movetype;
     }

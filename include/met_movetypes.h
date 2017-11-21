@@ -65,7 +65,8 @@ namespace movetypes {
                     SystemOrderParams& ops,
                     SystemBiases& biases,
                     InputParameters& params,
-                    double exchange_mult);
+                    vector<double> exchange_mults,
+                    bool adaptive_exchange);
             MetStapleExchangeMCMovetype(const
                     MetStapleExchangeMCMovetype&) = delete;
             MetStapleExchangeMCMovetype& operator=(const
@@ -83,7 +84,9 @@ namespace movetypes {
             bool insert_staple();
             bool delete_staple();
 
-            double m_exchange_mult;
+            bool m_adaptive_exchange;
+            bool m_staple_bound {false};
+            vector<double> m_exchange_mults;
             StapleExchangeTracking m_tracker {};
             unordered_map<StapleExchangeTracking, MovetypeTracking> m_tracking {};
 

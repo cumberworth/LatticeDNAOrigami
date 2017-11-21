@@ -11,6 +11,8 @@ namespace movetypes {
     using std::map;
     using std::pair;
     using std::set;
+    using utility::SimulationMisuse;
+    using utility::Occupancy;
 
 	MetMCMovetype::MetMCMovetype(
                 OrigamiSystem& origami_system,
@@ -78,19 +80,22 @@ namespace movetypes {
             SystemOrderParams& ops,
             SystemBiases& biases,
             InputParameters& params,
-            double exchange_mult):
+            vector<double> exchange_mults,
+            bool adaptive_exchange):
             MCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
             RegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
             MetMCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
-            m_exchange_mult {exchange_mult} {
+            m_adaptive_exchange {adaptive_exchange},
+            m_exchange_mults {exchange_mults} {
     }
 
     void MetStapleExchangeMCMovetype::reset_internal() {
         MetMCMovetype::reset_internal();
         m_insertion_sites = m_origami_system.num_domains();
+        m_staple_bound = false;
     }
 
     void MetStapleExchangeMCMovetype::write_log_summary(ostream* log_stream) {
@@ -114,6 +119,13 @@ namespace movetypes {
                 deletion_accepts[info.staple_type] = counts.accepts;
             }
         }
+
+        *log_stream << "       Exchange multipliers\n        ";
+        for (size_t i {0}; i != staple_types.size(); i++) {
+            *log_stream << m_exchange_mults[i];
+            *log_stream << ", ";
+        }
+        *log_stream << "\n";
 
         for (auto st: staple_types) {
             *log_stream << "    Staple type: " << st << "\n";
@@ -170,9 +182,30 @@ namespace movetypes {
         m_modifier *= staple_length;
 
         // Exchange probability multiplier
-        m_modifier *= m_exchange_mult;
+        bool accepted;
+        if (m_staple_bound) {
+            m_modifier *= m_exchange_mults[c_i_ident - 1];
 
-        return test_acceptance(ratio);
+            // Check if nonsensical probabilities will result
+            if (m_modifier * fmin(1, ratio) > 1) {
+                if (m_adaptive_exchange) {
+                    m_exchange_mults[c_i_ident - 1] /= 10;
+                    accepted = false;
+                }
+                else {
+                    cout << "Nonsensical exchange probability detected\n";
+                    throw SimulationMisuse {};
+                }
+            }
+            else {
+                accepted = test_acceptance(ratio);
+            }
+        }
+        else {
+            accepted = test_acceptance(ratio);
+        }
+
+        return accepted;
     }
 
     bool MetStapleExchangeMCMovetype::staple_deletion_accepted(int c_i_ident) {
@@ -189,9 +222,31 @@ namespace movetypes {
         double ratio {Ni / extra_states * boltz_factor};
 
         // Exchange probability multiplier
-        m_modifier *= m_exchange_mult;
+        bool accepted;
+        if (m_staple_bound) {
+            m_modifier *= m_exchange_mults[c_i_ident - 1];
 
-        return test_acceptance(ratio);
+            // Check if nonsensical probabilities will result
+            if (m_modifier * fmin(1, ratio) > 1) {
+                if (m_adaptive_exchange) {
+                    cout << c_i_ident << m_modifier << " " << ratio << "\n";
+                    m_exchange_mults[c_i_ident - 1] /= 10;
+                    accepted = false;
+                }
+                else {
+                    cout << "Nonsensical exchange probability detected\n";
+                    throw SimulationMisuse {};
+                }
+            }
+            else {
+                accepted = test_acceptance(ratio);
+            }
+        }
+        else {
+            accepted = test_acceptance(ratio);
+        }
+
+        return accepted;
     }
 
     bool MetStapleExchangeMCMovetype::insert_staple() {
@@ -228,6 +283,15 @@ namespace movetypes {
             return accepted;
         }
 
+        vector<Domain*> staple {m_origami_system.get_chain(c_i)};
+        for (size_t i {0}; i != staple.size(); i++) {
+            Domain* d {staple[i]};
+            if (d->m_state == Occupancy::bound) {
+                m_staple_bound = true;
+                break;
+            }
+        }
+
         accepted = staple_insertion_accepted(c_i_ident);
         return accepted;
     }
@@ -247,6 +311,13 @@ namespace movetypes {
         vector<Domain*> staple {m_origami_system.get_chain(c_i)};
         if (staple_is_connector(staple)) {
             return accepted;
+        }
+        for (size_t i {0}; i != staple.size(); i++) {
+            Domain* d {staple[i]};
+            if (d->m_state == Occupancy::bound) {
+                m_staple_bound = true;
+                break;
+            }
         }
 
         // Unassign domains and test acceptance

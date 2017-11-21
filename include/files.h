@@ -72,7 +72,9 @@ namespace files {
             vector<string> get_types();
             vector<string> get_labels();
             vector<double> get_freqs();
+            bool get_bool_option(int movetype_i, string key);
             double get_double_option(int movetype_i, string key);
+            vector<double> get_double_vector_option(int movetype_i, string key);
             string get_string_option(int movetype_i, string key);
             int get_int_option(int movetype_i, string key);
 
