@@ -40,13 +40,21 @@ namespace us {
         if (params.m_biases_file != "") {
             ifstream bias_file {params.m_biases_file};
             if (bias_file.good()) {
+                *m_us_stream << "Reading biases from file\n";
                 read_weights(params.m_biases_file);
             }
+        }
+        else {
+            *m_us_stream << "No biases read in\n";
         }
 
         // Update starting configs if restarting
         if (m_params.m_restart_traj_file != "") {
+            *m_us_stream << "Reading starting config from file\n";
             set_config_from_traj(m_params.m_restart_traj_file, params.m_restart_step);
+        }
+        else {
+            *m_us_stream << "Starting from configuration in system file\n";
         }
     }
 
