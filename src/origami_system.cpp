@@ -1041,8 +1041,13 @@ namespace origami {
         // New helix case
         if (cd_1.m_ore == ndr) {
 
+            // Check parallel helix constraint
+            if (not (cd_1.m_ore == cd_2.m_ore)) {
+                helical_constraints_obeyed = false;
+            }
+
             // Check doubly contiguous constraint
-            if (bound_same_chain) {
+            if (helical_constraints_obeyed and bound_same_chain) {
                 if (cd_bound_1.m_d == cd_bound_2.m_d - 1) {
                     helical_constraints_obeyed = false;
                 }
