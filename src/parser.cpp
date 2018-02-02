@@ -149,7 +149,7 @@ namespace parser {
             ("constraint_check_freq",
                 po::value<int>(&m_constraint_check_freq)->default_value(0),
                 "Constraint check frequency")
-            ("m_allow_nonsensical_ps",
+            ("allow_nonsensical_ps",
                 po::value<bool>(&m_allow_nonsensical_ps)->default_value(false),
                 "Allow nonsensical exchange probabilities")
             ("max_duration",
