@@ -14,6 +14,7 @@
 #include "domain.h"
 #include "hash.h"
 #include "nearest_neighbour.h"
+#include "origami_potential.h"
 #include "parser.h"
 #include "utility.h"
 
@@ -38,6 +39,7 @@ namespace origami {
 
     using domainContainer::Domain;
     using nearestNeighbour::ThermoOfHybrid;
+    using potential::OrigamiPotential;
     using parser::InputParameters;
     using utility::Occupancy;
     using utility::VectorThree;
@@ -170,42 +172,14 @@ namespace origami {
             unique_ptr<orderParams::SystemOrderParams> m_ops;
             unique_ptr<biasFunctions::SystemBiases> m_biases;
 
-            // CONSIDER CONTAINING ENERGY STUFF IN ANOTHER CLASS
-            // ALSO CONSIDER DEFINING TYPE FOR THESE TABLES
-            // Energy tables index by chain/domain identity pair
-            unordered_map<pair<int, int>, double> m_hybridization_energies {};
-            unordered_map<pair<int, int>, double> m_hybridization_enthalpies {};
-            unordered_map<pair<int, int>, double> m_hybridization_entropies {};
-            unordered_map<pair<int, int>, double> m_stacking_energies {};
-            string m_energy_filebase;
-
-            // Energies tables indexed by temperature
-            unordered_map<double, unordered_map<pair<int, int>, double>> 
-                    m_hybridization_energy_tables {};
-            unordered_map<double, unordered_map<pair<int, int>, double>> 
-                    m_hybridization_enthalpy_tables {};
-            unordered_map<double, unordered_map<pair<int, int>, double>> 
-                    m_hybridization_entropy_tables {};
-            unordered_map<double, unordered_map<pair<int, int>, double>> 
-                    m_stacking_energy_tables {};
-
-            double m_energy {0}; // Current total energy of system
+            double m_energy {0};
+            OrigamiPotential m_pot;
     
             // Intializers
             void initialize_complementary_associations();
-            void get_energies();
-            void calc_energies();
-            void calc_energy(string seq_i, string seq_j, pair<int, int> key);
             void initialize_scaffold(Chain scaffold_chain);
             void initialize_staples(Chains chain);
 
-            // Energy calculation
-            double check_stacking(Domain& cd_new, Domain& cd_old);
-            double hybridization_energy(const Domain& cd_i, const Domain& cd_j) const;
-            double hybridization_enthalpy(const Domain& cd_i, const Domain& cd_j) const;
-            double hybridization_entropy(const Domain& cd_i, const Domain& cd_j) const;
-            double stacking_energy(const Domain& cd_i, const Domain& cd_j) const;
-    
             // States updates
             double internal_unassign_domain(Domain& cd_i);
             double unassign_bound_domain(Domain& cd_i);
@@ -214,8 +188,6 @@ namespace origami {
             void update_occupancies(
                     Domain& cd_i,
                     VectorThree position);
-            bool read_energies_from_file();
-            void write_energies_to_file();
             void update_energy();
 
             // Constraint checkers
@@ -223,37 +195,7 @@ namespace origami {
                     Domain& cd_i,
                     VectorThree pos,
                     VectorThree ore);
-            double bind_domain(Domain& cd_i);
-            double bind_complementary_domains(Domain& cd_i, Domain& cd_j);
-            virtual double bind_noncomplementary_domains(Domain& cd_i, Domain& cd_j);
-            bool check_domain_pair_constraints(Domain& cd_i);
-            bool check_helical_constraints(Domain& cd_1, Domain& cd_2);
 
-            // Orientation checks
-            bool check_domain_orientations_opposing(Domain& cd_i, Domain& cd_j);
-
-            // Linear helix checks
-            bool check_linear_helix(VectorThree ndr_1, Domain& cd_2);
-            bool check_linear_helix_rear(Domain& cd_3);
-
-            // Junction checks
-            bool check_doubly_contiguous_junction(Domain& cd_2, Domain& cd_3);
-            bool doubly_contiguous_junction(Domain& cd_1, Domain& cd_2);
-            bool check_doubly_contiguous_junction(
-                    Domain& cd_1,
-                    Domain& cd_2,
-                    Domain& cd_3,
-                    Domain& cd_4);
-            bool check_junction_front(Domain& cd_1);
-            bool check_junction_rear(Domain& cd_4);
-    };
-
-    class OrigamiSystemWithoutMisbinding: public OrigamiSystem {
-        public:
-            using OrigamiSystem::OrigamiSystem;
-
-        protected:
-            double bind_noncomplementary_domains(Domain& cd_i, Domain& cd_j);
     };
 
     class OrigamiSystemWithBias: public OrigamiSystem {

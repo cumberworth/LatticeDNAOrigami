@@ -32,7 +32,7 @@ namespace enumerator {
                 biases, params.m_ops_to_output};
         }
         GrowthpointEnumerator* growthpoint_enumerator;
-        if (params.m_no_misbinding) {
+        if (params.m_misbinding_pot == "Disallowed") {
             growthpoint_enumerator = new NoMisbindingGrowthpointEnumerator {
                 *conf_enumerator, origami};
         }

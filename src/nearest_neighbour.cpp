@@ -19,14 +19,19 @@ namespace nearestNeighbour {
     using std::log;
     using std::reverse;
 
-    double calc_stacking_energy(
+    double calc_seq_spec_stacking_energy(
             string seq_i,
             string seq_j,
             double,
             double) {
+
         string nuc_i_back {seq_i.back()};
         string nuc_j_front {seq_j.front()};
-        return 0;
+        string stack_pair {nuc_i_back + nuc_j_front};
+        string comp_stack_pair {calc_comp_seq(stack_pair)};
+        string key {stack_pair + "/" + comp_stack_pair};
+
+        return Stacking_Energy.at(key);
     }
 
     ThermoOfHybrid calc_unitless_hybridization_thermo(

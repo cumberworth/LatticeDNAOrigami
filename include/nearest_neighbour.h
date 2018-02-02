@@ -52,7 +52,7 @@ namespace nearestNeighbour {
             {"TERMINAL_AT_PENALTY", 2.2},
             {"SYMMETRY_CORRECTION", 0}};
     
-    // kcal/mol/K
+    // same study; kcal/mol/K
     const unordered_map<string, double> NN_Entropy {
             {"AA/TT", -0.0213},
             {"TT/AA", -0.0213},
@@ -73,13 +73,45 @@ namespace nearestNeighbour {
             {"INITIATION", -0.0057},
             {"TERMINAL_AT_PENALTY", 0.0069},
             {"SYMMETRY_CORRECTION", -0.0014}};
+
+    // kilchherr2016 kcal/mol
+    const unordered_map<string, double> Stacking_Energy {
+            {"AA/TT", -1.36},
+            {"TT/AA", -1.36},
+            {"AT/TA", -2.35},
+            {"TA/AT", -1.01},
+            {"CA/GT", -0.81},
+            {"TG/AC", -2.03},
+            {"GT/CA", -0.81},
+            {"AC/TG", -2.03},
+            {"CT/GA", -1.39},
+            {"AG/TC", -1.60},
+            {"GA/CT", -1.39},
+            {"TC/AG", -1.60},
+            {"CG/GC", -2.06},
+            {"GC/CG", -3.42},
+            {"GG/CC", -1.64},
+            {"CC/GG", -1.64}};
     
     const map<char, char> Complementary_Base_Pairs {
     		{'A', 'T'}, {'T', 'A'}, {'G', 'C'}, {'C', 'G'}};
 
-	double calc_stacking_energy(string seq_i, string seq_j, double temp, double cation_M);
-	ThermoOfHybrid calc_unitless_hybridization_thermo(string seq, double temp, double cation_M);
-	double calc_unitless_hybridization_energy(string seq, double temp, double cation_M);
+	double calc_seq_spec_stacking_energy(
+            string seq_i,
+            string seq_j,
+            double temp,
+            double cation_M);
+
+	ThermoOfHybrid calc_unitless_hybridization_thermo(
+            string seq,
+            double temp,
+            double cation_M);
+
+	double calc_unitless_hybridization_energy(
+            string seq,
+            double temp,
+            double cation_M);
+
     ThermoOfHybrid calc_hybridization_H_and_S(string seq, double cation_M);
 	vector<string> find_longest_contig_complement(string seq_i, string seq_j);
     string calc_comp_seq(string seq);

@@ -5,11 +5,6 @@
 #include <iostream>
 #include <fstream>
 
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/serialization/unordered_map.hpp>
-#include <boost/serialization/utility.hpp>
-
 #include "bias_functions.h"
 #include "order_params.h"
 #include "origami_system.h"
@@ -58,12 +53,11 @@ namespace origami {
             m_cation_M {params.m_cation_M},
             m_staple_u {staple_u},
             m_cyclic {cyclic},
-            m_energy_filebase {params.m_energy_filebase} {
+            m_pot {identities, sequences, params} {
 
         initialize_complementary_associations();
         initialize_scaffold(chains[0]);
         initialize_staples(chains);
-        get_energies();
         set_all_domains(chains);
 
         m_ops = std::make_unique<SystemOrderParams>(params, *this);
@@ -125,6 +119,10 @@ namespace origami {
 
     Domain* OrigamiSystem::unbound_domain_at(VectorThree pos) const {
         return m_pos_to_unbound_d.at(pos);
+    }
+
+    bool OrigamiSystem::check_domains_complementary(Domain& cd_i, Domain& cd_j) {
+        return m_pot.check_domains_complementary(cd_i, cd_j);
     }
 
     double OrigamiSystem::energy() const {
@@ -199,17 +197,6 @@ namespace origami {
         return occ;
     }
 
-    bool OrigamiSystem::check_domains_complementary(Domain& cd_i, Domain& cd_j) {
-        bool comp;
-        if (cd_i.m_d_ident == -cd_j.m_d_ident) {
-            comp = true;
-        }
-        else {
-            comp = false;
-        }
-        return comp;
-    }
-
     ThermoOfHybrid OrigamiSystem::enthalpy_and_entropy() {
         ThermoOfHybrid DH_DS_total {0, 0};
         set<Domain*> accounted_domains; // Domains whose energy is already counted
@@ -220,10 +207,11 @@ namespace origami {
                     if (find(accounted_domains.begin(), accounted_domains.end(),
                                 domain) == accounted_domains.end()) {
                         Domain& bound_domain {*domain->m_bound_domain};
-                        DH_DS_total.enthalpy += hybridization_enthalpy(*domain,
-                                bound_domain);
-                        DH_DS_total.entropy += hybridization_entropy(*domain,
-                                bound_domain);
+
+                        DH_DS_total.enthalpy += m_pot.hybridization_enthalpy(
+                                *domain, bound_domain);
+                        DH_DS_total.entropy += m_pot.hybridization_entropy(
+                                *domain, bound_domain);
                         accounted_domains.insert(domain->m_bound_domain);
                     }
                 }
@@ -415,11 +403,11 @@ namespace origami {
         // Update internal energy
         double delta_e {0};
         if (cd_i.m_state == Occupancy::misbound) {
-            delta_e += hybridization_energy(cd_i, *cd_i.m_bound_domain);
+            delta_e += m_pot.hybridization_energy(cd_i, *cd_i.m_bound_domain);
         }
         else if (cd_i.m_state == Occupancy::bound) {
-            delta_e += hybridization_energy(cd_i, *cd_i.m_bound_domain);
-            delta_e += check_stacking(cd_i, *cd_i.m_bound_domain);
+            delta_e += m_pot.hybridization_energy(cd_i, *cd_i.m_bound_domain);
+            delta_e += m_pot.check_stacking(cd_i, *cd_i.m_bound_domain);
         }
         m_energy += delta_e;
         m_num_unassigned_domains--;
@@ -521,22 +509,8 @@ namespace origami {
 
     void OrigamiSystem::update_temp(double temp) {
         m_temp = temp;
-
-        // Update hybridization and stacking energy tables
-        if (m_hybridization_energy_tables.count(temp) == 0) {
-            get_energies();
-            m_hybridization_energy_tables[temp] = m_hybridization_energies;
-            m_hybridization_enthalpy_tables[temp] = m_hybridization_enthalpies;
-            m_hybridization_entropy_tables[temp] = m_hybridization_entropies;
-            m_stacking_energy_tables[temp] = m_stacking_energies;
-        }
-        else {
-            unordered_map<pair<int, int>, double> m_hybrid_old {m_hybridization_energies};
-            m_hybridization_energies = m_hybridization_energy_tables[temp];
-            m_hybridization_enthalpies = m_hybridization_enthalpy_tables[temp];
-            m_hybridization_entropies = m_hybridization_entropy_tables[temp];
-            m_stacking_energies = m_stacking_energy_tables[temp];
-        }
+        
+        m_pot.update_temp(temp);
 
         // Recalculate system energy
         update_energy();
@@ -550,19 +524,6 @@ namespace origami {
 
         // Update volume such that it cancels fugacity
         m_volume = exp(-u / m_temp);
-    }
-
-    // Protected methods
-
-    double OrigamiSystem::bind_noncomplementary_domains(
-            Domain& cd_i,
-            Domain& cd_j) {
-        m_constraints_violated = true;
-        if (not check_domain_orientations_opposing(cd_i, cd_j)) {
-            return 0;
-        }
-        m_constraints_violated = false;
-        return OrigamiSystem::hybridization_energy(cd_i, cd_j);
     }
 
     void OrigamiSystem::initialize_complementary_associations() {
@@ -583,82 +544,6 @@ namespace origami {
             }
             m_staple_ident_to_scaffold_ds.push_back(scaffold_d_is);
         }
-    }
-
-    void OrigamiSystem::get_energies() {
-        // Get S, H, and G for all possible interactions and store
-        if (m_energy_filebase.size() != 0) {
-            if (not read_energies_from_file()) {
-                calc_energies();
-            }
-        }
-        else {
-            calc_energies();
-        }
-    }
-
-    void OrigamiSystem::calc_energies() {
-        // Calculate S, H, and G for all possible interactions and store
-
-        // Loop through all pairs of sequences
-        for (size_t c_i {0}; c_i != m_sequences.size(); c_i++) {
-            for (size_t c_j {0}; c_j != m_sequences.size(); c_j++) {
-                size_t c_i_length {m_sequences[c_i].size()};
-                size_t c_j_length {m_sequences[c_j].size()};
-                for (size_t d_i {0}; d_i != c_i_length; d_i++) {
-                    int d_i_ident {m_identities[c_i][d_i]};
-                    for (size_t d_j {0}; d_j != c_j_length; d_j++) {
-                        int d_j_ident {m_identities[c_j][d_j]};
-                        string seq_i {m_sequences[c_i][d_i]};
-                        string seq_j {m_sequences[c_j][d_j]};
-                        pair<int, int> key {d_i_ident, d_j_ident};
-                        calc_energy(seq_i, seq_j, key);
-                    }
-                }
-            }
-        }
-        write_energies_to_file();
-    }
-
-    void OrigamiSystem::calc_energy(string seq_i, string seq_j,
-            pair<int, int> key) {
-        // Calculate S, H, and G for pair of sequences and store
-
-        // Hybridization values
-        vector<string> comp_seqs {nearestNeighbour::
-                find_longest_contig_complement(seq_i, seq_j)};
-        double H_hyb {0};
-        double S_hyb {0};
-        int N {0};
-        
-        // No interaction if no complementary sequence
-        if (comp_seqs.size() == 0) {
-            H_hyb = 0;
-            S_hyb = 0;
-        }
-
-        // Take average value of H and S of all equal length comp seqs
-        else {
-            for (auto comp_seq: comp_seqs) {
-                ThermoOfHybrid DH_DS {nearestNeighbour::
-                        calc_unitless_hybridization_thermo(comp_seq,
-                        m_temp, m_cation_M)};
-                H_hyb += DH_DS.enthalpy;
-                S_hyb += DH_DS.entropy;
-                N++;
-            }
-            H_hyb /= N;
-            S_hyb /= N;
-        }
-        m_hybridization_enthalpies[key] = H_hyb;
-        m_hybridization_entropies[key] = S_hyb;
-        m_hybridization_energies[key] = H_hyb - S_hyb;
-
-        // Stacking energies
-        double s_energy {0};
-        s_energy += nearestNeighbour::calc_stacking_energy(seq_i, seq_j, m_temp,
-                m_cation_M);
-        m_stacking_energies[key] = s_energy;
     }
 
     void OrigamiSystem::initialize_staples(Chains chains) {
@@ -691,58 +576,6 @@ namespace origami {
         }
     }
 
-    double OrigamiSystem::check_stacking(Domain& cd_new, Domain& cd_old) {
-        // Check both sides
-        double delta_e {0};
-        for (int i: {-1, 0}) {
-            Domain* cd_i {cd_old + i};
-            Domain* cd_j {cd_old + (i + 1)};
-            if (cd_i == nullptr or cd_j == nullptr) {
-                continue;
-            }
-            bool cd_j_bound {cd_j->m_state == Occupancy::bound};
-            if (not cd_j_bound) {
-                continue;
-            }
-            Domain& cd_adjacent {*cd_j->m_bound_domain};
-            if (cd_adjacent.m_c == cd_new.m_c) {
-                continue;
-            }
-            VectorThree pos_i = {cd_i->m_pos};
-            VectorThree pos_j = {cd_j->m_ore};
-            VectorThree ndr {pos_j - pos_i};
-            VectorThree ore_i = {cd_i->m_ore};
-            if (ndr == ore_i) {
-                continue;
-            }
-            delta_e += stacking_energy(cd_new, cd_adjacent);
-        }
-        return delta_e;
-    }
-
-    double OrigamiSystem::hybridization_energy(const Domain& cd_i,
-            const Domain& cd_j) const {
-        pair<int, int> key {cd_i.m_d_ident, cd_j.m_d_ident};
-        return m_hybridization_energies.at(key);
-    }
-
-    double OrigamiSystem::hybridization_enthalpy(const Domain& cd_i,
-            const Domain& cd_j) const {
-        pair<int, int> key {cd_i.m_d_ident, cd_j.m_d_ident};
-        return m_hybridization_enthalpies.at(key);
-    }
-
-    double OrigamiSystem::hybridization_entropy(const Domain& cd_i,
-            const Domain& cd_j) const {
-        pair<int, int> key {cd_i.m_d_ident, cd_j.m_d_ident};
-        return m_hybridization_entropies.at(key);
-    }
-
-    double OrigamiSystem::stacking_energy(const Domain& cd_i, const Domain& cd_j) const {
-        pair<int, int> key {cd_i.m_d_ident, cd_j.m_d_ident};
-        return m_stacking_energies.at(key);
-    }
-
     double OrigamiSystem::internal_unassign_domain(Domain& cd_i) {
         // Deletes positions, orientations, and removes/unassigns occupancies.
         Occupancy occupancy {cd_i.m_state};
@@ -751,7 +584,7 @@ namespace origami {
             case Occupancy::bound:
                 m_num_fully_bound_domain_pairs -= 1;
                 m_num_bound_domain_pairs -= 1;
-                delta_e += check_stacking(cd_i, *cd_i.m_bound_domain);
+                delta_e -= m_pot.check_stacking(cd_i, *cd_i.m_bound_domain);
                 delta_e += unassign_bound_domain(cd_i);
                 break;
             case Occupancy::misbound:
@@ -776,7 +609,7 @@ namespace origami {
 
     double OrigamiSystem::unassign_bound_domain(Domain& cd_i) {
         Domain& cd_j {*cd_i.m_bound_domain};
-        double delta_e {-hybridization_energy(cd_i, cd_j)};
+        double delta_e {-m_pot.hybridization_energy(cd_i, cd_j)};
 
         cd_i.m_bound_domain = nullptr;
         cd_j.m_bound_domain = nullptr;
@@ -842,67 +675,8 @@ namespace origami {
         }
     }
 
-    bool OrigamiSystem::read_energies_from_file() {
-        // Read energies from file, return false if not present
-        string temp_string {"_" + std::to_string(static_cast<int>(m_temp))};
-
-        // Hybridization free energies, enthalpies, entropies
-        string henergy_filename {m_energy_filebase + temp_string + ".hene"};
-        string hhenergy_filename {m_energy_filebase + temp_string + ".hhene"};
-        string hsenergy_filename {m_energy_filebase + temp_string + ".hsene"};
-
-        // Stacking energies
-        string senergy_filename {m_energy_filebase + temp_string + ".sene"};
-
-        std::ifstream henergy_file {henergy_filename};
-        std::ifstream hhenergy_file {henergy_filename};
-        std::ifstream hsenergy_file {henergy_filename};
-        std::ifstream senergy_file {senergy_filename};
-
-        bool files_present {henergy_file and hhenergy_file and hsenergy_file and
-                senergy_file};
-        if (files_present) {
-            boost::archive::text_iarchive h_arch {henergy_file};
-            h_arch >> m_hybridization_energies;
-            boost::archive::text_iarchive hh_arch {hhenergy_file};
-            hh_arch >> m_hybridization_enthalpies;
-            boost::archive::text_iarchive hs_arch {hsenergy_file};
-            hs_arch >> m_hybridization_entropies;
-            boost::archive::text_iarchive s_arch {senergy_file};
-            s_arch >> m_stacking_energies;
-        }
-
-        return files_present;
-    }
-
-    void OrigamiSystem::write_energies_to_file() {
-        string temp_string {"_" + std::to_string(static_cast<int>(m_temp))};
-
-        // Hybridization energies, enthalpies, entropies
-        string henergy_filename {m_energy_filebase + temp_string + ".hene"};
-        string hhenergy_filename {m_energy_filebase + temp_string + ".hhene"};
-        string hsenergy_filename {m_energy_filebase + temp_string + ".hsene"};
-
-        // Stacking energies
-        string senergy_filename {m_energy_filebase + temp_string + ".sene"};
-
-        std::ofstream henergy_file {henergy_filename};
-        boost::archive::text_oarchive h_arch {henergy_file};
-        h_arch << m_hybridization_energies;
-        std::ofstream hhenergy_file {hhenergy_filename};
-        boost::archive::text_oarchive hh_arch {hhenergy_file};
-        hh_arch << m_hybridization_enthalpies;
-        std::ofstream hsenergy_file {hsenergy_filename};
-        boost::archive::text_oarchive hs_arch {hsenergy_file};
-        hs_arch << m_hybridization_entropies;
-        std::ofstream senergy_file {senergy_filename};
-        boost::archive::text_oarchive s_arch {senergy_file};
-        s_arch << m_stacking_energies;
-    }
-
     void OrigamiSystem::update_energy() {
         // Recalculate total system energy with new energy tables
-        // WARNING: Does not account for stacking energy
         m_energy = 0;
         set<Domain*> accounted_domains; // Domains whose energy is already counted
         for (auto chain: m_domains) {
@@ -912,7 +686,8 @@ namespace origami {
                     if (find(accounted_domains.begin(), accounted_domains.end(),
                                 domain) == accounted_domains.end()) {
                         Domain& bound_domain {*domain->m_bound_domain};
-                        m_energy += hybridization_energy(*domain, bound_domain);
+                        m_energy += m_pot.hybridization_energy(*domain, bound_domain);
+                        m_energy += m_pot.check_stacking(*domain, bound_domain);
                         accounted_domains.insert(domain->m_bound_domain);
                     }
                 }
@@ -939,346 +714,14 @@ namespace origami {
             case Occupancy::unbound:
                 update_domain(cd_i, pos, ore);
                 update_occupancies(cd_i, pos);
-                delta_e += bind_domain(cd_i);
+                delta_e += m_pot.bind_domain(cd_i);
+                m_constraints_violated = m_pot.m_constraints_violated;
                 internal_unassign_domain(cd_i);
                 break;
             case Occupancy::unassigned:
                 update_domain(cd_i, pos, ore);
         }
         return delta_e;
-    }
-
-    double OrigamiSystem::bind_domain(Domain& cd_i) {
-        // Check constraints for an unbound to (mis)bound transition
-        Domain& cd_j {*cd_i.m_bound_domain};
-        double delta_e {0};
-        bool comp {check_domains_complementary(cd_i, cd_j)};
-        if (comp) {
-            delta_e += bind_complementary_domains(cd_i, cd_j);
-        }
-        else {
-            delta_e += bind_noncomplementary_domains(cd_i, cd_j);
-        }
-        return delta_e;
-    }
-
-    double OrigamiSystem::bind_complementary_domains(Domain& cd_i, Domain& cd_j) {
-        // cd_i is new
-        m_constraints_violated = true;
-        if (not check_domain_orientations_opposing(cd_i, cd_j)) {
-            return 0;
-        }
-        if (not check_domain_pair_constraints(cd_i)) {
-            return 0;
-        }
-        if (not check_domain_pair_constraints(cd_j)) {
-            return 0;
-        }
-
-        // Missed one linear helix check per chain
-        if (not check_linear_helix_rear(cd_i)) {
-            return 0;
-        }
-        if (not check_linear_helix_rear(cd_j)) {
-            return 0;
-        }
-
-        // Missed two contiguous junction checks per chain
-        if (not check_junction_front(cd_i)) {
-            return 0;
-        }
-        if (not check_junction_front(cd_j)) {
-            return 0;
-        }
-        if (not check_junction_rear(cd_i)) {
-            return 0;
-        }
-        if (not check_junction_rear(cd_j)) {
-            return 0;
-        }
-
-        // Collect energies
-        m_constraints_violated = false;
-        double delta_e {0};
-        delta_e += hybridization_energy(cd_i, cd_j);
-        delta_e += check_stacking(cd_i, cd_j);
-
-        return delta_e;
-    }
-
-    bool OrigamiSystem::check_domain_pair_constraints(Domain& cd_i) {
-        bool pair_constraints_obeyed {true};
-        // Check both pairs
-        for (int i: {-1, 0}) {
-            Domain* cd_1 {cd_i + i};
-            Domain* cd_2 {cd_i + (i + 1)};
-            if (cd_1 == nullptr or cd_2 == nullptr) {
-                continue;
-            }
-            if (cd_1->m_state == Occupancy::bound and cd_2->m_state == Occupancy::bound) {
-                if (not check_helical_constraints(*cd_1, *cd_2)) {
-                    pair_constraints_obeyed = false;
-                    break;
-                }
-            }
-            else {
-            }
-        }
-        return pair_constraints_obeyed;
-    }
-
-    bool OrigamiSystem::check_helical_constraints(Domain& cd_1, Domain& cd_2) {
-        // Given that d1 and d2 exist and are bound
-        bool helical_constraints_obeyed {true};
-
-        // Calculate next domain vector
-        VectorThree ndr {cd_2.m_pos - cd_1.m_pos};
-
-        Domain& cd_bound_1 {*cd_1.m_bound_domain};
-        Domain& cd_bound_2 {*cd_2.m_bound_domain};
-        bool bound_same_chain {cd_bound_1.m_c == cd_bound_2.m_c};
-
-        // New helix case
-        if (cd_1.m_ore == ndr) {
-
-            // Check parallel helix constraint
-            if (not (cd_1.m_ore == cd_2.m_ore)) {
-                helical_constraints_obeyed = false;
-            }
-
-            // Check doubly contiguous constraint
-            if (helical_constraints_obeyed and bound_same_chain) {
-                if (cd_bound_1.m_d == cd_bound_2.m_d - 1) {
-                    helical_constraints_obeyed = false;
-                }
-                else {
-                    if (not check_doubly_contiguous_junction(cd_1, cd_2)) {
-                        helical_constraints_obeyed = false;
-                    }
-                }
-            }
-        }
-
-        // Non-physical case
-        else if (cd_1.m_ore == -ndr) {
-            helical_constraints_obeyed = false;
-        }
-
-        // Same helix case
-        else {
-
-            // Check double contiguous constraint
-            if (bound_same_chain) {
-                if (cd_bound_1.m_d == cd_bound_2.m_d + 1) {
-                    helical_constraints_obeyed = false;
-                }
-            }
-            if (cd_1.check_twist_constraint(ndr, cd_2)) {
-                if (not check_linear_helix(ndr, cd_2)) {
-                    helical_constraints_obeyed = false;
-                }
-            }
-            else {
-                helical_constraints_obeyed = false;
-            }
-        }
-        return helical_constraints_obeyed;
-    }
-
-    bool OrigamiSystem::check_domain_orientations_opposing(Domain& cd_i, Domain& cd_j) {
-        bool domain_orientations_opposing {true};
-        if (cd_i.m_ore != -cd_j.m_ore) {
-            domain_orientations_opposing = false;
-            return domain_orientations_opposing;
-        }
-        return domain_orientations_opposing;
-    }
-
-    bool OrigamiSystem::check_linear_helix(VectorThree ndr_1, Domain& cd_2) {
-        bool linear_if_helix {true};
-        Domain* cd_3 {cd_2 + 1};
-        if (cd_3 == nullptr) {
-            return linear_if_helix;
-        }
-
-        // Third domain not bound or unasssigned
-        if (cd_3->m_state != Occupancy::bound) {
-            return linear_if_helix;
-        }
-
-        // Third domain part of new helix
-        VectorThree ndr_2 {cd_3->m_pos - cd_2.m_pos};
-        if (ndr_2 == cd_2.m_ore) {
-            return linear_if_helix;
-        }
-
-        // Third domain linear
-        if (ndr_1 == ndr_2) {
-            return linear_if_helix;
-        }
-
-        linear_if_helix = false;
-        return linear_if_helix;
-    }
-
-    bool OrigamiSystem::check_linear_helix_rear(Domain& cd_3) {
-        // Check linear helix constraints given rear domain exists and bound
-        bool linear_if_helix {true};
-        Domain* cd_2 {cd_3 + -1};
-        Domain* cd_1 {cd_3 + -2};
-        if (cd_1 == nullptr or cd_2 == nullptr) {
-            return linear_if_helix;
-        }
-        
-        // Domains 1 and 2 not bound
-        bool cd_1_bound {cd_1->m_state == Occupancy::bound};
-        bool cd_2_bound {cd_2->m_state == Occupancy::bound};
-        if (not (cd_1_bound and cd_2_bound)) {
-            return linear_if_helix;
-        }
-        VectorThree ndr_1 {cd_2->m_pos - cd_1->m_pos};
-        VectorThree ndr_2 {cd_3.m_pos - cd_2->m_pos};
-        VectorThree ore_1 {cd_1->m_ore};
-        VectorThree ore_2 {cd_2->m_ore};
-        // Domains 1 and 2 are junction
-        if (ndr_1 == ore_1) {
-            return linear_if_helix;
-        }
-
-        // Domains 2 and 3 are junction
-        if (ndr_2 == ore_2) {
-            return linear_if_helix;
-        }
-
-        // Domains are linear
-        if (ndr_1 == ndr_2) {
-            return linear_if_helix;
-        }
-
-        linear_if_helix = false;
-        return linear_if_helix;
-    }
-
-    bool OrigamiSystem::check_doubly_contiguous_junction(Domain& cd_2, Domain& cd_3) {
-        // Already know d_2 and d_3 are doubly contiguous junction
-        bool junction_constraints_obeyed {true};
-        Domain* cd_1 {cd_2 + -1};
-        Domain* cd_4 {cd_3 + 1};
-        if (cd_1 == nullptr or cd_4 == nullptr) {
-            return junction_constraints_obeyed;
-        }
-
-        bool cd_1_bound {cd_1->m_state == Occupancy::bound};
-        bool cd_4_bound {cd_4->m_state == Occupancy::bound};
-        if (not (cd_1_bound and cd_4_bound)) {
-            return junction_constraints_obeyed;
-        }
-        junction_constraints_obeyed = check_doubly_contiguous_junction(*cd_1, cd_2,
-                cd_3, *cd_4);
-        return junction_constraints_obeyed;
-    }
-
-    bool OrigamiSystem::doubly_contiguous_junction(Domain& cd_1, Domain& cd_2) {
-        // Given that d1 and d2 exist and are bound and contiguous
-
-        // Check doubly contiguous
-        Domain& cd_bound_1 {*cd_1.m_bound_domain};
-        Domain& cd_bound_2 {*cd_2.m_bound_domain};
-        if (cd_bound_1.m_c != cd_bound_2.m_c) {
-            return false;
-        }
-
-        if (cd_bound_2.m_d != cd_bound_1.m_d - 1) {
-            return false;
-        }
-
-        // Check junction
-        VectorThree ndr {cd_2.m_pos - cd_1.m_pos};
-        VectorThree ore_1 {cd_1.m_ore};
-        if (ndr != ore_1) {
-
-            // To be clear, this is only used to check for changes in junction
-            // constraints; if it's been set before the local constraints were okay
-            return false;
-        }
-
-        return true;
-    }
-
-    bool OrigamiSystem::check_doubly_contiguous_junction(
-            Domain& cd_1,
-            Domain& cd_2,
-            Domain& cd_3,
-            Domain& cd_4) {
-        // Calling functions already check for existance and boundeness of d1-4.
-
-        bool junction_constraints_obeyed;
-        VectorThree ndr_1 {cd_2.m_pos - cd_1.m_pos};
-        VectorThree ndr_3 {cd_4.m_pos - cd_3.m_pos};
-        if (ndr_1 == -ndr_3) {
-        // if (ndr_1 != ndr_3) {
-            junction_constraints_obeyed = true;
-        }
-        else {
-            junction_constraints_obeyed = false;
-        }
-
-        return junction_constraints_obeyed;
-    }
-
-    bool OrigamiSystem::check_junction_front(Domain& cd_1) {
-        bool junction_constraints_obeyed {true};
-        Domain* cd_2 {cd_1 + 1};
-        Domain* cd_3 {cd_1 + 2};
-        Domain* cd_4 {cd_1 + 3};
-        if (cd_2 == nullptr or cd_3 == nullptr or cd_4 == nullptr) {
-            return junction_constraints_obeyed;
-        }
-
-        // Check that all domains in bound state
-        bool cd_2_bound {cd_2->m_state == Occupancy::bound};
-        bool cd_3_bound {cd_3->m_state == Occupancy::bound};
-        bool cd_4_bound {cd_4->m_state == Occupancy::bound};
-        if (not (cd_2_bound and cd_3_bound and cd_4_bound)) {
-            return junction_constraints_obeyed;
-        }
-
-        if (not doubly_contiguous_junction(*cd_2, *cd_3)) {
-            return junction_constraints_obeyed;
-        }
-
-        return check_doubly_contiguous_junction(cd_1, *cd_2, *cd_3, *cd_4);
-    }
-
-    bool OrigamiSystem::check_junction_rear(Domain& cd_4) {
-        // Check junction given d4 exists
-        bool junction_constraints_obeyed {true};
-        Domain* cd_3 {cd_4 + -1};
-        Domain* cd_2 {cd_4 + -2};
-        Domain* cd_1 {cd_4 + -3};
-        if (cd_1 == nullptr or cd_2 == nullptr or cd_3 == nullptr) {
-            return junction_constraints_obeyed;
-        }
-
-        // Check that all domains in bound state
-        bool cd_1_bound {cd_1->m_state == Occupancy::bound};
-        bool cd_2_bound {cd_2->m_state == Occupancy::bound};
-        bool cd_3_bound {cd_3->m_state == Occupancy::bound};
-        if (not (cd_1_bound and cd_2_bound and cd_3_bound)) {
-            return junction_constraints_obeyed;
-        }
-
-        if (not doubly_contiguous_junction(*cd_2, *cd_3)) {
-            return junction_constraints_obeyed;
-        }
-
-        return check_doubly_contiguous_junction(*cd_1, *cd_2, *cd_3, cd_4);
-    }
-
-    double OrigamiSystemWithoutMisbinding::bind_noncomplementary_domains(
-            Domain&, Domain&) {
-        m_constraints_violated = true;
-        return 0;
     }
 
     OrigamiSystemWithBias::OrigamiSystemWithBias(
@@ -1311,7 +754,8 @@ namespace origami {
             state = Occupancy::unbound;
         }
         else if (pos_state == Occupancy::unbound) {
-            if (check_domains_complementary(*unbound_domain_at(pos), cd_i)) {
+            if (m_pot.check_domains_complementary(*unbound_domain_at(pos),
+                    cd_i)) {
                 state = Occupancy::bound;
             }
             else {
