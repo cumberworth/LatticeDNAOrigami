@@ -590,6 +590,7 @@ namespace potential {
     void OrigamiPotential::update_temp(double temp) {
 
         // Update hybridization and stacking energy tables
+        m_temp = temp;
         if (m_hybridization_energy_tables.count(temp) == 0) {
             get_energies();
             m_hybridization_energy_tables[temp] = m_hybridization_energies;
