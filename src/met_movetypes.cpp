@@ -193,7 +193,10 @@ namespace movetypes {
                     m_exchange_mults[c_i_ident - 1] /= 10;
                     accepted = false;
                 }
-                else if (not m_allow_nonsensical_ps) {
+                else if (m_allow_nonsensical_ps) {
+                    accepted = true;
+                }
+                else {
                     cout << "Nonsensical exchange probability detected\n";
                     throw SimulationMisuse {};
                 }
@@ -233,6 +236,9 @@ namespace movetypes {
                     cout << c_i_ident << m_modifier << " " << ratio << "\n";
                     m_exchange_mults[c_i_ident - 1] /= 10;
                     accepted = false;
+                }
+                else if (m_allow_nonsensical_ps) {
+                    accepted = true;
                 }
                 else {
                     cout << "Nonsensical exchange probability detected\n";
