@@ -7,6 +7,7 @@ import pdb
 import sys
 
 from origamipy.origami_io import *
+from origamipy.us_process import *
 
 def main():
     parser = argparse.ArgumentParser()
@@ -14,15 +15,15 @@ def main():
     parser.add_argument('out_filebase', type=str, help='Output filebase')
     parser.add_argument('wins_file', type=str, help='Windows file')
     parser.add_argument('config', type=int, help='Number of config in file')
+    parser.add_argument('iteration', type=str, help='Iteration')
     args = parser.parse_args()
     inp_filebase = args.inp_filebase
     out_filebase = args.out_filebase
     wins_filename = args.wins_file
     step = args.config
+    iteration = args.iteration
 
-    wins = read_windows(wins_filename)
-    iteration = 'prod'
-    #iteration = '8'
+    tags, wins = read_windows_file(wins_filename)
     for i, win in enumerate(wins):
         inp_postfix = '_iter-{}.trj'.format(iteration)
         inp_win_filename = create_win_filename(win, inp_filebase, inp_postfix)

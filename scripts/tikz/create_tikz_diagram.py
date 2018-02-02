@@ -10,13 +10,10 @@ import argparse
 import sys
 import string
 
-#sys.path.insert(0, '../../../../lib/lattice_origami_domains')
-sys.path.insert(0, '../../../lattice_origami_domains')
-
-from lattice_dna_origami.origami_io import JSONInputFile, PlainTextTrajFile
+from origamipy.origami_io import JSONInputFile, PlainTextTrajFile
 
 
-TEMPLATE_FILENAME = '../../../../share/tikz_template.tex'
+TEMPLATE_FILENAME = 'tikz_template.tex'
 
 
 def make_tikz_position_bond_orientation_list(chains):
