@@ -25,11 +25,12 @@ namespace annealing {
                     InputParameters& params);
             void run();
         private:
-            void update_internal(long long int) {};
             double m_max_temp;
             double m_min_temp;
             double m_temp_interval;
             long long int m_steps_per_temp;
+
+            void update_internal(long long int) {};
     };
 }
 

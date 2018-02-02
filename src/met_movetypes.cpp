@@ -89,6 +89,7 @@ namespace movetypes {
             MetMCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
             m_adaptive_exchange {adaptive_exchange},
+            m_allow_nonsensical_ps {m_params.m_allow_nonsensical_ps},
             m_exchange_mults {exchange_mults} {
     }
 
@@ -192,7 +193,7 @@ namespace movetypes {
                     m_exchange_mults[c_i_ident - 1] /= 10;
                     accepted = false;
                 }
-                else {
+                else if (not m_allow_nonsensical_ps) {
                     cout << "Nonsensical exchange probability detected\n";
                     throw SimulationMisuse {};
                 }

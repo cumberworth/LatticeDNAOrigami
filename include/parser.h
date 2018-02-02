@@ -60,6 +60,7 @@ namespace parser {
             int m_centering_freq;
             int m_centering_domain;
             int m_constraint_check_freq;
+            bool m_allow_nonsensical_ps;
 
             // Constant temperature parameters
             long long int m_ct_steps;

@@ -85,6 +85,7 @@ namespace movetypes {
             bool delete_staple();
 
             bool m_adaptive_exchange;
+            bool m_allow_nonsensical_ps;
             bool m_staple_bound {false};
             vector<double> m_exchange_mults;
             StapleExchangeTracking m_tracker {};
