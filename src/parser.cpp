@@ -37,6 +37,15 @@ namespace parser {
             ("origami_input_filename",
                 po::value<string>(&m_origami_input_filename),
                 "Origami input filename")
+            ("binding_pot",
+                po::value<string>(&m_binding_pot),
+                "Binding potential to use")
+            ("misbinding_pot",
+                po::value<string>(&m_misbinding_pot),
+                "Misbinding potential to use")
+            ("stacking_pot",
+                po::value<string>(&m_stacking_pot),
+                "Stacking potential to use")
             ("temp",
                 po::value<double>(&m_temp)->default_value(300),
                 "System temperature (K)")
@@ -55,9 +64,9 @@ namespace parser {
             ("lattice_site_volume",
                 po::value<double>(&m_lattice_site_volume)->default_value(1),
                 "Volume per lattice site (L)")
-            ("no_misbinding",
-                po::value<bool>(&m_no_misbinding)->default_value(false),
-                "Turn off misbinding")
+            ("stacking_ene",
+                po::value<double>(&m_stacking_ene)->default_value(1),
+                "Stacking energy for constant potential")
             ("min_total_staples",
                 po::value<int>(&m_min_total_staples)->default_value(0),
                 "Min number of total staples")
