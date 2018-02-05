@@ -369,8 +369,13 @@ namespace potential {
             Domain& cd_i,
             Domain& cd_j) {
 
-        // Loop through relevant pairs
         m_constraints_violated = false;
+        if (not check_domain_orientations_opposing(cd_i, cd_j)) {
+            m_constraints_violated = true;
+            return 0;
+        }
+
+        // Loop through relevant pairs
         double delta_e {0};
         for (auto cd: {&cd_i, &cd_j}) {
             for (int i: {-1, 0}) {
@@ -434,7 +439,7 @@ namespace potential {
                 }
             }
 
-            // The rest of this is shit ugly
+            // ugly
             else {
                 if (not check_edge_pair_junction(cd_1, cd_2, i)) {
                     m_constraints_violated = true;
@@ -455,7 +460,6 @@ namespace potential {
     bool FlexibleBindingPotential::check_doubly_contig_junction(
             Domain* cd_1, Domain* cd_2, Domain* cd_3, Domain* cd_4) {
 
-        bool junction_constraints_obeyed;
         VectorThree ndr_1 {cd_2->m_pos - cd_1->m_pos};
         VectorThree ndr_2 {cd_3->m_pos - cd_2->m_pos};
         VectorThree ndr_3 {cd_4->m_pos - cd_3->m_pos};
@@ -463,7 +467,7 @@ namespace potential {
         // Check that the domains are not on opposite sides of the junction
         bool junction_ok {true};
         if ((ndr_1 != ndr_2 and ndr_1 != -ndr_2) and (ndr_1 == -ndr_3)) {
-            junction_constraints_obeyed = false;
+            junction_ok = false;
         }
 
         return junction_ok;
@@ -477,16 +481,16 @@ namespace potential {
         Domain* cd_j3;
         Domain* cd_j4;
         if (i == -1) {
-            cd_j1 = *cd_1 + -3;
-            cd_j2 = *cd_1 + -2;
-            cd_j3 = *cd_1 + -1;
-            cd_j4 = cd_1;
+            cd_j1 = *cd_1 + -2;
+            cd_j2 = *cd_1 + -1;
+            cd_j3 = cd_1;
+            cd_j4 = cd_2;
         }
         else {
-            cd_j1 = cd_2;
-            cd_j2 = *cd_2 + 1;
-            cd_j3 = *cd_2 + 2;
-            cd_j4 = *cd_2 + 3;
+            cd_j1 = cd_1;
+            cd_j2 = cd_2;
+            cd_j3 = *cd_2 + 1;
+            cd_j4 = *cd_2 + 2;
         }
         bool junction_ok {true};
         if (check_domains_exist_and_bound({cd_j1, cd_j2, cd_j3, cd_j4})) {
@@ -494,9 +498,7 @@ namespace potential {
             Domain& cd_bound_j3 {*cd_j3->m_bound_domain};
             bool bound_same_chain {cd_bound_j2.m_c == cd_bound_j3.m_c};
             if (bound_same_chain) {
-                VectorThree ndr {cd_j3->m_pos - cd_j2->m_pos};
-                if ((cd_bound_j2.m_d == cd_bound_j3.m_d - 1) and (cd_j2->m_ore ==
-                        ndr)) {
+                if ((cd_bound_j2.m_d == cd_bound_j3.m_d - 1)) {
                     if (not check_doubly_contig_junction(cd_j1, cd_j2, cd_j3,
                             cd_j4)) {
                         junction_ok = false;
