@@ -677,22 +677,13 @@ namespace origami {
 
     void OrigamiSystem::update_energy() {
         // Recalculate total system energy with new energy tables
-        m_energy = 0;
-        set<Domain*> accounted_domains; // Domains whose energy is already counted
         for (auto chain: m_domains) {
             for (auto domain: chain) {
-                Occupancy state {domain->m_state};
-                if (state == Occupancy::bound or state == Occupancy::misbound) {
-                    if (find(accounted_domains.begin(), accounted_domains.end(),
-                                domain) == accounted_domains.end()) {
-                        Domain& bound_domain {*domain->m_bound_domain};
-                        m_energy += m_pot.hybridization_energy(*domain, bound_domain);
-                        m_energy += m_pot.check_stacking(*domain, bound_domain);
-                        accounted_domains.insert(domain->m_bound_domain);
-                    }
-                }
+                unassign_domain(*domain);
             }
         }
+        m_energy = 0;
+        set_all_domains();
     }
 
     double OrigamiSystem::internal_check_domain_constraints(

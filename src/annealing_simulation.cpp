@@ -33,9 +33,8 @@ namespace annealing {
         long long int step {0};
         while (temp >= m_min_temp) {
             m_origami_system.update_temp(temp);
-            simulate(m_steps_per_temp, step);
+            step += simulate(m_steps_per_temp, step);
             temp -= m_temp_interval;
-            step += m_steps_per_temp;
         }
     }
 }
