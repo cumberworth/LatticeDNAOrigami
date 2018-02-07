@@ -36,13 +36,13 @@ namespace potential {
             BindingPotential(OrigamiPotential& pot);
             virtual ~BindingPotential() {}
 
-            virtual double bind_domains(Domain& cd_i, Domain& cd_j) = 0;
-            double check_stacking(Domain& cd_i, Domain& cd_j);
+            virtual pair<double, int> bind_domains(Domain& cd_i, Domain& cd_j) = 0;
+            pair<double, int> check_stacking(Domain& cd_i, Domain& cd_j);
             bool m_constraints_violated;
 
         protected:
             OrigamiPotential& m_pot;
-            virtual double check_pair_stacking(Domain* cd_1, Domain* cd_2) = 0;
+            virtual pair<double, int> check_pair_stacking(Domain* cd_1, Domain* cd_2) = 0;
     };
 
     class RestrictiveBindingPotential:
@@ -50,8 +50,8 @@ namespace potential {
 
         public:
             using BindingPotential::BindingPotential;
-            double bind_domains(Domain& cd_i, Domain& cd_j) override;
-            double check_pair_stacking(Domain* cd_1, Domain* cd_2) override;
+            pair<double, int> bind_domains(Domain& cd_i, Domain& cd_j) override;
+            pair<double, int> check_pair_stacking(Domain* cd_1, Domain* cd_2) override;
 
         private:
             // Top level interaction checks
@@ -80,11 +80,11 @@ namespace potential {
 
         public:
             using BindingPotential::BindingPotential;
-            double bind_domains(Domain& cd_i, Domain& cd_j) override;
-            double check_pair_stacking(Domain* cd_1, Domain* cd_2) override;
+            pair<double, int> bind_domains(Domain& cd_i, Domain& cd_j) override;
+            pair<double, int> check_pair_stacking(Domain* cd_1, Domain* cd_2) override;
 
         private:
-            double check_constraints(Domain* cd_1, Domain* cd_2, int i);
+            pair<double, int> check_constraints(Domain* cd_1, Domain* cd_2, int i);
             bool check_doubly_contig_junction(Domain* cd_1, Domain* cd_2,
                     Domain* cd_3, Domain* cd_4);
             bool check_edge_pair_junction(Domain* cd_1, Domain* cd_2, int i);
@@ -139,9 +139,9 @@ namespace potential {
             void update_temp(double temp);
     
             // Domain interactions
-            double bind_domain(Domain& cd_i);
+            pair<double, int> bind_domain(Domain& cd_i);
             bool check_domains_complementary(Domain& cd_i, Domain& cd_j);
-            double check_stacking(Domain& cd_i, Domain& cd_j);
+            pair<double, int> check_stacking(Domain& cd_i, Domain& cd_j);
 
             // Energy calculations
             double hybridization_energy(const Domain& cd_i, const Domain& cd_j) const;

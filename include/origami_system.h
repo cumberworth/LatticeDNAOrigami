@@ -100,6 +100,7 @@ namespace origami {
             int num_fully_bound_domain_pairs() const;
             int num_self_bound_domain_pairs() const;
             int num_misbound_domain_pairs() const;
+            int num_stacked_domain_pairs() const;
             int num_staples_of_ident(int staple_ident) const;
             vector<int> staples_of_ident(int c_ident);
             vector<int> complementary_scaffold_domains(int staple_ident) const;
@@ -119,6 +120,7 @@ namespace origami {
                     VectorThree pos,
                     VectorThree ore);
             void check_distance_constraints();
+            //int check_stacking(Domain& domain);
     
             // Configuration modifiers
             virtual double unassign_domain(Domain& cd_i);
@@ -168,6 +170,7 @@ namespace origami {
             int m_num_fully_bound_domain_pairs {0}; // Num bound fully complementary domain pairs
             int m_num_self_bound_domain_pairs {0}; // Num self-misbound domain pairs
             int m_num_unassigned_domains {0};
+            int m_num_stacked_domain_pairs {0};
 
             unique_ptr<orderParams::SystemOrderParams> m_ops;
             unique_ptr<biasFunctions::SystemBiases> m_biases;
@@ -181,7 +184,7 @@ namespace origami {
             void initialize_staples(Chains chain);
 
             // States updates
-            double internal_unassign_domain(Domain& cd_i);
+            pair<double, int> internal_unassign_domain(Domain& cd_i);
             double unassign_bound_domain(Domain& cd_i);
             void unassign_unbound_domain(Domain& cd_i);
             void update_domain(Domain& cd_i, VectorThree pos, VectorThree ore);
@@ -191,7 +194,7 @@ namespace origami {
             void update_energy();
 
             // Constraint checkers
-            double internal_check_domain_constraints(
+            pair<double, int> internal_check_domain_constraints(
                     Domain& cd_i,
                     VectorThree pos,
                     VectorThree ore);

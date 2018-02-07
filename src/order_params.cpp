@@ -275,6 +275,37 @@ namespace orderParams {
         return m_checked_param;
     }
 
+    NumStackedPairsOrderParam::NumStackedPairsOrderParam(
+            OrigamiSystem& origami,
+            string label) :
+            m_origami {origami} {
+
+        m_label = label;
+        calc_param();
+        m_defined = true;
+    }
+
+    int NumStackedPairsOrderParam::calc_param() {
+        m_param = m_origami.num_stacked_domain_pairs();
+
+        return m_param;
+    }
+
+    int NumStackedPairsOrderParam::check_param(Domain&, VectorThree,
+            VectorThree, Occupancy) {
+        
+/*        if (state != Occupancy::unassigned) {
+            m_defined = true;
+            m_checked_param = m_origami.num_stacked_domain_pairs();
+            m_checked_param += m_origami.check_stacking(domain);
+        }
+
+        return m_checked_param;
+        */
+        cout << "CHECK STACKING NOT IMPLEMENTED\n";
+        return 0;
+    }
+
     SystemOrderParams::SystemOrderParams(InputParameters& params,
             OrigamiSystem& origami) :
             m_origami {origami} {
@@ -364,6 +395,10 @@ namespace orderParams {
                 }
                 else if (type == "NumMisboundDomainPairs") {
                     op = new NumMisboundDomainPairsOrderParam {
+                            m_origami, label};
+                }
+                else if (type == "NumStackedPairs") {
+                    op = new NumStackedPairsOrderParam {
                             m_origami, label};
                 }
                 else {

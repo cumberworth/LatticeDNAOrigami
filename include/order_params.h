@@ -147,6 +147,20 @@ namespace orderParams {
             OrigamiSystem& m_origami;
     };
 
+    class NumStackedPairsOrderParam: public OrderParam {
+        public:
+            NumStackedPairsOrderParam(OrigamiSystem& origami, string label);
+            int calc_param() override final;
+            int check_param(
+                    Domain& domain,
+                    VectorThree,
+                    VectorThree,
+                    Occupancy) override final;
+
+        private:
+            OrigamiSystem& m_origami;
+    };
+
     class SystemOrderParams {
         public:
             SystemOrderParams(InputParameters& params, OrigamiSystem& origami);
