@@ -30,20 +30,21 @@ namespace movetypes {
         VectorThree o_new {select_random_orientation()};
 
         if (domain->m_state == Occupancy::bound or domain->m_state == Occupancy::misbound) {
+            double delta_e {0};
             VectorThree o_old {domain->m_ore};
             Domain* bound_domain {domain->m_bound_domain};
-            m_origami_system.unassign_domain(*bound_domain);
+            delta_e += m_origami_system.unassign_domain(*bound_domain);
             m_origami_system.set_domain_orientation(*domain, o_new);
             VectorThree pos {domain->m_pos};
-            m_origami_system.set_domain_config(*bound_domain, pos, -o_new);
-            if (m_origami_system.m_constraints_violated) {
-                accepted = false;
+            delta_e += m_origami_system.set_domain_config(*bound_domain, pos, -o_new);
+            if (not m_origami_system.m_constraints_violated) {
+                double boltz_factor {exp(-delta_e)};
+                accepted = test_acceptance(boltz_factor);
+            }
+            if (not accepted) {
                 m_origami_system.unassign_domain(*bound_domain);
                 m_origami_system.set_domain_orientation(*domain, o_old);
                 m_origami_system.set_checked_domain_config(*bound_domain, pos, -o_old);
-            }
-            else {
-                accepted = true;
             }
         }
         else {
