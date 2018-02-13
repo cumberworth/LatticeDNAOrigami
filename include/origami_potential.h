@@ -27,6 +27,7 @@ namespace potential {
     bool check_domain_orientations_opposing(Domain& cd_i, Domain& cd_j);
     bool check_doubly_contig(Domain* cd_1, Domain* cd_2);
     bool check_domains_exist_and_bound(vector<Domain*> cdv);
+    bool check_linear_helix(VectorThree ndr_1, Domain& cd_2);
 
     // Forward declaration
     class OrigamiPotential;
@@ -37,7 +38,7 @@ namespace potential {
             virtual ~BindingPotential() {}
 
             virtual pair<double, int> bind_domains(Domain& cd_i, Domain& cd_j) = 0;
-            pair<double, int> check_stacking(Domain& cd_i, Domain& cd_j);
+            virtual pair<double, int> check_stacking(Domain& cd_i, Domain& cd_j);
             bool m_constraints_violated;
 
         protected:
@@ -59,7 +60,6 @@ namespace potential {
             bool check_helical_constraints(Domain& cd_1, Domain& cd_2);
 
             // Linear helix checks
-            bool check_linear_helix(VectorThree ndr_1, Domain& cd_2);
             bool check_linear_helix_rear(Domain& cd_3);
 
             // Junction checks
@@ -75,19 +75,78 @@ namespace potential {
 
     };
 
+    /** Base class for binding potentials that allow bending at backbone nicks
+      *
+      */
     class FlexibleBindingPotential:
             public BindingPotential {
 
         public:
             using BindingPotential::BindingPotential;
             pair<double, int> bind_domains(Domain& cd_i, Domain& cd_j) override;
-            pair<double, int> check_pair_stacking(Domain* cd_1, Domain* cd_2) override;
+
+        protected:
+            double m_delta_e;
+            int m_delta_stacked_pairs;
+
+            virtual void check_constraints(Domain* cd) = 0;
+            virtual void check_doubly_contig_junction(
+                    Domain* cd_1,
+                    Domain* cd_2,
+                    Domain* cd_3,
+                    Domain* cd_4) = 0;
+            void check_regular_pair_constraints(
+                    Domain* cd_1,
+                    Domain* cd_2,
+                    int i);
+            void check_possible_doubly_contig_helix(
+                    Domain* cd_1,
+                    Domain* cd_2);
+            void check_possible_doubly_contig_junction(
+                    Domain* cd_1,
+                    Domain* cd_2);
+            bool check_pair_stacked(Domain* cd_1, Domain* cd_2);
+            void check_edge_pair_junction(Domain* cd_1, Domain* cd_2, int i);
+    };
+
+    /** Helices must be linear to be fully stacked */
+    class LinearFlexibleBindingPotential:
+            public FlexibleBindingPotential {
+
+        public:
+            using FlexibleBindingPotential::FlexibleBindingPotential;
+            pair<double, int> check_stacking(Domain& cd_i, Domain& cd_j) override;
+            pair<double, int> check_pair_stacking(
+                    Domain* cd_1,
+                    Domain* cd_2) override;
 
         private:
-            pair<double, int> check_constraints(Domain* cd_1, Domain* cd_2, int i);
-            bool check_doubly_contig_junction(Domain* cd_1, Domain* cd_2,
-                    Domain* cd_3, Domain* cd_4);
-            bool check_edge_pair_junction(Domain* cd_1, Domain* cd_2, int i);
+            void check_constraints(Domain* cd) override;
+            void check_doubly_contig_junction(
+                    Domain* cd_1,
+                    Domain* cd_2,
+                    Domain* cd_3,
+                    Domain* cd_4) override;
+            void check_linear_helix(Domain* cd_1, Domain* cd_2, int i);
+    };
+
+    /** Helices can be fully stacked and nonlinear */
+    class NonLinearFlexibleBindingPotential:
+            public FlexibleBindingPotential {
+
+        public:
+            using FlexibleBindingPotential::FlexibleBindingPotential;
+            pair<double, int> check_pair_stacking(
+                    Domain* cd_1,
+                    Domain* cd_2) override;
+
+        private:
+            void check_constraints(Domain* cd) override;
+            void check_doubly_contig_junction(
+                    Domain* cd_1,
+                    Domain* cd_2,
+                    Domain* cd_3,
+                    Domain* cd_4) override;
     };
 
     class MisbindingPotential {
@@ -105,7 +164,7 @@ namespace potential {
     /**
       * Misbound domanis must have opposing orientation vectors
       */
-    class RestrictiveMisbindingPotential:
+    class OpposingMisbindingPotential:
             public MisbindingPotential {
 
         public:

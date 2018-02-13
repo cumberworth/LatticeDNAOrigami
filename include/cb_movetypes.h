@@ -328,8 +328,7 @@ namespace movetypes {
               */
             set<int> setup_fixed_end_biases(
                     vector<Domain*>& linker1,
-                    vector<Domain*>& linker2,
-                    vector<Domain*>& scaffold_domains);
+                    vector<Domain*>& linker2);
 
             bool domains_bound_externally(vector<Domain*> domains);
             bool scan_for_external_scaffold_domain(
@@ -406,7 +405,7 @@ namespace movetypes {
       * select domains that are contiguously bound out from the seed domain.
       */
     class Clustered2CTCBLinkerRegrowth:
-        public ClusteredCTCBLinkerRegrowth {
+        public CTCBLinkerRegrowthMCMovetype {
 
         public:
             Clustered2CTCBLinkerRegrowth(
@@ -431,6 +430,8 @@ namespace movetypes {
                     vector<Domain*>& linker1,
                     vector<Domain*>& linker2,
                     vector<Domain*>& central_segment) override;
+            vector<Domain*> cyclic_select_internal_endpoints();
+            vector<Domain*> linear_select_internal_endpoints();
     };
 }
 

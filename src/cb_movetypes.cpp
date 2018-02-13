@@ -786,6 +786,9 @@ namespace movetypes {
         vector<Domain*> central_segment {};
         set<int> staples {select_and_setup_segments(linker1, linker2,
                 central_segment)};
+        if (m_rejected) {
+            return accepted;
+        }
         set<int> central_staples {find_staples(central_segment)};
         vector<Domain*> central_domains {central_segment};
         for (auto staple: central_staples) {
@@ -917,7 +920,7 @@ namespace movetypes {
         // Growing from central to external, order needs to reflect this
         std::reverse(linker1.begin(), linker1.end());
 
-        return setup_fixed_end_biases(linker1, linker2, scaffold_domains);
+        return setup_fixed_end_biases(linker1, linker2);
     }
 
     pair<int, int> CTCBLinkerRegrowthMCMovetype::select_internal_endpoints(
@@ -931,13 +934,11 @@ namespace movetypes {
 
     set<int> CTCBLinkerRegrowthMCMovetype::setup_fixed_end_biases(
             vector<Domain*>& linker1,
-            vector<Domain*>& linker2,
-            vector<Domain*>& scaffold_domains) {
+            vector<Domain*>& linker2) {
 
         // Add terminal constraint points
-        int dir {scaffold_domains[1]->m_d - scaffold_domains[0]->m_d};
-        Domain* linker1_endpoint {*scaffold_domains[0] + (-dir)};
-        Domain* linker2_endpoint {*scaffold_domains.back() + dir};
+        Domain* linker1_endpoint {*linker1.back() + -m_dir};
+        Domain* linker2_endpoint {*linker2.back() + m_dir};
         int seg {0};
         for (auto linker_endpoint: {linker1_endpoint, linker2_endpoint}) {
             m_linker_endpoints.push_back(linker_endpoint);
@@ -1192,15 +1193,11 @@ namespace movetypes {
         int kernel {m_random_gens.uniform_int(1, domains.size() - 2)};
         int num_domains {static_cast<int>(domains.size())};
         bool segment_started {false};
-        // HACK SHOULD BE 1
-        int start_di {0};
-        // WARNING THIS IS A HACK THAT BREAKS THIS FOR CLUSTERED2
-        // SHOULD BE domains.size() - 2 FOR CLUSTERED
-        int end_di {static_cast<int>(domains.size()) - 1};
+        int start_di {1};
+        int end_di {static_cast<int>(domains.size()) - 2};
         if (domains[kernel]->m_state == Occupancy::bound) {
             segment_started = true;
-            // HACK SHOULD BE i != 0
-            for (int i {kernel - 1}; i >= 0; i--) {
+            for (int i {kernel - 1}; i != 0; i--) {
                 auto state = domains[i]->m_state;
                 if (state != Occupancy::bound) {
                     start_di = i + 1;
@@ -1208,9 +1205,7 @@ namespace movetypes {
                 }
             }
         }
-        // WARNING THIS IS A HACK THAT BREAKS THIS FOR CLUSTERED2
-        // SHOULD BE num_domains - 1 FOR CLUSTERED
-        for (int i {kernel + 1}; i != num_domains; i++) {
+        for (int i {kernel + 1}; i != num_domains - 1; i++) {
             if (domains[i]->m_state == Occupancy::bound and not
                     segment_started) {
                 segment_started = true;
@@ -1267,7 +1262,7 @@ namespace movetypes {
                     config_files, label, ops, biases, params),
             CTRegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params, num_excluded_staples),
-            ClusteredCTCBLinkerRegrowth(origami_system, random_gens,
+            CTCBLinkerRegrowthMCMovetype(origami_system, random_gens,
                     ideal_random_walks, config_files, label, ops, biases,
                     params, num_excluded_staples, max_disp, max_turns) {
     }
@@ -1279,56 +1274,129 @@ namespace movetypes {
 
         // Select a domain on the scaffold that is bound and then make central
         // region be all contiguously bound segments
-        auto internal_endpoints = select_internal_endpoints(m_scaffold);
-
-        int start_di {internal_endpoints.first};
-        int end_di {internal_endpoints.second};
-        if (end_di < start_di) {
-            std::swap(start_di, end_di);
+        if (m_origami_system.m_cyclic) {
+            central_segment = cyclic_select_internal_endpoints();
         }
-        
+        else {
+            central_segment = linear_select_internal_endpoints();
+        }
+        if (central_segment.size() == 0) {
+            m_rejected = true;
+            return {};
+        }
+
         // Get linker domains
-        int i {start_di - 1};
-        linker1.push_back(m_scaffold[start_di]);
-        int mod_start {start_di};
-        // bound vs misbound
-        while (i >= 0) {
-            auto d = m_scaffold[i];
-            if (d->m_state != Occupancy::bound) {
-                linker1.push_back(d);
-                mod_start = i;
-            }
-            else {
-                break;
-            }
-            i--;
+        linker1.push_back(central_segment[0]);
+        Domain* p_domain {*central_segment[0] + -1};
+        while (p_domain != nullptr and p_domain->m_state != Occupancy::bound) {
+            linker1.push_back(p_domain);
+            p_domain = *p_domain + -1;
         }
-        auto j = static_cast<size_t>(end_di + 1);
-        linker2.push_back(m_scaffold[end_di]);
-        int mod_end {end_di};
-        while (j < m_scaffold.size()) {
-            auto d = m_scaffold[j];
-            if (d->m_state != Occupancy::bound) {
-                linker2.push_back(d);
-                mod_end = j;
-            }
-            else {
-                break;
-            }
-            j++;
+        linker2.push_back(central_segment.back());
+        Domain* n_domain {*central_segment.back() + -1};
+        while (p_domain != nullptr and p_domain->m_state != Occupancy::bound) {
+            linker2.push_back(n_domain);
+            n_domain = *n_domain + 1;
         }
 
-        i = start_di;
-        while (i <= end_di) {
-            central_segment.push_back(m_scaffold[i]);
-            i++;
+        return setup_fixed_end_biases(linker1, linker2);
+    }
+
+    vector<Domain*> Clustered2CTCBLinkerRegrowth::linear_select_internal_endpoints() {
+
+        // Find a bound domain in the segment and set central cluster to be all
+        // contiguous bound domains
+        m_dir = 1;
+        vector<Domain*> central_segment {};
+        int kernel {m_random_gens.uniform_int(1, m_scaffold.size() - 2)};
+        bool segment_started {false};
+        Domain* kernel_domain {m_scaffold[kernel]};
+        if (kernel_domain->m_state == Occupancy::bound) {
+            segment_started = true;
+            central_segment.push_back(kernel_domain);
+            Domain* p_domain {*kernel_domain + -1};
+            while (p_domain != nullptr and p_domain->m_state ==
+                    Occupancy::bound) {
+                central_segment.push_back(p_domain);
+            }
+        }
+        std::reverse(central_segment.begin(), central_segment.end());
+        Domain* n_domain {*kernel_domain + 1};
+        bool segment_ended {false};
+        while (not segment_ended and n_domain != nullptr) {
+            if (n_domain->m_state == Occupancy::bound and not
+                    segment_started) {
+                segment_started = true;
+                central_segment.push_back(n_domain);
+            }
+            else if (n_domain->m_state == Occupancy::bound and
+                    segment_started) {
+                central_segment.push_back(n_domain);
+            }
+            else if (n_domain->m_state != Occupancy::bound and segment_started) {
+                segment_ended = true;
+            }
+            n_domain = *n_domain + 1;
+        }
+        n_domain = *kernel_domain + -1;
+        if (segment_started == false) {
+            while (not segment_ended and n_domain != nullptr) {
+                if (n_domain->m_state == Occupancy::bound and not
+                        segment_started) {
+                    segment_started = true;
+                    central_segment.push_back(n_domain);
+                }
+                else if (n_domain->m_state == Occupancy::bound and
+                        segment_started) {
+                    central_segment.push_back(n_domain);
+                }
+                else if (n_domain->m_state != Occupancy::bound and segment_started) {
+                    segment_ended = true;
+                }
+                n_domain = *n_domain + -1;
+            }
+            std::reverse(central_segment.begin(), central_segment.end());
         }
 
-        vector<Domain*> modified_segment {};
-        for (int i {mod_start}; i <= mod_end; i++) {
-            modified_segment.push_back(m_scaffold[i]);
+        return central_segment;
+    }
+
+    vector<Domain*> Clustered2CTCBLinkerRegrowth::cyclic_select_internal_endpoints() {
+
+        // Find a bound domain in the segment and set central cluster to be all
+        // contiguous bound domains
+        m_dir = 1;
+        vector<Domain*> central_segment;
+        int kernel {m_random_gens.uniform_int(1, m_scaffold.size() - 2)};
+        bool segment_started {false};
+        Domain* kernel_domain {m_scaffold[kernel]};
+        if (kernel_domain->m_state == Occupancy::bound) {
+            segment_started = true;
+            central_segment.push_back(kernel_domain);
+            Domain* p_domain {*kernel_domain + -1};
+            while (p_domain->m_state == Occupancy::bound) {
+                central_segment.push_back(p_domain);
+                p_domain = *p_domain + -1;
+            }
+        }
+        std::reverse(central_segment.begin(), central_segment.end());
+        Domain* n_domain {*kernel_domain + 1};
+        bool segment_ended {false};
+        while (not segment_ended and n_domain != kernel_domain) {
+            if (n_domain->m_state == Occupancy::bound and not
+                    segment_started) {
+                segment_started = true;
+                central_segment.push_back(n_domain);
+            }
+            else if (n_domain->m_state == Occupancy::bound) {
+                central_segment.push_back(n_domain);
+            }
+            else if (n_domain->m_state != Occupancy::bound and segment_started) {
+                segment_ended = true;
+            }
+            n_domain = *n_domain + 1;
         }
 
-        return setup_fixed_end_biases(linker1, linker2, modified_segment);
+        return central_segment;
     }
 }

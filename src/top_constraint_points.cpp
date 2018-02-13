@@ -415,8 +415,10 @@ namespace topConstraintPoints {
             dir = 0;
         }
         else {
-            dir =  scaffold_domains[1]->m_d -
-                scaffold_domains[0]->m_d;
+            dir = scaffold_domains[1]->m_d - scaffold_domains[0]->m_d;
+            if (m_origami_system.m_cyclic and abs(dir) > 1) {
+                dir = -1*dir/abs(dir);
+            }
         }
         m_domain_to_dir[key] = dir;
         for (auto d: scaffold_domains) {

@@ -360,11 +360,16 @@ namespace simulation {
             // Pick movetype and apply
             MCMovetype& movetype {select_movetype()};
             bool accepted;
+            double old_ene {m_origami_system.energy()};
             accepted = movetype.attempt_move(step);
             if (not accepted) {
                 movetype.reset_origami();
                 m_ops.update_move_params();
                 m_biases.calc_move();
+            }
+            double new_ene {m_origami_system.energy()};
+            if (new_ene - old_ene >= 100) {
+                cout << "Hang on\n";
             }
 
             // Center and check constraints
