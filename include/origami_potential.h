@@ -27,7 +27,14 @@ namespace potential {
     bool check_domain_orientations_opposing(Domain& cd_i, Domain& cd_j);
     bool check_doubly_contig(Domain* cd_1, Domain* cd_2);
     bool check_domains_exist_and_bound(vector<Domain*> cdv);
-    bool check_linear_helix(VectorThree ndr_1, Domain& cd_2);
+
+    struct DeltaConfig {
+        double e {0};
+        int stacked_pairs {0};
+        int linear_helices {0};
+        int stacked_juncts {0};
+    };
+
 
     // Forward declaration
     class OrigamiPotential;
@@ -37,13 +44,19 @@ namespace potential {
             BindingPotential(OrigamiPotential& pot);
             virtual ~BindingPotential() {}
 
-            virtual pair<double, int> bind_domains(Domain& cd_i, Domain& cd_j) = 0;
-            virtual pair<double, int> check_stacking(Domain& cd_i, Domain& cd_j);
+            virtual DeltaConfig bind_domains(Domain& cd_i, Domain& cd_j) = 0;
+            virtual DeltaConfig check_stacking(Domain& cd_i, Domain& cd_j);
             bool m_constraints_violated;
 
         protected:
             OrigamiPotential& m_pot;
-            virtual pair<double, int> check_pair_stacking(Domain* cd_1, Domain* cd_2) = 0;
+            DeltaConfig m_delta_config;
+
+            virtual void internal_check_stacking(Domain& cd_i, Domain& cd_j);
+            virtual void check_pair_stacking(
+                    Domain* cd_1,
+                    Domain* cd_2,
+                    bool doubly_contig) = 0;
     };
 
     class RestrictiveBindingPotential:
@@ -51,8 +64,11 @@ namespace potential {
 
         public:
             using BindingPotential::BindingPotential;
-            pair<double, int> bind_domains(Domain& cd_i, Domain& cd_j) override;
-            pair<double, int> check_pair_stacking(Domain* cd_1, Domain* cd_2) override;
+            DeltaConfig bind_domains(Domain& cd_i, Domain& cd_j) override;
+            void check_pair_stacking(
+                    Domain* cd_1,
+                    Domain* cd_2,
+                    bool doubly_contig) override;
 
         private:
             // Top level interaction checks
@@ -60,6 +76,7 @@ namespace potential {
             bool check_helical_constraints(Domain& cd_1, Domain& cd_2);
 
             // Linear helix checks
+            bool check_linear_helix(VectorThree ndr_1, Domain& cd_2);
             bool check_linear_helix_rear(Domain& cd_3);
 
             // Junction checks
@@ -83,23 +100,20 @@ namespace potential {
 
         public:
             using BindingPotential::BindingPotential;
-            pair<double, int> bind_domains(Domain& cd_i, Domain& cd_j) override;
+            DeltaConfig bind_domains(Domain& cd_i, Domain& cd_j) override;
 
         protected:
-            double m_delta_e;
-            int m_delta_stacked_pairs;
-
             virtual void check_constraints(Domain* cd) = 0;
             virtual void check_doubly_contig_junction(
                     Domain* cd_1,
                     Domain* cd_2,
                     Domain* cd_3,
                     Domain* cd_4) = 0;
-            void check_regular_pair_constraints(
+            bool check_regular_pair_constraints(
                     Domain* cd_1,
                     Domain* cd_2,
                     int i);
-            void check_possible_doubly_contig_helix(
+            bool check_possible_doubly_contig_helix(
                     Domain* cd_1,
                     Domain* cd_2);
             void check_possible_doubly_contig_junction(
@@ -115,10 +129,11 @@ namespace potential {
 
         public:
             using FlexibleBindingPotential::FlexibleBindingPotential;
-            pair<double, int> check_stacking(Domain& cd_i, Domain& cd_j) override;
-            pair<double, int> check_pair_stacking(
+            DeltaConfig check_stacking(Domain& cd_i, Domain& cd_j) override;
+            void check_pair_stacking(
                     Domain* cd_1,
-                    Domain* cd_2) override;
+                    Domain* cd_2,
+                    bool doubly_contig) override;
 
         private:
             void check_constraints(Domain* cd) override;
@@ -128,6 +143,10 @@ namespace potential {
                     Domain* cd_3,
                     Domain* cd_4) override;
             void check_linear_helix(Domain* cd_1, Domain* cd_2, int i);
+            void check_linear_helix(
+                    Domain* cd_h1,
+                    Domain* cd_h2,
+                    Domain* cd_h3);
     };
 
     /** Helices can be fully stacked and nonlinear */
@@ -136,9 +155,10 @@ namespace potential {
 
         public:
             using FlexibleBindingPotential::FlexibleBindingPotential;
-            pair<double, int> check_pair_stacking(
+            void check_pair_stacking(
                     Domain* cd_1,
-                    Domain* cd_2) override;
+                    Domain* cd_2,
+                    bool doubly_contig) override;
 
         private:
             void check_constraints(Domain* cd) override;
@@ -198,9 +218,9 @@ namespace potential {
             void update_temp(double temp);
     
             // Domain interactions
-            pair<double, int> bind_domain(Domain& cd_i);
+            DeltaConfig bind_domain(Domain& cd_i);
             bool check_domains_complementary(Domain& cd_i, Domain& cd_j);
-            pair<double, int> check_stacking(Domain& cd_i, Domain& cd_j);
+            DeltaConfig check_stacking(Domain& cd_i, Domain& cd_j);
 
             // Energy calculations
             double hybridization_energy(const Domain& cd_i, const Domain& cd_j) const;

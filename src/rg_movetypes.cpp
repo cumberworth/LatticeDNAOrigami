@@ -127,13 +127,28 @@ namespace movetypes {
         // Calculate new weights
         setup_for_calc_new_weights();
         unassign_and_save_domains();
+        m_constraintpoints.reset_active_endpoints();
+        if (not m_origami_system.m_cyclic and m_regrow_ds.size() !=
+            m_origami_system.get_chain(0).size()) {
+            m_constraintpoints.remove_active_endpoint(m_regrow_ds[0]);
+        }
         calc_weights();
 
         // Calculate old weights
         unassign_domains();
+        m_constraintpoints.reset_active_endpoints();
+        if (not m_origami_system.m_cyclic and m_regrow_ds.size() !=
+            m_origami_system.get_chain(0).size()) {
+            m_constraintpoints.remove_active_endpoint(m_regrow_ds[0]);
+        }
         calc_old_c_opens();
         setup_for_calc_old_weights();
         unassign_and_save_domains();
+        m_constraintpoints.reset_active_endpoints();
+        if (not m_origami_system.m_cyclic and m_regrow_ds.size() !=
+            m_origami_system.get_chain(0).size()) {
+            m_constraintpoints.remove_active_endpoint(m_regrow_ds[0]);
+        }
         calc_weights();
 
         // Test acceptance
@@ -227,6 +242,7 @@ namespace movetypes {
         m_c_attempts_q.resize(m_regrow_ds.size());
         m_avail_cis_q.resize(m_regrow_ds.size());
         m_c_opens.resize(m_regrow_ds.size());
+        m_c_opens[0] = 1;
         prepare_for_growth();
 
         // Stop growing when all domains done or max num recoils reached
@@ -238,7 +254,6 @@ namespace movetypes {
             while (not c_open and m_c_attempts != m_d_max_c_attempts) {
                 m_c_attempts++;
                 c = select_trial_config();
-                m_c_opens[m_di] = c_open;
                 p_c_open = calc_p_config_open(c);
                 c_open = test_config_open(p_c_open); 
             }
@@ -372,7 +387,7 @@ namespace movetypes {
         }
 
         // Consider putting this check into the constraintpoints class
-        // It's repated (except growthpoint check) in the CTCB code
+        // It's repeated (except growthpoint check) in the CTCB code
         Occupancy pos_occ {m_origami_system.position_occupancy(c.first)};
         if (pos_occ == Occupancy::unbound) {
             Domain* occ_domain {m_origami_system.unbound_domain_at(c.first)};
@@ -387,7 +402,7 @@ namespace movetypes {
             }
         }
 
-        return std::exp(-delta_e);
+        return std::fmin(1, std::exp(-delta_e));
     }
 
     bool CTScaffoldRG::test_config_open(double p_c_open) {
@@ -419,11 +434,11 @@ namespace movetypes {
             m_dir = m_constraintpoints.get_dir(m_d);
 
             // Calculate the number of available configurations.
+            int avail_cs {1}; // Available configurations, already found 1
             if (not m_prev_gp) {
                 m_ref_d = (*m_d + (-m_dir));
                 int c_attempts {m_c_attempts_wq[m_di]};
                 m_avail_cis = m_avail_cis_wq[m_di];
-                int avail_cs {1}; // Available configurations, already found 1
                 while (c_attempts != m_max_c_attempts) {
                     c_attempts++;
                     configT c {select_trial_config()};
@@ -449,8 +464,8 @@ namespace movetypes {
                         restore_endpoints();
                     }
                 }
-                m_weight *= avail_cs / m_c_opens[m_di];
             }
+            m_weight *= avail_cs / m_c_opens[m_di - 1];
 
             // Set to actual config
             pair<int, int> key {m_d->m_c, m_d->m_d};
@@ -462,6 +477,7 @@ namespace movetypes {
             m_erased_endpoints_q.push_back(erased_endpoints);
             write_config();
         }
+        m_weight /= m_c_opens[m_di];
     }
 
     /*
@@ -530,6 +546,7 @@ namespace movetypes {
 
     void CTScaffoldRG::calc_old_c_opens() {
         m_di = 0;
+        m_c_opens[0] = 1;
         while (m_di != m_regrow_ds.size() - 1) {
             m_di++;
             m_d = m_regrow_ds[m_di];
@@ -539,12 +556,12 @@ namespace movetypes {
             VectorThree p {m_old_pos[key]};
             VectorThree o {m_old_ore[key]};
             configT c {p, o};
+            m_prev_gp = m_constraintpoints.is_growthpoint(
+                    m_regrow_ds[m_di - 1]);
             m_c_opens[m_di]= calc_p_config_open(c);
             set_config(m_d, c);
 
             // Remove this config from available
-            m_prev_gp = m_constraintpoints.is_growthpoint(
-                    m_regrow_ds[m_di - 1]);
             if (m_prev_gp) {
                 m_avail_cis_q[m_di] = {};
             }
@@ -563,6 +580,7 @@ namespace movetypes {
 
     bool CTScaffoldRG::test_rg_acceptance() {
         long double ratio {m_weight_new / m_weight * std::exp(-m_delta_e)};
+        //cout << ratio << " " << m_weight_new << " " << m_weight << " " << std::exp(-m_delta_e) << "\n";
         bool accepted {false};
         if (test_acceptance(ratio)) {
             m_prev_pos = m_new_pos;

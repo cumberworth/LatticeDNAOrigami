@@ -108,6 +108,14 @@ namespace origami {
         return m_num_stacked_domain_pairs;
     }
 
+    int OrigamiSystem::num_linear_helix_trips() const {
+        return m_num_linear_helix_trips;
+    }
+
+    int OrigamiSystem::num_stacked_junct_quads() const {
+        return m_num_stacked_junct_quads;
+    }
+
     int OrigamiSystem::num_staples_of_ident(int staple_ident) const {
         return m_identity_to_index[staple_ident].size();
     }
@@ -298,12 +306,10 @@ namespace origami {
             VectorThree pos,
             VectorThree ore) {
 
-        double delta_e;
-        double stacked_pairs;
-        std::tie(delta_e, stacked_pairs) = internal_check_domain_constraints(
-                cd_i, pos, ore);
+        DeltaConfig delta_config {internal_check_domain_constraints(
+                cd_i, pos, ore)};
 
-        return delta_e;
+        return delta_config.e;
     }
 
     void OrigamiSystem::check_distance_constraints() {
@@ -325,14 +331,14 @@ namespace origami {
     }
 
     double OrigamiSystem::unassign_domain(Domain& cd_i) {
-        double delta_e;
-        double stacked_pairs;
-        std::tie(delta_e, stacked_pairs) = internal_unassign_domain(cd_i);
-        m_energy += delta_e;
-        m_num_stacked_domain_pairs += stacked_pairs;
+        DeltaConfig delta_config {internal_unassign_domain(cd_i)};
+        m_energy += delta_config.e;
+        m_num_stacked_domain_pairs += delta_config.stacked_pairs;
+        m_num_linear_helix_trips += delta_config.linear_helices;
+        m_num_stacked_junct_quads += delta_config.stacked_juncts;
         m_num_unassigned_domains++;
 
-        return delta_e;
+        return delta_config.e;
     }
 
     int OrigamiSystem::add_chain(int c_i_ident) {
@@ -423,10 +429,12 @@ namespace origami {
         }
         else if (cd_i.m_state == Occupancy::bound) {
             delta_e += m_pot.hybridization_energy(cd_i, *cd_i.m_bound_domain);
-            pair<double, int> delta_ene_stack;
-            delta_ene_stack = m_pot.check_stacking(cd_i, *cd_i.m_bound_domain);
-            delta_e += delta_ene_stack.first;
-            m_num_stacked_domain_pairs += delta_ene_stack.second;
+            DeltaConfig delta_config;
+            delta_config = m_pot.check_stacking(cd_i, *cd_i.m_bound_domain);
+            delta_e += delta_config.e;
+            m_num_stacked_domain_pairs += delta_config.stacked_pairs;
+            m_num_linear_helix_trips += delta_config.linear_helices;
+            m_num_stacked_junct_quads += delta_config.stacked_juncts;
         }
         m_energy += delta_e;
         m_num_unassigned_domains--;
@@ -443,17 +451,17 @@ namespace origami {
         }
 
         // Check constraints and update if obeyed, otherwise throw
-        double delta_e;
-        int stacked_pairs;
-        std::tie(delta_e, stacked_pairs) = internal_check_domain_constraints(
-                cd_i, pos, ore);
+        DeltaConfig delta_config {internal_check_domain_constraints(
+                cd_i, pos, ore)};
         if (not m_constraints_violated) {
             update_occupancies(cd_i, pos);
-            m_energy += delta_e;
-            m_num_stacked_domain_pairs += stacked_pairs;
+            m_energy += delta_config.e;
+            m_num_stacked_domain_pairs += delta_config.stacked_pairs;
+            m_num_linear_helix_trips += delta_config.linear_helices;
+            m_num_stacked_junct_quads += delta_config.stacked_juncts;
             m_num_unassigned_domains--;
         }
-        return delta_e;
+        return delta_config.e;
     }
 
     void OrigamiSystem::set_domain_orientation(Domain& cd_i, VectorThree ore) {
@@ -599,27 +607,28 @@ namespace origami {
         }
     }
 
-    pair<double, int> OrigamiSystem::internal_unassign_domain(Domain& cd_i) {
+    DeltaConfig OrigamiSystem::internal_unassign_domain(Domain& cd_i) {
         // Deletes positions, orientations, and removes/unassigns occupancies.
         Occupancy occupancy {cd_i.m_state};
-        double delta_e {0};
-        int stacked_pairs {0};
+        DeltaConfig delta_config {};
         pair<double, int> delta_ene_stack;
         switch (occupancy) {
             case Occupancy::bound:
                 m_num_fully_bound_domain_pairs -= 1;
                 m_num_bound_domain_pairs -= 1;
-                delta_ene_stack = m_pot.check_stacking(cd_i, *cd_i.m_bound_domain);
-                delta_e -= delta_ene_stack.first;
-                stacked_pairs -= delta_ene_stack.second;
-                delta_e += unassign_bound_domain(cd_i);
+                delta_config = m_pot.check_stacking(cd_i, *cd_i.m_bound_domain);
+                delta_config.e *= -1;
+                delta_config.stacked_pairs *= -1;
+                delta_config.linear_helices *= -1;
+                delta_config.stacked_juncts *= -1;
+                delta_config.e += unassign_bound_domain(cd_i);
                 break;
             case Occupancy::misbound:
                 m_num_bound_domain_pairs -= 1;
                 if (cd_i.m_bound_domain->m_c == cd_i.m_c) {
                     m_num_self_bound_domain_pairs -= 1;
                 }
-                delta_e += unassign_bound_domain(cd_i);
+                delta_config.e += unassign_bound_domain(cd_i);
                 break;
             case Occupancy::unbound:
                 unassign_unbound_domain(cd_i);
@@ -630,7 +639,7 @@ namespace origami {
                 m_num_unassigned_domains--;
                 break;
         }
-        return {delta_e, stacked_pairs};
+        return delta_config;
     }
 
 
@@ -713,15 +722,14 @@ namespace origami {
         set_all_domains();
     }
 
-    pair<double, int> OrigamiSystem::internal_check_domain_constraints(
+    DeltaConfig OrigamiSystem::internal_check_domain_constraints(
             Domain& cd_i,
             VectorThree pos,
             VectorThree ore) {
         // Updates positions and orientations and returns without reverting if no 
         // constraint violation. But states left unassigned.
         Occupancy occupancy {position_occupancy(pos)};
-        double delta_e {0};
-        int stacked_pairs {0};
+        DeltaConfig delta_config {};
 
         switch (occupancy) {
             case Occupancy::bound:
@@ -733,14 +741,14 @@ namespace origami {
             case Occupancy::unbound:
                 update_domain(cd_i, pos, ore);
                 update_occupancies(cd_i, pos);
-                std::tie(delta_e, stacked_pairs) = m_pot.bind_domain(cd_i);
+                delta_config = m_pot.bind_domain(cd_i);
                 m_constraints_violated = m_pot.m_constraints_violated;
                 internal_unassign_domain(cd_i);
                 break;
             case Occupancy::unassigned:
                 update_domain(cd_i, pos, ore);
         }
-        return {delta_e, stacked_pairs};
+        return delta_config;
     }
 
     OrigamiSystemWithBias::OrigamiSystemWithBias(

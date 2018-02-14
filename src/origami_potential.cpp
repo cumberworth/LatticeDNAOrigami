@@ -41,38 +41,20 @@ namespace potential {
         return exists_and_bound;
     }
 
-    bool check_linear_helix(VectorThree ndr_1, Domain& cd_2) {
-
-        bool linear_if_helix {true};
-        Domain* cd_3 {cd_2 + 1};
-        if (not check_domains_exist_and_bound({cd_3})) {
-            return linear_if_helix;
-        }
-
-        // Third domain part of new helix
-        VectorThree ndr_2 {cd_3->m_pos - cd_2.m_pos};
-        if (ndr_2 == cd_2.m_ore) {
-            return linear_if_helix;
-        }
-
-        // Third domain linear
-        if (ndr_1 == ndr_2) {
-            return linear_if_helix;
-        }
-
-        linear_if_helix = false;
-        return linear_if_helix;
-    }
-
     BindingPotential::BindingPotential(OrigamiPotential& pot):
             m_pot {pot} {
     }
 
-    pair<double, int> BindingPotential::check_stacking(Domain& cd_i, Domain& cd_j) {
+    DeltaConfig BindingPotential::check_stacking(Domain& cd_i, Domain& cd_j) {
+        m_delta_config = {};
+        internal_check_stacking(cd_i, cd_j);
+
+        return m_delta_config;
+    }
+
+    void BindingPotential::internal_check_stacking(Domain& cd_i, Domain& cd_j) {
 
         // Loop through relevant pairs
-        double delta_e {0};
-        int stacked_pairs {0};
         for (auto cd: {&cd_i, &cd_j}) {
             for (int i: {-1, 0}) {
                 Domain* cd_1 {*cd + i};
@@ -83,32 +65,21 @@ namespace potential {
                 Domain& cd_bound_1 {*cd_1->m_bound_domain};
                 Domain& cd_bound_2 {*cd_2->m_bound_domain};
                 bool bound_same_chain {cd_bound_1.m_c == cd_bound_2.m_c};
-                double delta_delta_e;
-                int delta_stacked_pairs;
+                bool doubly_contig = false;
                 if (bound_same_chain and
                         (cd_bound_1.m_d == cd_bound_2.m_d - 1)) {
-
-                    // I have to divide this by two so that I don't overcount
-                    std::tie(delta_delta_e, delta_stacked_pairs) =
-                        check_pair_stacking(cd_1, cd_2);
-                    delta_e += delta_delta_e/2;
+                    doubly_contig = true;
                 }
-                else {
-                    std::tie(delta_delta_e, delta_stacked_pairs) =
-                        check_pair_stacking(cd_1, cd_2);
-                    delta_e += delta_delta_e;
-                    stacked_pairs += delta_stacked_pairs;
-                }
+                check_pair_stacking(cd_1, cd_2, doubly_contig);
             }
         }
-
-        return {delta_e, stacked_pairs};
     }
 
-    pair<double, int> RestrictiveBindingPotential::bind_domains(
+    DeltaConfig RestrictiveBindingPotential::bind_domains(
             Domain& cd_i, Domain& cd_j) {
 
         // cd_i is new
+        m_delta_config = {};
         m_constraints_violated = true;
         if (not check_domain_orientations_opposing(cd_i, cd_j)) {
             return {0, 0};
@@ -144,12 +115,10 @@ namespace potential {
 
         // Collect energies
         m_constraints_violated = false;
-        double delta_e {0};
-        int stacked_pairs {0};
-        std::tie(delta_e, stacked_pairs) = check_stacking(cd_i, cd_j);
-        delta_e += m_pot.hybridization_energy(cd_i, cd_j);
+        internal_check_stacking(cd_i, cd_j);
+        m_delta_config.e += m_pot.hybridization_energy(cd_i, cd_j);
 
-        return {delta_e, stacked_pairs};
+        return m_delta_config;
     }
 
     bool RestrictiveBindingPotential::check_domain_pair_constraints(
@@ -232,6 +201,31 @@ namespace potential {
         return helical_constraints_obeyed;
     }
 
+    bool RestrictiveBindingPotential::check_linear_helix(VectorThree ndr_1,
+            Domain& cd_2) {
+
+        bool linear_if_helix {true};
+        Domain* cd_3 {cd_2 + 1};
+        if (not check_domains_exist_and_bound({cd_3})) {
+            return linear_if_helix;
+        }
+
+        // Third domain part of new helix
+        VectorThree ndr_2 {cd_3->m_pos - cd_2.m_pos};
+        if (ndr_2 == cd_2.m_ore) {
+            return linear_if_helix;
+        }
+
+        // Third domain linear
+        if (ndr_1 == ndr_2) {
+            m_delta_config.linear_helices += 1;
+            return linear_if_helix;
+        }
+
+        linear_if_helix = false;
+        return linear_if_helix;
+    }
+
     bool RestrictiveBindingPotential::check_linear_helix_rear(Domain& cd_3) {
         // Check linear helix constraints given rear domain exists and bound
         bool linear_if_helix {true};
@@ -257,6 +251,7 @@ namespace potential {
 
         // Domains are linear
         if (ndr_1 == ndr_2) {
+            m_delta_config.linear_helices += 1;
             return linear_if_helix;
         }
 
@@ -320,6 +315,7 @@ namespace potential {
 
         if (ndr_1 == -ndr_3 or ndr_1 == cd_1.m_ore or ndr_3 == cd_3.m_ore) {
             junction_constraints_obeyed = true;
+            m_delta_config.stacked_juncts += 1;
         }
         else {
             junction_constraints_obeyed = false;
@@ -361,29 +357,31 @@ namespace potential {
         return check_doubly_contiguous_junction(*cd_1, *cd_2, *cd_3, cd_4);
     }
 
-    pair<double,int> RestrictiveBindingPotential::check_pair_stacking(Domain* cd_1,
-            Domain* cd_2) {
+    void RestrictiveBindingPotential::check_pair_stacking(Domain* cd_1,
+            Domain* cd_2, bool doubly_contig) {
 
-        double delta_e {0};
-        int stacked {0};
+        DeltaConfig delta_config;
         VectorThree ndr {cd_2->m_pos - cd_1->m_pos};
         if (ndr == cd_1->m_ore) {
             ;
         }
         else {
-            delta_e += m_pot.stacking_energy(*cd_1, *cd_2);
-            stacked = 1;
+            double delta_e {m_pot.stacking_energy(*cd_1, *cd_2)};
+            if (doubly_contig) {
+                delta_e /= 2;
+            }
+            else {
+                delta_config.stacked_pairs = 1;
+            }
+            delta_config.e += delta_e;
         }
-
-        return {delta_e, stacked};
     }
 
-    pair<double, int> FlexibleBindingPotential::bind_domains(
+    DeltaConfig FlexibleBindingPotential::bind_domains(
             Domain& cd_i,
             Domain& cd_j) {
 
-        m_delta_e = 0;
-        m_delta_stacked_pairs = 0;
+        m_delta_config = {};
         m_constraints_violated = false;
         if (not check_domain_orientations_opposing(cd_i, cd_j)) {
             m_constraints_violated = true;
@@ -397,38 +395,46 @@ namespace potential {
                 return {0, 0};
             }
         }
-        m_delta_e += m_pot.hybridization_energy(cd_i, cd_j);
+        m_delta_config.e += m_pot.hybridization_energy(cd_i, cd_j);
 
-        return {m_delta_e, m_delta_stacked_pairs};
+        return m_delta_config;
     }
 
-    void FlexibleBindingPotential::check_regular_pair_constraints(
+    bool FlexibleBindingPotential::check_regular_pair_constraints(
             Domain* cd_1, Domain* cd_2, int i) {
 
+        bool stacked {false};
         check_edge_pair_junction(cd_1, cd_2, i);
         if (not m_constraints_violated) {
             if (check_pair_stacked(cd_1, cd_2)) {
-                m_delta_e += m_pot.stacking_energy(*cd_1, *cd_2);
-                m_delta_stacked_pairs += 1;
+                stacked = true;
+                m_delta_config.e += m_pot.stacking_energy(*cd_1, *cd_2);
+                m_delta_config.stacked_pairs += 1;
             }
         }
+
+        return stacked;
     }
 
-    void FlexibleBindingPotential::check_possible_doubly_contig_helix(
+    bool FlexibleBindingPotential::check_possible_doubly_contig_helix(
             Domain* cd_1, Domain* cd_2) {
 
+        bool stacked {false};
         VectorThree ndr {cd_2->m_pos - cd_1->m_pos};
         if (ndr == cd_1->m_ore or ndr == -cd_1->m_ore) {
             m_constraints_violated = true;
         }
         else if (cd_1->check_twist_constraint(ndr, *cd_2)) {
+            stacked = true;
 
             // I have to divide this by two so that I don't overcount
-            m_delta_e += m_pot.stacking_energy(*cd_1, *cd_2) / 2;
+            m_delta_config.e += m_pot.stacking_energy(*cd_1, *cd_2) / 2;
         }
         else {
             m_constraints_violated = true;
         }
+
+        return stacked;
     }
 
     bool FlexibleBindingPotential::check_pair_stacked(Domain* cd_1,
@@ -490,27 +496,23 @@ namespace potential {
         }
     }
 
-    pair<double, int> LinearFlexibleBindingPotential::check_stacking(
+    DeltaConfig LinearFlexibleBindingPotential::check_stacking(
             Domain& cd_i, Domain& cd_j) {
 
-        m_delta_e = 0;
-        m_delta_stacked_pairs = 0;
+        m_delta_config = {};
         m_constraints_violated = false;
         for (auto cd: {&cd_i, &cd_j}) {
             check_constraints(cd);
         }
 
-        return {m_delta_e, m_delta_stacked_pairs};
+        return m_delta_config;
     }
 
     // BAD LAZY JUST HERE TO PREVENT WARNINGS
-    pair<double, int> LinearFlexibleBindingPotential::check_pair_stacking(
-            Domain* cd_1, Domain* cd_2) {
+    void LinearFlexibleBindingPotential::check_pair_stacking(
+            Domain*, Domain*, bool) {
         // BULLSHIT
         std::cout << "This better not be called\n";
-        if (cd_1->m_d == 0 and cd_2->m_d == 0) {
-        }
-        return {0, 0};
     }
 
     void LinearFlexibleBindingPotential::check_constraints(Domain* cd) {
@@ -529,14 +531,12 @@ namespace potential {
             Domain& cd_bound_1 {*cd_1->m_bound_domain};
             Domain& cd_bound_2 {*cd_2->m_bound_domain};
             bool bound_same_chain {cd_bound_1.m_c == cd_bound_2.m_c};
+            bool stacked {false};
             if (bound_same_chain) {
 
                 // Same helix case
                 if (cd_bound_1.m_d == cd_bound_2.m_d - 1) {
-                    check_possible_doubly_contig_helix(cd_1, cd_2);
-                    if (not m_constraints_violated) {
-                        pairs_stacked[i + 1] = true;
-                    }
+                    stacked = check_possible_doubly_contig_helix(cd_1, cd_2);
                 }
 
                 // Crossover case
@@ -546,18 +546,22 @@ namespace potential {
 
                 // Not doubly contiguous
                 else {
-                    check_regular_pair_constraints(cd_1, cd_2, i);
+                    stacked = check_regular_pair_constraints(cd_1, cd_2, i);
                 }
             }
             else {
-                check_regular_pair_constraints(cd_1, cd_2, i);
+                stacked = check_regular_pair_constraints(cd_1, cd_2, i);
+            }
+            if (stacked) {
+                check_linear_helix(cd_1, cd_2, i);
+                pairs_stacked[i + 1] = true;
             }
             if (m_constraints_violated) {
                 return;
             }
-            if (pairs_stacked[0] and pairs_stacked[1]) {
-                check_linear_helix(cd_1, cd_2, i);
-            }
+        }
+        if (pairs_stacked[0] and pairs_stacked[1]) {
+            check_linear_helix(*cd + -1, cd, *cd + 1);
         }
     }
 
@@ -575,12 +579,30 @@ namespace potential {
         else {
             if (check_pair_stacked(cd_1, cd_2) and check_pair_stacked(cd_3,
                         cd_4)) {
-                if (ndr_1 != -ndr_3) {
-                    m_delta_e -= m_pot.stacking_energy(*cd_1, *cd_2)/2;
-                    m_delta_e -= m_pot.stacking_energy(*cd_2, *cd_3)/2;
-                    m_delta_stacked_pairs -= 1;
+                if (ndr_1 == -ndr_3) {
+                    m_delta_config.stacked_juncts += 1;
+                }
+                else {
+                    m_delta_config.e -= m_pot.stacking_energy(*cd_1, *cd_2)/2;
+                    m_delta_config.e -= m_pot.stacking_energy(*cd_2, *cd_3)/2;
+                    m_delta_config.stacked_pairs -= 1;
                 }
             }
+        }
+    }
+
+    void LinearFlexibleBindingPotential::check_linear_helix(Domain* cd_h1,
+            Domain* cd_h2, Domain* cd_h3) {
+
+        VectorThree ndr_1 {cd_h2->m_pos - cd_h1->m_pos};
+        VectorThree ndr_2 {cd_h3->m_pos - cd_h2->m_pos};
+        if (ndr_1 == ndr_2) {
+            m_delta_config.linear_helices += 1;
+        }
+        else {
+            m_delta_config.e -= m_pot.stacking_energy(*cd_h1, *cd_h2)/2;
+            m_delta_config.e -= m_pot.stacking_energy(*cd_h2, *cd_h3)/2;
+            m_delta_config.stacked_pairs -= 1;
         }
     }
 
@@ -592,23 +614,28 @@ namespace potential {
         Domain* cd_h3;
         if (i == -1) {
             cd_h1 = *cd_1 + -1;
+            if (not check_domains_exist_and_bound({cd_h1})) {
+                return;
+            }
             cd_h2 = cd_1;
+            if (not check_pair_stacked(cd_h1, cd_h2)) {
+                return;
+            }
             cd_h3 = cd_2;
         }
         else {
-            cd_h1 = cd_1;
-            cd_h2 = cd_2;
             cd_h3 = *cd_2 + 1;
-        }
-        if (check_domains_exist_and_bound({cd_h1, cd_h2, cd_h3})) {
-            VectorThree ndr_1 {cd_h2->m_pos - cd_h1->m_pos};
-            VectorThree ndr_2 {cd_h3->m_pos - cd_h2->m_pos};
-            if (ndr_1 != ndr_2) {
-                m_delta_e -= m_pot.stacking_energy(*cd_h1, *cd_h2)/2;
-                m_delta_e -= m_pot.stacking_energy(*cd_h2, *cd_h3)/2;
-                m_delta_stacked_pairs -= 1;
+            if (not check_domains_exist_and_bound({cd_h3})) {
+                return;
             }
+            cd_h2 = cd_2;
+            if (not check_pair_stacked(cd_h2, cd_h3)) {
+                return;
+            }
+            cd_h1 = cd_1;
         }
+
+        check_linear_helix(cd_h1, cd_h2, cd_h3);
     }
 
     void NonLinearFlexibleBindingPotential::check_constraints(Domain* cd) {
@@ -662,17 +689,19 @@ namespace potential {
         }
     }
 
-    pair<double, int> NonLinearFlexibleBindingPotential::check_pair_stacking(
-            Domain* cd_1, Domain* cd_2) {
+    void NonLinearFlexibleBindingPotential::check_pair_stacking(
+            Domain* cd_1, Domain* cd_2, bool doubly_contig) {
 
-        double delta_e {0};
-        int stacked {0};
         if (check_pair_stacked(cd_1, cd_2)) {
-            delta_e += m_pot.stacking_energy(*cd_1, *cd_2);
-            stacked = 1;
+            double delta_e {m_pot.stacking_energy(*cd_1, *cd_2)};
+            if (doubly_contig) {
+                delta_e /= 2;
+            }
+            else {
+                m_delta_config.stacked_pairs += 1;
+            }
+            m_delta_config.e += delta_e;
         }
-
-        return {delta_e, stacked};
     }
 
     MisbindingPotential::MisbindingPotential(OrigamiPotential& pot):
@@ -905,26 +934,24 @@ namespace potential {
         s_arch << m_stacking_energies;
     }
 
-    pair<double, int> OrigamiPotential::bind_domain(Domain& cd_i) {
+    DeltaConfig OrigamiPotential::bind_domain(Domain& cd_i) {
         m_constraints_violated = false;
         Domain& cd_j {*cd_i.m_bound_domain};
-        double delta_e {0};
-        int stacked_pairs {0};
         bool comp {check_domains_complementary(cd_i, cd_j)};
+        DeltaConfig delta_config {};
         if (comp) {
-            std::tie(delta_e, stacked_pairs) = m_binding_pot->bind_domains(
-                    cd_i, cd_j);
+            delta_config = m_binding_pot->bind_domains(cd_i, cd_j);
             m_constraints_violated = m_binding_pot->m_constraints_violated;
         }
         else {
-            delta_e += m_misbinding_pot->bind_domains(cd_i, cd_j);
+            delta_config.e += m_misbinding_pot->bind_domains(cd_i, cd_j);
             m_constraints_violated = m_misbinding_pot->m_constraints_violated;
         }
 
-        return {delta_e, stacked_pairs};
+        return delta_config;
     }
 
-    pair<double, int> OrigamiPotential::check_stacking(Domain& cd_i,
+    DeltaConfig OrigamiPotential::check_stacking(Domain& cd_i,
             Domain& cd_j) {
 
         return m_binding_pot->check_stacking(cd_i, cd_j);

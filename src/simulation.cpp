@@ -439,6 +439,8 @@ namespace simulation {
         *m_logging_stream << "Fully bound domain pairs: " << m_origami_system.num_fully_bound_domain_pairs() << "\n";
         *m_logging_stream << "Misbound domain pairs: " << m_origami_system.num_misbound_domain_pairs() << "\n";
         *m_logging_stream << "Stacked domain pairs: " << m_origami_system.num_stacked_domain_pairs() << "\n";
+        *m_logging_stream << "Linear helix triplets: " << m_origami_system.num_linear_helix_trips() << "\n";
+        *m_logging_stream << "Stacked junction quadruplets: " << m_origami_system.num_stacked_junct_quads() << "\n";
         *m_logging_stream << "Staple counts: ";
         for (auto staple_count: m_origami_system.get_staple_counts()) {
             *m_logging_stream << staple_count << " ";

@@ -838,6 +838,7 @@ namespace movetypes {
         add_external_bias();
         setup_for_regrow_old();
         m_constraintpoints.reset_active_endpoints();
+        // THIS PROBABLY NEEDS SOMETHING ABOUT REMOVING TERMINAL ENDPOINTS UNLESS CYCLIC
 
         // Unassign domains
         unassign_domains(linker1_to_unassign);
@@ -1318,6 +1319,7 @@ namespace movetypes {
             while (p_domain != nullptr and p_domain->m_state ==
                     Occupancy::bound) {
                 central_segment.push_back(p_domain);
+                p_domain = *p_domain + -1;
             }
         }
         std::reverse(central_segment.begin(), central_segment.end());
