@@ -218,7 +218,8 @@ namespace potential {
 
         // Third domain linear
         if (ndr_1 == ndr_2) {
-            m_delta_config.linear_helices += 1;
+            // Can only be used if I have a way increase it when setting a checked domain
+            //m_delta_config.linear_helices += 1;
             return linear_if_helix;
         }
 
@@ -251,7 +252,8 @@ namespace potential {
 
         // Domains are linear
         if (ndr_1 == ndr_2) {
-            m_delta_config.linear_helices += 1;
+            // Can only be used if I have a way increase it when setting a checked domain
+            //m_delta_config.linear_helices += 1;
             return linear_if_helix;
         }
 
@@ -359,7 +361,6 @@ namespace potential {
     void RestrictiveBindingPotential::check_pair_stacking(Domain* cd_1,
             Domain* cd_2, bool doubly_contig) {
 
-        DeltaConfig delta_config;
         VectorThree ndr {cd_2->m_pos - cd_1->m_pos};
         if (ndr == cd_1->m_ore) {
             ;
@@ -370,9 +371,9 @@ namespace potential {
                 delta_e /= 2;
             }
             else {
-                delta_config.stacked_pairs += 1;
+                m_delta_config.stacked_pairs += 1;
             }
-            delta_config.e += delta_e;
+            m_delta_config.e += delta_e;
         }
     }
 
