@@ -315,7 +315,6 @@ namespace potential {
 
         if (ndr_1 == -ndr_3 or ndr_1 == cd_1.m_ore or ndr_3 == cd_3.m_ore) {
             junction_constraints_obeyed = true;
-            m_delta_config.stacked_juncts += 1;
         }
         else {
             junction_constraints_obeyed = false;
@@ -371,7 +370,7 @@ namespace potential {
                 delta_e /= 2;
             }
             else {
-                delta_config.stacked_pairs = 1;
+                delta_config.stacked_pairs += 1;
             }
             delta_config.e += delta_e;
         }
