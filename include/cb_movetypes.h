@@ -216,7 +216,8 @@ namespace movetypes {
                     SystemOrderParams& ops,
                     SystemBiases& biases,
                     InputParameters& params,
-                    int num_excluded_staples);
+                    int num_excluded_staples,
+                    int max_regrowth);
             CTCBRegrowthMCMovetype(const
                     CTCBRegrowthMCMovetype&) = delete;
             CTCBRegrowthMCMovetype& operator=(const
@@ -257,7 +258,8 @@ namespace movetypes {
                     SystemOrderParams& ops,
                     SystemBiases& biases,
                     InputParameters& params,
-                    int num_excluded_staples);
+                    int num_excluded_staples,
+                    int max_regrowth);
             CTCBScaffoldRegrowthMCMovetype(const
                     CTCBScaffoldRegrowthMCMovetype&) = delete;
             CTCBScaffoldRegrowthMCMovetype& operator=(const
@@ -419,7 +421,8 @@ namespace movetypes {
                     InputParameters& params,
                     int num_excluded_staples,
                     int max_disp,
-                    int max_turns);
+                    int max_turns,
+                    int m_max_regrowth);
             Clustered2CTCBLinkerRegrowth(const
                     ClusteredCTCBLinkerRegrowth&) = delete;
             Clustered2CTCBLinkerRegrowth& operator=(const

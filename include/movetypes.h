@@ -232,7 +232,8 @@ namespace movetypes {
                     SystemOrderParams& ops,
                     SystemBiases& biases,
                     InputParameters& params,
-                    int num_excluded_staples);
+                    int num_excluded_staples,
+                    int max_regrowth);
             CTRegrowthMCMovetype(const CTRegrowthMCMovetype&) = delete;
             CTRegrowthMCMovetype& operator=(const CTRegrowthMCMovetype&) = delete;
 
@@ -242,27 +243,10 @@ namespace movetypes {
             void sel_excluded_staples();
 
             /** Select scaffold segment to be regrown */
-            vector<Domain*> select_indices(vector<Domain*> d, int seg=0);
-
-            /** Return segment of linear domains given endpoints */
-            vector<Domain*> select_cyclic_segment(
-                    Domain* start_domain,
-                    Domain* end_domain);
-
-            /**
-              * Return segment of cyclic domains given endpoints
-              *
-              * Selects a direction of regrowth with uniform probability
-              */
-            vector<Domain*> select_linear_segment(
-                    Domain* start_domain,
-                    Domain* end_domain);
-
-            /** Select endpoints of a chain segment of given length */
-            pair<int, int> select_endpoints(
-                    const int array_size,
-                    const int mar, // Number of elements to exclude at ends
-                    const int min_size); // Minimum size of selection (excluding endpoints)
+            vector<Domain*> select_indices(
+                    vector<Domain*> d,
+                    unsigned int min_length,
+                    int seg=0);
 
             /** Check if excluded staples are still bound to system */
             bool excluded_staples_bound();
@@ -273,6 +257,7 @@ namespace movetypes {
             Constraintpoints m_constraintpoints {m_origami_system,
                     m_ideal_random_walks}; // For fixed end biases
             vector<Domain*> m_scaffold {};
+            unsigned int m_max_regrowth; // Maximum number of scaffold domains to regrow
     };
 
     /**

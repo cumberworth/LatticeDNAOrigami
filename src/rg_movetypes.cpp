@@ -22,12 +22,14 @@ namespace movetypes {
             InputParameters& params,
             int num_excluded_staples,
             int max_recoils,
-            int max_c_attempts):
+            int max_c_attempts,
+            int max_regrowth):
 
         MCMovetype(origami_system, random_gens, ideal_random_walks,
                 config_files, label, ops, biases, params),
         CTRegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
-                config_files, label, ops, biases, params, num_excluded_staples),
+                config_files, label, ops, biases, params, num_excluded_staples,
+                max_regrowth),
         m_all_configs {all_pairs<VectorThree>(utility::vectors)},
         m_config_to_i {pair_to_index<VectorThree>(m_all_configs)},
         m_all_cis (m_all_configs.size()),
@@ -99,7 +101,7 @@ namespace movetypes {
         bool accepted {false};
 
         // Select scaffold indices and excluded staples
-        m_sel_scaf_doms = select_indices(m_scaffold);
+        m_sel_scaf_doms = select_indices(m_scaffold, 2);
         m_tracker.num_scaffold_domains = m_sel_scaf_doms.size();
         sel_excluded_staples();
 

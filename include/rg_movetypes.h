@@ -33,7 +33,8 @@ namespace movetypes {
                     InputParameters& params,
                     int num_excluded_staples,
                     int max_num_recoils,
-                    int max_c_attempts);
+                    int max_c_attempts,
+                    int max_regrowth);
             CTScaffoldRG(const CTScaffoldRG&) = delete;
             CTScaffoldRG& operator=(const CTScaffoldRG&) = delete;
 

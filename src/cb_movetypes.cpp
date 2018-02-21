@@ -410,7 +410,8 @@ namespace movetypes {
             SystemOrderParams& ops,
             SystemBiases& biases,
             InputParameters& params,
-            int num_excluded_staples):
+            int num_excluded_staples,
+            int max_regrowth):
             MCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
             RegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
@@ -418,7 +419,8 @@ namespace movetypes {
             CBMCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
             CTRegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
-                    config_files, label, ops, biases, params, num_excluded_staples) {
+                    config_files, label, ops, biases, params,
+                    num_excluded_staples, max_regrowth) {
     }
 
     void CTCBRegrowthMCMovetype::reset_internal() {
@@ -431,13 +433,13 @@ namespace movetypes {
         if (domains.size() <= 1) {
             return;
         }
-        m_dir = domains[1]->m_d - domains[0]->m_d;
         for (size_t i {1}; i != domains.size(); i++) {
+            Domain* domain {domains[i]};
+            m_dir = m_constraintpoints.get_dir(domain);
             select_and_set_config(i, domains);
             if (m_rejected) {
                 break;
             }
-            Domain* domain {domains[i]};
             m_constraintpoints.update_endpoints(domain);
 
             // Grow staple if growth point
@@ -461,7 +463,7 @@ namespace movetypes {
         for (size_t i {0}; i != configs.size(); i++) {
             VectorThree cur_pos {configs[i].first};
 
-            // Set weights of positions involving non-self binding to 0 unless endpoint reached
+            // Set weights of non-self binding to 0 unless endpoint reached
             Occupancy pos_occ {m_origami_system.position_occupancy(cur_pos)};
             if (pos_occ == Occupancy::unbound) {
                 Domain* occ_domain {m_origami_system.unbound_domain_at(cur_pos)};
@@ -476,13 +478,13 @@ namespace movetypes {
             }
 
             // Bias weights with number of walks
-            weights[i] *= m_constraintpoints.calc_num_walks_prod(domain, cur_pos,
-                    m_dir);
+            weights[i] *= m_constraintpoints.calc_num_walks_prod(domain,
+                    cur_pos, m_dir);
         }
 
         // Calculate number of walks for previous position
-        long double prod_num_walks {m_constraintpoints.calc_num_walks_prod(domain,
-                p_prev, m_dir, 1)};
+        long double prod_num_walks {m_constraintpoints.calc_num_walks_prod(
+                domain, p_prev, m_dir, 1)};
 
         // Modified Rosenbluth
         long double weights_sum {0};
@@ -537,7 +539,8 @@ namespace movetypes {
             SystemOrderParams& ops,
             SystemBiases& biases,
             InputParameters& params,
-            int num_excluded_staples):
+            int num_excluded_staples,
+            int max_regrowth):
             MCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
             RegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
@@ -545,10 +548,11 @@ namespace movetypes {
             CBMCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
             CTRegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
-                    config_files, label, ops, biases, params, num_excluded_staples),
+                    config_files, label, ops, biases, params, num_excluded_staples,
+                    max_regrowth),
             CTCBRegrowthMCMovetype(origami_system, random_gens,
                     ideal_random_walks, config_files, label, ops, biases,
-                    params, num_excluded_staples) {
+                    params, num_excluded_staples, max_regrowth) {
     }
 
     void CTCBScaffoldRegrowthMCMovetype::write_log_summary(ostream* log_stream) {
@@ -608,11 +612,12 @@ namespace movetypes {
         bool accepted {false};
 
         m_regrow_old = false;
-        vector<Domain*> scaffold_domains {select_indices(m_scaffold)};
+        vector<Domain*> scaffold_domains {select_indices(m_scaffold, 2)};
         m_tracker.num_scaffold_domains = scaffold_domains.size();
         sel_excluded_staples();
 
-        m_constraintpoints.calculate_constraintpoints(scaffold_domains, m_excluded_staples);
+        m_constraintpoints.calculate_constraintpoints(scaffold_domains,
+                m_excluded_staples);
         if (not m_origami_system.m_cyclic and scaffold_domains.size() !=
             m_origami_system.get_chain(0).size()) {
             m_constraintpoints.remove_active_endpoint(scaffold_domains[0]);
@@ -653,7 +658,7 @@ namespace movetypes {
             m_constraintpoints.remove_active_endpoint(scaffold_domains[0]);
         }
 
-        // Unassign staples except those directly and indirectly bound to external scaffold domains
+        // Unassign staples except those bound/linked to external scaffold domains
         unassign_domains(scaffold_domains_to_unassign);
         for (auto c_i: staples) {
             unassign_domains(m_origami_system.get_chain(c_i));
@@ -669,6 +674,7 @@ namespace movetypes {
         // Reset modifier and test acceptance
         m_modifier = 1;
         accepted = test_cb_acceptance();
+
         return accepted;
     }
 
@@ -694,10 +700,13 @@ namespace movetypes {
                     config_files, label, ops, biases, params),
             CBMCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
+            // WARNING SENDING MAX REGROWTH OF 0
             CTRegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
-                    config_files, label, ops, biases, params, num_excluded_staples),
+                    config_files, label, ops, biases, params,
+                    num_excluded_staples, 0),
             CTCBRegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
-                    config_files, label, ops, biases, params, num_excluded_staples),
+                    config_files, label, ops, biases, params,
+                    num_excluded_staples, 0),
             m_max_disp {max_disp},
             m_max_turns {max_turns} {
     }
@@ -822,12 +831,13 @@ namespace movetypes {
 
         // Grow linkers
         for (auto linker: {linker1, linker2}) {
-            if (m_constraintpoints.is_growthpoint(linker[0])) {
-                grow_staple_and_update_endpoints(linker[0]);
-                if (m_rejected) {
-                    return accepted;
-                }
-            }
+            // THIS SHOULD BE HERE IS NOT DOING CLUSTERED
+//            if (m_constraintpoints.is_growthpoint(linker[0])) {
+//                grow_staple_and_update_endpoints(linker[0]);
+//                if (m_rejected) {
+//                    return accepted;
+//                }
+//            }
             grow_chain(linker);
             if (m_rejected) {
                 return accepted;
@@ -884,16 +894,7 @@ namespace movetypes {
             vector<Domain*>& central_segment) {
 
         // Pick region to be modified
-        pair<int, int> endpoints {select_endpoints(m_scaffold.size(), 0, 3)};
-        Domain* scaffold_start {m_scaffold[endpoints.first]};
-        Domain* scaffold_end {m_scaffold[endpoints.second]};
-        vector<Domain*> scaffold_domains {};
-        if (m_origami_system.m_cyclic) {
-            scaffold_domains = select_cyclic_segment(scaffold_start, scaffold_end);
-        }
-        else {
-            scaffold_domains = select_linear_segment(scaffold_start, scaffold_end);
-        }
+        vector<Domain*> scaffold_domains {select_indices(m_scaffold, 3)};
 
         // Select endpoints (these will be inluded as central segment)
         // Exclude the terminal domains to ensure always linkers to regrow
@@ -927,10 +928,18 @@ namespace movetypes {
     pair<int, int> CTCBLinkerRegrowthMCMovetype::select_internal_endpoints(
             vector<Domain*> domains) {
 
-        pair<int, int> internal_endpoints {select_endpoints(
-                domains.size(), 1, 1)};
+        int margin {1};
+        int min_size {1};
+        int start_i {m_random_gens.uniform_int(margin, domains.size() - 1 -
+                margin)};
+        int end_i {m_random_gens.uniform_int(margin, domains.size()- 1 -
+                margin)};
+        while (std::abs(start_i - end_i) + 1 < min_size) {
+            end_i = m_random_gens.uniform_int(margin, domains.size()- 1 -
+                    margin);
+        }
 
-        return internal_endpoints;
+        return {start_i, end_i};
     }
 
     set<int> CTCBLinkerRegrowthMCMovetype::setup_fixed_end_biases(
@@ -1179,8 +1188,10 @@ namespace movetypes {
                     config_files, label, ops, biases, params),
             CBMCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
+            // WARNING SENDING MAX REGROWTH OF 0
             CTRegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
-                    config_files, label, ops, biases, params, num_excluded_staples),
+                    config_files, label, ops, biases, params,
+                    num_excluded_staples, 0),
             CTCBLinkerRegrowthMCMovetype(origami_system, random_gens,
                     ideal_random_walks, config_files, label, ops, biases,
                     params, num_excluded_staples, max_disp, max_turns) {
@@ -1254,7 +1265,8 @@ namespace movetypes {
             InputParameters& params,
             int num_excluded_staples,
             int max_disp,
-            int max_turns):
+            int max_turns,
+            int max_regrowth):
             MCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
             RegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
@@ -1262,7 +1274,8 @@ namespace movetypes {
             CBMCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
             CTRegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
-                    config_files, label, ops, biases, params, num_excluded_staples),
+                    config_files, label, ops, biases, params,
+                    num_excluded_staples, max_regrowth),
             CTCBLinkerRegrowthMCMovetype(origami_system, random_gens,
                     ideal_random_walks, config_files, label, ops, biases,
                     params, num_excluded_staples, max_disp, max_turns) {
@@ -1289,13 +1302,16 @@ namespace movetypes {
         // Get linker domains
         linker1.push_back(central_segment[0]);
         Domain* p_domain {*central_segment[0] + -1};
-        while (p_domain != nullptr and p_domain->m_state != Occupancy::bound) {
+        while (p_domain != nullptr and p_domain->m_state != Occupancy::bound and
+                linker1.size() != m_max_regrowth) {
             linker1.push_back(p_domain);
             p_domain = *p_domain + -1;
         }
+
         linker2.push_back(central_segment.back());
-        Domain* n_domain {*central_segment.back() + -1};
-        while (p_domain != nullptr and p_domain->m_state != Occupancy::bound) {
+        Domain* n_domain {*central_segment.back() + 1};
+        while (p_domain != nullptr and p_domain->m_state != Occupancy::bound and
+                linker2.size() != m_max_regrowth) {
             linker2.push_back(n_domain);
             n_domain = *n_domain + 1;
         }

@@ -289,10 +289,12 @@ namespace simulation {
 
         int excluded_staples {movetypes_file.get_int_option(i,
                 "num_excluded_staples")};
+        int max_regrowth {movetypes_file.get_int_option(i, "max_regrowth")};
         movetype = new movetypes::CTCBScaffoldRegrowthMCMovetype {
                 m_origami_system, m_random_gens,
                 m_ideal_random_walks, m_config_per_move_files,
-                label, m_ops, m_biases, m_params, excluded_staples};
+                label, m_ops, m_biases, m_params, excluded_staples,
+                max_regrowth};
 
         return movetype;
     }
@@ -308,6 +310,7 @@ namespace simulation {
         int max_disp {movetypes_file.get_int_option(i, "max_disp")};
         int max_turns {movetypes_file.get_int_option(i,
                 "max_turns")};
+        int max_regrowth {movetypes_file.get_int_option(i, "max_regrowth")};
         if (type == "CTCBLinkerRegrowth") {
             movetype = new movetypes::CTCBLinkerRegrowthMCMovetype {
                     m_origami_system, m_random_gens, m_ideal_random_walks,
@@ -324,7 +327,7 @@ namespace simulation {
             movetype = new movetypes::Clustered2CTCBLinkerRegrowth {
                     m_origami_system, m_random_gens, m_ideal_random_walks,
                     m_config_per_move_files, label, m_ops, m_biases, m_params,
-                    excluded_staples, max_disp, max_turns};
+                    excluded_staples, max_disp, max_turns, max_regrowth};
         }
 
         return movetype;
@@ -341,11 +344,12 @@ namespace simulation {
                 "num_excluded_staples")};
         int max_num_recoils {movetypes_file.get_int_option(i, "max_num_recoils")};
         int max_c_attempts {movetypes_file.get_int_option(i, "max_c_attempts")};
+        int max_regrowth {movetypes_file.get_int_option(i, "max_regrowth")};
         movetype = new movetypes::CTScaffoldRG {
                 m_origami_system, m_random_gens,
                 m_ideal_random_walks, m_config_per_move_files,
                 label, m_ops, m_biases, m_params, excluded_staples,
-                max_num_recoils, max_c_attempts};
+                max_num_recoils, max_c_attempts, max_regrowth};
 
         return movetype;
     }

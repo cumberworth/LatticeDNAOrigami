@@ -10,6 +10,7 @@
 namespace movetypes {
 
     using std::fmin;
+    using std::min;
     using std::set;
     using std::find;
     using utility::Occupancy;
@@ -350,11 +351,14 @@ namespace movetypes {
                 SystemOrderParams& ops,
                 SystemBiases& biases,
                 InputParameters& params,
-                int num_excluded_staples) :
+                int num_excluded_staples,
+                int max_regrowth) :
         MCMovetype(origami_system, random_gens, ideal_random_walks,
                 config_files, label, ops, biases, params),
-        m_num_excluded_staples {num_excluded_staples} {
-        m_scaffold = m_origami_system.get_chain(m_origami_system.c_scaffold);
+        m_num_excluded_staples {num_excluded_staples},
+        m_max_regrowth {static_cast<unsigned int>(max_regrowth)} {
+
+            m_scaffold = m_origami_system.get_chain(m_origami_system.c_scaffold);
     }
 
     void CTRegrowthMCMovetype::reset_internal() {
@@ -382,87 +386,39 @@ namespace movetypes {
     }
 
     vector<Domain*> CTRegrowthMCMovetype::select_indices(
-            vector<Domain*> segment, int seg) {
+            vector<Domain*> segment, unsigned int min_length, int seg) {
 
-        pair<int, int> endpoints {select_endpoints(segment.size(), 0, 2)};
-        Domain* start_domain {segment[endpoints.first]};
-        Domain* end_domain {segment[endpoints.second]};
-        vector<Domain*> domains {};
-        if (m_origami_system.m_cyclic) {
-            domains = select_cyclic_segment(start_domain, end_domain);
-        }
-        else {
-            domains = select_linear_segment(start_domain, end_domain);
-        }
-
-        // If end domain is end of chain, no endpoint
-        Domain* endpoint_domain {(*end_domain) + m_dir};
-        if (endpoint_domain != nullptr) {
-            m_constraintpoints.add_active_endpoint(endpoint_domain,
-                    endpoint_domain->m_pos, seg);
-        }
-
-        return domains;
-    }
-
-    vector<Domain*> CTRegrowthMCMovetype::select_linear_segment(
-            Domain* start_domain,
-            Domain* end_domain) {
-
-        vector<Domain*> scaffold {m_origami_system.get_chain(m_origami_system.c_scaffold)};
-        vector<Domain*> domains {};
-
-        // Find direction of regrowth
-        if (end_domain->m_d > start_domain->m_d) {
-            m_dir = 1;
-        }
-        else {
-            m_dir = -1;
-        }
-        for (int d_i {start_domain->m_d}; d_i != end_domain->m_d + m_dir; d_i +=
-                m_dir) {
-            Domain* cur_domain {scaffold[d_i]};
-            domains.push_back(cur_domain);
-        }
-
-        return domains;
-    }
-
-    vector<Domain*> CTRegrowthMCMovetype::select_cyclic_segment(
-            Domain* start_domain,
-            Domain* end_domain) {
-
-        vector<Domain*> domains {};
+        unsigned int seg_length {static_cast<unsigned int>(segment.size())};
+        unsigned int max_length {min(seg_length, m_max_regrowth)};
+        unsigned int sel_length {static_cast<unsigned int>(
+                m_random_gens.uniform_int(min_length, max_length))};
+        int start_i {m_random_gens.uniform_int(0, seg_length - 1)};
 
         // Select direction of regrowth
         m_dir = m_random_gens.uniform_int(0, 1);
         if (m_dir == 0) {
             m_dir = -1;
         }
-        int d_i {start_domain->m_d};
-        Domain* cur_domain {start_domain};
-        while (d_i != end_domain->m_d) {
+
+        // Add domains until length reached or end of segment reached
+        Domain* cur_domain {segment[start_i]};
+        vector<Domain*> domains {};
+        while (cur_domain != nullptr and domains.size() != sel_length) {
             domains.push_back(cur_domain);
             cur_domain = (*cur_domain) + m_dir;
-            d_i = cur_domain->m_d;
         }
-        domains.push_back(end_domain);
+        if (domains.size() < min_length) {
+            domains = select_indices(segment, min_length, seg);
+            return domains;
+        }
+
+        // If end domain is end of chain, no endpoint
+        if (cur_domain != nullptr) {
+            m_constraintpoints.add_active_endpoint(cur_domain,
+                    cur_domain->m_pos, seg);
+        }
 
         return domains;
-    }
-
-    pair<int, int> CTRegrowthMCMovetype::select_endpoints(
-            const int array_size,
-            const int m,
-            const int min_size) {
-
-        int start_i {m_random_gens.uniform_int(m, array_size - 1 - m)};
-        int end_i {m_random_gens.uniform_int(m, array_size - 1 - m)};
-        while (std::abs(start_i - end_i) + 1 < min_size) {
-            end_i = m_random_gens.uniform_int(m, array_size - 1 - m);
-        }
-
-        return {start_i, end_i};
     }
 
     bool CTRegrowthMCMovetype::excluded_staples_bound() {

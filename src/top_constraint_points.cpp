@@ -10,6 +10,7 @@ namespace topConstraintPoints {
     using std::fmin;
     using std::set;
     using std::find;
+    using std::cout;
 
     bool domain_included(vector<Domain*> domains, Domain* d) {
         return find(domains.begin(), domains.end(), d) !=
@@ -194,7 +195,9 @@ namespace topConstraintPoints {
     int Constraintpoints::get_dir(Domain* d) {
         auto seg = m_segs[d];
         pair<int, int> key {d->m_c, seg};
-        return m_domain_to_dir[key];
+        int dir {m_domain_to_dir[key]};
+
+        return dir;
     }
 
     vector<VectorThree> Constraintpoints::get_erased_endpoints() {
@@ -535,12 +538,16 @@ namespace topConstraintPoints {
     int Constraintpoints::calc_remaining_steps(int endpoint_d_i, Domain* domain,
             int dir, int step_offset) {
         int steps;
-        if (m_origami_system.m_cyclic and domain->m_c == m_origami_system.c_scaffold) {
+        if (m_origami_system.m_cyclic and domain->m_c ==
+                m_origami_system.c_scaffold) {
+
             if (dir > 0 and endpoint_d_i < domain->m_d) {
                 steps = m_origami_system.get_chain(0).size() + endpoint_d_i - domain->m_d;
             }
             else if (dir < 0 and endpoint_d_i > domain->m_d) {
-                steps = domain->m_d + m_origami_system.get_chain(0).size() - endpoint_d_i;
+                steps = domain->m_d + m_origami_system.get_chain(0).size() -
+                    endpoint_d_i;
+
             }
             else if (dir == 0 or endpoint_d_i == domain->m_d) {
                 steps = 0;
