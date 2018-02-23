@@ -27,6 +27,7 @@ namespace potential {
     bool check_domain_orientations_opposing(Domain& cd_i, Domain& cd_j);
     bool check_doubly_contig(Domain* cd_1, Domain* cd_2);
     bool check_domains_exist_and_bound(vector<Domain*> cdv);
+    bool doubly_contiguous_helix(Domain* cd_1, Domain* cd_2);
 
     struct DeltaConfig {
         double e {0};
@@ -129,6 +130,7 @@ namespace potential {
 
         public:
             using FlexibleBindingPotential::FlexibleBindingPotential;
+            DeltaConfig bind_domains(Domain& cd_i, Domain& cd_j) override;
             DeltaConfig check_stacking(Domain& cd_i, Domain& cd_j) override;
             void check_pair_stacking(
                     Domain* cd_1,
@@ -147,6 +149,7 @@ namespace potential {
                     Domain* cd_h1,
                     Domain* cd_h2,
                     Domain* cd_h3);
+            void check_central_linear_helix(Domain& cd_i, Domain& cd_j);
     };
 
     /** Helices can be fully stacked and nonlinear */
