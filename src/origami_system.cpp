@@ -308,6 +308,7 @@ namespace origami {
 
         DeltaConfig delta_config {internal_check_domain_constraints(
                 cd_i, pos, ore)};
+        internal_unassign_domain(cd_i);
 
         return delta_config.e;
     }
@@ -453,8 +454,10 @@ namespace origami {
         // Check constraints and update if obeyed, otherwise throw
         DeltaConfig delta_config {internal_check_domain_constraints(
                 cd_i, pos, ore)};
-        if (not m_constraints_violated) {
-            update_occupancies(cd_i, pos);
+        if (m_constraints_violated) {
+            internal_unassign_domain(cd_i);
+        }
+        else{
             m_energy += delta_config.e;
             m_num_stacked_domain_pairs += delta_config.stacked_pairs;
             m_num_linear_helix_trips += delta_config.linear_helices;
@@ -734,19 +737,21 @@ namespace origami {
         switch (occupancy) {
             case Occupancy::bound:
                 m_constraints_violated = true;
+                m_num_unassigned_domains++;
                 break;
             case Occupancy::misbound:
                 m_constraints_violated = true;
+                m_num_unassigned_domains++;
                 break;
             case Occupancy::unbound:
                 update_domain(cd_i, pos, ore);
                 update_occupancies(cd_i, pos);
                 delta_config = m_pot.bind_domain(cd_i);
                 m_constraints_violated = m_pot.m_constraints_violated;
-                internal_unassign_domain(cd_i);
                 break;
             case Occupancy::unassigned:
                 update_domain(cd_i, pos, ore);
+                update_occupancies(cd_i, pos);
         }
         return delta_config;
     }

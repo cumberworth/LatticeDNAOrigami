@@ -337,10 +337,15 @@ namespace movetypes {
 
         // Grow staple
         set_growthpoint_and_grow_staple(growthpoint, selected_chain);
+        //grow_staple(growthpoint.first->m_d, selected_chain);
 
         // Revert modifier and test acceptance
         m_modifier = m_new_modifier;
         accepted = test_cb_acceptance();
+        //debug
+        if (accepted) {
+            m_origami_system.check_all_constraints();
+        }
 
         return accepted;
     }
@@ -1333,10 +1338,14 @@ namespace movetypes {
             central_segment.push_back(kernel_domain);
             Domain* p_domain {*kernel_domain + -1};
             while (p_domain != nullptr and p_domain->m_state ==
-                    Occupancy::bound) {
+                    Occupancy::bound and central_segment.size() !=
+                    m_scaffold.size() - 1) {
                 central_segment.push_back(p_domain);
                 p_domain = *p_domain + -1;
             }
+        }
+        if (central_segment.size() == m_scaffold.size() - 1) {
+            return {};
         }
         std::reverse(central_segment.begin(), central_segment.end());
         Domain* n_domain {*kernel_domain + 1};
@@ -1392,10 +1401,14 @@ namespace movetypes {
             segment_started = true;
             central_segment.push_back(kernel_domain);
             Domain* p_domain {*kernel_domain + -1};
-            while (p_domain->m_state == Occupancy::bound) {
+            while (p_domain->m_state == Occupancy::bound and
+                    central_segment.size() != m_scaffold.size() - 1) {
                 central_segment.push_back(p_domain);
                 p_domain = *p_domain + -1;
             }
+        }
+        if (central_segment.size() == m_scaffold.size() - 1) {
+            return {};
         }
         std::reverse(central_segment.begin(), central_segment.end());
         Domain* n_domain {*kernel_domain + 1};
