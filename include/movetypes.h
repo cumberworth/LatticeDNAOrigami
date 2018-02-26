@@ -213,7 +213,9 @@ namespace movetypes {
 
             double set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old);
             void grow_staple(int d_i_index, vector<Domain*> selected_chain);
-            pair<Domain*, Domain*> select_new_growthpoint(vector<Domain*> selected_chain);
+            pair<Domain*, Domain*> select_new_growthpoint(
+                    vector<Domain*> selected_chain);
+            Domain* select_existing_growthpoint(vector<Domain*> selected_chain);
     };
 
     /**

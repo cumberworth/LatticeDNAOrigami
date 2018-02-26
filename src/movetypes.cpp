@@ -333,13 +333,20 @@ namespace movetypes {
     pair<Domain*, Domain*> RegrowthMCMovetype::select_new_growthpoint(
             vector<Domain*> selected_chain) {
 
-/*        int growth_d_new {m_random_gens.uniform_int(0, selected_chain.size() - 1)};
-        Domain* growth_domain_new {selected_chain[growth_d_new]};
-        Domain* growth_domain_old {select_random_domain()};
-        while (growth_domain_old->m_c == growth_domain_new->m_c) {
-            growth_domain_old = select_random_domain();
+        int growth_di_new {m_random_gens.uniform_int(0, selected_chain.size() -
+                1)};
+        Domain* growth_d_new {selected_chain[growth_di_new]};
+        Domain* growth_d_old {select_random_domain()};
+        while (growth_d_old->m_c == growth_d_new->m_c) {
+            growth_d_old = select_random_domain();
         }
-        */
+
+        return {growth_d_new, growth_d_old};
+    }
+
+    Domain* RegrowthMCMovetype::select_existing_growthpoint(
+            vector<Domain*> selected_chain) {
+
         vector<Domain*> possible_growthpoints {};
         for (auto d: selected_chain) {
             if (d->m_state != Occupancy::unbound and d->m_bound_domain->m_c !=
@@ -347,13 +354,11 @@ namespace movetypes {
                 possible_growthpoints.push_back(d);
             }
         }
-        int growth_di_new {m_random_gens.uniform_int(0,
+        int growth_di {m_random_gens.uniform_int(0,
                 possible_growthpoints.size() - 1)};
-        Domain* growth_d_new {selected_chain[growth_di_new]};
-        Domain* growth_d_old {growth_d_new->m_bound_domain};
-        
+        Domain* growth_d {possible_growthpoints[growth_di]};
 
-        return {growth_d_new, growth_d_old};
+        return growth_d;
     }
 
     CTRegrowthMCMovetype::CTRegrowthMCMovetype(

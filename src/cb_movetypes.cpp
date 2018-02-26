@@ -313,7 +313,9 @@ namespace movetypes {
         }
 
         // Select growth points on chains
-        pair<Domain*, Domain*> growthpoint {select_new_growthpoint(selected_chain)};
+//        pair<Domain*, Domain*> growthpoint {select_new_growthpoint(selected_chain)};
+        Domain* growth_d {select_existing_growthpoint(selected_chain)};
+        pair<Domain*, Domain*> growthpoint {growth_d, growth_d->m_bound_domain};
 
         auto bound_domains = find_bound_domains(selected_chain);
         unassign_domains(selected_chain);
