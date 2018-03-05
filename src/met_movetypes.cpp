@@ -165,7 +165,9 @@ namespace movetypes {
         movetypes::add_tracker(m_tracker, m_tracking, accepted);
     }
 
-    bool MetStapleExchangeMCMovetype::staple_insertion_accepted(int c_i_ident) {
+    bool MetStapleExchangeMCMovetype::staple_insertion_accepted(int c_i_ident,
+            int num_staple_bd) {
+
         add_external_bias();
         double boltz_factor {exp(-m_delta_e)};
         int Ni_new {m_origami_system.num_staples_of_ident(c_i_ident)};
@@ -174,13 +176,13 @@ namespace movetypes {
         size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
         int extra_df {2 * static_cast<int>(staple_length) - 1 - preconstrained_df};
         double extra_states {pow(6, extra_df)};
-        double ratio {extra_states / Ni_new * boltz_factor};
+        double pratio {extra_states / Ni_new * boltz_factor};
 
         // Correct for insertion into subset of volume
-        m_modifier *= m_insertion_sites / m_origami_system.m_volume;
+        pratio *= m_insertion_sites / m_origami_system.m_volume;
 
-        // Correct for considering only 1 of staple length ways insertion could occur
-        m_modifier *= staple_length;
+        // Correct for overcounting multiply bound staples
+        pratio *= num_staple_bd;
 
         // Exchange probability multiplier
         bool accepted;
@@ -188,7 +190,7 @@ namespace movetypes {
             m_modifier *= m_exchange_mults[c_i_ident - 1];
 
             // Check if nonsensical probabilities will result
-            if (m_modifier * fmin(1, ratio) > 1) {
+            if (m_modifier * fmin(1, pratio) > 1) {
                 if (m_adaptive_exchange) {
                     m_exchange_mults[c_i_ident - 1] /= 10;
                     accepted = false;
@@ -202,17 +204,20 @@ namespace movetypes {
                 }
             }
             else {
-                accepted = test_acceptance(ratio);
+                accepted = test_acceptance(pratio);
             }
         }
         else {
-            accepted = test_acceptance(ratio);
+            accepted = test_acceptance(pratio);
         }
 
         return accepted;
     }
 
-    bool MetStapleExchangeMCMovetype::staple_deletion_accepted(int c_i_ident) {
+    bool MetStapleExchangeMCMovetype::staple_deletion_accepted(int c_i_ident,
+            int num_staple_bd) {
+
+        // This is ugly but necessary as I don't remove staple unles accepted
         m_origami_system.temp_reduce_staples_by_one();
         add_external_bias();
         m_origami_system.undo_reduce_staples_by_one();
@@ -223,7 +228,13 @@ namespace movetypes {
         size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
         double extra_df {2 * static_cast<double>(staple_length) - 1 - preconstrained_df};
         double extra_states {pow(6, extra_df)};
-        double ratio {Ni / extra_states * boltz_factor};
+        double pratio {Ni / extra_states * boltz_factor};
+
+        // Correct for insertion into subset of volume
+        pratio *= m_insertion_sites / m_origami_system.m_volume;
+
+        // Correct for overcounting multiply bound staples
+        pratio /= num_staple_bd;
 
         // Exchange probability multiplier
         bool accepted;
@@ -231,9 +242,9 @@ namespace movetypes {
             m_modifier *= m_exchange_mults[c_i_ident - 1];
 
             // Check if nonsensical probabilities will result
-            if (m_modifier * fmin(1, ratio) > 1) {
+            if (m_modifier * fmin(1, pratio) > 1) {
                 if (m_adaptive_exchange) {
-                    cout << c_i_ident << m_modifier << " " << ratio << "\n";
+                    cout << c_i_ident << m_modifier << " " << pratio << "\n";
                     m_exchange_mults[c_i_ident - 1] /= 10;
                     accepted = false;
                 }
@@ -246,11 +257,11 @@ namespace movetypes {
                 }
             }
             else {
-                accepted = test_acceptance(ratio);
+                accepted = test_acceptance(pratio);
             }
         }
         else {
-            accepted = test_acceptance(ratio);
+            accepted = test_acceptance(pratio);
         }
 
         return accepted;
@@ -299,7 +310,8 @@ namespace movetypes {
             }
         }
 
-        accepted = staple_insertion_accepted(c_i_ident);
+        accepted = staple_insertion_accepted(c_i_ident,
+                num_bound_staple_domains(staple));
         return accepted;
     }
 
@@ -328,8 +340,10 @@ namespace movetypes {
         }
 
         // Unassign domains and test acceptance
+        int num_staple_bd {num_bound_staple_domains(staple)};
         unassign_domains(staple);
-        accepted = staple_deletion_accepted(c_i_ident);
+        accepted = staple_deletion_accepted(c_i_ident,
+                num_staple_bd);
         if (accepted) {
             m_origami_system.delete_chain(c_i);
         }
@@ -402,6 +416,7 @@ namespace movetypes {
         // Select growth points on chains
         pair<Domain*, Domain*> growthpoint {select_new_growthpoint(selected_chain)};
 
+        int old_num_staple_bd {num_bound_staple_domains(selected_chain)};
         unassign_domains(selected_chain);
 
         // Grow staple
@@ -416,8 +431,10 @@ namespace movetypes {
         }
 
         add_external_bias();
+        int new_num_staple_bd {num_bound_staple_domains(selected_chain)};
         double boltz_factor {exp(-(m_delta_e))};
-        accepted = test_acceptance(boltz_factor);
+        double pratio {boltz_factor * old_num_staple_bd / new_num_staple_bd};
+        accepted = test_acceptance(pratio);
         return accepted;
     }
 

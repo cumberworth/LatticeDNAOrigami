@@ -79,8 +79,8 @@ namespace movetypes {
             bool internal_attempt_move() override;
             void add_tracker(bool accepted) override;
 
-            bool staple_insertion_accepted(int c_i_ident);
-            bool staple_deletion_accepted(int c_i_ident);
+            bool staple_insertion_accepted(int c_i_ident, int num_staple_bd);
+            bool staple_deletion_accepted(int c_i_ident, int num_staple_bd);
             bool insert_staple();
             bool delete_staple();
 

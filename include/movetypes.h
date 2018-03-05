@@ -215,7 +215,9 @@ namespace movetypes {
             void grow_staple(int d_i_index, vector<Domain*> selected_chain);
             pair<Domain*, Domain*> select_new_growthpoint(
                     vector<Domain*> selected_chain);
-            Domain* select_existing_growthpoint(vector<Domain*> selected_chain);
+
+            /** Number of staple domains (mis)bound to external chains **/
+            int num_bound_staple_domains(vector<Domain*> staple);
     };
 
     /**

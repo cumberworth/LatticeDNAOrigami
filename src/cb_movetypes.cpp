@@ -303,7 +303,8 @@ namespace movetypes {
         }
 
         // Select a staple to regrow
-        int c_i_index {m_random_gens.uniform_int(1, m_origami_system.num_staples())};
+        int c_i_index {m_random_gens.uniform_int(1,
+                m_origami_system.num_staples())};
         vector<Domain*> selected_chain {m_origami_system.get_chains()[c_i_index]};
         m_tracker.staple_type = selected_chain[0]->m_c_ident;
 
@@ -313,11 +314,8 @@ namespace movetypes {
         }
 
         // Select growth points on chains
-//        pair<Domain*, Domain*> growthpoint {select_new_growthpoint(selected_chain)};
-        Domain* growth_d {select_existing_growthpoint(selected_chain)};
-        pair<Domain*, Domain*> growthpoint {growth_d, growth_d->m_bound_domain};
-
         auto bound_domains = find_bound_domains(selected_chain);
+        domainPairT growthpoint {select_old_growthpoint(bound_domains)};
         unassign_domains(selected_chain);
 
         // Grow staple

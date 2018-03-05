@@ -297,8 +297,6 @@ namespace movetypes {
     void RegrowthMCMovetype::grow_staple(int d_i_index, vector<Domain*> selected_chain) {
         // Grow staple in both directions out from growth point
         // The indices passed to grow chain should include the growth point
-        int old_num_bound_domains {m_origami_system.num_bound_domain_pairs() -
-                m_origami_system.num_self_bound_domain_pairs()};
 
         // Grow in three prime direction (staple domains increase in 3' direction)
         auto first_iter3 {selected_chain.begin() + d_i_index};
@@ -322,12 +320,6 @@ namespace movetypes {
         if (m_rejected) {
             return;
         }
-
-        // Overcount correction
-        int overcount {m_origami_system.num_bound_domain_pairs() -
-                m_origami_system.num_self_bound_domain_pairs() -
-                old_num_bound_domains};
-        m_modifier /= (overcount + 1);
     }
 
     pair<Domain*, Domain*> RegrowthMCMovetype::select_new_growthpoint(
@@ -344,21 +336,16 @@ namespace movetypes {
         return {growth_d_new, growth_d_old};
     }
 
-    Domain* RegrowthMCMovetype::select_existing_growthpoint(
-            vector<Domain*> selected_chain) {
-
-        vector<Domain*> possible_growthpoints {};
-        for (auto d: selected_chain) {
-            if (d->m_state != Occupancy::unbound and d->m_bound_domain->m_c !=
-                    d->m_c) {
-                possible_growthpoints.push_back(d);
+    int RegrowthMCMovetype::num_bound_staple_domains(vector<Domain*> staple) {
+        int num_bd {0};
+        for (auto d: staple) {
+            if (d->m_state == Occupancy::bound or
+                    d->m_state == Occupancy::misbound) {
+                num_bd++;
             }
         }
-        int growth_di {m_random_gens.uniform_int(0,
-                possible_growthpoints.size() - 1)};
-        Domain* growth_d {possible_growthpoints[growth_di]};
 
-        return growth_d;
+        return num_bd;
     }
 
     CTRegrowthMCMovetype::CTRegrowthMCMovetype(
