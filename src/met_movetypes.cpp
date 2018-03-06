@@ -231,7 +231,7 @@ namespace movetypes {
         double pratio {Ni / extra_states * boltz_factor};
 
         // Correct for insertion into subset of volume
-        pratio *= m_insertion_sites / m_origami_system.m_volume;
+        pratio /= m_insertion_sites * m_origami_system.m_volume;
 
         // Correct for overcounting multiply bound staples
         pratio /= num_staple_bd;
