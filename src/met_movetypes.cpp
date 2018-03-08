@@ -404,8 +404,10 @@ namespace movetypes {
         }
 
         // Select a staple to regrow
-        int c_i_index {m_random_gens.uniform_int(1, m_origami_system.num_staples())};
-        vector<Domain*> selected_chain {m_origami_system.get_chains()[c_i_index]};
+        int c_i_index {m_random_gens.uniform_int(1,
+                m_origami_system.num_staples())};
+        vector<Domain*> selected_chain {
+                m_origami_system.get_chains()[c_i_index]};
         m_tracker.staple_type = selected_chain[0]->m_c_ident;
 
         // Reject if staple is connector
@@ -414,9 +416,9 @@ namespace movetypes {
         }
 
         // Select growth points on chains
-        pair<Domain*, Domain*> growthpoint {select_new_growthpoint(selected_chain)};
+        auto bound_domains = find_bound_domains(selected_chain);
+        domainPairT growthpoint {select_old_growthpoint(bound_domains)};
 
-        int old_num_staple_bd {num_bound_staple_domains(selected_chain)};
         unassign_domains(selected_chain);
 
         // Grow staple
@@ -433,7 +435,7 @@ namespace movetypes {
         add_external_bias();
         int new_num_staple_bd {num_bound_staple_domains(selected_chain)};
         double boltz_factor {exp(-(m_delta_e))};
-        double pratio {boltz_factor * old_num_staple_bd / new_num_staple_bd};
+        double pratio {boltz_factor * bound_domains.size() / new_num_staple_bd};
         accepted = test_acceptance(pratio);
         return accepted;
     }

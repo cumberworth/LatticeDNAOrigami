@@ -49,7 +49,6 @@ namespace movetypes {
     using utility::VectorThree;
 
     typedef vector<pair<VectorThree, VectorThree>> configsT;
-    typedef pair<Domain*, Domain*> domainPairT;
 
     /**
       * Base for CB moves
@@ -81,7 +80,6 @@ namespace movetypes {
             virtual vector<double> calc_bias(
                     const vector<double> bfactors, // Boltzman weights
                     const configsT& configs, // Configs
-                    const VectorThree p_prev, // Position of growthpoint domain
                     Domain* domain) = 0; // Domain being regrown
 
             /**
@@ -134,14 +132,6 @@ namespace movetypes {
             /** Prepare interals for regrowing old configuration */
             void setup_for_regrow_old();
 
-            /** Find all domains bound directly to give domains */
-            vector<domainPairT> find_bound_domains(
-                    vector<Domain*> selected_chain);
-
-            /** Select a growthpoint from set of possible */
-            domainPairT select_old_growthpoint(
-                    vector<domainPairT> bound_domains);
-
             /** Update the external bias without adding */
             void update_external_bias();
 
@@ -187,7 +177,6 @@ namespace movetypes {
             vector<double> calc_bias(
                     const vector<double> bfactors, // Boltzman weights
                     const configsT& configs, // Configs
-                    const VectorThree p_prev, // Position of growthpoint domain
                     Domain* domain) override; // Domain being regrown
 
             /** Set given growthpoint and grow staple */
@@ -234,7 +223,6 @@ namespace movetypes {
             vector<double> calc_bias(
                     const vector<double> bfactors, // Boltzman weights
                     const configsT& configs, // Configs
-                    const VectorThree p_prev, // Position of growthpoint domain
                     Domain* domain) override; // Domain being regrown
 
             /** Grow given staple and update fixed-end biases */

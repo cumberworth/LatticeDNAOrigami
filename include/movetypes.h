@@ -44,6 +44,8 @@ namespace movetypes {
     using topConstraintPoints::Constraintpoints;
     using utility::VectorThree;
 
+    typedef pair<Domain*, Domain*> domainPairT;
+
     /**
       * Tracker for general movetype info
       */
@@ -170,6 +172,10 @@ namespace movetypes {
             bool scan_for_scaffold_domain(
                     Domain* domain,
                     set<int>& participating_chains);
+
+            /** Find all domains bound directly to give domains */
+            vector<domainPairT> find_bound_domains(
+                    vector<Domain*> selected_chain);
     };
 
     /** For debugging purposes */
@@ -213,8 +219,14 @@ namespace movetypes {
 
             double set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old);
             void grow_staple(int d_i_index, vector<Domain*> selected_chain);
+
             pair<Domain*, Domain*> select_new_growthpoint(
                     vector<Domain*> selected_chain);
+
+            /** Select a growthpoint from set of possible */
+            domainPairT select_old_growthpoint(
+                    vector<domainPairT> bound_domains);
+
 
             /** Number of staple domains (mis)bound to external chains **/
             int num_bound_staple_domains(vector<Domain*> staple);

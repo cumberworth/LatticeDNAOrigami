@@ -14,6 +14,7 @@ namespace movetypes {
     using std::set;
     using std::find;
     using utility::Occupancy;
+    using utility::OrigamiMisuse;
 
 	MCMovetype::MCMovetype(
                 OrigamiSystem& origami_system,
@@ -247,6 +248,27 @@ namespace movetypes {
         return m_general_tracker.accepts;
     }
 
+    vector<domainPairT> MCMovetype::find_bound_domains(
+            vector<Domain*> selected_chain) {
+
+        vector<pair<Domain*, Domain*>> bound_domains {};
+        for (auto domain: selected_chain) {
+            // shouldn't this be only non-self binding (only would effect staple size > 2)
+            if (domain->m_bound_domain != nullptr) {
+
+                // New domain, old domain
+                bound_domains.push_back({domain, domain->m_bound_domain});
+            }
+        }
+
+        if (bound_domains.empty()) {
+            cout << "System has unbound staple\n";
+            throw OrigamiMisuse {};
+        }
+
+        return bound_domains;
+    }
+
 	IdentityMCMovetype::IdentityMCMovetype(
                 OrigamiSystem& origami_system,
                 RandomGens& random_gens,
@@ -334,6 +356,16 @@ namespace movetypes {
         }
 
         return {growth_d_new, growth_d_old};
+    }
+
+    domainPairT RegrowthMCMovetype::select_old_growthpoint(
+            vector<domainPairT> bound_domains) {
+
+        int bound_domain_index {m_random_gens.uniform_int(0,
+                bound_domains.size() - 1)};
+        Domain* growth_domain_new {bound_domains[bound_domain_index].first};
+        Domain* growth_domain_old {bound_domains[bound_domain_index].second};
+        return {growth_domain_new, growth_domain_old};
     }
 
     int RegrowthMCMovetype::num_bound_staple_domains(vector<Domain*> staple) {

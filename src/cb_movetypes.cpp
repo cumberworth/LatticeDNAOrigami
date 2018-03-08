@@ -104,7 +104,7 @@ namespace movetypes {
         vector<pair<VectorThree, VectorThree>> configs {};
         vector<double> bfactors {};
         calc_biases(p_prev, *domain, configs, bfactors);
-        vector<double> weights {calc_bias(bfactors, configs, p_prev, domain)};
+        vector<double> weights {calc_bias(bfactors, configs, domain)};
         if (m_rejected) {
             return;
         }
@@ -215,36 +215,6 @@ namespace movetypes {
         m_old_ore = m_prev_ore;
     }
 
-    vector<domainPairT> CBMCMovetype::find_bound_domains(
-            vector<Domain*> selected_chain) {
-
-        vector<pair<Domain*, Domain*>> bound_domains {};
-        for (auto domain: selected_chain) {
-            // shouldn't this be only non-self binding (only would effect staple size > 2)
-            if (domain->m_bound_domain != nullptr) {
-
-                // New domain, old domain
-                bound_domains.push_back({domain, domain->m_bound_domain});
-            }
-        }
-
-        if (bound_domains.empty()) {
-            cout << "System has unbound staple\n";
-            throw OrigamiMisuse {};
-        }
-
-        return bound_domains;
-    }
-
-    domainPairT CBMCMovetype::select_old_growthpoint(
-            vector<domainPairT> bound_domains) {
-
-        int bound_domain_index {m_random_gens.uniform_int(0, bound_domains.size() - 1)};
-        Domain* growth_domain_new {bound_domains[bound_domain_index].first};
-        Domain* growth_domain_old {bound_domains[bound_domain_index].second};
-        return {growth_domain_new, growth_domain_old};
-    }
-
 	CBStapleRegrowthMCMovetype::CBStapleRegrowthMCMovetype(
                 OrigamiSystem& origami_system,
                 RandomGens& random_gens,
@@ -315,6 +285,7 @@ namespace movetypes {
 
         // Select growth points on chains
         auto bound_domains = find_bound_domains(selected_chain);
+        m_bias *= bound_domains.size();
         domainPairT growthpoint {select_old_growthpoint(bound_domains)};
         unassign_domains(selected_chain);
 
@@ -323,6 +294,7 @@ namespace movetypes {
         if (m_rejected) {
             return accepted;
         }
+        m_bias /= num_bound_staple_domains(selected_chain);
 
         add_external_bias();
 
@@ -342,10 +314,6 @@ namespace movetypes {
         // Revert modifier and test acceptance
         m_modifier = m_new_modifier;
         accepted = test_cb_acceptance();
-        //debug
-        if (accepted) {
-            m_origami_system.check_all_constraints();
-        }
 
         return accepted;
     }
@@ -366,7 +334,6 @@ namespace movetypes {
     vector<double> CBStapleRegrowthMCMovetype::calc_bias(
             const vector<double> bfactors,
             const configsT&,
-            const VectorThree,
             Domain*) {
 
         // Calculate rosenbluth weight
@@ -460,7 +427,6 @@ namespace movetypes {
     vector<double> CTCBRegrowthMCMovetype::calc_bias(
             const vector<double> bfactors,
             const vector<pair<VectorThree, VectorThree>>& configs,
-            const VectorThree p_prev,
             Domain* domain) {
 
 
@@ -482,14 +448,11 @@ namespace movetypes {
                 }
             }
 
-            // Bias weights with number of walks
-            weights[i] *= m_constraintpoints.calc_num_walks_prod(domain,
-                    cur_pos, m_dir);
+            // Zero probability of accepting configs with no walks remaining
+            if (not m_constraintpoints.walks_remain(domain, cur_pos, m_dir)) {
+                weights[i] = 0;
+            }
         }
-
-        // Calculate number of walks for previous position
-        long double prod_num_walks {m_constraintpoints.calc_num_walks_prod(
-                domain, p_prev, m_dir, 1)};
 
         // Modified Rosenbluth
         long double weights_sum {0};
@@ -503,8 +466,7 @@ namespace movetypes {
             m_rejected = true;
         }
         else {
-            long double bias {weights_sum / prod_num_walks};
-            m_bias *= bias;
+            m_bias *= weights_sum;
 
             // Normalize
             for (size_t i {0}; i != weights.size(); i++) {
