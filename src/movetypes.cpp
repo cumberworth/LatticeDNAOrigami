@@ -86,6 +86,16 @@ namespace movetypes {
         m_origami_system.m_constraints_violated = false;
     }
 
+    void MCMovetype::write_log_summary_header(ostream* log_stream) {
+        *log_stream << "Movetype: " << get_label() << "\n";
+        int attempts {get_attempts()};
+        int accepts {get_accepts()};
+        double freq {static_cast<double>(accepts) / attempts};
+        *log_stream << "    Attempts: " << attempts << "\n";
+        *log_stream << "    Accepts: " << accepts << "\n";
+        *log_stream << "    Frequency: " << freq << "\n";
+    }
+
     Domain* MCMovetype::select_random_domain() {
         int d_i_index {m_random_gens.uniform_int(0, m_origami_system.num_domains() - 1)};
         int counter {0};

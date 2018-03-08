@@ -100,6 +100,7 @@ namespace movetypes {
     }
 
     void MetStapleExchangeMCMovetype::write_log_summary(ostream* log_stream) {
+        write_log_summary_header(log_stream);
 
         // Insertion of each staple type
         map<int, int> insertion_attempts {};
@@ -182,7 +183,7 @@ namespace movetypes {
         pratio *= m_insertion_sites / m_origami_system.m_volume;
 
         // Correct for overcounting multiply bound staples
-        pratio *= num_staple_bd;
+        pratio /= num_staple_bd;
 
         // Exchange probability multiplier
         bool accepted;
@@ -231,10 +232,11 @@ namespace movetypes {
         double pratio {Ni / extra_states * boltz_factor};
 
         // Correct for insertion into subset of volume
-        pratio *= m_origami_system.m_volume / m_insertion_sites;
+        pratio *= m_origami_system.m_volume / (m_insertion_sites -
+                staple_length);
 
         // Correct for overcounting multiply bound staples
-        pratio /= num_staple_bd;
+        pratio *= num_staple_bd;
 
         // Exchange probability multiplier
         bool accepted;
@@ -369,6 +371,7 @@ namespace movetypes {
     }
 
     void MetStapleRegrowthMCMovetype::write_log_summary(ostream* log_stream) {
+        write_log_summary_header(log_stream);
 
         // Insertion of each staple type
         map<int, int> attempts {};
@@ -400,6 +403,7 @@ namespace movetypes {
 
         // No staples to regrow
         if (m_origami_system.num_staples() == 0) {
+            m_tracker.no_staples = true;
             return accepted;
         }
 

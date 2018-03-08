@@ -233,6 +233,7 @@ namespace movetypes {
 	}
 
     void CBStapleRegrowthMCMovetype::write_log_summary(ostream* log_stream) {
+        write_log_summary_header(log_stream);
 
         // Insertion of each staple type
         map<int, int> attempts {};
@@ -523,6 +524,7 @@ namespace movetypes {
     }
 
     void CTCBScaffoldRegrowthMCMovetype::write_log_summary(ostream* log_stream) {
+        write_log_summary_header(log_stream);
         // Insertion of each staple type
         map<int, int> length_attempts {};
         map<int, int> length_accepts {};
@@ -679,6 +681,8 @@ namespace movetypes {
     }
 
     void CTCBLinkerRegrowthMCMovetype::write_log_summary(ostream* log_stream) {
+        write_log_summary_header(log_stream);
+
         // Insertion of each staple type
         map<pair<int, int>, pair<int, int>> length_counts {};
         set<pair<int, int>> lengths {};

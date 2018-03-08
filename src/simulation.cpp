@@ -465,14 +465,7 @@ namespace simulation {
         movetype_sum_stream = new ofstream {m_params.m_output_filebase +
                 ".moves"};
         for (auto &movetype: m_movetypes) {
-            *m_logging_stream << "Movetype: " << movetype->get_label() << "\n";
-            int attempts {movetype->get_attempts()};
-            int accepts {movetype->get_accepts()};
-            double freq {static_cast<double>(accepts) / attempts};
-            *m_logging_stream << "    Attempts: " << attempts << "\n";
-            *m_logging_stream << "    Accepts: " << accepts << "\n";
-            *m_logging_stream << "    Frequency: " << freq << "\n";
-
+            movetype->write_log_summary_header(m_logging_stream);
             movetype->write_log_summary(movetype_sum_stream);
             *m_logging_stream << "\n";
         }

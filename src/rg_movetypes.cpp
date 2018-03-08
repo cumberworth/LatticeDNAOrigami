@@ -40,6 +40,8 @@ namespace movetypes {
     }
 
     void CTScaffoldRG::write_log_summary(ostream* log_stream) {
+        write_log_summary_header(log_stream);
+
         // Insertion of each staple type
         map<int, int> length_attempts {};
         map<int, int> length_accepts {};

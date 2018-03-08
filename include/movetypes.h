@@ -81,7 +81,10 @@ namespace movetypes {
             /** Reset origami system to state before move attempt */
             virtual void reset_origami();
 
-            /** Write summary of movetype attempts to file */
+            /** Write summary header of movetype attempts */
+            void write_log_summary_header(ostream* log_stream);
+
+            /** Write summary of movetype attempts */
             virtual void write_log_summary(ostream* log_stream) = 0;
 
             string get_label();
