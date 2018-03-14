@@ -61,9 +61,6 @@ namespace parser {
             ("staple_u_mult",
                 po::value<double>(&m_staple_u_mult)->default_value(1),
                 "Multiplier for staple u")
-            ("lattice_site_volume",
-                po::value<double>(&m_lattice_site_volume)->default_value(1),
-                "Volume per lattice site (L)")
             ("stacking_ene",
                 po::value<double>(&m_stacking_ene)->default_value(1),
                 "Stacking energy for constant potential")

@@ -842,25 +842,21 @@ namespace origami {
     //    delta_e += m_biases->calc_one_domain(cd_i);
     //}
 
-    double molarity_to_lattice_volume(double molarity, double lattice_site_volume) {
-        // Given a molarity, calculate the volume that cancels the fugacity.
+    double molarity_to_lattice_volume(double molarity) {
         // Volume is in units of number of lattice sites.
-
-        // Number of lattice sites per L (1 L * (1000) cm^3 / L * m^3 / (10^2)^3 cm^3)
-        double sites_per_litre {1e-3 / lattice_site_volume};
-
         // u = KB*T*ln(p), where p is the number of particles per lattice site
         // z = exp(1/(KB*T)*u) = exp(ln(p)) = p
         // V * p = 1, V = 1 / p
         // So just convert molarity to number of particles per lattice site
-        double V {1 / (molarity * utility::NA / sites_per_litre)};
+        // The lattice site volume removes the units
+        // The four is for non-palindromic sequences and is not actually a part of the volume, but is convienient to put here
+        double V {4 / molarity};
         return V;
     }
 
-    double molarity_to_chempot(double molarity, double temp,
-            double lattice_site_volume) {
-        double sites_per_litre {1e-3 / lattice_site_volume};
-        double chempot {temp * log(molarity * utility::NA / sites_per_litre)};
+    double molarity_to_chempot(double molarity, double temp) {
+        // The four is for non-palindromic sequences
+        double chempot {temp * log(molarity / 4)};
         return chempot;
     }
 
@@ -882,7 +878,7 @@ namespace origami {
 
         // Calculate chemical potential from specified staple concentration
         double staple_u {molarity_to_chempot(params.m_staple_M,
-                params.m_temp_for_staple_u, params.m_lattice_site_volume)};
+                params.m_temp_for_staple_u)};
         staple_u *= params.m_staple_u_mult;
         double volume {chempot_to_volume(staple_u, params.m_temp)};
 

@@ -32,7 +32,6 @@ namespace parser {
             double m_cation_M; // mol/L
             double m_temp_for_staple_u; // K
             double m_staple_u_mult;
-            double m_lattice_site_volume; // L
             double m_stacking_ene;
             int m_min_total_staples;
             int m_max_total_staples;

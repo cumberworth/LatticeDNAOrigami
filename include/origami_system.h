@@ -243,13 +243,12 @@ namespace origami {
     // Moved from main
     OrigamiSystem* setup_origami(InputParameters& params);
 
-    double molarity_to_lattice_volume(double molarity, double lattice_site_volume);
+    double molarity_to_lattice_volume(double molarity);
 
     // Convert concentration to reduced (u/kb) chemical potential
     double molarity_to_chempot(
             double molarity,
-            double temp,
-            double lattice_site_volume);
+            double temp);
     double chempot_to_volume(double chempot, double temp);
 }
 

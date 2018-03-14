@@ -109,13 +109,11 @@ namespace ptmc {
                 double staple_u;
                 if (m_params.m_constant_staple_M) {
                     staple_u = origami::molarity_to_chempot(m_params.m_staple_M,
-                            params.m_temps[i],
-                            params.m_lattice_site_volume);
+                            params.m_temps[i]);
                 }
                 else {
                     staple_u = origami::molarity_to_chempot(m_params.m_staple_M,
-                            params.m_temp_for_staple_u,
-                    params.m_lattice_site_volume);
+                            params.m_temp_for_staple_u);
                     staple_u *= m_params.m_chem_pot_mults[i];
                 }
                 m_control_qs[m_staple_u_i].push_back(staple_u);
@@ -139,14 +137,12 @@ namespace ptmc {
                 // Recalculating for each node rather than sending from master
                 if (m_params.m_constant_staple_M) {
                     m_replica_control_qs[m_staple_u_i] = origami::molarity_to_chempot(
-                            m_params.m_staple_M, m_replica_control_qs[m_temp_i],
-                            params.m_lattice_site_volume);
+                            m_params.m_staple_M, m_replica_control_qs[m_temp_i]);
                 }
                 else {
                     double staple_u {origami::molarity_to_chempot(
                             m_params.m_staple_M,
-                            params.m_temp_for_staple_u,
-                            params.m_lattice_site_volume)};
+                            params.m_temp_for_staple_u)};
                     staple_u *= m_params.m_chem_pot_mults[i];
                     m_replica_control_qs[m_staple_u_i] = staple_u;
                 }
