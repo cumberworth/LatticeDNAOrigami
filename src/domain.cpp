@@ -46,8 +46,10 @@ namespace domainContainer {
          if (ndr == -m_ore) {
             kink_constraint_obeyed = false;
          }
-         else if (ndr == m_ore and cd_2.m_ore != m_ore) {
+         else if (ndr == m_ore) {
+            if (cd_2.m_ore != m_ore) {
              kink_constraint_obeyed = false;
+            }
          }
          else if (cd_2.m_ore == ndr or cd_2.m_ore == -ndr) {
              kink_constraint_obeyed = false;
