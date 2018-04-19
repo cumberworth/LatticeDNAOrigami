@@ -849,14 +849,12 @@ namespace origami {
         // V * p = 1, V = 1 / p
         // So just convert molarity to number of particles per lattice site
         // The lattice site volume removes the units
-        // The four is for non-palindromic sequences and is not actually a part of the volume, but is convienient to put here
-        double V {4 / molarity};
+        double V {1 / molarity};
         return V;
     }
 
     double molarity_to_chempot(double molarity, double temp) {
-        // The four is for non-palindromic sequences
-        double chempot {temp * log(molarity / 4)};
+        double chempot {temp * log(molarity)};
         return chempot;
     }
 

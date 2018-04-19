@@ -40,6 +40,7 @@ namespace domainContainer{
 
             // Constraint checkers
             virtual bool check_twist_constraint(VectorThree ndr, Domain& cd_j) = 0;
+            virtual bool check_kink_constraint(VectorThree ndr, Domain& cd_j) = 0;
     };
 
     class SixteenDomain: public Domain {
@@ -48,6 +49,7 @@ namespace domainContainer{
 
             // Constraint checkers
             bool check_twist_constraint(VectorThree ndr, Domain& cd_j);
+            bool check_kink_constraint(VectorThree ndr, Domain& cd_j);
     };
 
 }

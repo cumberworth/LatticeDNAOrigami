@@ -110,7 +110,7 @@ namespace potential {
                     Domain* cd_2,
                     Domain* cd_3,
                     Domain* cd_4) = 0;
-            bool check_regular_pair_constraints(
+            virtual bool check_regular_pair_constraints(
                     Domain* cd_1,
                     Domain* cd_2,
                     int i);
@@ -124,7 +124,7 @@ namespace potential {
             void check_edge_pair_junction(Domain* cd_1, Domain* cd_2, int i);
     };
 
-    /** Helices must be linear to be fully stacked */
+    /** Helices must be linear to be stacked */
     class LinearFlexibleBindingPotential:
             public FlexibleBindingPotential {
 
@@ -150,6 +150,20 @@ namespace potential {
                     Domain* cd_h2,
                     Domain* cd_h3);
             void check_central_linear_helix(Domain& cd_i, Domain& cd_j);
+    };
+
+    /** Only some configurations allowed at kinks */
+    class ConKinkLinearFlexibleBindingPotential:
+        public LinearFlexibleBindingPotential {
+
+        public:
+            using LinearFlexibleBindingPotential::
+                    LinearFlexibleBindingPotential;
+
+            bool check_regular_pair_constraints(
+                    Domain* cd_1,
+                    Domain* cd_2,
+                    int i);
     };
 
     /** Helices can be fully stacked and nonlinear */

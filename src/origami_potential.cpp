@@ -403,14 +403,14 @@ namespace potential {
         m_constraints_violated = false;
         if (not check_domain_orientations_opposing(cd_i, cd_j)) {
             m_constraints_violated = true;
-            return {0, 0};
+            return {};
         }
 
         // Loop through relevant pairs
         for (auto cd: {&cd_i, &cd_j}) {
             check_constraints(cd);
             if (m_constraints_violated) {
-                return {0, 0};
+                return {};
             }
         }
         m_delta_config.e += m_pot.hybridization_energy(cd_i, cd_j);
@@ -522,14 +522,14 @@ namespace potential {
         m_constraints_violated = false;
         if (not check_domain_orientations_opposing(cd_i, cd_j)) {
             m_constraints_violated = true;
-            return {0, 0};
+            return {};
         }
 
         // Loop through relevant pairs
         for (auto cd: {&cd_i, &cd_j}) {
             check_constraints(cd);
             if (m_constraints_violated) {
-                return {0, 0};
+                return {};
             }
         }
         check_central_linear_helix(cd_i, cd_j);
@@ -550,9 +550,7 @@ namespace potential {
                 if (check_pair_stacked(cd_h1, cd_h2) and
                         check_pair_stacked(cd_h2, cd_h3->m_bound_domain)) {
 
-                    if (not doubly_contiguous_helix(cd_h1, cd_h2) and
-                            not doubly_contiguous_helix(
-                                cd_h2->m_bound_domain, cd_h3)) {
+                    if (not doubly_contiguous_helix(cd_h1, cd_h2)) {
                         check_linear_helix(cd_h1, cd_h2, cd_h3);
                     }
                 }
@@ -567,9 +565,7 @@ namespace potential {
                 if (check_pair_stacked(cd_h1->m_bound_domain, cd_h2) and
                         check_pair_stacked(cd_h2, cd_h3)) {
 
-                    if (not doubly_contiguous_helix(cd_h2, cd_h3) and
-                            not doubly_contiguous_helix(
-                                cd_h1, cd_h2->m_bound_domain)) {
+                    if (not doubly_contiguous_helix(cd_h2, cd_h3)) {
                         check_linear_helix(cd_h1, cd_h2, cd_h3);
                     }
                 }
@@ -711,9 +707,7 @@ namespace potential {
                 cd_h1 = *(cd_1->m_bound_domain) + j;
                 if (check_domains_exist_and_bound({cd_h1})) {
                     if (check_pair_stacked(cd_h1->m_bound_domain, cd_h2)) {
-                        if (not doubly_contiguous_helix(cd_h2, cd_h3) and
-                                not doubly_contiguous_helix(
-                                    cd_h1, cd_h2->m_bound_domain)) {
+                        if (not doubly_contiguous_helix(cd_h2, cd_h3)) {
                             check_linear_helix(cd_h1, cd_h2, cd_h3);
                         }
                     }
@@ -738,15 +732,35 @@ namespace potential {
                 cd_h3 = *(cd_2->m_bound_domain) + j;
                 if (check_domains_exist_and_bound({cd_h3})) {
                     if (check_pair_stacked(cd_h2, cd_h3->m_bound_domain)) {
-                        if (not doubly_contiguous_helix(cd_h1, cd_h2) and
-                                not doubly_contiguous_helix(
-                                    cd_h2->m_bound_domain, cd_h3)) {
+                        if (not doubly_contiguous_helix(cd_h1, cd_h2)) {
                             check_linear_helix(cd_h1, cd_h2, cd_h3);
                         }
                     }
                 }
             }
         }
+    }
+
+    bool ConKinkLinearFlexibleBindingPotential::check_regular_pair_constraints(
+            Domain* cd_1, Domain* cd_2, int i) {
+
+        bool stacked {false};
+        check_edge_pair_junction(cd_1, cd_2, i);
+        
+        // Inefficient as I also calculate this in check pair stacked
+        VectorThree ndr {cd_2->m_pos - cd_1->m_pos};
+        if (not cd_1->check_kink_constraint(ndr, *cd_2)) {
+            m_constraints_violated = true;
+        }
+        if (not m_constraints_violated) {
+            if (check_pair_stacked(cd_1, cd_2)) {
+                stacked = true;
+                m_delta_config.e += m_pot.stacking_energy(*cd_1, *cd_2);
+                m_delta_config.stacked_pairs += 1;
+            }
+        }
+
+        return stacked;
     }
 
     void NonLinearFlexibleBindingPotential::check_constraints(Domain* cd) {
@@ -852,6 +866,9 @@ namespace potential {
         }
         else if (params.m_binding_pot == "LinearFlexible") {
             m_binding_pot = new LinearFlexibleBindingPotential(*this);
+        }
+        else if (params.m_binding_pot == "ConKinkLinearFlexible") {
+            m_binding_pot = new ConKinkLinearFlexibleBindingPotential(*this);
         }
         else if (params.m_binding_pot == "NonLinearFlexible") {
             m_binding_pot = new NonLinearFlexibleBindingPotential(*this);

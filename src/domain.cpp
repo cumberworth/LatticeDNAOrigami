@@ -40,4 +40,19 @@ namespace domainContainer {
         }
         return twist_constraint_obeyed;
     }
+
+    bool SixteenDomain::check_kink_constraint(VectorThree ndr, Domain& cd_2) {
+         bool kink_constraint_obeyed {true};
+         if (ndr == -m_ore) {
+            kink_constraint_obeyed = false;
+         }
+         else if (ndr == m_ore and cd_2.m_ore != m_ore) {
+             kink_constraint_obeyed = false;
+         }
+         else if (cd_2.m_ore == ndr or cd_2.m_ore == -ndr) {
+             kink_constraint_obeyed = false;
+         }
+
+         return kink_constraint_obeyed;
+     }
 }

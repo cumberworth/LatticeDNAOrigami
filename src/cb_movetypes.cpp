@@ -310,7 +310,6 @@ namespace movetypes {
 
         // Grow staple
         set_growthpoint_and_grow_staple(growthpoint, selected_chain);
-        //grow_staple(growthpoint.first->m_d, selected_chain);
 
         // Revert modifier and test acceptance
         m_modifier = m_new_modifier;
