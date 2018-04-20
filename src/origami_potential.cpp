@@ -44,8 +44,13 @@ namespace potential {
     bool doubly_contiguous_helix(Domain* cd_1,
             Domain* cd_2) {
 
-        // Given that d1 and d2 exist and are bound and contiguous
+        if (not check_domains_exist_and_bound({cd_1, cd_2})) {
+            return false;
+        }
 
+        if (cd_1->m_c != cd_2->m_c or cd_2->m_d != cd_1->m_d + 1) {
+            return false;
+        }
         Domain* cd_bound_1 {cd_1->m_bound_domain};
         Domain* cd_bound_2 {cd_2->m_bound_domain};
         if (cd_bound_1->m_c != cd_bound_2->m_c) {
@@ -550,7 +555,9 @@ namespace potential {
                 if (check_pair_stacked(cd_h1, cd_h2) and
                         check_pair_stacked(cd_h2, cd_h3->m_bound_domain)) {
 
-                    if (not doubly_contiguous_helix(cd_h1, cd_h2)) {
+                    if (not doubly_contiguous_helix(cd_h1, cd_h2) and
+                           not doubly_contiguous_helix(
+                               cd_h2, (*cd_h2 + 1))) {
                         check_linear_helix(cd_h1, cd_h2, cd_h3);
                     }
                 }
@@ -565,7 +572,9 @@ namespace potential {
                 if (check_pair_stacked(cd_h1->m_bound_domain, cd_h2) and
                         check_pair_stacked(cd_h2, cd_h3)) {
 
-                    if (not doubly_contiguous_helix(cd_h2, cd_h3)) {
+                    if (not doubly_contiguous_helix(cd_h2, cd_h3) and
+                           not doubly_contiguous_helix(
+                               (*cd_h2 + -1), cd_h2)) {
                         check_linear_helix(cd_h1, cd_h2, cd_h3);
                     }
                 }
@@ -707,7 +716,9 @@ namespace potential {
                 cd_h1 = *(cd_1->m_bound_domain) + j;
                 if (check_domains_exist_and_bound({cd_h1})) {
                     if (check_pair_stacked(cd_h1->m_bound_domain, cd_h2)) {
-                        if (not doubly_contiguous_helix(cd_h2, cd_h3)) {
+                        if (not doubly_contiguous_helix(cd_h2, cd_h3) and
+                               not doubly_contiguous_helix(
+                                   (*cd_h2 + -1), cd_h2)) {
                             check_linear_helix(cd_h1, cd_h2, cd_h3);
                         }
                     }
@@ -732,7 +743,9 @@ namespace potential {
                 cd_h3 = *(cd_2->m_bound_domain) + j;
                 if (check_domains_exist_and_bound({cd_h3})) {
                     if (check_pair_stacked(cd_h2, cd_h3->m_bound_domain)) {
-                        if (not doubly_contiguous_helix(cd_h1, cd_h2)) {
+                        if (not doubly_contiguous_helix(cd_h1, cd_h2) and
+                               not doubly_contiguous_helix(
+                                   cd_h2, (*cd_h2 + 1))) {
                             check_linear_helix(cd_h1, cd_h2, cd_h3);
                         }
                     }
