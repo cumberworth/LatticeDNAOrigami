@@ -448,11 +448,16 @@ namespace movetypes {
             m_dir = -1;
         }
 
-        // Add domains until length reached or end of segment reached
+        // Add domains until length reached
         Domain* cur_domain {segment[start_i]};
         vector<Domain*> domains {};
         while (cur_domain != nullptr and domains.size() != sel_length) {
             domains.push_back(cur_domain);
+            cur_domain = (*cur_domain) + m_dir;
+        }
+        cur_domain = segment[start_i] + -m_dir;
+        while (cur_domain != nullptr and domains.size() != sel_length) {
+            domains.insert(domains.begin(), cur_domain);
             cur_domain = (*cur_domain) + m_dir;
         }
         if (domains.size() < min_length) {
