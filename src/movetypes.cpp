@@ -455,10 +455,10 @@ namespace movetypes {
             domains.push_back(cur_domain);
             cur_domain = (*cur_domain) + m_dir;
         }
-        cur_domain = segment[start_i] + -m_dir;
-        while (cur_domain != nullptr and domains.size() != sel_length) {
-            domains.insert(domains.begin(), cur_domain);
-            cur_domain = (*cur_domain) + m_dir;
+        Domain* back_domain = (*segment[start_i]) + -m_dir;
+        while (back_domain != nullptr and domains.size() != sel_length) {
+            domains.insert(domains.begin(), back_domain);
+            back_domain = (*back_domain) + -m_dir;
         }
         if (domains.size() < min_length) {
             domains = select_indices(segment, min_length, seg);
