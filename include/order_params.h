@@ -161,6 +161,34 @@ namespace orderParams {
             OrigamiSystem& m_origami;
     };
 
+    class NumLinearHelicesOrderParam: public OrderParam {
+        public:
+            NumLinearHelicesOrderParam(OrigamiSystem& origami, string label);
+            int calc_param() override final;
+            int check_param(
+                    Domain& domain,
+                    VectorThree,
+                    VectorThree,
+                    Occupancy) override final;
+
+        private:
+            OrigamiSystem& m_origami;
+    };
+
+    class NumStackedJunctsOrderParam: public OrderParam {
+        public:
+            NumStackedJunctsOrderParam(OrigamiSystem& origami, string label);
+            int calc_param() override final;
+            int check_param(
+                    Domain& domain,
+                    VectorThree,
+                    VectorThree,
+                    Occupancy) override final;
+
+        private:
+            OrigamiSystem& m_origami;
+    };
+
     class SystemOrderParams {
         public:
             SystemOrderParams(InputParameters& params, OrigamiSystem& origami);

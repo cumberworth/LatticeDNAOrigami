@@ -306,6 +306,68 @@ namespace orderParams {
         return 0;
     }
 
+    NumLinearHelicesOrderParam::NumLinearHelicesOrderParam(
+            OrigamiSystem& origami,
+            string label) :
+            m_origami {origami} {
+
+        m_label = label;
+        calc_param();
+        m_defined = true;
+    }
+
+    int NumLinearHelicesOrderParam::calc_param() {
+        m_param = m_origami.num_linear_helix_trips();
+
+        return m_param;
+    }
+
+    int NumLinearHelicesOrderParam::check_param(Domain&, VectorThree,
+            VectorThree, Occupancy) {
+        
+/*        if (state != Occupancy::unassigned) {
+            m_defined = true;
+            m_checked_param = m_origami.num_stacked_domain_pairs();
+            m_checked_param += m_origami.check_stacking(domain);
+        }
+
+        return m_checked_param;
+        */
+        cout << "CHECK LINEAR HELICES NOT IMPLEMENTED\n";
+        return 0;
+    }
+
+    NumStackedJunctsOrderParam::NumStackedJunctsOrderParam(
+            OrigamiSystem& origami,
+            string label) :
+            m_origami {origami} {
+
+        m_label = label;
+        calc_param();
+        m_defined = true;
+    }
+
+    int NumStackedJunctsOrderParam::calc_param() {
+        m_param = m_origami.num_stacked_junct_quads();
+
+        return m_param;
+    }
+
+    int NumStackedJunctsOrderParam::check_param(Domain&, VectorThree,
+            VectorThree, Occupancy) {
+        
+/*        if (state != Occupancy::unassigned) {
+            m_defined = true;
+            m_checked_param = m_origami.num_stacked_domain_pairs();
+            m_checked_param += m_origami.check_stacking(domain);
+        }
+
+        return m_checked_param;
+        */
+        cout << "CHECK STACKED JUNCTIONS NOT IMPLEMENTED\n";
+        return 0;
+    }
+
     SystemOrderParams::SystemOrderParams(InputParameters& params,
             OrigamiSystem& origami) :
             m_origami {origami} {
@@ -399,6 +461,14 @@ namespace orderParams {
                 }
                 else if (type == "NumStackedPairs") {
                     op = new NumStackedPairsOrderParam {
+                            m_origami, label};
+                }
+                else if (type == "NumLinearHelices") {
+                    op = new NumLinearHelicesOrderParam {
+                            m_origami, label};
+                }
+                else if (type == "NumStackedJuncts") {
+                    op = new NumStackedJunctsOrderParam {
                             m_origami, label};
                 }
                 else {
