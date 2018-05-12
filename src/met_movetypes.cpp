@@ -91,6 +91,15 @@ namespace movetypes {
             m_adaptive_exchange {adaptive_exchange},
             m_allow_nonsensical_ps {m_params.m_allow_nonsensical_ps},
             m_exchange_mults {exchange_mults} {
+
+        size_t num_missing_exchange_mults {
+                m_origami_system.m_identities.size() -
+                m_exchange_mults.size() - 1};
+        if (num_missing_exchange_mults > 0) {
+            for (size_t i {0}; i != num_missing_exchange_mults; i++) {
+                m_exchange_mults.push_back(1);
+            }
+        }
     }
 
     void MetStapleExchangeMCMovetype::reset_internal() {

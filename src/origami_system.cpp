@@ -572,9 +572,17 @@ namespace origami {
             for (auto staple_d_i: staple) {
 
                 // staple_d_i's are negatives of scaffold_d_i's
-                int scaffold_d_i {utility::index(m_identities[c_scaffold],
-                        -staple_d_i)};
-                scaffold_d_is.push_back(scaffold_d_i);
+                if (std::find(m_identities[c_scaffold].begin(),
+                        m_identities[c_scaffold].end(), -staple_d_i) ==
+                        m_identities[c_scaffold].end()) {
+
+                    scaffold_d_is.push_back(0);
+                }
+                else {
+                    int scaffold_d_i {utility::index(m_identities[c_scaffold],
+                            -staple_d_i)};
+                    scaffold_d_is.push_back(scaffold_d_i);
+                }
             }
             m_staple_ident_to_scaffold_ds.push_back(scaffold_d_is);
         }
