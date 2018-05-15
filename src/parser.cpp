@@ -46,6 +46,9 @@ namespace parser {
             ("stacking_pot",
                 po::value<string>(&m_stacking_pot),
                 "Stacking potential to use")
+            ("hybridization_pot",
+                po::value<string>(&m_hybridization_pot),
+                "Hybridization potential to use")
             ("temp",
                 po::value<double>(&m_temp)->default_value(300),
                 "System temperature (K)")
@@ -64,6 +67,18 @@ namespace parser {
             ("stacking_ene",
                 po::value<double>(&m_stacking_ene)->default_value(1),
                 "Stacking energy for constant potential")
+            ("binding_h",
+                po::value<double>(&m_binding_h)->default_value(1),
+                "Hybridization enthalpy for bound domains")
+            ("binding_s",
+                po::value<double>(&m_binding_s)->default_value(1),
+                "Hybridization entropy for bound domains")
+            ("misbinding_h",
+                po::value<double>(&m_misbinding_h)->default_value(1),
+                "Hybridization enthalpy for misbound domains")
+            ("misbinding_s",
+                po::value<double>(&m_misbinding_s)->default_value(1),
+                "Hybridization entropy for misbound domains")
             ("min_total_staples",
                 po::value<int>(&m_min_total_staples)->default_value(0),
                 "Min number of total staples")

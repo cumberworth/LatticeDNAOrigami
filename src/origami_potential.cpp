@@ -1,6 +1,7 @@
 // origami_potential.cpp
 
 #include "origami_potential.h"
+#include "nearest_neighbour.h"
 
 #include <iostream>
 #include <fstream>
@@ -14,6 +15,7 @@
 namespace potential {
 
     using utility::Occupancy;
+    using nearestNeighbour::calc_comp_seq;
 
     bool check_domain_orientations_opposing(Domain& cd_i, Domain& cd_j) {
         bool domain_orientations_opposing {true};
@@ -872,7 +874,8 @@ namespace potential {
             m_cation_M {params.m_cation_M},
             m_identities {identities},
             m_sequences {sequences},
-            m_stacking_pot {params.m_stacking_pot} {
+            m_stacking_pot {params.m_stacking_pot},
+            m_hybridization_pot {params.m_hybridization_pot} {
 
         if (params.m_binding_pot == "Restrictive") {
             m_binding_pot = new RestrictiveBindingPotential(*this);
@@ -902,6 +905,13 @@ namespace potential {
 
         if (m_stacking_pot == "Constant") {
             m_stacking_ene = params.m_stacking_ene;
+        }
+
+        if (m_hybridization_pot == "Uniform") {
+            m_binding_h = params.m_binding_h;
+            m_binding_s = params.m_binding_s;
+            m_misbinding_h = params.m_misbinding_h;
+            m_misbinding_s = params.m_misbinding_s;
         }
 
         get_energies();
@@ -969,33 +979,47 @@ namespace potential {
 
     void OrigamiPotential::calc_energy(string seq_i, string seq_j,
             pair<int, int> key) {
-        // Calculate S, H, and G for pair of sequences and store
 
         // Hybridization values
-        vector<string> comp_seqs {nearestNeighbour::
-                find_longest_contig_complement(seq_i, seq_j)};
         double H_hyb {0};
         double S_hyb {0};
-        int N {0};
-        
-        // No interaction if no complementary sequence
-        if (comp_seqs.size() == 0) {
-            H_hyb = 0;
-            S_hyb = 0;
+        if (m_hybridization_pot == "NearestNeighbour") {
+            vector<string> comp_seqs {nearestNeighbour::
+                    find_longest_contig_complement(seq_i, seq_j)};
+            int N {0};
+            
+            // No interaction if no complementary sequence
+            if (comp_seqs.size() == 0) {
+                H_hyb = 0;
+                S_hyb = 0;
+            }
+
+            // Take average value of H and S of all equal length comp seqs
+            else {
+                for (auto comp_seq: comp_seqs) {
+                    ThermoOfHybrid DH_DS {nearestNeighbour::
+                            calc_unitless_hybridization_thermo(comp_seq,
+                            m_temp, m_cation_M)};
+                    H_hyb += DH_DS.enthalpy;
+                    S_hyb += DH_DS.entropy;
+                    N++;
+                }
+                H_hyb /= N;
+                S_hyb /= N;
+            }
         }
 
-        // Take average value of H and S of all equal length comp seqs
-        else {
-            for (auto comp_seq: comp_seqs) {
-                ThermoOfHybrid DH_DS {nearestNeighbour::
-                        calc_unitless_hybridization_thermo(comp_seq,
-                        m_temp, m_cation_M)};
-                H_hyb += DH_DS.enthalpy;
-                S_hyb += DH_DS.entropy;
-                N++;
+        else if (m_hybridization_pot == "Uniform") {
+            string seq_j_comp {calc_comp_seq(seq_j)};
+            reverse(seq_j_comp.begin(), seq_j_comp.end());
+            if (seq_i == seq_j_comp) {
+                H_hyb = m_binding_h / m_temp;
+                S_hyb = m_binding_s;
             }
-            H_hyb /= N;
-            S_hyb /= N;
+            else {
+                H_hyb = m_misbinding_h / m_temp;
+                S_hyb = m_misbinding_s;
+            }
         }
         m_hybridization_enthalpies[key] = H_hyb;
         m_hybridization_entropies[key] = S_hyb;

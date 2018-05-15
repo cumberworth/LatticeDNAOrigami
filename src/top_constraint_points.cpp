@@ -415,6 +415,7 @@ namespace topConstraintPoints {
         int dir;
         if (scaffold_domains.size() == 1) {
             // HACK TODO HACK TODO
+            // Todo what?
             dir = 0;
         }
         else {

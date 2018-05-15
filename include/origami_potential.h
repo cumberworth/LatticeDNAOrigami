@@ -256,9 +256,16 @@ namespace potential {
             BindingPotential* m_binding_pot;
             MisbindingPotential* m_misbinding_pot;
             string m_stacking_pot;
+            string m_hybridization_pot;
 
             // Stacking energy if constant
             double m_stacking_ene {0};
+
+            // Hybridization enthalpy and entropy if constant
+            double m_binding_h;
+            double m_binding_s;
+            double m_misbinding_h;
+            double m_misbinding_s;
 
             // CONSIDER DEFINING TYPE FOR THESE TABLES
             // Energy tables index by chain/domain identity pair

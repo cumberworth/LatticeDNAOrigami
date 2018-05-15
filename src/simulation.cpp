@@ -21,6 +21,7 @@
 #include "met_movetypes.h"
 #include "cb_movetypes.h"
 #include "rg_movetypes.h"
+#include "transform_movetypes.h"
 #include "simulation.h"
 #include "files.h"
 

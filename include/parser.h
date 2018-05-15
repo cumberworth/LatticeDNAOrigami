@@ -27,12 +27,17 @@ namespace parser {
             string m_binding_pot;
             string m_misbinding_pot;
             string m_stacking_pot;
+            string m_hybridization_pot;
             double m_temp; // K
             double m_staple_M; // mol/L
             double m_cation_M; // mol/L
             double m_temp_for_staple_u; // K
             double m_staple_u_mult;
             double m_stacking_ene;
+            double m_binding_h;
+            double m_binding_s;
+            double m_misbinding_h;
+            double m_misbinding_s;
             int m_min_total_staples;
             int m_max_total_staples;
             int m_max_type_staples;
