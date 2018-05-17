@@ -39,7 +39,6 @@ namespace ptmc {
                     SystemOrderParams& ops,
                     SystemBiases& biases,
                     InputParameters& params);
-            ~PTGCMCSimulation();
             void run();
 
         protected:
@@ -51,19 +50,21 @@ namespace ptmc {
             // General PTMC parameters
             int m_rank {m_world.rank()};
             int m_master_rep {0};
-            int m_swaps;
             int m_num_reps;
+            long long int m_swaps;
+            double m_max_pt_dur;
             long long int m_exchange_interval;
 
             ofstream m_swapfile; // Only used by master
 
             // Could be safer to have only one vector instead of seperating 
-            // control and dependent. Then no chance of using index on wrong vector
+            // control and dependent. Then no chance of using index on wrong
+            // vector
             // Vectors of current replica quantities
             vector<double> m_replica_control_qs = vector<double>(3);
             vector<double> m_replica_dependent_qs = vector<double>(3);
 
-            // Vectors of quantities accross all replicas (only filled by master)
+            // Vectors of quantities accross all replicas (used by master only)
             vector<vector<double>> m_control_qs {};
 
             // Index into the control qs to replica with those qs
@@ -72,8 +73,7 @@ namespace ptmc {
             // Indices into control quantities vector for type
             int m_temp_i {0};
             int m_staple_u_i {1};
-            int m_volume_i {2};
-            int m_bias_mult_i {3};
+            int m_bias_mult_i {2};
 
             // Indices into dependent quantities vector for type
             int m_enthalpy_i {0};
@@ -89,9 +89,10 @@ namespace ptmc {
 
             // Communication methods
             void slave_send(int swap_i);
-            void slave_receive(int swap_i);
+            bool slave_receive(int swap_i);
             void master_receive(int swap_i, vector<vector<double>>& quantities);
             void master_send(int swap_i);
+            void master_send_kill(int swap_i);
             void master_get_dependent_qs(vector<vector<double>>&);
             virtual void update_control_qs() = 0;
             void update_dependent_qs();

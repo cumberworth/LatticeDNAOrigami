@@ -127,9 +127,11 @@ namespace topConstraintPoints {
               */
             void calculate_constraintpoints(
                     vector<Domain*> scaffold_domains,
+                    int dir,
                     vector<int> excluded_staples);
             void calculate_constraintpoints(
                     vector<vector<Domain*>> scaffold_segments,
+                    vector<int> dirs,
                     vector<int> excluded_staples);
 
             /**

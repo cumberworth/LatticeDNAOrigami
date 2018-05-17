@@ -218,11 +218,14 @@ namespace topConstraintPoints {
 
     void Constraintpoints::calculate_constraintpoints(
             vector<Domain*> scaffold_domains,
+            int dir,
             vector<int> excluded_staples) {
 
         m_scaffold_domains = scaffold_domains;
         m_staple_network.set_scaffold_domains(m_scaffold_domains);
         m_staple_network.set_excluded_staples(excluded_staples);
+        pair<int, int> key {scaffold_domains[0]->m_c, 0};
+        m_domain_to_dir[key] = dir;
         find_growthpoints_endpoints(scaffold_domains, excluded_staples, 0);
 
         // Save initial active endpionts and remaining steps for regrowing old
@@ -231,6 +234,7 @@ namespace topConstraintPoints {
 
     void Constraintpoints::calculate_constraintpoints(
             vector<vector<Domain*>> scaffold_segments,
+            vector<int> dirs,
             vector<int> excluded_staples) {
 
         for (auto segment: scaffold_segments) {
@@ -240,8 +244,11 @@ namespace topConstraintPoints {
         m_staple_network.set_scaffold_domains(m_scaffold_domains);
         m_staple_network.set_excluded_staples(excluded_staples);
         int seg {0};
-        for (auto scaffold_domains: scaffold_segments) {
+        for (size_t i {0}; i != scaffold_segments.size(); i++) {
+            auto scaffold_domains = scaffold_segments[i];
             if (scaffold_domains.size() != 0) {
+                pair<int, int> key {scaffold_domains[0]->m_c, seg};
+                m_domain_to_dir[key] = dirs[i];
                 find_growthpoints_endpoints(scaffold_domains, excluded_staples,
                         seg);
             }
@@ -411,20 +418,6 @@ namespace topConstraintPoints {
             vector<int> excluded_staples,
             int seg) {
         
-        pair<int, int> key {scaffold_domains[0]->m_c, seg};
-        int dir;
-        if (scaffold_domains.size() == 1) {
-            // HACK TODO HACK TODO
-            // Todo what?
-            dir = 0;
-        }
-        else {
-            dir = scaffold_domains[1]->m_d - scaffold_domains[0]->m_d;
-            if (m_origami_system.m_cyclic and abs(dir) > 1) {
-                dir = -1*dir/abs(dir);
-            }
-        }
-        m_domain_to_dir[key] = dir;
         for (auto d: scaffold_domains) {
             m_d_stack.push_back(d);
             m_segs[d] = seg;

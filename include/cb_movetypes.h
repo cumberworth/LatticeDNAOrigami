@@ -51,7 +51,7 @@ namespace movetypes {
     typedef vector<pair<VectorThree, VectorThree>> configsT;
 
     /**
-      * Base for CB moves
+      * Configurational bias base class
       */
     class CBMCMovetype:
         virtual public RegrowthMCMovetype {
@@ -212,7 +212,7 @@ namespace movetypes {
             CTCBRegrowthMCMovetype& operator=(const
                     CTCBRegrowthMCMovetype&) = delete;
 
-            void reset_internal() override;
+            virtual void reset_internal() override;
 
         protected:
 

@@ -55,6 +55,9 @@ namespace parser {
             ("staple_M",
                 po::value<double>(&m_staple_M)->default_value(1),
                 "Staple concentration (mol/L)")
+            ("constant_staple_M",
+                po::value<bool>(&m_constant_staple_M)->default_value(true),
+                "Hold staple concentration constant")
             ("cation_M",
                 po::value<double>(&m_cation_M)->default_value(1),
                 "Cation concentration (mol/L)")
@@ -203,15 +206,15 @@ namespace parser {
             ("num_reps",
                 po::value<int>(&m_num_reps)->default_value(1),
                 "Number of replicas")
-            ("pt_steps",
-                po::value<long long int>(&m_pt_steps)->default_value(0),
-                "Number of MC steps")
+            ("swaps",
+                po::value<long long int>(&m_swaps)->default_value(0),
+                "Number of swaps")
+            ("max_pt_dur",
+                po::value<double>(&m_max_pt_dur)->default_value(10e9),
+                "Maximum duration (s)")
             ("exchange_interval",
                 po::value<int>(&m_exchange_interval)->default_value(0),
                 "Steps between exchange attempts")
-            ("constant_staple_M",
-                po::value<bool>(&m_constant_staple_M)->default_value(true),
-                "Hold staple concentration constant")
             ("chem_pot_mults",
                 po::value<string>(),
                 "Factor to multiply base chem pot for each rep")
@@ -307,7 +310,7 @@ namespace parser {
                 po::value<int>(&m_order_params_output_freq)->default_value(0),
                 "Order parameters write frequency")
             ("vmd_pipe_freq",
-                po::value<int>(&m_vmd_pipe_freq),
+                po::value<int>(&m_vmd_pipe_freq)->default_value(0),
                 "Realtime VMD visualization updating frequency")
             ("create_vmd_instance",
                 po::value<bool>(&m_create_vmd_instance)->default_value(false),

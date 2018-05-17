@@ -202,17 +202,19 @@ namespace simulation {
                         movetypes_file, movetype);
             }
             else if (type == "CTCBLinkerRegrowth" or
-                    type == "ClusteredCTCBLinkerRegrowth" or
-                    type == "Clustered2CTCBLinkerRegrowth") {
+                    type == "CTCBClusteredLinkerRegrowth" or
+                    type == "CTRGLinkerRegrowth" or
+                    type == "CTRGClusteredLinkerRegrowth") {
+
                 movetype = setup_scaffold_transform_movetype(i, type, label,
                         movetypes_file, movetype);
             }
-            else if (type == "RGScaffoldRegrowth") {
+            else if (type == "CTRGScaffoldRegrowth") {
                 movetype = setup_rg_movetype(i, type, label,
                         movetypes_file, movetype);
             }
             else {
-                cout << "No such movetype";
+                cout << "No such movetype\n";
                 throw utility::SimulationMisuse {};
             }
             m_movetypes.emplace_back(movetype);
@@ -288,8 +290,9 @@ namespace simulation {
             OrigamiMovetypeFile& movetypes_file,
             MCMovetype* movetype) {
 
-        int excluded_staples {movetypes_file.get_int_option(i,
-                "num_excluded_staples")};
+        //int excluded_staples {movetypes_file.get_int_option(i,
+        //        "num_excluded_staples")};
+        int excluded_staples {0};
         int max_regrowth {movetypes_file.get_int_option(i, "max_regrowth")};
         movetype = new movetypes::CTCBScaffoldRegrowthMCMovetype {
                 m_origami_system, m_random_gens,
@@ -309,26 +312,37 @@ namespace simulation {
 
         int excluded_staples {0};
         int max_disp {movetypes_file.get_int_option(i, "max_disp")};
-        int max_turns {movetypes_file.get_int_option(i,
-                "max_turns")};
+        int max_turns {movetypes_file.get_int_option(i, "max_turns")};
         int max_regrowth {movetypes_file.get_int_option(i, "max_regrowth")};
+        int max_linker_length {movetypes_file.get_int_option(i,
+                "max_linker_length")};
         if (type == "CTCBLinkerRegrowth") {
             movetype = new movetypes::CTCBLinkerRegrowthMCMovetype {
                     m_origami_system, m_random_gens, m_ideal_random_walks,
                     m_config_per_move_files, label, m_ops, m_biases, m_params,
-                    excluded_staples, max_disp, max_turns};
+                    excluded_staples, max_disp, max_turns,
+                    static_cast<unsigned int>(max_regrowth),
+                    static_cast<unsigned int>(max_linker_length)};
         }
-        else if (type == "ClusteredCTCBLinkerRegrowth") {
-            movetype = new movetypes::ClusteredCTCBLinkerRegrowth {
+        else if (type == "CTCBClusteredLinkerRegrowth") {
+            movetype = new movetypes::CTCBClusteredLinkerRegrowthMCMovetype {
                     m_origami_system, m_random_gens, m_ideal_random_walks,
                     m_config_per_move_files, label, m_ops, m_biases, m_params,
-                    excluded_staples, max_disp, max_turns};
+                    excluded_staples, max_disp, max_turns,
+                    static_cast<unsigned int>(max_linker_length)};
         }
-        else if (type == "Clustered2CTCBLinkerRegrowth") {
-            movetype = new movetypes::Clustered2CTCBLinkerRegrowth {
+        else if (type == "CTRGLinkerRegrowth") {
+            int max_num_recoils {movetypes_file.get_int_option(i,
+                    "max_num_recoils")};
+            int max_c_attempts {movetypes_file.get_int_option(i,
+                    "max_c_attempts")};
+            movetype = new movetypes::CTRGLinkerRegrowthMCMovetype {
                     m_origami_system, m_random_gens, m_ideal_random_walks,
                     m_config_per_move_files, label, m_ops, m_biases, m_params,
-                    excluded_staples, max_disp, max_turns, max_regrowth};
+                    excluded_staples, max_num_recoils, max_c_attempts,
+                    max_disp, max_turns,
+                    static_cast<unsigned int>(max_regrowth),
+                    static_cast<unsigned int>(max_linker_length)};
         }
 
         return movetype;
@@ -341,12 +355,13 @@ namespace simulation {
             OrigamiMovetypeFile& movetypes_file,
             MCMovetype* movetype) {
 
-        int excluded_staples {movetypes_file.get_int_option(i,
-                "num_excluded_staples")};
+//        int excluded_staples {movetypes_file.get_int_option(i,
+//                "num_excluded_staples")};
+        int excluded_staples {0};
         int max_num_recoils {movetypes_file.get_int_option(i, "max_num_recoils")};
         int max_c_attempts {movetypes_file.get_int_option(i, "max_c_attempts")};
         int max_regrowth {movetypes_file.get_int_option(i, "max_regrowth")};
-        movetype = new movetypes::CTScaffoldRG {
+        movetype = new movetypes::CTRGScaffoldRegrowthMCMovetype {
                 m_origami_system, m_random_gens,
                 m_ideal_random_walks, m_config_per_move_files,
                 label, m_ops, m_biases, m_params, excluded_staples,
@@ -386,7 +401,6 @@ namespace simulation {
                 m_origami_system.check_all_constraints();
             }
 
-            // TODO make this work for simulations that call this multiple times
             std::chrono::duration<double> dt {(steady_clock::now() -
                     start)};
             if (dt.count() > m_max_duration) {
@@ -439,24 +453,37 @@ namespace simulation {
 
         *m_logging_stream << "Step: " << step << "\n";
         *m_logging_stream << "Temperature: " << m_origami_system.m_temp << "\n";
-        *m_logging_stream << "Bound staples: " << m_origami_system.num_staples() << "\n";
-        *m_logging_stream << "Unique bound staples: " << m_origami_system.num_unique_staples() << "\n";
-        *m_logging_stream << "Fully bound domain pairs: " << m_origami_system.num_fully_bound_domain_pairs() << "\n";
-        *m_logging_stream << "Misbound domain pairs: " << m_origami_system.num_misbound_domain_pairs() << "\n";
-        *m_logging_stream << "Stacked domain pairs: " << m_origami_system.num_stacked_domain_pairs() << "\n";
-        *m_logging_stream << "Linear helix triplets: " << m_origami_system.num_linear_helix_trips() << "\n";
-        *m_logging_stream << "Stacked junction quadruplets: " << m_origami_system.num_stacked_junct_quads() << "\n";
+        *m_logging_stream << "Bound staples: " <<
+                m_origami_system.num_staples() << "\n";
+        *m_logging_stream << "Unique bound staples: " <<
+                m_origami_system.num_unique_staples() << "\n";
+        *m_logging_stream << "Fully bound domain pairs: " <<
+                m_origami_system.num_fully_bound_domain_pairs() << "\n";
+        *m_logging_stream << "Misbound domain pairs: " <<
+                m_origami_system.num_misbound_domain_pairs() << "\n";
+        *m_logging_stream << "Stacked domain pairs: " <<
+                m_origami_system.num_stacked_domain_pairs() << "\n";
+        *m_logging_stream << "Linear helix triplets: " <<
+                m_origami_system.num_linear_helix_trips() << "\n";
+        *m_logging_stream << "Stacked junction quadruplets: " <<
+                m_origami_system.num_stacked_junct_quads() << "\n";
         *m_logging_stream << "Staple counts: ";
         for (auto staple_count: m_origami_system.get_staple_counts()) {
             *m_logging_stream << staple_count << " ";
         }
         *m_logging_stream << "\n";
-        *m_logging_stream << "System energy: " << m_origami_system.energy() << "\n";
-        *m_logging_stream << "Total external bias: " << m_biases.get_total_bias() << "\n";
-        *m_logging_stream << "Domain update external bias: " << m_biases.get_domain_update_bias() << "\n";
-        *m_logging_stream << "Move update external bias: " << m_biases.get_move_update_bias() << "\n";
-        *m_logging_stream << "Movetype: " << movetype.get_label() << "\n";
-        *m_logging_stream << "Accepted: " << std::boolalpha << accepted << "\n";
+        *m_logging_stream << "System energy: " <<
+                m_origami_system.energy() << "\n";
+        *m_logging_stream << "Total external bias: " <<
+                m_biases.get_total_bias() << "\n";
+        *m_logging_stream << "Domain update external bias: " <<
+                m_biases.get_domain_update_bias() << "\n";
+        *m_logging_stream << "Move update external bias: " <<
+                m_biases.get_move_update_bias() << "\n";
+        *m_logging_stream << "Movetype: " <<
+                movetype.get_label() << "\n";
+        *m_logging_stream << "Accepted: " <<
+                std::boolalpha << accepted << "\n";
         *m_logging_stream << "\n";
     }
 
@@ -496,7 +523,8 @@ namespace simulation {
         if (m_params.m_create_vmd_instance) {
             vmd_proc = new bp::child {bp::search_path("vmd"),
                 "-e", m_params.m_vmd_file_dir + "/pipe.tcl",
-                "-args", m_params.m_vmd_file_dir, m_params.m_output_filebase + "_vmd",
+                "-args", m_params.m_vmd_file_dir,
+                m_params.m_output_filebase + "_vmd",
                 bp::std_out > "/dev/null"};
         }
     }

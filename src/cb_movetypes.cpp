@@ -591,7 +591,7 @@ namespace movetypes {
         m_tracker.num_scaffold_domains = scaffold_domains.size();
         sel_excluded_staples();
 
-        m_constraintpoints.calculate_constraintpoints(scaffold_domains,
+        m_constraintpoints.calculate_constraintpoints(scaffold_domains, m_dir,
                 m_excluded_staples);
         if (not m_origami_system.m_cyclic and scaffold_domains.size() !=
             m_origami_system.get_chain(0).size()) {

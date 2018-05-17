@@ -8,6 +8,8 @@ namespace annealing {
 
     using std::cout;
 
+    using origami::molarity_to_chempot;
+
     AnnealingGCMCSimulation::AnnealingGCMCSimulation(
             OrigamiSystem& origami_system,
             SystemOrderParams& ops,
@@ -17,7 +19,9 @@ namespace annealing {
             m_max_temp {params.m_max_temp},
             m_min_temp {params.m_min_temp},
             m_temp_interval {params.m_temp_interval},
-            m_steps_per_temp {params.m_steps_per_temp} {
+            m_steps_per_temp {params.m_steps_per_temp},
+            m_staple_M {params.m_staple_M},
+            m_constant_staple_M {params.m_constant_staple_M} {
 
         if (fmod(m_max_temp - m_min_temp, m_temp_interval) != 0) {
             cout << "Bad temperature interval";
@@ -30,9 +34,14 @@ namespace annealing {
 
     void AnnealingGCMCSimulation::run() {
         double temp {m_max_temp};
+        double staple_u {molarity_to_chempot(m_staple_M, temp)};
         long long int step {0};
         while (temp >= m_min_temp) {
             m_origami_system.update_temp(temp);
+            if (m_constant_staple_M) {
+                staple_u = molarity_to_chempot(m_staple_M, temp);
+                m_origami_system.update_staple_u(staple_u);
+            }
             step += simulate(m_steps_per_temp, step);
             temp -= m_temp_interval;
         }

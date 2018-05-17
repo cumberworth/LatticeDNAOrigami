@@ -9,20 +9,19 @@
 
 namespace movetypes {
 
-    using std::deque;
     using std::list;
     using utility::ScaffoldRGRegrowthTracking;
 
     typedef pair<VectorThree, VectorThree> configT;
 
     /**
-     * Recoil regrowth of scaffold segment and bound staples
-     */
-    class CTScaffoldRG:
-        public CTRegrowthMCMovetype {
+      * Conserved topoplgoy recoil growth base class
+      */
+    class CTRGRegrowthMCMovetype:
+        virtual public CTRegrowthMCMovetype {
 
         public:
-            CTScaffoldRG(
+            CTRGRegrowthMCMovetype(
                     OrigamiSystem& origami_system,
                     RandomGens& random_gens,
                     IdealRandomWalks& ideal_random_walks,
@@ -35,18 +34,13 @@ namespace movetypes {
                     int max_num_recoils,
                     int max_c_attempts,
                     int max_regrowth);
-            CTScaffoldRG(const CTScaffoldRG&) = delete;
-            CTScaffoldRG& operator=(const CTScaffoldRG&) = delete;
 
-            void write_log_summary(ostream* log_entry) override;
             void reset_internal() override;
 
-        private:
+        protected:
             void add_external_bias() override;
-            bool internal_attempt_move() override;
-            void add_tracker(bool accepted) override;
-
             double unassign_and_save_domains();
+            double unassign_and_save_domains(vector<Domain*>);
             void unassign_domains();
 
             /** Update the external bias without adding */
@@ -66,9 +60,6 @@ namespace movetypes {
             bool test_config_avail();
             void calc_old_c_opens();
             bool test_rg_acceptance();
-
-            ScaffoldRGRegrowthTracking m_tracker {};
-            unordered_map<ScaffoldRGRegrowthTracking, MovetypeTracking> m_tracking {};
 
             const vector<configT> m_all_configs;
             const unordered_map<configT, int> m_config_to_i;
@@ -104,7 +95,39 @@ namespace movetypes {
             int m_c_attempts; // Number of configs tried for current domain
             int m_d_max_c_attempts; // Max number of configs to be tried for current domain
             list<int> m_avail_cis; // Available configurations
+    };
 
+    /**
+     * Recoil regrowth of scaffold segment and bound staples
+     */
+    class CTRGScaffoldRegrowthMCMovetype:
+        public CTRGRegrowthMCMovetype {
+
+        public:
+            CTRGScaffoldRegrowthMCMovetype(
+                    OrigamiSystem& origami_system,
+                    RandomGens& random_gens,
+                    IdealRandomWalks& ideal_random_walks,
+                    vector<OrigamiOutputFile*> config_files,
+                    string label,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params,
+                    int num_excluded_staples,
+                    int max_num_recoils,
+                    int max_c_attempts,
+                    int max_regrowth);
+            CTRGScaffoldRegrowthMCMovetype(const CTRGScaffoldRegrowthMCMovetype&) = delete;
+            CTRGScaffoldRegrowthMCMovetype& operator=(const CTRGScaffoldRegrowthMCMovetype&) = delete;
+
+            void write_log_summary(ostream* log_entry) override;
+
+        private:
+            bool internal_attempt_move() override;
+            void add_tracker(bool accepted) override;
+
+            ScaffoldRGRegrowthTracking m_tracker {};
+            unordered_map<ScaffoldRGRegrowthTracking, MovetypeTracking> m_tracking {};
     };
     
 }

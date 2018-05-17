@@ -4,17 +4,21 @@
 #define TRANSFORM_MOVETYPES_H
 
 #include "cb_movetypes.h"
+#include "rg_movetypes.h"
 
 namespace movetypes {
 
     /**
-      * Transformation of a segment and regrowth of its linkers
+      * Base class for transformation and linker regrowth movetypes
+      *
+      * Transformation of a scaffold segment and any bound staples,
+      * followed by regrowth of linker regions between it and the rest of the
+      * system.
       */
-    class CTCBLinkerRegrowthMCMovetype:
-        public CTCBRegrowthMCMovetype {
-
+    class LinkerRegrowthMCMovetype:
+        virtual public CTRegrowthMCMovetype {
         public:
-            CTCBLinkerRegrowthMCMovetype(
+            LinkerRegrowthMCMovetype(
                     OrigamiSystem& origami_system,
                     RandomGens& random_gens,
                     IdealRandomWalks& ideal_random_walks,
@@ -25,17 +29,17 @@ namespace movetypes {
                     InputParameters& params,
                     int num_excluded_staples,
                     int max_disp,
-                    int max_turns);
-            CTCBLinkerRegrowthMCMovetype(const
-                    CTCBLinkerRegrowthMCMovetype&) = delete;
-            CTCBLinkerRegrowthMCMovetype& operator=(const
-                    CTCBLinkerRegrowthMCMovetype&) = delete;
+                    int max_turns,
+                    unsigned int max_regrowth,
+                    unsigned int max_linker_length);
+            LinkerRegrowthMCMovetype(const
+                    LinkerRegrowthMCMovetype&) = delete;
+            LinkerRegrowthMCMovetype& operator=(const
+                    LinkerRegrowthMCMovetype&) = delete;
 
             void write_log_summary(ostream* log_entry) override;
-            void reset_internal() override;
 
         protected:
-            bool internal_attempt_move() override;
             virtual void add_tracker(bool accepted) override;
 
             /** Unasssign domains reset arrays for resetting */
@@ -51,9 +55,6 @@ namespace movetypes {
                     vector<Domain*>& linker1,
                     vector<Domain*>& linker2,
                     vector<Domain*>& central_segment);
-
-            virtual pair<int, int> select_internal_endpoints(
-                    vector<Domain*> domains);
 
             /**
               * Setup constraints for fixed end biases
@@ -90,10 +91,12 @@ namespace movetypes {
                     vector<Domain*> linker1,
                     vector<Domain*> linker2);
 
-            void revert_transformation(vector<Domain*> central_domains);
+            virtual void revert_transformation(
+                    vector<Domain*> central_domains) = 0;
 
             int m_max_disp;
             int m_max_turns;
+            unsigned int m_max_linker_length;
 
             CTCBLinkerRegrowthTracking m_tracker {};
             unordered_map<CTCBLinkerRegrowthTracking, MovetypeTracking> m_tracking {};
@@ -101,48 +104,18 @@ namespace movetypes {
     };
 
     /**
-      * Transformation of a segment and regrowth of its linkers
+      * Base class for clustered transformation and linker regrowth movetypes
       *
-      * Constrasts with parent in selection of segment to be transformed. Will
-      * select domains that are contiguously bound out from the seed domain.
+      * Instead of randomly selecting a segment of the scaffold for
+      * transformation, a segment is selected in which all domains are in
+      * bound states, and the linker regions are in unbound (or misbound?)
+      * states.
       */
-    class ClusteredCTCBLinkerRegrowth:
-        public CTCBLinkerRegrowthMCMovetype {
+    class ClusteredLinkerRegrowthMCMovetype:
+        virtual public LinkerRegrowthMCMovetype {
 
         public:
-            ClusteredCTCBLinkerRegrowth(
-                    OrigamiSystem& origami_system,
-                    RandomGens& random_gens,
-                    IdealRandomWalks& ideal_random_walks,
-                    vector<OrigamiOutputFile*> config_files,
-                    string label,
-                    SystemOrderParams& ops,
-                    SystemBiases& biases,
-                    InputParameters& params,
-                    int num_excluded_staples,
-                    int max_disp,
-                    int max_turns);
-            ClusteredCTCBLinkerRegrowth(const
-                    ClusteredCTCBLinkerRegrowth&) = delete;
-            ClusteredCTCBLinkerRegrowth& operator=(const
-                    ClusteredCTCBLinkerRegrowth&) = delete;
-
-        protected:
-            pair<int, int> select_internal_endpoints(
-                    vector<Domain*> domains) override;
-    };
-
-    /**
-      * Transformation of a segment and regrowth of its linkers
-      *
-      * Constrasts with parent in selection of segment to be transformed. Will
-      * select domains that are contiguously bound out from the seed domain.
-      */
-    class Clustered2CTCBLinkerRegrowth:
-        public CTCBLinkerRegrowthMCMovetype {
-
-        public:
-            Clustered2CTCBLinkerRegrowth(
+            ClusteredLinkerRegrowthMCMovetype(
                     OrigamiSystem& origami_system,
                     RandomGens& random_gens,
                     IdealRandomWalks& ideal_random_walks,
@@ -154,19 +127,119 @@ namespace movetypes {
                     int num_excluded_staples,
                     int max_disp,
                     int max_turns,
-                    int m_max_regrowth);
-            Clustered2CTCBLinkerRegrowth(const
-                    ClusteredCTCBLinkerRegrowth&) = delete;
-            Clustered2CTCBLinkerRegrowth& operator=(const
-                    ClusteredCTCBLinkerRegrowth&) = delete;
+                    unsigned int max_linker_length);
+            ClusteredLinkerRegrowthMCMovetype(const
+                    ClusteredLinkerRegrowthMCMovetype&) = delete;
+            ClusteredLinkerRegrowthMCMovetype& operator=(const
+                    ClusteredLinkerRegrowthMCMovetype&) = delete;
 
         private:
             set<int> select_and_setup_segments(
                     vector<Domain*>& linker1,
                     vector<Domain*>& linker2,
                     vector<Domain*>& central_segment) override;
-            vector<Domain*> cyclic_select_internal_endpoints();
-            vector<Domain*> linear_select_internal_endpoints();
+            vector<Domain*> cyclic_select_central_segment();
+            vector<Domain*> linear_select_central_segment();
+    };
+
+    /**
+      * CTCB linker regrowth movetype
+      */
+    class CTCBLinkerRegrowthMCMovetype:
+        virtual public LinkerRegrowthMCMovetype,
+        virtual public CTCBRegrowthMCMovetype {
+
+        public:
+            CTCBLinkerRegrowthMCMovetype(
+                    OrigamiSystem& origami_system,
+                    RandomGens& random_gens,
+                    IdealRandomWalks& ideal_random_walks,
+                    vector<OrigamiOutputFile*> config_files,
+                    string label,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params,
+                    int num_excluded_staples,
+                    int max_disp,
+                    int max_turns,
+                    unsigned int max_regrowth,
+                    unsigned int max_linker_length);
+            CTCBLinkerRegrowthMCMovetype(const
+                    CTCBLinkerRegrowthMCMovetype&) = delete;
+            CTCBLinkerRegrowthMCMovetype& operator=(const
+                    CTCBLinkerRegrowthMCMovetype&) = delete;
+
+            bool internal_attempt_move() override;
+
+        protected:
+            void revert_transformation(
+                    vector<Domain*> central_domains) override;
+            void reset_internal() override;
+    };
+
+    /**
+      * CTCB clustered linker regrowth movetype
+      */
+    class CTCBClusteredLinkerRegrowthMCMovetype:
+        public CTCBLinkerRegrowthMCMovetype,
+        public ClusteredLinkerRegrowthMCMovetype {
+
+        public:
+            CTCBClusteredLinkerRegrowthMCMovetype(
+                    OrigamiSystem& origami_system,
+                    RandomGens& random_gens,
+                    IdealRandomWalks& ideal_random_walks,
+                    vector<OrigamiOutputFile*> config_files,
+                    string label,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params,
+                    int num_excluded_staples,
+                    int max_disp,
+                    int max_turns,
+                    unsigned int max_linker_length);
+            CTCBClusteredLinkerRegrowthMCMovetype(const
+                    CTCBClusteredLinkerRegrowthMCMovetype&) = delete;
+            CTCBClusteredLinkerRegrowthMCMovetype& operator=(const
+                    CTCBClusteredLinkerRegrowthMCMovetype&) = delete;
+            void reset_internal() override;
+    };
+
+    /**
+      * CTRG linker regrowth movetype
+      */
+    class CTRGLinkerRegrowthMCMovetype:
+        virtual public LinkerRegrowthMCMovetype,
+        virtual public CTRGRegrowthMCMovetype {
+
+        public:
+            CTRGLinkerRegrowthMCMovetype(
+                    OrigamiSystem& origami_system,
+                    RandomGens& random_gens,
+                    IdealRandomWalks& ideal_random_walks,
+                    vector<OrigamiOutputFile*> config_files,
+                    string label,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params,
+                    int num_excluded_staples,
+                    int max_num_recoils,
+                    int max_c_attempts,
+                    int max_disp,
+                    int max_turns,
+                    unsigned int max_regrowth,
+                    unsigned int max_linker_length);
+            CTRGLinkerRegrowthMCMovetype(const
+                    CTRGLinkerRegrowthMCMovetype&) = delete;
+            CTRGLinkerRegrowthMCMovetype& operator=(const
+                    CTRGLinkerRegrowthMCMovetype&) = delete;
+
+            bool internal_attempt_move() override;
+
+        protected:
+            void revert_transformation(
+                    vector<Domain*> central_domains) override;
+            void reset_internal() override;
     };
 }
 

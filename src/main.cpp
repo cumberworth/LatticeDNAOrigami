@@ -33,33 +33,33 @@ int main(int argc, char* argv[]) {
         // Select simulation type
         simulation::GCMCSimulation* sim;
         if (params.m_simulation_type == "constant_temp") {
-            cout << "Running serial constant temperature simuation\n";
+            cout << "Running serial constant temperature simulation\n";
             sim = new constantTemp::ConstantTGCMCSimulation {*origami, ops,
                     biases, params};
         }
         else if (params.m_simulation_type == "annealing") {
-            cout << "Running serial annealing simuation\n";
+            cout << "Running serial annealing simulation\n";
             sim = new annealing::AnnealingGCMCSimulation {*origami, ops, biases,
                     params};
         }
         else if (params.m_simulation_type == "t_parallel_tempering") {
-            cout << "Running T parallel tempering simuation\n";
+            cout << "Running T parallel tempering simulation\n";
             sim = new ptmc::TPTGCMCSimulation {*origami, ops, biases, params};
         }
         else if (params.m_simulation_type == "ut_parallel_tempering") {
-            cout << "Running uT parallel tempering simuation\n";
+            cout << "Running uT parallel tempering simulation\n";
             sim = new ptmc::UTPTGCMCSimulation {*origami, ops, biases, params};
         }
         else if (params.m_simulation_type == "hut_parallel_tempering") {
-            cout << "Running HuT parallel tempering simuation\n";
+            cout << "Running HuT parallel tempering simulation\n";
             sim = new ptmc::HUTPTGCMCSimulation {*origami, ops, biases, params};
         }
         else if (params.m_simulation_type == "umbrella_sampling") {
-            cout << "Running single window US simuation\n";
+            cout << "Running single window US simulation\n";
             sim = new us::SimpleUSGCMCSimulation {*origami, ops, biases, params};
         }
         else if (params.m_simulation_type == "mw_umbrella_sampling") {
-            cout << "Running multi window US simuation\n";
+            cout << "Running multi window US simulation\n";
             sim = new us::MWUSGCMCSimulation {*origami, ops, biases, params};
         }
         else {

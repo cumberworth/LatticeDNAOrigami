@@ -33,6 +33,7 @@ namespace parser {
             double m_cation_M; // mol/L
             double m_temp_for_staple_u; // K
             double m_staple_u_mult;
+            bool m_constant_staple_M;
             double m_stacking_ene;
             double m_binding_h;
             double m_binding_s;
@@ -65,10 +66,10 @@ namespace parser {
             int m_centering_domain;
             int m_constraint_check_freq;
             bool m_allow_nonsensical_ps;
+            double m_max_duration;
 
             // Constant temperature parameters
             long long int m_ct_steps;
-            double m_max_duration;
 
             // Enumerator parameters
             bool m_enumerate_staples_only;
@@ -83,8 +84,8 @@ namespace parser {
             vector<double> m_temps {};
             int m_num_reps;
             int m_exchange_interval;
-            long long int m_pt_steps;
-            bool m_constant_staple_M;
+            long long int m_swaps;
+            double m_max_pt_dur;
             vector<double> m_bias_mults {};
             vector<double> m_chem_pot_mults {};
             string m_restart_swap_file;

@@ -1,5 +1,6 @@
 // ptmc_simulation.cpp
 
+#include <chrono>
 #include <sstream>
 #include <string>
 
@@ -8,6 +9,7 @@
 
 namespace ptmc {
 
+    using std::chrono::steady_clock;
     using std::cout;
     using std::min;
     using std::pair;
@@ -23,9 +25,10 @@ namespace ptmc {
             InputParameters& params) :
             GCMCSimulation(origami_system, ops, biases, params),
             m_num_reps {params.m_num_reps},
+            m_swaps {params.m_swaps},
+            m_max_pt_dur {params.m_max_pt_dur},
             m_exchange_interval {params.m_exchange_interval} {
-        cout << "WARNING: DOES NOT APPEAR TO OBEY BALANCE";
-        m_swaps = params.m_pt_steps / m_exchange_interval;
+
         string string_rank {std::to_string(m_rank)};
 
         // Update starting configs if restarting
@@ -89,10 +92,6 @@ namespace ptmc {
         }
     }
 
-    PTGCMCSimulation::~PTGCMCSimulation() {
-        delete m_logging_stream;
-    }
-
     // Could probably break this into two methods
     void PTGCMCSimulation::initialize_control_qs(InputParameters& params) {
         if (m_rank == m_master_rep) {
@@ -102,10 +101,10 @@ namespace ptmc {
 
             // Chemical potentials and volumes
             m_control_qs.push_back({});
-            m_control_qs.push_back({});
             for (int i {0}; i != m_num_reps; i++) {
 
-                // Calculate chemical potential of each replica if constant [staple]
+                // Calculate chemical potential of each replica if constant
+                // staple concentration
                 double staple_u;
                 if (m_params.m_constant_staple_M) {
                     staple_u = origami::molarity_to_chempot(m_params.m_staple_M,
@@ -117,27 +116,27 @@ namespace ptmc {
                     staple_u *= m_params.m_chem_pot_mults[i];
                 }
                 m_control_qs[m_staple_u_i].push_back(staple_u);
-
-                double volume {origami::chempot_to_volume(staple_u,
-                        params.m_temps[i])};
-                m_control_qs[m_volume_i].push_back(volume);
             }
 
             // Biases
             m_control_qs.push_back(params.m_bias_mults);
         }
 
-        // Initialize quantities of each replica (updating on origami happens in run)
+        // Initialize quantities of each replica (updating on origami happens
+        // in run)
         for (int i {0}; i != m_num_reps; i++) {
             if (m_rank == i) {
                 m_replica_control_qs[m_temp_i] = params.m_temps[i];
                 m_replica_control_qs[m_bias_i] = params.m_bias_mults[i];
 
-                // Update chemical potential of each replica if constant [staple]
+                // Update chemical potential of each replica if constant
+                // staple concentration
                 // Recalculating for each node rather than sending from master
                 if (m_params.m_constant_staple_M) {
-                    m_replica_control_qs[m_staple_u_i] = origami::molarity_to_chempot(
-                            m_params.m_staple_M, m_replica_control_qs[m_temp_i]);
+                    m_replica_control_qs[m_staple_u_i] =
+                            origami::molarity_to_chempot(
+                            m_params.m_staple_M,
+                            m_replica_control_qs[m_temp_i]);
                 }
                 else {
                     double staple_u {origami::molarity_to_chempot(
@@ -151,12 +150,12 @@ namespace ptmc {
     }
 
     void PTGCMCSimulation::run() {
-        // Run temperature/chemical potential parallel tempering grand cannonical monte carlo
         long long int step {0};
 
         // Keep track of number of attempted and succesful swaps
         vector<int> attempt_count(m_num_reps - 1, 0);
         vector<int> swap_count(m_num_reps - 1, 0);
+        auto start = steady_clock::now();
         for (int swap_i {1}; swap_i != m_swaps + 1; swap_i++) {
 
             // Update origami system with current replica's quantities
@@ -167,10 +166,22 @@ namespace ptmc {
             update_dependent_qs();
             step += m_exchange_interval;
 
+            if (m_rank == m_master_rep) {
+                std::chrono::duration<double> dt {(steady_clock::now() -
+                        start)};
+                if (dt.count() > m_max_pt_dur) {
+                    master_send_kill(swap_i);
+                    cout << "Maximum time allowed reached\n";
+                    break;
+                }
+            }
+
             // Send information from slave nodes to master nodes
             if (m_rank != m_master_rep) {
                 slave_send(swap_i);
-                slave_receive(swap_i);
+                if (not slave_receive(swap_i)) {
+                    break;
+                }
             }
 
             // Attempt exchanges between replicas
@@ -198,18 +209,21 @@ namespace ptmc {
     }
 
     void PTGCMCSimulation::slave_send(int swap_i) {
-        // Send quantities to master
         for (size_t q_i {0}; q_i != m_replica_dependent_qs.size(); q_i++) {
             double q {m_replica_dependent_qs[q_i]};
             m_world.send(m_master_rep, swap_i, q);
         }
     }
 
-    void PTGCMCSimulation::slave_receive(int swap_i) {
-        // Receive quantities from master
+    bool PTGCMCSimulation::slave_receive(int swap_i) {
         for (auto i: m_exchange_q_is) {
             m_world.recv(m_master_rep, swap_i, m_replica_control_qs[i]);
+            if (m_replica_control_qs[i] == 0.0) {
+                return false;
+            }
         }
+
+        return true;
     }
 
     void PTGCMCSimulation::master_receive(int swap_i,
@@ -225,7 +239,6 @@ namespace ptmc {
     }
 
     void PTGCMCSimulation::master_send(int swap_i) {
-        // Send temperatures and chemical potentials to slaves
         for (int q_i {0}; q_i != m_num_reps; q_i++) {
             int rep_i {m_q_to_repi[q_i]};
             if (rep_i == m_master_rep) {
@@ -236,6 +249,21 @@ namespace ptmc {
             else {
                 for (auto i: m_exchange_q_is) {
                     m_world.send(rep_i, swap_i, m_control_qs[i][q_i]);
+                }
+            }
+        }
+    }
+
+    void PTGCMCSimulation::master_send_kill(int swap_i) {
+        for (int q_i {0}; q_i != m_num_reps; q_i++) {
+            int rep_i {m_q_to_repi[q_i]};
+            if (rep_i == m_master_rep) {
+                continue;
+            }
+            else {
+                for (size_t i {0}; i != m_exchange_q_is.size(); i++) {
+                    double msg {0.0};
+                    m_world.send(rep_i, swap_i, msg);
                 }
             }
         }
@@ -322,8 +350,6 @@ namespace ptmc {
         double temp2 {control_q_pairs[m_temp_i].second};
         double staple_u1 {control_q_pairs[m_staple_u_i].first};
         double staple_u2 {control_q_pairs[m_staple_u_i].second};
-        double V1 {control_q_pairs[m_volume_i].first};
-        double V2 {control_q_pairs[m_volume_i].second};
 
         double enthalpy1 {dependent_q_pairs[m_enthalpy_i].first};
         double enthalpy2 {dependent_q_pairs[m_enthalpy_i].second};
@@ -338,9 +364,7 @@ namespace ptmc {
         double DBias {bias2*temp2 - bias1*temp1};
         double DN {N2 - N1};
         double DBU {staple_u2 / temp2 - staple_u1 / temp1};
-        double Vratio {pow(V2/V1, DN)};
-        double p_accept {min({1.0, Vratio*exp(DB*(DH + DBias) - DBU*DN)})};
-        cout << p_accept << "\n";
+        double p_accept {min({1.0, exp(DB*(DH + DBias) - DBU*DN)})};
 
         return p_accept;
     }
