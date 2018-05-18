@@ -131,24 +131,42 @@ namespace movetypes {
             vector<Domain*>& linker2,
             vector<Domain*>& central_segment) {
 
-        // Select region to be transformed
-        central_segment = select_indices(m_scaffold, 3);
+        // Reject moves that have central region bound externally
+        bool externally_bound {true};
 
-        // Select linker regions
-        size_t linker1_length {static_cast<size_t>(m_random_gens.uniform_int(
-                    2, m_max_linker_length + 1))};
-        Domain* linker_d {central_segment.front()};
-        while (linker1.size() != linker1_length and linker_d != nullptr) {
-            linker1.push_back(linker_d);
-            linker_d = *linker_d + -m_dir;
+        // Could make max attempts settable
+        int attempts {0};
+        while (externally_bound and attempts != 10) {
+            linker1.clear();
+            linker2.clear();
+            central_segment.clear();
+
+            // Select region to be transformed
+            central_segment = select_indices(m_scaffold, 3);
+
+            // Select linker regions
+            size_t linker1_length {static_cast<size_t>(
+                        m_random_gens.uniform_int(2, m_max_linker_length + 1))};
+
+            Domain* linker_d {central_segment.front()};
+            while (linker1.size() != linker1_length and linker_d != nullptr) {
+                linker1.push_back(linker_d);
+                linker_d = *linker_d + -m_dir;
+            }
+
+            size_t linker2_length {static_cast<size_t>(
+                        m_random_gens.uniform_int(2, m_max_linker_length + 1))};
+            linker_d = central_segment.back();
+            while (linker2.size() != linker2_length and linker_d != nullptr) {
+                linker2.push_back(linker_d);
+                linker_d = *linker_d + m_dir;
+            }
+
+            externally_bound = domains_bound_externally(central_segment);
+            attempts++;
         }
-
-        size_t linker2_length {static_cast<size_t>(m_random_gens.uniform_int(
-                    2, m_max_linker_length + 1))};
-        linker_d = central_segment.back();
-        while (linker2.size() != linker2_length and linker_d != nullptr) {
-            linker2.push_back(linker_d);
-            linker_d = *linker_d + m_dir;
+        if (externally_bound) {
+            m_rejected = true;
         }
 
         return setup_fixed_end_biases(linker1, linker2);
@@ -269,7 +287,10 @@ namespace movetypes {
 
         // Try transformations until is not going to be immediately rejected
         bool regrowth_possible {false};
-        while (not regrowth_possible) {
+
+        // Could make max attempts settable
+        int attempts {0};
+        while (not regrowth_possible and attempts != 1000) {
 
             // Translation component
             VectorThree disp {};
@@ -305,6 +326,7 @@ namespace movetypes {
                     m_tracker.rot_turns = turns;
                 }
             }
+            attempts++;
         }
         write_config();
     }
@@ -615,11 +637,6 @@ namespace movetypes {
         m_tracker.num_central_domains = central_segment.size();
         m_tracker.num_central_staples = central_staples.size();
 
-        // Reject moves that have central region bound externally
-        if (domains_bound_externally(central_segment)) {
-            m_tracker.central_domains_connected = true;
-            return accepted;
-        }
 
         // Unassign domains
         vector<Domain*> linker1_to_unassign(linker1.begin() + 1, linker1.end());
@@ -790,12 +807,6 @@ namespace movetypes {
         m_tracker.num_linker_staples = staples.size();
         m_tracker.num_central_domains = central_segment.size();
         m_tracker.num_central_staples = central_staples.size();
-
-        // Reject moves that have central region bound externally
-        if (domains_bound_externally(central_segment)) {
-            m_tracker.central_domains_connected = true;
-            return accepted;
-        }
 
         // Unassign domains
         m_regrow_ds = m_constraintpoints.domains_to_be_regrown();
