@@ -27,7 +27,8 @@ namespace ptmc {
             m_num_reps {params.m_num_reps},
             m_swaps {params.m_swaps},
             m_max_pt_dur {params.m_max_pt_dur},
-            m_exchange_interval {params.m_exchange_interval} {
+            m_exchange_interval {params.m_exchange_interval},
+            m_config_output_freq {params.m_configs_output_freq} {
 
         string string_rank {std::to_string(m_rank)};
 
@@ -88,7 +89,7 @@ namespace ptmc {
                 }
             }
             m_swapfile << "\n";
-            write_swap_entry();
+            write_swap_entry(0);
         }
     }
 
@@ -162,7 +163,7 @@ namespace ptmc {
             update_control_qs();
 
             // Run the simulation
-            simulate(m_exchange_interval, step);
+            simulate(m_exchange_interval, step, false);
             update_dependent_qs();
             step += m_exchange_interval;
 
@@ -187,7 +188,7 @@ namespace ptmc {
             // Attempt exchanges between replicas
             else {
                 attempt_exchange(swap_i, attempt_count, swap_count);
-                write_swap_entry();
+                write_swap_entry(step);
             }
         }
 
@@ -369,11 +370,19 @@ namespace ptmc {
         return p_accept;
     }
 
-    void PTGCMCSimulation::write_swap_entry() {
-        for (auto repi: m_q_to_repi) {
-            m_swapfile << repi << " ";
+    void PTGCMCSimulation::write_swap_entry(long long int step) {
+        if (step % m_config_output_freq == 0) {
+            for (auto q_to_repi: m_q_to_repi_buf) {
+                for (auto repi: m_q_to_repi) {
+                    m_swapfile << repi << " ";
+                }
+                m_swapfile << "\n";
+            }
+            m_q_to_repi_buf.clear();
         }
-        m_swapfile << "\n";
+        else {
+            m_q_to_repi_buf.push_back(m_q_to_repi);
+        }
     }
 
     void PTGCMCSimulation::write_acceptance_freqs(vector<int> attempt_count,
