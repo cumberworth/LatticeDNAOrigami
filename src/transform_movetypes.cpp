@@ -142,7 +142,7 @@ namespace movetypes {
             central_segment.clear();
 
             // Select region to be transformed
-            central_segment = select_indices(m_scaffold, 3);
+            central_segment = select_indices(m_scaffold, 1);
 
             // Select linker regions
             size_t linker1_length {static_cast<size_t>(
@@ -214,11 +214,13 @@ namespace movetypes {
                         break;
                     }
                 }
-                set<int> participating_chains {domain->m_c};
-                if (scan_for_external_scaffold_domain(bound_domain, domains,
-                            participating_chains)) {
-                    externally_bound = true;
-                    break;
+                else {
+                    set<int> participating_chains {domain->m_c};
+                    if (scan_for_external_scaffold_domain(bound_domain, domains,
+                                participating_chains)) {
+                        externally_bound = true;
+                        break;
+                    }
                 }
             }
         }
