@@ -167,6 +167,7 @@ namespace movetypes {
         }
         if (externally_bound) {
             m_rejected = true;
+            return {};
         }
 
         return setup_fixed_end_biases(linker1, linker2);
@@ -434,13 +435,25 @@ namespace movetypes {
 
         // Select a domain on the scaffold that is bound and then make central
         // region be all contiguously bound segments
-        if (m_origami_system.m_cyclic) {
-            central_segment = cyclic_select_central_segment();
+
+        // Reject moves that have central region bound externally
+        bool externally_bound {true};
+        int attempts {0};
+        while (externally_bound and attempts != 10) {
+            if (m_origami_system.m_cyclic) {
+                central_segment = cyclic_select_central_segment();
+            }
+            else {
+                central_segment = linear_select_central_segment();
+            }
+            if (central_segment.size() == 0) {
+                m_rejected = true;
+                return {};
+            }
+            externally_bound = domains_bound_externally(central_segment);
+            attempts++;
         }
-        else {
-            central_segment = linear_select_central_segment();
-        }
-        if (central_segment.size() == 0) {
+        if (externally_bound) {
             m_rejected = true;
             return {};
         }
