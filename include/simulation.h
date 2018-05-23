@@ -119,7 +119,8 @@ namespace simulation {
             void set_max_dur(long long int dur);
             long long int simulate(
                     long long int steps,
-                    long long int start_step=0);
+                    long long int start_step=0,
+                    bool summarize=true);
             MCMovetype& select_movetype();
             void write_log_entry(
                     const long long int step,

@@ -54,6 +54,7 @@ namespace ptmc {
             long long int m_swaps;
             double m_max_pt_dur;
             long long int m_exchange_interval;
+            long long int m_config_output_freq;
 
             ofstream m_swapfile; // Only used by master
 
@@ -69,6 +70,9 @@ namespace ptmc {
 
             // Index into the control qs to replica with those qs
             vector<int> m_q_to_repi;
+
+            // Buffer for m_q_to_repi
+            vector<vector<int>> m_q_to_repi_buf;
 
             // Indices into control quantities vector for type
             int m_temp_i {0};
@@ -108,7 +112,7 @@ namespace ptmc {
                     vector<pair<double, double>> dependent_q_pairs); // rep1 and rep2 values
 
             // Output methods
-            void write_swap_entry();
+            void write_swap_entry(long long int step);
             void write_acceptance_freqs(
                     vector<int> attempt_count,
                     vector<int> swap_count);
