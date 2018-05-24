@@ -191,17 +191,19 @@ namespace movetypes {
         return accepted;
     }
 
-    void CBMCMovetype::unassign_domains(vector<Domain*> domains) {
+    double CBMCMovetype::unassign_domains(vector<Domain*> domains) {
+        double delta_e {0};
         for (auto domain: domains) {
             pair<int, int> key {domain->m_c, domain->m_d};
             m_prev_pos[key] = domain->m_pos;
             m_prev_ore[key] = domain->m_ore;
             m_modified_domains.push_back(key);
 
-            // Would be double counting to include delta_e in bias
-            m_origami_system.unassign_domain(*domain);
+            delta_e += m_origami_system.unassign_domain(*domain);
         }
         write_config();
+
+        return delta_e;
     }
 
     void CBMCMovetype::setup_for_regrow_old() {

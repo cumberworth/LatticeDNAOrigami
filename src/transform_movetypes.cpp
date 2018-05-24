@@ -208,12 +208,7 @@ namespace movetypes {
             if (domain->m_state != Occupancy::unbound) {
                 Domain* bound_domain {domain->m_bound_domain};
                 if (bound_domain->m_c == m_origami_system.c_scaffold) {
-                    bool domain_in_range {find(domains.begin(), domains.end(),
-                            bound_domain) != domains.end()};
-                    if (not domain_in_range) {
-                        externally_bound = true;
-                        break;
-                    }
+                    continue;
                 }
                 else {
                     set<int> participating_chains {domain->m_c};
@@ -282,7 +277,7 @@ namespace movetypes {
         return externally_bound;
     }
 
-    void LinkerRegrowthMCMovetype::transform_segment(
+    double LinkerRegrowthMCMovetype::transform_segment(
             vector<Domain*> linker1,
             vector<Domain*> linker2,
             vector<Domain*> central_segment,
@@ -293,6 +288,7 @@ namespace movetypes {
 
         // Could make max attempts settable
         int attempts {0};
+        double delta_e {0};
         while (not regrowth_possible and attempts != 1000) {
 
             // Translation component
@@ -315,11 +311,11 @@ namespace movetypes {
             int turns {m_random_gens.uniform_int(0, m_max_turns)};
 
             // Apply transformation
-            bool transform_applied {apply_transformation(central_domains, disp,
-                    center, axis, turns)};
+            delta_e = apply_transformation(central_domains, disp,
+                    center, axis, turns);
 
             // Check if enough steps to reach endpoints
-            if (transform_applied) {
+            if (not m_transform_rejected) {
                 if (steps_less_than_distance(linker1, linker2)) {
                     reset_segment(central_domains, central_domains.size());
                 }
@@ -332,16 +328,19 @@ namespace movetypes {
             attempts++;
         }
         write_config();
+
+        return delta_e;
     }
 
-    bool LinkerRegrowthMCMovetype::apply_transformation(
+    double LinkerRegrowthMCMovetype::apply_transformation(
             vector<Domain*> central_domains,
             VectorThree disp,
             VectorThree center,
             VectorThree axis,
             int turns) {
 
-        bool transform_applied {true};
+        m_transform_rejected = false;
+        double delta_e {0};
         for (size_t di {0}; di != central_domains.size(); di++) {
             Domain* domain {central_domains[di]};
             pair<int, int> key {domain->m_c, domain->m_d};
@@ -360,25 +359,31 @@ namespace movetypes {
                     m_origami_system.position_occupancy(pos) ==
                     Occupancy::misbound) {
                 reset_segment(central_domains, di);
-                transform_applied = false;
+                m_transform_rejected = true;
                 break;
             }
             else if (m_origami_system.position_occupancy(pos) ==
                     Occupancy::unbound) {
                 Domain* unbound_domain {m_origami_system.unbound_domain_at(
                         pos)};
-                if (find(central_domains.begin(), central_domains.end(),
-                            unbound_domain) == central_domains.end()) {
+                
+                bool scaffold_misbinding {domain->m_c ==
+                        m_origami_system.c_scaffold and unbound_domain->m_c ==
+                        m_origami_system.c_scaffold};
+                if (not scaffold_misbinding and find(central_domains.begin(),
+                        central_domains.end(), unbound_domain) ==
+                        central_domains.end()) {
                     reset_segment(central_domains, di);
-                    transform_applied = false;
+                    m_transform_rejected = true;
                     break;
                 }
             }
-            m_origami_system.set_checked_domain_config(*domain, pos, ore);
+            delta_e += m_origami_system.set_checked_domain_config(*domain, pos,
+                    ore);
             m_assigned_domains.push_back(key);
         }
 
-        return transform_applied;
+        return delta_e;
     }
 
     bool LinkerRegrowthMCMovetype::steps_less_than_distance(
@@ -663,9 +668,11 @@ namespace movetypes {
         }
 
         // It would be nice if I didn't have to fully unassign them
-        unassign_domains(central_domains);
+        double delta_e {0};
+        delta_e += unassign_domains(central_domains);
 
-        transform_segment(linker1, linker2, central_segment, central_domains);
+        delta_e += transform_segment(linker1, linker2, central_segment, central_domains);
+        m_bias *= exp(-delta_e);
 
         // Grow linkers
         for (auto linker: {linker1, linker2}) {
@@ -827,10 +834,10 @@ namespace movetypes {
         m_regrow_ds = m_constraintpoints.domains_to_be_regrown();
         m_regrow_ds.insert(m_regrow_ds.begin(), linker1.front());
         m_delta_e += unassign_and_save_domains();
-        unassign_and_save_domains(central_domains);
+        m_delta_e += unassign_and_save_domains(central_domains);
 
         // Transform central segment
-        transform_segment(linker1, linker2, central_segment, central_domains);
+        m_delta_e += transform_segment(linker1, linker2, central_segment, central_domains);
 
         // Grow linkers
         m_delta_e += recoil_regrow();
