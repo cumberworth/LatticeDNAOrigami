@@ -370,16 +370,27 @@ namespace movetypes {
                 bool scaffold_misbinding {domain->m_c ==
                         m_origami_system.c_scaffold and unbound_domain->m_c ==
                         m_origami_system.c_scaffold};
-                if (not scaffold_misbinding and find(central_domains.begin(),
+                bool new_binding_pair {find(central_domains.begin(),
                         central_domains.end(), unbound_domain) ==
-                        central_domains.end()) {
+                        central_domains.end()};
+                if (not scaffold_misbinding and new_binding_pair) {
                     reset_segment(central_domains, di);
                     m_transform_rejected = true;
                     break;
                 }
+                else if (scaffold_misbinding and new_binding_pair) {
+                    delta_e += m_origami_system.check_domain_constraints(
+                            *domain, pos, ore);
+                    if (m_origami_system.m_constraints_violated) {
+                        m_transform_rejected = true;
+                        m_origami_system.m_constraints_violated = false;
+                        reset_segment(central_domains, di);
+                        break;
+                    }
+                }
             }
-            delta_e += m_origami_system.set_checked_domain_config(*domain, pos,
-                    ore);
+            delta_e += m_origami_system.set_checked_domain_config(*domain,
+                    pos, ore);
             m_assigned_domains.push_back(key);
         }
 
