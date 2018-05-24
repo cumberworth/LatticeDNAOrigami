@@ -127,7 +127,7 @@ namespace movetypes {
             bool test_cb_acceptance();
 
             /** Unassign all given domains and store old configurations */
-            void unassign_domains(vector<Domain*>);
+            double unassign_domains(vector<Domain*>);
 
             /** Prepare interals for regrowing old configuration */
             void setup_for_regrow_old();

@@ -72,14 +72,14 @@ namespace movetypes {
                     set<int>& participating_chains);
 
             /** Transform the central segment */
-            void transform_segment(
+            double transform_segment(
                     vector<Domain*> linker1,
                     vector<Domain*> linker2,
                     vector<Domain*> central_segment,
                     vector<Domain*> central_domains);
 
             /** Translate and rotate segment */
-            bool apply_transformation(
+            double apply_transformation(
                     vector<Domain*> central_domains,
                     VectorThree disp,
                     VectorThree center,
@@ -101,6 +101,7 @@ namespace movetypes {
             CTCBLinkerRegrowthTracking m_tracker {};
             unordered_map<CTCBLinkerRegrowthTracking, MovetypeTracking> m_tracking {};
             vector<Domain*> m_linker_endpoints;
+            bool m_transform_rejected;
     };
 
     /**
