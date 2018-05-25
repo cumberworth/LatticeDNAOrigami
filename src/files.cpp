@@ -438,11 +438,11 @@ namespace files {
 
     void OrigamiOutputFile::open_write_close() {
         m_file.open(m_filename);
-        write(0);
+        write(0, 0);
         m_file.close();
     }
 
-    void OrigamiVSFOutputFile::write(long int) {
+    void OrigamiVSFOutputFile::write(long int, double) {
         m_file << "atom 0:";
         size_t scaffold_length {m_origami_system.get_chain(0).size()};
         m_file << scaffold_length << " radius 0.25 type scaffold\n";
@@ -451,7 +451,7 @@ namespace files {
         m_file << " radius 0.25 type staple";
     }
 
-    void OrigamiTrajOutputFile::write(long int step) {
+    void OrigamiTrajOutputFile::write(long int step, double) {
         m_file << step << "\n";
         for (auto chain: m_origami_system.get_chains()) {
             m_file << chain[0]->m_c << " " << chain[0]->m_c_ident << "\n";
@@ -471,7 +471,7 @@ namespace files {
         m_file << "\n";
     }
 
-    void OrigamiVCFOutputFile::write(long int) {
+    void OrigamiVCFOutputFile::write(long int, double) {
         m_file << "timestep\n";
         for (auto chain: m_origami_system.get_chains()) {
             for (auto domain: chain) {
@@ -492,7 +492,7 @@ namespace files {
         m_file << "\n";
     }
 
-    void OrigamiOrientationOutputFile::write(long int) {
+    void OrigamiOrientationOutputFile::write(long int, double) {
         for (auto chain: m_origami_system.get_chains()) {
             for (auto domain: chain) {
                 for (int i {0}; i != 3; i++) {
@@ -514,7 +514,7 @@ namespace files {
         m_file << "\n";
     }
 
-    void OrigamiStateOutputFile::write(long int) {
+    void OrigamiStateOutputFile::write(long int, double) {
         for (auto chain: m_origami_system.get_chains()) {
             for (auto domain: chain) {
                 if (domain->m_state == Occupancy::unbound) {
@@ -539,7 +539,7 @@ namespace files {
         m_file << "\n";
     }
 
-    void OrigamiCountsOutputFile::write(long int step) {
+    void OrigamiCountsOutputFile::write(long int step, double) {
         m_file << step << " ";
         m_file << m_origami_system.num_staples() << " ";
         m_file << m_origami_system.num_unique_staples() << " ";
@@ -561,10 +561,26 @@ namespace files {
         m_file << "step energy bias\n";
     }
 
-    void OrigamiEnergiesOutputFile::write(long int step) {
+    void OrigamiEnergiesOutputFile::write(long int step, double) {
         m_file << step << " ";
         m_file << m_origami_system.energy() << " ";
         m_file << m_biases.get_total_bias() << " ";
+        m_file << "\n";
+    }
+
+    OrigamiTimesOutputFile::OrigamiTimesOutputFile(
+            string filename,
+            int write_freq,
+            int max_num_staples,
+            OrigamiSystem& origami_system):
+            OrigamiOutputFile {filename, write_freq, max_num_staples, origami_system} {
+
+        m_file << "step time\n";
+    }
+
+    void OrigamiTimesOutputFile::write(long int step, double time) {
+        m_file << step << " ";
+        m_file << time;
         m_file << "\n";
     }
 
@@ -586,7 +602,7 @@ namespace files {
         m_file << "\n";
     }
 
-    void OrigamiOrderParamsOutputFile::write(long int step) {
+    void OrigamiOrderParamsOutputFile::write(long int step, double) {
         m_file << step;
         for (auto op: m_ops_to_output) {
             m_file << " " << op.get().calc_param();

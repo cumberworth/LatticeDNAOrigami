@@ -148,7 +148,7 @@ namespace files {
             virtual ~OrigamiOutputFile() {};
 
             void open_write_close();
-            virtual void write(long int step) = 0;
+            virtual void write(long int step, double) = 0;
 
             const string m_filename;
             const int m_write_freq;
@@ -163,35 +163,35 @@ namespace files {
         // Write a VSF file of the system
         public:
             using OrigamiOutputFile::OrigamiOutputFile;
-            void write(long int);
+            void write(long int, double);
     };
 
     class OrigamiTrajOutputFile: public OrigamiOutputFile {
         // Trajectory output file for simulation configurations
         public:
             using OrigamiOutputFile::OrigamiOutputFile;
-            void write(long int step);
+            void write(long int step, double);
     };
 
     class OrigamiVCFOutputFile: public OrigamiOutputFile {
         // Output file for simulation configurations compatible with VMD
         public:
             using OrigamiOutputFile::OrigamiOutputFile;
-            void write(long int step);
+            void write(long int step, double);
     };
 
     class OrigamiOrientationOutputFile: public OrigamiOutputFile {
         // Simple format for orientation vector output mainly for vmd viewing
         public:
             using OrigamiOutputFile::OrigamiOutputFile;
-            void write(long int step);
+            void write(long int step, double);
     };
 
     class OrigamiStateOutputFile: public OrigamiOutputFile {
         // Outputs binding state of each domain
         public:
             using OrigamiOutputFile::OrigamiOutputFile;
-            void write(long int step);
+            void write(long int step, double);
     };
 
     class OrigamiEnergiesOutputFile: public OrigamiOutputFile {
@@ -203,16 +203,27 @@ namespace files {
                     OrigamiSystem& origami_system,
                     SystemBiases& m_biases);
             using OrigamiOutputFile::OrigamiOutputFile;
-            void write(long int step);
+            void write(long int step, double);
 
         private:
             SystemBiases& m_biases;
     };
 
+    class OrigamiTimesOutputFile: public OrigamiOutputFile {
+        public:
+            OrigamiTimesOutputFile(
+                    string filename,
+                    int write_freq,
+                    int max_num_staples,
+                    OrigamiSystem& origami_system);
+            using OrigamiOutputFile::OrigamiOutputFile;
+            void write(long int step, double time);
+    };
+
     class OrigamiCountsOutputFile: public OrigamiOutputFile {
         public:
             using OrigamiOutputFile::OrigamiOutputFile;
-            void write(long int step);
+            void write(long int step, double);
     };
 
     class OrigamiOrderParamsOutputFile: public  OrigamiOutputFile {
@@ -224,7 +235,7 @@ namespace files {
                     OrigamiSystem& origami_system,
                     SystemOrderParams& ops,
                     vector<string> op_tags);
-            void write(long int step);
+            void write(long int step, double);
 
         private:
             SystemOrderParams& m_ops;

@@ -7,6 +7,7 @@
 
 namespace movetypes {
 
+    using std::min;
     using std::map;
 
     using utility::Occupancy;
@@ -147,17 +148,23 @@ namespace movetypes {
             // Select linker regions
             size_t linker1_length {static_cast<size_t>(
                         m_random_gens.uniform_int(2, m_max_linker_length + 1))};
-
             Domain* linker_d {central_segment.front()};
-            while (linker1.size() != linker1_length and linker_d != nullptr) {
+            while (linker1.size() != linker1_length and linker_d != nullptr and
+                    linker_d != (*central_segment.back() + 2*m_dir)) {
                 linker1.push_back(linker_d);
                 linker_d = *linker_d + -m_dir;
+            }
+            if (linker1.size() == 1) {
+                m_rejected = true;
+                return {};
             }
 
             size_t linker2_length {static_cast<size_t>(
                         m_random_gens.uniform_int(2, m_max_linker_length + 1))};
             linker_d = central_segment.back();
-            while (linker2.size() != linker2_length and linker_d != nullptr) {
+            while (linker2.size() != linker2_length and linker_d != nullptr and
+                    linker_d != (*linker1.back() + -m_dir)) {
+
                 linker2.push_back(linker_d);
                 linker_d = *linker_d + m_dir;
             }
@@ -477,20 +484,33 @@ namespace movetypes {
         // Get linker domains
         linker1.push_back(central_segment[0]);
         Domain* p_domain {*central_segment[0] + -1};
-        while (p_domain != nullptr and p_domain->m_state != Occupancy::bound and
-                linker1.size() != m_max_linker_length and p_domain !=
-                central_segment.back()) {
-            linker1.push_back(p_domain);
-            p_domain = *p_domain + -1;
+        if (p_domain != central_segment.back() and p_domain !=
+                (*central_segment.back() + 1)) {
+            while (p_domain != nullptr and
+                    p_domain->m_state != Occupancy::bound and
+                    linker1.size() != m_max_linker_length and
+                    p_domain != (*central_segment.back() + 2)) {
+
+                linker1.push_back(p_domain);
+                p_domain = *p_domain + -1;
+            }
+        }
+        if (linker1.size() == 1) {
+            m_rejected = true;
+            return {};
         }
 
         linker2.push_back(central_segment.back());
         Domain* n_domain {*central_segment.back() + 1};
-        while (n_domain != nullptr and n_domain->m_state != Occupancy::bound and
-                linker2.size() != m_max_linker_length and n_domain !=
-                linker1.back()) {
-            linker2.push_back(n_domain);
-            n_domain = *n_domain + 1;
+        if (n_domain != linker1.back()) {
+            while (n_domain != nullptr and
+                    n_domain->m_state != Occupancy::bound and
+                    linker2.size() != m_max_linker_length and
+                    n_domain != (*linker1.back() + -1)) {
+
+                linker2.push_back(n_domain);
+                n_domain = *n_domain + 1;
+            }
         }
 
         return setup_fixed_end_biases(linker1, linker2);

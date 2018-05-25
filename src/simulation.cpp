@@ -42,6 +42,7 @@ namespace simulation {
     using files::OrigamiMovetypeFile;
     using files::OrigamiTrajOutputFile;
     using files::OrigamiCountsOutputFile;
+    using files::OrigamiTimesOutputFile;
     using files::OrigamiEnergiesOutputFile;
     using files::OrigamiOrderParamsOutputFile;
 
@@ -56,7 +57,7 @@ namespace simulation {
         OrigamiVSFOutputFile vsf_file {
                 output_filebase + ".vsf", 0,
                 params.m_max_total_staples, origami};
-        vsf_file.write(0);
+        vsf_file.write(0, 0);
 
         vector<OrigamiOutputFile*> outs {};
         if (params.m_configs_output_freq != 0) {
@@ -75,6 +76,12 @@ namespace simulation {
                     output_filebase + ".counts", params.m_counts_output_freq,
                     params.m_max_total_staples, origami};
             outs.push_back(counts_out);
+        }
+        if (params.m_times_output_freq != 0) {
+            OrigamiOutputFile* times_out = new OrigamiTimesOutputFile {
+                    output_filebase + ".times", params.m_times_output_freq,
+                    params.m_max_total_staples, origami};
+            outs.push_back(times_out);
         }
         if (params.m_energies_output_freq != 0) {
             OrigamiOutputFile* energies_out = new OrigamiEnergiesOutputFile {
@@ -425,7 +432,7 @@ namespace simulation {
             for (auto output_file: m_output_files) {
                 if (output_file->m_write_freq != 0 and step %
                         output_file->m_write_freq == 0) {
-                    output_file->write(step);
+                    output_file->write(step, dt.count());
                 }
             }
         }

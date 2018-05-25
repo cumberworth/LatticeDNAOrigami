@@ -114,6 +114,7 @@ namespace parser {
             int m_vtf_output_freq;
             bool m_vcf_per_domain;
             int m_counts_output_freq;
+            int m_times_output_freq;
             int m_energies_output_freq;
             vector<string> m_ops_to_output {};
             int m_order_params_output_freq;

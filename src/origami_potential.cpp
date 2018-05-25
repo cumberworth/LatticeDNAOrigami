@@ -1010,9 +1010,7 @@ namespace potential {
         }
 
         else if (m_hybridization_pot == "Uniform") {
-            string seq_j_comp {calc_comp_seq(seq_j)};
-            reverse(seq_j_comp.begin(), seq_j_comp.end());
-            if (seq_i == seq_j_comp) {
+            if (key.first == -key.second) {
                 H_hyb = m_binding_h / m_temp;
                 S_hyb = m_binding_s;
             }

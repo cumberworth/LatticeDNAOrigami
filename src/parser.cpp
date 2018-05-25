@@ -300,6 +300,9 @@ namespace parser {
             ("counts_output_freq",
                 po::value<int>(&m_counts_output_freq)->default_value(0),
                 "Counts output write frequency")
+            ("times_output_freq",
+                po::value<int>(&m_times_output_freq)->default_value(0),
+                "Step timing output write frequency")
             ("energies_output_freq",
                 po::value<int>(&m_energies_output_freq)->default_value(0),
                 "Energies output write frequency")

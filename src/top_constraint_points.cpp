@@ -289,6 +289,10 @@ namespace topConstraintPoints {
         m_active_endpoints[key].push_back({domain->m_d, pos});
     }
 
+    void Constraintpoints::add_inactive_endpoint(Domain* d_i, Domain* d_j) {
+        m_inactive_endpoints[d_i] = d_j;
+    }
+
     void Constraintpoints::reset_active_endpoints() {
         m_active_endpoints = m_initial_active_endpoints;
     }

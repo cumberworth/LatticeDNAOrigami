@@ -231,7 +231,7 @@ namespace movetypes {
     void MCMovetype::write_config() {
         if (m_config_output_freq != 0 and m_step % m_config_output_freq == 0) {
             for (auto file: m_config_files) {
-                file->write(0);
+                file->write(0, 0);
             }
         }
     }

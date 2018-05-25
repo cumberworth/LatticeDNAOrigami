@@ -167,6 +167,7 @@ namespace topConstraintPoints {
                     Domain* domain,
                     VectorThree endpoint_pos,
                     int seg);
+            void add_inactive_endpoint(Domain* d_i, Domain* d_j);
 
             /**
               * Reset the set of active endpoints to the initial set
