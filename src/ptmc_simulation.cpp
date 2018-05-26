@@ -194,6 +194,7 @@ namespace ptmc {
 
         // Write end-of-simulation data
         if (m_rank == m_master_rep) {
+            write_swap_entry(step);
             write_acceptance_freqs(attempt_count, swap_count);
             m_swapfile.close();
         }
