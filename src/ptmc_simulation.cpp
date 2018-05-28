@@ -372,15 +372,11 @@ namespace ptmc {
     }
 
     void PTGCMCSimulation::write_swap_entry(long long int step) {
-        m_q_to_repi_buf.push_back(m_q_to_repi);
         if (step % m_config_output_freq == 0) {
-            for (auto q_to_repi: m_q_to_repi_buf) {
-                for (auto repi: m_q_to_repi) {
-                    m_swapfile << repi << " ";
-                }
-                m_swapfile << "\n";
+            for (auto repi: m_q_to_repi) {
+                m_swapfile << repi << " ";
             }
-            m_q_to_repi_buf.clear();
+            m_swapfile << "\n";
         }
     }
 
