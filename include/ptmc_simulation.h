@@ -71,9 +71,6 @@ namespace ptmc {
             // Index into the control qs to replica with those qs
             vector<int> m_q_to_repi;
 
-            // Buffer for m_q_to_repi
-            vector<vector<int>> m_q_to_repi_buf;
-
             // Indices into control quantities vector for type
             int m_temp_i {0};
             int m_staple_u_i {1};
