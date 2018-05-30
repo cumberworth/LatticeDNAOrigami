@@ -361,13 +361,14 @@ namespace origami {
         for (int d_i {0}; d_i != chain_length; d_i++) {
             int d_i_ident {m_identities[c_i_ident][d_i]};
             Domain* domain;
-            size_t domain_size {m_sequences[c_i_ident][d_i].size()};
-            if (domain_size == 16 or domain_size == 15) {
-                domain = new SixteenDomain {c_i, c_i_ident, d_i, d_i_ident, chain_length};
-            }
-            else {
-                throw NotImplemented {};
-            }
+            // Assume that all domains are 16
+//            size_t domain_size {m_sequences[c_i_ident][d_i].size()};
+//            if (domain_size == 16 or domain_size == 15) {
+            domain = new SixteenDomain {c_i, c_i_ident, d_i, d_i_ident, chain_length};
+//            }
+ //           else {
+  //              throw NotImplemented {};
+   //         }
 
             // Set forward and backwards domains
             if (prev_domain != nullptr) {

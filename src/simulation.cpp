@@ -378,9 +378,9 @@ namespace simulation {
     }
 
     long long int GCMCSimulation::simulate(long long int steps,
-            long long int start_step, bool summarize) {
+            long long int start_step, bool summarize,
+            steady_clock::time_point start) {
 
-        auto start = steady_clock::now();
         long long int step {start_step + 1};
         for (; step != (steps + start_step + 1); step ++) {
             

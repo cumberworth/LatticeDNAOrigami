@@ -163,7 +163,7 @@ namespace ptmc {
             update_control_qs();
 
             // Run the simulation
-            simulate(m_exchange_interval, step, false);
+            simulate(m_exchange_interval, step, false, start);
             update_dependent_qs();
             step += m_exchange_interval;
 

@@ -32,6 +32,7 @@ namespace simulation {
     using std::unordered_map;
     using std::set;
     using std::string;
+    using std::chrono::steady_clock;
 
     namespace bp = boost::process;
 
@@ -120,7 +121,8 @@ namespace simulation {
             long long int simulate(
                     long long int steps,
                     long long int start_step=0,
-                    bool summarize=true);
+                    bool summarize=true,
+                    steady_clock::time_point = steady_clock::now());
             MCMovetype& select_movetype();
             void write_log_entry(
                     const long long int step,

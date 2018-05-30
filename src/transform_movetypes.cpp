@@ -560,7 +560,7 @@ namespace movetypes {
             n_domain = *n_domain + 1;
         }
         n_domain = *kernel_domain + -1;
-        if (segment_started == false) {
+        if (not segment_started) {
             while (not segment_ended and n_domain != nullptr) {
                 if (n_domain->m_state == Occupancy::bound and not
                         segment_started) {

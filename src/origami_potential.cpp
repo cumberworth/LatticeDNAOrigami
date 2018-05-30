@@ -14,7 +14,10 @@
 
 namespace potential {
 
+    using std::cout;
+
     using utility::Occupancy;
+    using utility::OrigamiMisuse;
     using nearestNeighbour::calc_comp_seq;
 
     bool check_domain_orientations_opposing(Domain& cd_i, Domain& cd_j) {
@@ -958,18 +961,38 @@ namespace potential {
         // Calculate S, H, and G for all possible interactions and store
 
         // Loop through all pairs of sequences
-        for (size_t c_i {0}; c_i != m_sequences.size(); c_i++) {
-            for (size_t c_j {0}; c_j != m_sequences.size(); c_j++) {
-                size_t c_i_length {m_sequences[c_i].size()};
-                size_t c_j_length {m_sequences[c_j].size()};
+        for (size_t c_i {0}; c_i != m_identities.size(); c_i++) {
+            for (size_t c_j {0}; c_j != m_identities.size(); c_j++) {
+                size_t c_i_length {m_identities[c_i].size()};
+                size_t c_j_length {m_identities[c_j].size()};
                 for (size_t d_i {0}; d_i != c_i_length; d_i++) {
                     int d_i_ident {m_identities[c_i][d_i]};
                     for (size_t d_j {0}; d_j != c_j_length; d_j++) {
                         int d_j_ident {m_identities[c_j][d_j]};
-                        string seq_i {m_sequences[c_i][d_i]};
-                        string seq_j {m_sequences[c_j][d_j]};
                         pair<int, int> key {d_i_ident, d_j_ident};
-                        calc_energy(seq_i, seq_j, key);
+                        if (m_hybridization_pot == "NearestNeighbour") {
+                            string seq_i {m_sequences[c_i][d_i]};
+                            string seq_j {m_sequences[c_j][d_j]};
+                            calc_hybridization_energy(seq_i, seq_j, key);
+                        }
+                        else if (m_hybridization_pot == "Uniform") {
+                            calc_hybridization_energy(key);
+                        }
+                        else {
+                            std::cout << "No such hybridization potential";
+                        }
+
+                        if (m_stacking_pot == "SequenceSpecific") {
+                            string seq_i {m_sequences[c_i][d_i]};
+                            string seq_j {m_sequences[c_j][d_j]};
+                            calc_stacking_energy(seq_i, seq_j, key);
+                        }
+                        else if (m_stacking_pot == "Constant") {
+                            calc_stacking_energy(key);
+                        }
+                        else {
+                            std::cout << "No such stacking potential";
+                        }
                     }
                 }
             }
@@ -977,65 +1000,83 @@ namespace potential {
         write_energies_to_file();
     }
 
-    void OrigamiPotential::calc_energy(string seq_i, string seq_j,
+    void OrigamiPotential::calc_hybridization_energy(string seq_i, string seq_j,
             pair<int, int> key) {
 
-        // Hybridization values
         double H_hyb {0};
         double S_hyb {0};
-        if (m_hybridization_pot == "NearestNeighbour") {
-            vector<string> comp_seqs {nearestNeighbour::
-                    find_longest_contig_complement(seq_i, seq_j)};
-            int N {0};
-            
-            // No interaction if no complementary sequence
-            if (comp_seqs.size() == 0) {
-                H_hyb = 0;
-                S_hyb = 0;
-            }
+        vector<string> comp_seqs {nearestNeighbour::
+                find_longest_contig_complement(seq_i, seq_j)};
+        int N {0};
+        
+        // No interaction if no complementary sequence
+        if (comp_seqs.size() == 0) {
+            H_hyb = 0;
+            S_hyb = 0;
+        }
 
-            // Take average value of H and S of all equal length comp seqs
-            else {
-                for (auto comp_seq: comp_seqs) {
-                    ThermoOfHybrid DH_DS {nearestNeighbour::
-                            calc_unitless_hybridization_thermo(comp_seq,
-                            m_temp, m_cation_M)};
-                    H_hyb += DH_DS.enthalpy;
-                    S_hyb += DH_DS.entropy;
-                    N++;
-                }
-                H_hyb /= N;
-                S_hyb /= N;
+        // Take average value of H and S of all equal length comp seqs
+        else {
+            for (auto comp_seq: comp_seqs) {
+                ThermoOfHybrid DH_DS {nearestNeighbour::
+                        calc_unitless_hybridization_thermo(comp_seq,
+                        m_temp, m_cation_M)};
+                H_hyb += DH_DS.enthalpy;
+                S_hyb += DH_DS.entropy;
+                N++;
+            }
+            H_hyb /= N;
+            S_hyb /= N;
+        }
+
+        // Check that sequences are complementary if they should
+        if (key.first == -key.second) {
+            if (comp_seqs[0].size() != seq_i.size() and seq_i.size() ==
+                    seq_j.size()) {
+                cout << "Sequences that should be complementary are not\n";
+                throw OrigamiMisuse {};
             }
         }
 
-        else if (m_hybridization_pot == "Uniform") {
-            if (key.first == -key.second) {
-                H_hyb = m_binding_h / m_temp;
-                S_hyb = m_binding_s;
+        // Check that sequences are not complementary if they shouldn't be
+        else {
+            if (comp_seqs[0].size() == seq_i.size() and seq_i.size() ==
+                    seq_j.size()) {
+                cout << "Sequences that should not be complementary are\n";
             }
-            else {
-                H_hyb = m_misbinding_h / m_temp;
-                S_hyb = m_misbinding_s;
-            }
+        }
+
+        m_hybridization_enthalpies[key] = H_hyb;
+        m_hybridization_entropies[key] = S_hyb;
+        m_hybridization_energies[key] = H_hyb - S_hyb;
+    }
+
+    void OrigamiPotential::calc_hybridization_energy(pair<int, int> key) {
+        double H_hyb {0};
+        double S_hyb {0};
+        if (key.first == -key.second) {
+            H_hyb = m_binding_h / m_temp;
+            S_hyb = m_binding_s;
+        }
+        else {
+            H_hyb = m_misbinding_h / m_temp;
+            S_hyb = m_misbinding_s;
         }
         m_hybridization_enthalpies[key] = H_hyb;
         m_hybridization_entropies[key] = S_hyb;
         m_hybridization_energies[key] = H_hyb - S_hyb;
+    }
 
-        // Stacking energies
-        double s_energy {0};
-        if (m_stacking_pot == "SequenceSpecific") {
-            s_energy = nearestNeighbour::calc_seq_spec_stacking_energy(seq_i,
-                    seq_j, m_temp, m_cation_M);
-        }
-        else if (m_stacking_pot == "Constant") {
-            s_energy = m_stacking_ene;
-        }
-        else {
-            std::cout << "No such stacking potential";
-        }
+    void OrigamiPotential::calc_stacking_energy(string seq_i, string seq_j,
+            pair<int, int> key) {
+
+        double s_energy {nearestNeighbour::calc_seq_spec_stacking_energy(seq_i,
+                seq_j, m_temp, m_cation_M)};
         m_stacking_energies[key] = s_energy;
+    }
+
+    void OrigamiPotential::calc_stacking_energy(pair<int, int> key) {
+        m_stacking_energies[key] = m_stacking_ene;
     }
 
     bool OrigamiPotential::read_energies_from_file() {

@@ -289,7 +289,16 @@ namespace potential {
             bool read_energies_from_file();
             void write_energies_to_file();
             void calc_energies();
-            void calc_energy(string seq_i, string seq_j, pair<int, int> key);
+            void calc_hybridization_energy(
+                    string seq_i,
+                    string seq_j,
+                    pair<int, int> key);
+            void calc_hybridization_energy(pair<int, int> key);
+            void calc_stacking_energy(
+                    string seq_i,
+                    string seq_j,
+                    pair<int, int> key);
+            void calc_stacking_energy(pair<int, int> key);
 
     };
 
