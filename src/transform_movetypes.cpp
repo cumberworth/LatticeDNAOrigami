@@ -151,10 +151,11 @@ namespace movetypes {
             Domain* linker_d {central_segment.front()};
             while (linker1.size() != linker1_length and linker_d != nullptr and
                     linker_d != (*central_segment.back() + 2*m_dir)) {
+
                 linker1.push_back(linker_d);
                 linker_d = *linker_d + -m_dir;
             }
-            if (linker1.size() == 1) {
+            if (m_origami_system.m_cyclic and linker1.size() == 1) {
                 m_rejected = true;
                 return {};
             }
@@ -334,6 +335,9 @@ namespace movetypes {
             }
             attempts++;
         }
+        if (not regrowth_possible) {
+            m_rejected = true;
+        }
         write_config();
 
         return delta_e;
@@ -386,7 +390,7 @@ namespace movetypes {
                     break;
                 }
                 else if (scaffold_misbinding and new_binding_pair) {
-                    delta_e += m_origami_system.check_domain_constraints(
+                    m_origami_system.check_domain_constraints(
                             *domain, pos, ore);
                     if (m_origami_system.m_constraints_violated) {
                         m_transform_rejected = true;
@@ -703,6 +707,9 @@ namespace movetypes {
         delta_e += unassign_domains(central_domains);
 
         delta_e += transform_segment(linker1, linker2, central_segment, central_domains);
+        if (m_rejected) {
+            return accepted;
+        }
         m_bias *= exp(-delta_e);
 
         // Grow linkers
@@ -869,6 +876,9 @@ namespace movetypes {
 
         // Transform central segment
         m_delta_e += transform_segment(linker1, linker2, central_segment, central_domains);
+        if (m_rejected) {
+            return accepted;
+        }
 
         // Grow linkers
         m_delta_e += recoil_regrow();
