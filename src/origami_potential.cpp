@@ -1013,35 +1013,36 @@ namespace potential {
         if (comp_seqs.size() == 0) {
             H_hyb = 0;
             S_hyb = 0;
-            return;
         }
-
-        // Take average value of H and S of all equal length comp seqs
-        for (auto comp_seq: comp_seqs) {
-            ThermoOfHybrid DH_DS {nearestNeighbour::
-                    calc_unitless_hybridization_thermo(comp_seq,
-                    m_temp, m_cation_M)};
-            H_hyb += DH_DS.enthalpy;
-            S_hyb += DH_DS.entropy;
-            N++;
-        }
-        H_hyb /= N;
-        S_hyb /= N;
-
-        // Check that sequences are complementary if they should be
-        if (key.first == -key.second) {
-            if (comp_seqs[0].size() != seq_i.size() and seq_i.size() ==
-                    seq_j.size()) {
-                cout << "Sequences that should be complementary are not\n";
-                throw OrigamiMisuse {};
-            }
-        }
-
-        // Check that sequences are not complementary if they shouldn't be
         else {
-            if (comp_seqs[0].size() == seq_i.size() and seq_i.size() ==
-                    seq_j.size()) {
-                cout << "Sequences that should not be complementary are\n";
+
+            // Take average value of H and S of all equal length comp seqs
+            for (auto comp_seq: comp_seqs) {
+                ThermoOfHybrid DH_DS {nearestNeighbour::
+                        calc_unitless_hybridization_thermo(comp_seq,
+                        m_temp, m_cation_M)};
+                H_hyb += DH_DS.enthalpy;
+                S_hyb += DH_DS.entropy;
+                N++;
+            }
+            H_hyb /= N;
+            S_hyb /= N;
+
+            // Check that sequences are complementary if they should be
+            if (key.first == -key.second) {
+                if (comp_seqs[0].size() != seq_i.size() and seq_i.size() ==
+                        seq_j.size()) {
+                    cout << "Sequences that should be complementary are not\n";
+                    throw OrigamiMisuse {};
+                }
+            }
+
+            // Check that sequences are not complementary if they shouldn't be
+            else {
+                if (comp_seqs[0].size() == seq_i.size() and seq_i.size() ==
+                        seq_j.size()) {
+                    cout << "Sequences that should not be complementary are\n";
+                }
             }
         }
 
