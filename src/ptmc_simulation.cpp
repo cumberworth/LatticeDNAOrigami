@@ -89,7 +89,6 @@ namespace ptmc {
                 }
             }
             m_swapfile << "\n";
-            write_swap_entry(0);
         }
     }
 
@@ -187,8 +186,8 @@ namespace ptmc {
 
             // Attempt exchanges between replicas
             else {
-                attempt_exchange(swap_i, attempt_count, swap_count);
                 write_swap_entry(step);
+                attempt_exchange(swap_i, attempt_count, swap_count);
             }
         }
 

@@ -1008,7 +1008,7 @@ namespace potential {
         vector<string> comp_seqs {nearestNeighbour::
                 find_longest_contig_complement(seq_i, seq_j)};
         int N {0};
-        
+ 
         // No interaction if no complementary sequence
         if (comp_seqs.size() == 0) {
             H_hyb = 0;
@@ -1042,6 +1042,7 @@ namespace potential {
                 if (comp_seqs[0].size() == seq_i.size() and seq_i.size() ==
                         seq_j.size()) {
                     cout << "Sequences that should not be complementary are\n";
+                    throw OrigamiMisuse {};
                 }
             }
         }
