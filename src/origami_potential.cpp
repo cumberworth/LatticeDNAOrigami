@@ -1077,7 +1077,7 @@ namespace potential {
     }
 
     void OrigamiPotential::calc_stacking_energy(pair<int, int> key) {
-        m_stacking_energies[key] = m_stacking_ene;
+        m_stacking_energies[key] = m_stacking_ene / m_temp;
     }
 
     bool OrigamiPotential::read_energies_from_file() {
