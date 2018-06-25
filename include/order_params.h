@@ -119,6 +119,42 @@ namespace orderParams {
             OrigamiSystem& m_origami;
     };
 
+    class NumStaplesTypeOrderParam: public OrderParam {
+        public:
+            NumStaplesTypeOrderParam(
+                    OrigamiSystem& origami,
+                    int stype,
+                    string label);
+            int calc_param() override final;
+            int check_param(
+                    Domain& domain,
+                    VectorThree new_pos,
+                    VectorThree,
+                    Occupancy) override final;
+
+        private:
+            OrigamiSystem& m_origami;
+            int m_c_ident;
+    };
+
+    class StapleTypeFullyBoundOrderParam: public OrderParam {
+        public:
+            StapleTypeFullyBoundOrderParam(
+                    OrigamiSystem& origami,
+                    int stype,
+                    string label);
+            int calc_param() override final;
+            int check_param(
+                    Domain& domain,
+                    VectorThree new_pos,
+                    VectorThree,
+                    Occupancy) override final;
+
+        private:
+            OrigamiSystem& m_origami;
+            int m_c_ident;
+    };
+
     class NumBoundDomainPairsOrderParam: public OrderParam {
         public:
             NumBoundDomainPairsOrderParam(OrigamiSystem& origami, string label);

@@ -209,6 +209,69 @@ namespace orderParams {
         return m_checked_param;
     }
 
+    NumStaplesTypeOrderParam::NumStaplesTypeOrderParam(
+            OrigamiSystem& origami,
+            int c_ident,
+            string label) :
+            m_origami {origami} {
+
+        m_c_ident = c_ident;
+        m_label = label;
+        calc_param();
+        m_defined = true;
+    }
+
+    int NumStaplesTypeOrderParam::calc_param() {
+        m_param = m_origami.staples_of_ident(m_c_ident).size();
+
+        return m_param;
+    }
+
+    int NumStaplesTypeOrderParam::check_param(Domain&, VectorThree, VectorThree,
+            Occupancy) {
+
+        cout << "CHECK STACKING NOT IMPLEMENTED\n";
+        return 0;
+    }
+
+    StapleTypeFullyBoundOrderParam::StapleTypeFullyBoundOrderParam(
+            OrigamiSystem& origami,
+            int c_ident,
+            string label) :
+            m_origami {origami} {
+
+        m_c_ident = c_ident;
+        m_label = label;
+        calc_param();
+        m_defined = true;
+    }
+
+    int StapleTypeFullyBoundOrderParam::calc_param() {
+        m_param = 0;
+        for (auto staple_i: m_origami.staples_of_ident(m_c_ident)) {
+            bool fully_bound {true};
+            for (auto domain: m_origami.get_chain(staple_i)) {
+                if (domain->m_state != Occupancy::bound) {
+                    fully_bound = false;
+                    break;
+                }
+            }
+            if (fully_bound) {
+                m_param = 1;
+                break;
+            }
+        }
+
+        return m_param;
+    }
+
+    int StapleTypeFullyBoundOrderParam::check_param(Domain&, VectorThree, VectorThree,
+            Occupancy) {
+
+        cout << "CHECK STACKING NOT IMPLEMENTED\n";
+        return 0;
+    }
+
     NumBoundDomainPairsOrderParam::NumBoundDomainPairsOrderParam(
             OrigamiSystem& origami,
             string label) :
@@ -450,6 +513,16 @@ namespace orderParams {
                 }
                 else if (type == "NumStaples")  {
                     op = new NumStaplesOrderParam {m_origami, label};
+                }
+                else if (type == "NumStaplesType")  {
+                    int staple {ops_file.get_int_option(i, j, "staple")};
+                    op = new NumStaplesTypeOrderParam {m_origami, staple,
+                            label};
+                }
+                else if (type == "StapleTypeFullyBound")  {
+                    int staple {ops_file.get_int_option(i, j, "staple")};
+                    op = new StapleTypeFullyBoundOrderParam {m_origami, staple,
+                            label};
                 }
                 else if (type == "NumBoundDomainPairs") {
                     op = new NumBoundDomainPairsOrderParam {
