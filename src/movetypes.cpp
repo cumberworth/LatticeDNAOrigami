@@ -73,6 +73,7 @@ namespace movetypes {
         }
 
         // Revert modified domains to previous positions
+//        cout << "Reassigning\n";
         for (auto c_i_d_i: m_modified_domains) {
             int c_i {c_i_d_i.first};
             int d_i {c_i_d_i.second};

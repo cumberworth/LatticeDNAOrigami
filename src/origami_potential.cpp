@@ -629,6 +629,12 @@ namespace potential {
                 // Same helix case
                 if (cd_bound_1.m_d == cd_bound_2.m_d - 1) {
                     stacked = check_possible_doubly_contig_helix(cd_1, cd_2);
+                    if (i == 0) {
+                        check_forward_single_junction(cd_1, cd_2);
+                    }
+                    else {
+                        check_backward_single_junction(cd_1, cd_2);
+                    }
                 }
 
                 // Crossover case
@@ -676,7 +682,7 @@ namespace potential {
                 }
                 else {
                     m_delta_config.e -= m_pot.stacking_energy(*cd_1, *cd_2)/2;
-                    m_delta_config.e -= m_pot.stacking_energy(*cd_2, *cd_3)/2;
+                    m_delta_config.e -= m_pot.stacking_energy(*cd_3, *cd_4)/2;
                     m_delta_config.stacked_pairs -= 1;
                 }
             }
@@ -759,12 +765,373 @@ namespace potential {
         }
     }
 
+    void LinearFlexibleBindingPotential::check_forward_single_junction(
+            Domain* cd_1, Domain* cd_2) {
+
+        // Passed domains are the first junction pair
+        Domain* cd_j1 {cd_1};
+        Domain* cd_j2 {cd_2};
+        Domain* cd_j3;
+        Domain* cd_j4;
+        Domain* cd_k1;
+        Domain* cd_k2;
+
+        // Find possible kink pair combinations
+        vector<pair<Domain*, Domain*>> first_sel {};
+
+        // Add kink pair that is the same chain as the first junction pair
+        first_sel.push_back({cd_j2, cd_j2->m_forward_domain});
+
+        // Add kink pairs that are on the chain bound to j2
+        Domain* cd_j1_bound {cd_j1->m_bound_domain};
+        Domain* cd_j2_bound {cd_j2->m_bound_domain};
+        Domain* cd_j2_bound_for {cd_j2_bound->m_forward_domain};
+        Domain* cd_j2_bound_bac {cd_j2_bound->m_backward_domain};
+        if (cd_j1->m_bound_domain->m_c == cd_j2->m_bound_domain->m_c) {
+            int diff {cd_j2_bound->m_d - cd_j1_bound->m_d};
+
+            // Do not double count from double contiguous bound domain pairs
+            if (diff == 1) {
+                first_sel.push_back({cd_j2_bound, cd_j2_bound_for});
+            }
+            else if (diff == -1) {
+                first_sel.push_back({cd_j2_bound, cd_j2_bound_bac});
+            }
+            else {
+                first_sel.push_back({cd_j2_bound, cd_j2_bound_for});
+                first_sel.push_back({cd_j2_bound, cd_j2_bound_bac});
+            }
+        }
+        else {
+            first_sel.push_back({cd_j2_bound, cd_j2_bound_for});
+            first_sel.push_back({cd_j2_bound, cd_j2_bound_bac});
+        }
+        for (auto sel1: first_sel) {
+            cd_k1 = sel1.first;
+            cd_k2 = sel1.second;
+            if (not check_domains_exist_and_bound({cd_k2})) {
+                continue;
+            }
+
+            // If kink is stacked, not a kink
+            if (check_pair_stacked(cd_k1, cd_k2)) {
+                continue;
+            }
+
+            // If k1 and k2 are doubly contiguous, skip
+            if (cd_k1->m_bound_domain->m_c == cd_k2->m_bound_domain->m_c and
+                    abs(cd_k1->m_bound_domain->m_d -
+                    cd_k2->m_bound_domain->m_d) == 1) {
+                continue;
+            }
+
+            // Find possible second junction pairs
+            vector<pair<Domain*, Domain*>> second_sel {};
+
+            // Add junction that is on the same chain as the kink pair
+            int dir {cd_k2->m_d - cd_k1->m_d};
+            Domain* cd_k2_next {*cd_k2 + dir};
+            second_sel.push_back({cd_k2, cd_k2_next});
+
+            // Add junction pairs that are on chain bound to k2
+            Domain* cd_k2_bound {cd_k2->m_bound_domain};
+            Domain* cd_k2_bound_for {cd_k2_bound->m_forward_domain};
+            Domain* cd_k2_bound_bac {cd_k2_bound->m_backward_domain};
+            if (check_domains_exist_and_bound({cd_k2_next})) {
+
+                // If j3 and j4 are doubly contiguous, then this will be double
+                // counted
+                Domain* cd_k2_next_bound {cd_k2_next->m_bound_domain};
+                if (cd_k2_bound_for != cd_k2_next_bound) {
+                    second_sel.push_back({cd_k2_bound, cd_k2_bound_for});
+                }
+                if (cd_k2_bound_bac != cd_k2_next_bound) {
+                    second_sel.push_back({cd_k2_bound, cd_k2_bound_bac});
+                }
+            }
+            else {
+                    second_sel.push_back({cd_k2_bound, cd_k2_bound_for});
+                    second_sel.push_back({cd_k2_bound, cd_k2_bound_bac});
+            }
+            for (auto sel2: second_sel) {
+                cd_j3 = sel2.first;
+                cd_j4 = sel2.second;
+                if (not check_domains_exist_and_bound({cd_j4})) {
+                    continue;
+                }
+//                cout << "Check forward\n";
+                check_single_junction(cd_j1, cd_j2, cd_j3, cd_j4, cd_k1,
+                        cd_k2);
+            }
+        }
+    }
+
+    void LinearFlexibleBindingPotential::check_backward_single_junction(
+            Domain* cd_1, Domain* cd_2) {
+
+        // Passed domains are the second junction pair
+        Domain* cd_j1;
+        Domain* cd_j2;
+        Domain* cd_j3 {cd_1};
+        Domain* cd_j4 {cd_2};
+        Domain* cd_k1;
+        Domain* cd_k2;
+
+        // Find possible kink pair combinations
+        vector<pair<Domain*, Domain*>> first_sel {};
+
+        // Add kink pair that is the same chain as the first junction pair
+        first_sel.push_back({cd_j3, cd_j3->m_backward_domain});
+
+        // Add kink pairs that are on the chain bound to j3
+        Domain* cd_j3_bound {cd_j3->m_bound_domain};
+        Domain* cd_j4_bound {cd_j4->m_bound_domain};
+        Domain* cd_j3_bound_for {cd_j3_bound->m_forward_domain};
+        Domain* cd_j3_bound_bac {cd_j3_bound->m_backward_domain};
+        if (cd_j3->m_bound_domain->m_c == cd_j4->m_bound_domain->m_c) {
+            int diff {cd_j4_bound->m_d - cd_j3_bound->m_d};
+
+            // Do not double count from double contiguous bound domain pairs
+            if (diff == 1) {
+                first_sel.push_back({cd_j3_bound, cd_j3_bound_for});
+            }
+            else if (diff == -1) {
+                first_sel.push_back({cd_j3_bound, cd_j3_bound_bac});
+            }
+            else {
+                first_sel.push_back({cd_j3_bound, cd_j3_bound_for});
+                first_sel.push_back({cd_j3_bound, cd_j3_bound_bac});
+            }
+        }
+        else {
+            first_sel.push_back({cd_j3_bound, cd_j3_bound_for});
+            first_sel.push_back({cd_j3_bound, cd_j3_bound_bac});
+        }
+        for (auto sel1: first_sel) {
+            cd_k2 = sel1.first;
+            cd_k1 = sel1.second;
+            if (not check_domains_exist_and_bound({cd_k1})) {
+                continue;
+            }
+
+            // If kink is stacked, not a kink
+            if (check_pair_stacked(cd_k1, cd_k2)) {
+                continue;
+            }
+
+            // If k1 and k2 are doubly contiguous, skip
+            if (cd_k1->m_bound_domain->m_c == cd_k2->m_bound_domain->m_c and
+                    abs(cd_k1->m_bound_domain->m_d -
+                    cd_k2->m_bound_domain->m_d) == 1) {
+                continue;
+            }
+
+            // Find possible second junction pairs
+            vector<pair<Domain*, Domain*>> second_sel {};
+
+            // Add junction that is on the same chain as the kink pair
+            int dir {cd_k1->m_d - cd_k2->m_d};
+            Domain* cd_k1_next {*cd_k1 + dir};
+            second_sel.push_back({cd_k1, cd_k1_next});
+
+            // Add junction pairs that are on chain bound to k2
+            Domain* cd_k1_bound {cd_k1->m_bound_domain};
+            Domain* cd_k1_bound_for {cd_k1_bound->m_forward_domain};
+            Domain* cd_k1_bound_bac {cd_k1_bound->m_backward_domain};
+            if (check_domains_exist_and_bound({cd_k1_next})) {
+
+                // If j1 and j2 are doubly contiguous, then this will be double
+                // counted
+                Domain* cd_k1_next_bound {cd_k1_next->m_bound_domain};
+                if (cd_k1_bound_for != cd_k1_next_bound) {
+                    second_sel.push_back({cd_k1_bound, cd_k1_bound_for});
+                }
+                if (cd_k1_bound_bac != cd_k1_next_bound) {
+                    second_sel.push_back({cd_k1_bound, cd_k1_bound_bac});
+                }
+            }
+            else {
+                    second_sel.push_back({cd_k1_bound, cd_k1_bound_for});
+                    second_sel.push_back({cd_k1_bound, cd_k1_bound_bac});
+            }
+            for (auto sel2: second_sel) {
+                cd_j2 = sel2.first;
+                cd_j1 = sel2.second;
+                if (not check_domains_exist_and_bound({cd_j1})) {
+                    continue;
+                }
+//                cout << "Check backward\n";
+                check_single_junction(cd_j1, cd_j2, cd_j3, cd_j4, cd_k1,
+                        cd_k2);
+            }
+        }
+    }
+
+    void LinearFlexibleBindingPotential::check_central_single_junction(
+            Domain* cd_1, Domain* cd_2) {
+
+        // Passed domains are the kink pair
+        Domain* cd_j1;
+        Domain* cd_j2;
+        Domain* cd_j3;
+        Domain* cd_j4;
+        Domain* cd_k1 {cd_1};
+        Domain* cd_k2 {cd_2};
+
+        // Kinked pair cannot be doubly contiguous
+        if (cd_k1->m_bound_domain->m_c == cd_k2->m_bound_domain->m_c and
+                abs(cd_k1->m_bound_domain->m_d -
+                cd_k2->m_bound_domain->m_d) == 1) {
+            return;
+        }
+
+        // Find possible first junction pairs
+        vector<pair<Domain*, Domain*>> first_sel {};
+
+        // Add first junction pair that is on the same chain as the kink pair
+        Domain* cd_k1_bac {cd_k1->m_backward_domain};
+        first_sel.push_back({cd_k1, cd_k1_bac});
+
+        // Add first junction pairs bound to k1
+        Domain* cd_k1_bound {cd_k1->m_bound_domain};
+        Domain* cd_k1_bound_for {cd_k1_bound->m_forward_domain};
+        Domain* cd_k1_bound_bac {cd_k1_bound->m_backward_domain};
+        if (check_domains_exist_and_bound({cd_k1_bac})) {
+
+            // If j1 and j2 are doubly contiguous, then this will be double
+            // counted
+            Domain* cd_k1_bac_bound {cd_k1_bac->m_bound_domain};
+            if (cd_k1_bound_for != cd_k1_bac_bound) {
+                first_sel.push_back({cd_k1_bound, cd_k1_bound_for});
+            }
+            if (cd_k1_bound_bac != cd_k1_bac_bound) {
+                first_sel.push_back({cd_k1_bound, cd_k1_bound_bac});
+            }
+        }
+        else {
+                first_sel.push_back({cd_k1_bound, cd_k1_bound_for});
+                first_sel.push_back({cd_k1_bound, cd_k1_bound_bac});
+        }
+        for (auto sel1: first_sel) {
+            cd_j2 = sel1.first;
+            cd_j1 = sel1.second;
+            if (not check_domains_exist_and_bound({cd_j1})) {
+                continue;
+            }
+
+            // Find possible second junction pairs
+            vector<pair<Domain*, Domain*>> second_sel {};
+
+            // Add junction pair that is on the same chain as the kink pair
+            Domain* cd_k2_for {cd_k2->m_forward_domain};
+            second_sel.push_back({cd_k2, cd_k2_for});
+
+            // Add junction pairs that are on chain bound to k2
+            Domain* cd_k2_bound {cd_k2->m_bound_domain};
+            Domain* cd_k2_bound_for {cd_k2_bound->m_forward_domain};
+            Domain* cd_k2_bound_bac {cd_k2_bound->m_backward_domain};
+            if (check_domains_exist_and_bound({cd_k2_for})) {
+
+                // If j3 and j4 are doubly contiguous, then this will be double
+                // counted
+                Domain* cd_k2_for_bound {cd_k2_for->m_bound_domain};
+                if (cd_k2_bound_for != cd_k2_for_bound) {
+                    second_sel.push_back({cd_k2_bound, cd_k2_bound_for});
+                }
+                if (cd_k2_bound_bac != cd_k2_for_bound) {
+                    second_sel.push_back({cd_k2_bound, cd_k2_bound_bac});
+                }
+            }
+            else {
+                    second_sel.push_back({cd_k2_bound, cd_k2_bound_for});
+                    second_sel.push_back({cd_k2_bound, cd_k2_bound_bac});
+            }
+            for (auto sel2: second_sel) {
+                cd_j3 = sel2.first;
+                cd_j4 = sel2.second;
+                if (not check_domains_exist_and_bound({cd_j4})) {
+                    continue;
+                }
+//                cout << "Check central\n";
+                check_single_junction(cd_j1, cd_j2, cd_j3, cd_j4, cd_k1,
+                        cd_k2);
+            }
+        }
+    }
+
+    void LinearFlexibleBindingPotential::check_single_junction(
+            Domain* cd_j1, Domain* cd_j2, Domain* cd_j3, Domain* cd_j4,
+            Domain* cd_k1, Domain* cd_k2) {
+
+        // Put domains in order along chain
+        Domain* hold;
+        if (cd_j1->m_d > cd_j2->m_d) {
+            hold = cd_j1;
+            cd_j1 = cd_j2;
+            cd_j2 = hold;
+        }
+        if (cd_j3->m_d > cd_j4->m_d) {
+            hold = cd_j3;
+            cd_j3 = cd_j4;
+            cd_j4 = hold;
+        }
+        if (cd_k1->m_d > cd_k2->m_d) {
+            hold = cd_k1;
+            cd_k1 = cd_k2;
+            cd_k2 = hold;
+        }
+//        cout << "j1: " << cd_j1->m_c << "," << cd_j1->m_d << " ";
+//        cout << "j2: " << cd_j2->m_c << "," << cd_j2->m_d << " ";
+//        cout << "j3: " << cd_j3->m_c << "," << cd_j3->m_d << " ";
+//        cout << "j4: " << cd_j4->m_c << "," << cd_j4->m_d << " ";
+//        cout << "k1: " << cd_k1->m_c << "," << cd_k1->m_d << " ";
+//        cout << "k2: " << cd_k2->m_c << "," << cd_k2->m_d << "\n";
+        VectorThree ndr_k1 {cd_k2->m_pos - cd_k1->m_pos};
+ 
+        // Check if kinked pair forms crossover angle
+        if (ndr_k1 != cd_k1->m_ore) {
+            VectorThree ndr_1 {cd_j2->m_pos - cd_j1->m_pos};
+            VectorThree ndr_3 {cd_j4->m_pos - cd_j3->m_pos};
+
+            // Check that the kink next domain vector is orthoganal to the
+            // junction pair next domain vector and that the junction pair next
+            // domain vector are parallel (sign is unimportant here)
+            if ((ndr_1 != ndr_k1 and ndr_1 != -ndr_k1) and
+                    (ndr_1 == ndr_3 or ndr_1 == -ndr_3)) {
+                if (check_pair_stacked(cd_j1, cd_j2) and
+                        check_pair_stacked(cd_j3, cd_j4)) {
+                    m_delta_config.e -= m_pot.stacking_energy(*cd_j1, *cd_j2)/2;
+                    m_delta_config.e -= m_pot.stacking_energy(*cd_j3, *cd_j4)/2;
+                    m_delta_config.stacked_pairs -= 1;
+//                    cout << "unstack\n";
+                }
+                else {
+//                    cout << "First or last pair unstacked\n";
+                }
+            }
+            else {
+//                cout << "Kink next domain vector is parallel or antiparallel to first next domain vector or first and third next domain vectors are not parallel and not antiparallel\n";
+            }
+        }
+        else {
+//            cout << "Kink has correct crossover\n";
+        }
+    }
+
     bool ConKinkLinearFlexibleBindingPotential::check_regular_pair_constraints(
             Domain* cd_1, Domain* cd_2, int i) {
 
         bool stacked {false};
+
+        // Why do these before?
         check_edge_pair_junction(cd_1, cd_2, i);
-        
+        if (i == 0) {
+            check_forward_single_junction(cd_1, cd_2);
+        }
+        else {
+            check_backward_single_junction(cd_1, cd_2);
+        }
+ 
         // Inefficient as I also calculate this in check pair stacked
         VectorThree ndr {cd_2->m_pos - cd_1->m_pos};
         if (not cd_1->check_kink_constraint(ndr, *cd_2)) {
@@ -775,6 +1142,9 @@ namespace potential {
                 stacked = true;
                 m_delta_config.e += m_pot.stacking_energy(*cd_1, *cd_2);
                 m_delta_config.stacked_pairs += 1;
+            }
+            else {
+                check_central_single_junction(cd_1, cd_2);
             }
         }
 

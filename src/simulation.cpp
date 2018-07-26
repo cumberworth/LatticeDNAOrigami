@@ -390,6 +390,7 @@ namespace simulation {
             double old_ene {m_origami_system.energy()};
             accepted = movetype.attempt_move(step);
             if (not accepted) {
+//                cout << "reset\n";
                 movetype.reset_origami();
                 m_ops.update_move_params();
                 m_biases.calc_move();
@@ -405,7 +406,19 @@ namespace simulation {
             }
             if (m_constraint_check_freq != 0 and step % m_constraint_check_freq
                     == 0) {
-                m_origami_system.check_all_constraints();
+//                cout << "check\n";
+                try {
+                    m_origami_system.check_all_constraints();
+                }
+                catch (utility::OrigamiMisuse) {
+                    write_log_entry(step, accepted, movetype);
+                    std::chrono::duration<double> dt {(steady_clock::now() -
+                            start)};
+                    for (auto output_file: m_output_files) {
+                        output_file->write(step, dt.count());
+                    }
+                    break;
+                }
             }
 
             std::chrono::duration<double> dt {(steady_clock::now() -

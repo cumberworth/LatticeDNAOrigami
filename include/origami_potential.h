@@ -150,6 +150,56 @@ namespace potential {
                     Domain* cd_h2,
                     Domain* cd_h3);
             void check_central_linear_helix(Domain& cd_i, Domain& cd_j);
+
+        protected:
+            // The following are ugly methods to enforce the ugly four body
+            // stacking rule that would be much easier to enforce if the
+            // domains had explicit helical axis vectors
+
+            /** Check for unstacked single junctions from first two domains
+              *
+              * The domains passed are the first two domains of the junction.
+              * A total of nine combinations of domains will be tested,
+              * including two different kink pairs
+              */
+            void check_forward_single_junction(
+                    Domain* cd_1,
+                    Domain* cd_2);
+
+            /** Check for unstacked single junctions from last two domains
+              *
+              * The domains passed are the last two domains of the junction.
+              * A total of nine combinations of domains will be tested,
+              * including two different kink pairs
+              */
+            void check_backward_single_junction(
+                    Domain* cd_1,
+                    Domain* cd_2);
+
+            /** Check for unstacked single junctions from kink pair
+              *
+              * The domains passed are the kink pair. A total of nine
+              * combinations of domains will be tested.
+              */
+            void check_central_single_junction(
+                    Domain* cd_1,
+                    Domain* cd_2);
+
+            /** Check for unstacked single junctions
+              *
+              * This will subtract a stacked pair from configurations in which
+              * the next domain vectors of the first and third pairs are
+              * parallel to each other, antiparallel to the kink pair next
+              * domain vector, and the kink pair is not agreeing with where a
+              * crossover should occur given the domain lengths
+              */
+            void check_single_junction(
+                    Domain* cd_j1,
+                    Domain* cd_j2,
+                    Domain* cd_j3,
+                    Domain* cd_j4,
+                    Domain* cd_k1,
+                    Domain* cd_k2);
     };
 
     /** Only some configurations allowed at kinks */

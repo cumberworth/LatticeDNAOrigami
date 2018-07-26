@@ -263,22 +263,26 @@ namespace origami {
             }
         }
 
+        // Check that number of stacked pairs is consistent
+        if (m_num_stacked_domain_pairs != 0) {
+            cout << "Stack count inconsistency\n";
+            cout << m_num_stacked_domain_pairs << "\n";
+            set_all_domains();
+            throw OrigamiMisuse {};
+        }
+
         // Check that energy has returned to 0 (eps is totally arbitrary)
         double eps {0.000001};
         if (m_energy < -eps or m_energy > eps) {
             cout << "Inconsistency in system energy\n";
             cout << m_energy << "\n";
+            set_all_domains();
             throw OrigamiMisuse {};
         }
         else {
 
             // Prevent rounding errors from building up
             m_energy = 0;
-        }
-        if (m_num_stacked_domain_pairs != 0) {
-            cout << "Stack count inconsistency\n";
-            cout << m_num_stacked_domain_pairs << "\n";
-            throw OrigamiMisuse {};
         }
 
         // Reset configuration
