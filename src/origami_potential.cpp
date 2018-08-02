@@ -399,7 +399,7 @@ namespace potential {
                 delta_e /= 2;
             }
             else {
-                m_delta_config.stacked_pairs += 1;
+                m_delta_config.stacked_pairs += 2;
             }
             m_delta_config.e += delta_e;
         }
@@ -437,7 +437,7 @@ namespace potential {
             if (check_pair_stacked(cd_1, cd_2)) {
                 stacked = true;
                 m_delta_config.e += m_pot.stacking_energy(*cd_1, *cd_2);
-                m_delta_config.stacked_pairs += 1;
+                m_delta_config.stacked_pairs += 2;
             }
         }
 
@@ -457,6 +457,7 @@ namespace potential {
 
             // I have to divide this by two so that I don't overcount
             m_delta_config.e += m_pot.stacking_energy(*cd_1, *cd_2) / 2;
+            m_delta_config.stacked_pairs += 1;
         }
         else {
             m_constraints_violated = true;
@@ -683,7 +684,7 @@ namespace potential {
                 else {
                     m_delta_config.e -= m_pot.stacking_energy(*cd_1, *cd_2)/2;
                     m_delta_config.e -= m_pot.stacking_energy(*cd_3, *cd_4)/2;
-                    m_delta_config.stacked_pairs -= 1;
+                    m_delta_config.stacked_pairs -= 2;
                 }
             }
         }
@@ -700,7 +701,7 @@ namespace potential {
         else {
             m_delta_config.e -= m_pot.stacking_energy(*cd_h1, *cd_h2)/2;
             m_delta_config.e -= m_pot.stacking_energy(*cd_h2, *cd_h3)/2;
-            m_delta_config.stacked_pairs -= 1;
+            m_delta_config.stacked_pairs -= 2;
         }
     }
 
@@ -787,11 +788,17 @@ namespace potential {
         Domain* cd_j2_bound {cd_j2->m_bound_domain};
         Domain* cd_j2_bound_for {cd_j2_bound->m_forward_domain};
         Domain* cd_j2_bound_bac {cd_j2_bound->m_backward_domain};
-        if (cd_j1->m_bound_domain->m_c == cd_j2->m_bound_domain->m_c) {
+        if (cd_j1_bound->m_c == cd_j2_bound->m_c) {
             int diff {cd_j2_bound->m_d - cd_j1_bound->m_d};
 
-            // Do not double count from double contiguous bound domain pairs
+            // Must prevent double counting
+            if (abs(diff) == 1 and cd_j1->m_c > cd_j1_bound->m_c) {
+                return;
+            }
+
+            // Doubly contiguous cannot be single strand kink
             if (diff == 1) {
+                
                 first_sel.push_back({cd_j2_bound, cd_j2_bound_for});
             }
             else if (diff == -1) {
@@ -859,7 +866,7 @@ namespace potential {
                 if (not check_domains_exist_and_bound({cd_j4})) {
                     continue;
                 }
-//                cout << "Check forward\n";
+                //cout << "Check forward\n";
                 check_single_junction(cd_j1, cd_j2, cd_j3, cd_j4, cd_k1,
                         cd_k2);
             }
@@ -891,7 +898,11 @@ namespace potential {
         if (cd_j3->m_bound_domain->m_c == cd_j4->m_bound_domain->m_c) {
             int diff {cd_j4_bound->m_d - cd_j3_bound->m_d};
 
-            // Do not double count from double contiguous bound domain pairs
+            // Must prevent double counting
+            if (abs(diff) == 1 and cd_j3->m_c > cd_j3_bound->m_c) {
+                return;
+            }
+            // Doubly contiguous cannot be single strand kink
             if (diff == 1) {
                 first_sel.push_back({cd_j3_bound, cd_j3_bound_for});
             }
@@ -960,7 +971,7 @@ namespace potential {
                 if (not check_domains_exist_and_bound({cd_j1})) {
                     continue;
                 }
-//                cout << "Check backward\n";
+                //cout << "Check backward\n";
                 check_single_junction(cd_j1, cd_j2, cd_j3, cd_j4, cd_k1,
                         cd_k2);
             }
@@ -1052,7 +1063,7 @@ namespace potential {
                 if (not check_domains_exist_and_bound({cd_j4})) {
                     continue;
                 }
-//                cout << "Check central\n";
+                //cout << "Check central\n";
                 check_single_junction(cd_j1, cd_j2, cd_j3, cd_j4, cd_k1,
                         cd_k2);
             }
@@ -1080,12 +1091,12 @@ namespace potential {
             cd_k1 = cd_k2;
             cd_k2 = hold;
         }
-//        cout << "j1: " << cd_j1->m_c << "," << cd_j1->m_d << " ";
-//        cout << "j2: " << cd_j2->m_c << "," << cd_j2->m_d << " ";
-//        cout << "j3: " << cd_j3->m_c << "," << cd_j3->m_d << " ";
-//        cout << "j4: " << cd_j4->m_c << "," << cd_j4->m_d << " ";
-//        cout << "k1: " << cd_k1->m_c << "," << cd_k1->m_d << " ";
-//        cout << "k2: " << cd_k2->m_c << "," << cd_k2->m_d << "\n";
+        //cout << "j1: " << cd_j1->m_c << "," << cd_j1->m_d << " ";
+        //cout << "j2: " << cd_j2->m_c << "," << cd_j2->m_d << " ";
+        //cout << "j3: " << cd_j3->m_c << "," << cd_j3->m_d << " ";
+        //cout << "j4: " << cd_j4->m_c << "," << cd_j4->m_d << " ";
+        //cout << "k1: " << cd_k1->m_c << "," << cd_k1->m_d << " ";
+        //cout << "k2: " << cd_k2->m_c << "," << cd_k2->m_d << "\n";
         VectorThree ndr_k1 {cd_k2->m_pos - cd_k1->m_pos};
  
         // Check if kinked pair forms crossover angle
@@ -1102,19 +1113,19 @@ namespace potential {
                         check_pair_stacked(cd_j3, cd_j4)) {
                     m_delta_config.e -= m_pot.stacking_energy(*cd_j1, *cd_j2)/2;
                     m_delta_config.e -= m_pot.stacking_energy(*cd_j3, *cd_j4)/2;
-                    m_delta_config.stacked_pairs -= 1;
-//                    cout << "unstack\n";
+                    m_delta_config.stacked_pairs -= 2;
+                    //cout << "unstack\n";
                 }
                 else {
-//                    cout << "First or last pair unstacked\n";
+                    //cout << "First or last pair unstacked\n";
                 }
             }
             else {
-//                cout << "Kink next domain vector is parallel or antiparallel to first next domain vector or first and third next domain vectors are not parallel and not antiparallel\n";
+                //cout << "Kink next domain vector is parallel or antiparallel to first next domain vector or first and third next domain vectors are not parallel and not antiparallel\n";
             }
         }
         else {
-//            cout << "Kink has correct crossover\n";
+            //cout << "Kink has correct crossover\n";
         }
     }
 
@@ -1141,7 +1152,7 @@ namespace potential {
             if (check_pair_stacked(cd_1, cd_2)) {
                 stacked = true;
                 m_delta_config.e += m_pot.stacking_energy(*cd_1, *cd_2);
-                m_delta_config.stacked_pairs += 1;
+                m_delta_config.stacked_pairs += 2;
             }
             else {
                 check_central_single_junction(cd_1, cd_2);
@@ -1211,7 +1222,7 @@ namespace potential {
                 delta_e /= 2;
             }
             else {
-                m_delta_config.stacked_pairs += 1;
+                m_delta_config.stacked_pairs += 2;
             }
             m_delta_config.e += delta_e;
         }

@@ -338,7 +338,7 @@ namespace origami {
     double OrigamiSystem::unassign_domain(Domain& cd_i) {
         DeltaConfig delta_config {internal_unassign_domain(cd_i)};
         m_energy += delta_config.e;
-        m_num_stacked_domain_pairs += delta_config.stacked_pairs;
+        m_num_stacked_domain_pairs += (delta_config.stacked_pairs/2);
         m_num_linear_helix_trips += delta_config.linear_helices;
         m_num_stacked_junct_quads += delta_config.stacked_juncts;
         m_num_unassigned_domains++;
@@ -438,7 +438,7 @@ namespace origami {
             DeltaConfig delta_config;
             delta_config = m_pot.check_stacking(cd_i, *cd_i.m_bound_domain);
             delta_e += delta_config.e;
-            m_num_stacked_domain_pairs += delta_config.stacked_pairs;
+            m_num_stacked_domain_pairs += (delta_config.stacked_pairs/2);
             m_num_linear_helix_trips += delta_config.linear_helices;
             m_num_stacked_junct_quads += delta_config.stacked_juncts;
         }
@@ -464,7 +464,7 @@ namespace origami {
         }
         else{
             m_energy += delta_config.e;
-            m_num_stacked_domain_pairs += delta_config.stacked_pairs;
+            m_num_stacked_domain_pairs += (delta_config.stacked_pairs/2);
             m_num_linear_helix_trips += delta_config.linear_helices;
             m_num_stacked_junct_quads += delta_config.stacked_juncts;
             m_num_unassigned_domains--;
@@ -627,7 +627,6 @@ namespace origami {
         // Deletes positions, orientations, and removes/unassigns occupancies.
         Occupancy occupancy {cd_i.m_state};
         DeltaConfig delta_config {};
-        pair<double, int> delta_ene_stack;
         switch (occupancy) {
             case Occupancy::bound:
                 m_num_fully_bound_domain_pairs -= 1;

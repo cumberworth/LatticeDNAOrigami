@@ -51,7 +51,6 @@ namespace domainContainer{
             bool check_twist_constraint(VectorThree ndr, Domain& cd_j);
             bool check_kink_constraint(VectorThree ndr, Domain& cd_j);
     };
-
 }
 
 #endif // DOMAIN_H

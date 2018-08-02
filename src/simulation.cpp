@@ -390,7 +390,7 @@ namespace simulation {
             double old_ene {m_origami_system.energy()};
             accepted = movetype.attempt_move(step);
             if (not accepted) {
-//                cout << "reset\n";
+                //cout << "reset\n";
                 movetype.reset_origami();
                 m_ops.update_move_params();
                 m_biases.calc_move();
@@ -406,7 +406,7 @@ namespace simulation {
             }
             if (m_constraint_check_freq != 0 and step % m_constraint_check_freq
                     == 0) {
-//                cout << "check\n";
+                //cout << "check\n";
                 try {
                     m_origami_system.check_all_constraints();
                 }
