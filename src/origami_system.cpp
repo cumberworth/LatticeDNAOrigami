@@ -230,7 +230,7 @@ namespace origami {
                 }
             }
         }
-        m_stacking_energy = m_hyb_enthalpy / m_temp - m_hyb_entropy;
+        m_stacking_energy = m_energy - (m_hyb_enthalpy - m_hyb_entropy);
     }
 
     double OrigamiSystem::hybridization_enthalpy() {
