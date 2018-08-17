@@ -298,7 +298,7 @@ namespace potential {
         private:
             string m_energy_filebase;
             double m_temp;
-            const double m_cation_M; // Cation concentration (mol/V)
+            const double m_cation_M; // Cation concentration (mol/L)
             const vector<vector<int>> m_identities; // Domain identities
             const vector<vector<string>> m_sequences; // Domain sequences
 

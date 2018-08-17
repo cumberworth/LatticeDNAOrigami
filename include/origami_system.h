@@ -13,7 +13,6 @@
 
 #include "domain.h"
 #include "hash.h"
-#include "nearest_neighbour.h"
 #include "origami_potential.h"
 #include "parser.h"
 #include "utility.h"
@@ -38,7 +37,6 @@ namespace origami {
     using std::valarray;
 
     using domainContainer::Domain;
-    using nearestNeighbour::ThermoOfHybrid;
     using potential::OrigamiPotential;
     using potential::DeltaConfig;
     using parser::InputParameters;
@@ -112,7 +110,10 @@ namespace origami {
             Domain* unbound_domain_at(VectorThree pos) const;
             bool check_domains_complementary(Domain& cd_i, Domain& cd_j);
             double energy() const;
-            ThermoOfHybrid enthalpy_and_entropy();
+            void update_enthalpy_and_entropy();
+            double hybridization_enthalpy();
+            double hybridization_entropy();
+            double stacking_energy();
             bool configuration_fully_set();
             int num_unassigned_domains();
     
@@ -181,6 +182,9 @@ namespace origami {
             unique_ptr<biasFunctions::SystemBiases> m_biases;
 
             double m_energy {0};
+            double m_hyb_enthalpy;
+            double m_hyb_entropy;
+            double m_stacking_energy;
             OrigamiPotential m_pot;
     
             // Intializers

@@ -558,12 +558,16 @@ namespace files {
             OrigamiOutputFile {filename, write_freq, max_num_staples, origami_system},
             m_biases {biases} {
 
-        m_file << "step energy bias\n";
+        m_file << "step tenergy henthalpy hentropy stacking bias\n";
     }
 
     void OrigamiEnergiesOutputFile::write(long int step, double) {
         m_file << step << " ";
         m_file << m_origami_system.energy() << " ";
+        m_origami_system.update_enthalpy_and_entropy();
+        m_file << m_origami_system.hybridization_enthalpy() << " ";
+        m_file << m_origami_system.hybridization_entropy() << " ";
+        m_file << m_origami_system.stacking_energy() << " ";
         m_file << m_biases.get_total_bias() << " ";
         m_file << "\n";
     }

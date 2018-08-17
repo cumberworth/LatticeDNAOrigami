@@ -209,8 +209,9 @@ namespace origami {
         return occ;
     }
 
-    ThermoOfHybrid OrigamiSystem::enthalpy_and_entropy() {
-        ThermoOfHybrid DH_DS_total {0, 0};
+    void OrigamiSystem::update_enthalpy_and_entropy() {
+        m_hyb_enthalpy = 0;
+        m_hyb_entropy = 0;
         set<Domain*> accounted_domains; // Domains whose energy is already counted
         for (auto chain: m_domains) {
             for (auto domain: chain) {
@@ -220,16 +221,28 @@ namespace origami {
                                 domain) == accounted_domains.end()) {
                         Domain& bound_domain {*domain->m_bound_domain};
 
-                        DH_DS_total.enthalpy += m_pot.hybridization_enthalpy(
+                        m_hyb_enthalpy += m_pot.hybridization_enthalpy(
                                 *domain, bound_domain);
-                        DH_DS_total.entropy += m_pot.hybridization_entropy(
+                        m_hyb_entropy += m_pot.hybridization_entropy(
                                 *domain, bound_domain);
                         accounted_domains.insert(domain->m_bound_domain);
                     }
                 }
             }
         }
-        return DH_DS_total;
+        m_stacking_energy = m_hyb_enthalpy / m_temp - m_hyb_entropy;
+    }
+
+    double OrigamiSystem::hybridization_enthalpy() {
+        return m_hyb_enthalpy;
+    }
+
+    double OrigamiSystem::hybridization_entropy() {
+        return m_hyb_entropy;
+    }
+
+    double OrigamiSystem::stacking_energy() {
+        return m_stacking_energy;
     }
 
     bool OrigamiSystem::configuration_fully_set() {
