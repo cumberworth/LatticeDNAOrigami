@@ -200,7 +200,8 @@ namespace ptmc {
     }
 
     void PTGCMCSimulation::update_dependent_qs() {
-        double DH {m_origami_system.enthalpy_and_entropy().enthalpy};
+        m_origami_system.update_enthalpy_and_entropy();
+        double DH {m_origami_system.hybridization_enthalpy()};
         double N {static_cast<double>(m_origami_system.num_staples())};
         double bias_e {m_biases.get_total_bias()};
 
@@ -272,7 +273,8 @@ namespace ptmc {
 
     void PTGCMCSimulation::master_get_dependent_qs(
             vector<vector<double>>& dependent_qs) {
-        double DH {m_origami_system.enthalpy_and_entropy().enthalpy};
+        m_origami_system.update_enthalpy_and_entropy();
+        double DH {m_origami_system.hybridization_enthalpy()};
         double staples {static_cast<double>(m_origami_system.num_staples())};
         double bias {m_biases.get_total_bias()};
         dependent_qs[m_enthalpy_i].push_back(DH);
