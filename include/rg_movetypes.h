@@ -14,9 +14,7 @@ namespace movetypes {
 
     typedef pair<VectorThree, VectorThree> configT;
 
-    /**
-      * Conserved topoplgoy recoil growth base class
-      */
+    /** Conserved topoplgoy recoil growth base class */
     class CTRGRegrowthMCMovetype:
         virtual public CTRegrowthMCMovetype {
 
@@ -91,15 +89,13 @@ namespace movetypes {
             unsigned int m_di; // Index into m_regrow_ds of the current domain
             Domain* m_d;  // Domain to be regrown
             Domain* m_ref_d; // Reference domain
-            bool m_prev_gp; // If the previous domain is a growthpoint
+            bool m_stemd; // If the current domain is a stem
             int m_c_attempts; // Number of configs tried for current domain
             int m_d_max_c_attempts; // Max number of configs to be tried for current domain
             list<int> m_avail_cis; // Available configurations
     };
 
-    /**
-     * Recoil regrowth of scaffold segment and bound staples
-     */
+    /** CTRG of a scaffold segment and bound staples */
     class CTRGScaffoldRegrowthMCMovetype:
         public CTRGRegrowthMCMovetype {
 
@@ -117,8 +113,10 @@ namespace movetypes {
                     int max_num_recoils,
                     int max_c_attempts,
                     int max_regrowth);
-            CTRGScaffoldRegrowthMCMovetype(const CTRGScaffoldRegrowthMCMovetype&) = delete;
-            CTRGScaffoldRegrowthMCMovetype& operator=(const CTRGScaffoldRegrowthMCMovetype&) = delete;
+            CTRGScaffoldRegrowthMCMovetype(
+                    const CTRGScaffoldRegrowthMCMovetype&) = delete;
+            CTRGScaffoldRegrowthMCMovetype& operator=(
+                    const CTRGScaffoldRegrowthMCMovetype&) = delete;
 
             void write_log_summary(ostream* log_entry) override;
 
@@ -127,7 +125,43 @@ namespace movetypes {
             void add_tracker(bool accepted) override;
 
             ScaffoldRGRegrowthTracking m_tracker {};
-            unordered_map<ScaffoldRGRegrowthTracking, MovetypeTracking> m_tracking {};
+            unordered_map<ScaffoldRGRegrowthTracking, MovetypeTracking>
+                    m_tracking {};
+    };
+    
+    /** CTRG of noncontiguous scaffold segments and bound staples */
+    class CTRGJumpScaffoldRegrowthMCMovetype:
+        public CTRGRegrowthMCMovetype {
+
+        public:
+            CTRGJumpScaffoldRegrowthMCMovetype(
+                    OrigamiSystem& origami_system,
+                    RandomGens& random_gens,
+                    IdealRandomWalks& ideal_random_walks,
+                    vector<OrigamiOutputFile*> config_files,
+                    string label,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params,
+                    int num_excluded_staples,
+                    int max_num_recoils,
+                    int max_c_attempts,
+                    int max_regrowth,
+                    int max_seg_regrowth);
+            CTRGJumpScaffoldRegrowthMCMovetype(
+                    const CTRGScaffoldRegrowthMCMovetype&) = delete;
+            CTRGJumpScaffoldRegrowthMCMovetype& operator=(
+                    const CTRGScaffoldRegrowthMCMovetype&) = delete;
+
+            void write_log_summary(ostream* log_entry) override;
+
+        private:
+            bool internal_attempt_move() override;
+            void add_tracker(bool accepted) override;
+
+            ScaffoldRGRegrowthTracking m_tracker {};
+            unordered_map<ScaffoldRGRegrowthTracking, MovetypeTracking>
+                    m_tracking {};
     };
     
 }

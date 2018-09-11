@@ -397,7 +397,7 @@ namespace movetypes {
                     config_files, label, ops, biases, params),
             CTRegrowthMCMovetype(origami_system, random_gens,
                     ideal_random_walks, config_files, label, ops, biases,
-                    params, num_excluded_staples, max_regrowth) {
+                    params, num_excluded_staples, max_regrowth, max_regrowth) {
     }
 
     void CTCBRegrowthMCMovetype::reset_internal() {
@@ -456,7 +456,7 @@ namespace movetypes {
             }
 
             // Zero probability of accepting configs with no walks remaining
-            if (not m_constraintpoints.walks_remain(domain, cur_pos, m_dir)) {
+            if (not m_constraintpoints.walks_remain(domain, cur_pos)) {
                 weights[i] = 0;
             }
         }
@@ -492,6 +492,10 @@ namespace movetypes {
         Domain* growth_d_new {m_constraintpoints.get_domain_to_grow(
                 growth_d_old)};
         int c_i {growth_d_new->m_c};
+        // HACK TO PREVENT ACCIDENTLY GROWING SCAFFOLD SEGMENTS
+        if (c_i == m_origami_system.c_scaffold) {
+            return;
+        }
         if (m_regrow_old) {
             set_old_growth_point(*growth_d_new, *growth_d_old);
         }
@@ -525,7 +529,7 @@ namespace movetypes {
                     config_files, label, ops, biases, params),
             CTRegrowthMCMovetype(origami_system, random_gens,
                     ideal_random_walks, config_files, label, ops, biases,
-                    params, num_excluded_staples, max_regrowth),
+                    params, num_excluded_staples, max_regrowth, max_regrowth),
             CTCBRegrowthMCMovetype(origami_system, random_gens,
                     ideal_random_walks, config_files, label, ops, biases,
                     params, num_excluded_staples, max_regrowth) {
@@ -593,10 +597,10 @@ namespace movetypes {
         m_tracker.num_scaffold_domains = scaffold_domains.size();
         sel_excluded_staples();
 
-        m_constraintpoints.calculate_constraintpoints(scaffold_domains, m_dir,
-                m_excluded_staples);
-        if (not m_origami_system.m_cyclic and scaffold_domains.size() !=
-            m_origami_system.get_chain(0).size()) {
+        m_constraintpoints.calculate_constraintpoints(scaffold_domains,
+                m_dir, m_excluded_staples);
+        if (not (m_origami_system.m_cyclic and scaffold_domains.size() !=
+            m_origami_system.get_chain(0).size())) {
             m_constraintpoints.remove_active_endpoint(scaffold_domains[0]);
         }
         set<int> staples {m_constraintpoints.staples_to_be_regrown()};
@@ -630,8 +634,8 @@ namespace movetypes {
         // Regrow in old conformation
         setup_for_regrow_old();
         m_constraintpoints.reset_active_endpoints();
-        if (not m_origami_system.m_cyclic and scaffold_domains.size() !=
-            m_origami_system.get_chain(0).size()) {
+        if (not (m_origami_system.m_cyclic and scaffold_domains.size() !=
+            m_origami_system.get_chain(0).size())) {
             m_constraintpoints.remove_active_endpoint(scaffold_domains[0]);
         }
 
@@ -657,5 +661,204 @@ namespace movetypes {
 
     void CTCBScaffoldRegrowthMCMovetype::add_tracker(bool accepted) {
         movetypes::add_tracker(m_tracker, m_tracking, accepted);
+    }
+
+    CTCBJumpScaffoldRegrowthMCMovetype::CTCBJumpScaffoldRegrowthMCMovetype(
+            OrigamiSystem& origami_system,
+            RandomGens& random_gens,
+            IdealRandomWalks& ideal_random_walks,
+            vector<OrigamiOutputFile*> config_files,
+            string label,
+            SystemOrderParams& ops,
+            SystemBiases& biases,
+            InputParameters& params,
+            int num_excluded_staples,
+            int max_regrowth,
+            int max_seg_regrowth):
+            MCMovetype(origami_system, random_gens, ideal_random_walks,
+                    config_files, label, ops, biases, params),
+            RegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
+                    config_files, label, ops, biases, params),
+            CBMCMovetype(origami_system, random_gens, ideal_random_walks,
+                    config_files, label, ops, biases, params),
+            CTRegrowthMCMovetype(origami_system, random_gens,
+                    ideal_random_walks, config_files, label, ops, biases,
+                    params, num_excluded_staples,
+                    max_regrowth, max_seg_regrowth),
+            CTCBRegrowthMCMovetype(origami_system, random_gens,
+                    ideal_random_walks, config_files, label, ops, biases,
+                    params, num_excluded_staples, max_regrowth) {
+    }
+
+    void CTCBJumpScaffoldRegrowthMCMovetype::write_log_summary(
+            ostream* log_stream) {
+
+        write_log_summary_header(log_stream);
+        // Insertion of each staple type
+        map<int, int> length_attempts {};
+        map<int, int> length_accepts {};
+        map<int, int> staple_attempts {};
+        map<int, int> staple_accepts {};
+        set<int> lengths {};
+        set<int> staples {};
+        for (auto tracker: m_tracking) {
+            auto info = tracker.first;
+            auto counts = tracker.second;
+            int length {info.num_scaffold_domains};
+            int num_staples {info.num_staples};
+            lengths.insert(length);
+            staples.insert(num_staples);
+            if (lengths.find(length) == lengths.end()) {
+                length_attempts[length] = counts.attempts;
+                length_accepts[length] = counts.accepts;
+            }
+            else {
+                length_attempts[length] += counts.attempts;
+                length_accepts[length] += counts.accepts;
+            }
+            if (staples.find(num_staples) == lengths.end()) {
+                staple_attempts[num_staples] = counts.attempts;
+                staple_accepts[num_staples] = counts.accepts;
+            }
+            else {
+                staple_attempts[num_staples] += counts.attempts;
+                staple_accepts[num_staples] += counts.accepts;
+            }
+        }
+        for (auto l: lengths) {
+            *log_stream << "    Number of scaffold domains: " << l << "\n";
+            int ats {length_attempts[l]};
+            int acs {length_accepts[l]};
+            double freq {static_cast<double>(acs) / ats};
+            *log_stream << "        Attempts: " << ats << "\n";
+            *log_stream << "        Accepts: " << acs << "\n";
+            *log_stream << "        Frequency: " << freq << "\n";
+        }
+        *log_stream << "\n";
+        for (auto st: staples) {
+            *log_stream << "    Number of staples: " << st << "\n";
+            int ats {staple_attempts[st]};
+            int acs {staple_accepts[st]};
+            double freq {static_cast<double>(acs) / ats};
+            *log_stream << "        Attempts: " << ats << "\n";
+            *log_stream << "        Accepts: " << acs << "\n";
+            *log_stream << "        Frequency: " << freq << "\n";
+        }
+    }
+
+    bool CTCBJumpScaffoldRegrowthMCMovetype::internal_attempt_move() {
+        bool accepted {false};
+
+        // Select scaffold segments and excluded staples
+        m_regrow_old = false;
+        vector<vector<Domain*>> segs {};
+        vector<vector<vector<Domain*>>> paired_segs {};
+        vector<Domain*> seg_stems {};
+        vector<int> dirs {};
+        select_noncontig_segs(m_scaffold, segs, paired_segs, seg_stems, dirs);
+        m_tracker.num_scaffold_domains = 0;
+        sel_excluded_staples();
+
+        m_constraintpoints.calculate_constraintpoints(segs, dirs,
+                m_excluded_staples);
+        m_constraintpoints.remove_active_endpoint(segs[0][0]);
+        set<int> staples {m_constraintpoints.staples_to_be_regrown()};
+        m_tracker.num_staples = staples.size();
+        vector<Domain*> regrow_domains {
+                m_constraintpoints.domains_to_be_regrown()};
+
+        // Unassign domains to be regrown
+        vector<Domain*> domains_to_unassign(regrow_domains.begin() +
+                1, regrow_domains.end());
+        unassign_domains(domains_to_unassign);
+
+        // Grow scaffold and staples
+        if (m_constraintpoints.is_growthpoint(segs[0][0])) {
+            grow_staple_and_update_endpoints(segs[0][0]);
+            if (m_rejected) {
+                return accepted;
+            }
+        }
+        grow_chain(segs[0]);
+        if (m_rejected) {
+            return accepted;
+        }
+        for (size_t i {0}; i != seg_stems.size(); i++) {
+            Domain* seg_stem {seg_stems[i]};
+            set_first_seg_domain(seg_stem);
+            if (m_rejected) {
+                return accepted;
+            }
+            for (auto seg: paired_segs[i]) {
+                seg.insert(seg.begin(), seg_stem);
+                grow_chain(seg);
+                if (m_rejected) {
+                    return accepted;
+                }
+            }
+        }
+
+        // Check if excluded staples have become unbound
+        bool bound_to_system {excluded_staples_bound()};
+        if (m_rejected or (m_num_excluded_staples != 0 and
+                    not bound_to_system)) {
+            return accepted;
+        }
+        add_external_bias();
+
+        // Regrow in old conformation
+        setup_for_regrow_old();
+        m_constraintpoints.reset_active_endpoints();
+        m_constraintpoints.remove_active_endpoint(segs[0][0]);
+        unassign_domains(domains_to_unassign);
+
+        // Grow scaffold and staples
+        if (m_constraintpoints.is_growthpoint(segs[0][0])) {
+            grow_staple_and_update_endpoints(segs[0][0]);
+            if (m_rejected) {
+                return accepted;
+            }
+        }
+        grow_chain(segs[0]);
+        if (m_rejected) {
+            return accepted;
+        }
+        for (size_t i {0}; i != seg_stems.size(); i++) {
+            Domain* seg_stem {seg_stems[i]};
+            set_first_seg_domain(seg_stem);
+            if (m_rejected) {
+                return accepted;
+            }
+            for (auto seg: paired_segs[i]) {
+                seg.insert(seg.begin(), seg_stem);
+                grow_chain(seg);
+                if (m_rejected) {
+                    return accepted;
+                }
+            }
+        }
+
+        // Reset modifier and test acceptance
+        m_modifier = 1;
+        accepted = test_cb_acceptance();
+
+        return accepted;
+    }
+
+    void CTCBJumpScaffoldRegrowthMCMovetype::add_tracker(bool accepted) {
+        movetypes::add_tracker(m_tracker, m_tracking, accepted);
+    }
+
+    void CTCBJumpScaffoldRegrowthMCMovetype::set_first_seg_domain(
+            Domain* d_new) {
+
+        Domain* d_old {m_constraintpoints.get_growthpoint(d_new)};
+        if (not m_constraintpoints.walks_remain(d_new, d_old->m_pos)) {
+            m_rejected = true;
+            return;
+        }
+        m_dir = m_constraintpoints.get_dir(d_new);
+        double delta_e {set_growth_point(*d_new, *d_old)};
+        m_bias *= exp(-delta_e);
     }
 }

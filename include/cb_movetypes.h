@@ -50,9 +50,7 @@ namespace movetypes {
 
     typedef vector<pair<VectorThree, VectorThree>> configsT;
 
-    /**
-      * Configurational bias base class
-      */
+    /** Configurational bias base class */
     class CBMCMovetype:
         virtual public RegrowthMCMovetype {
 
@@ -82,8 +80,7 @@ namespace movetypes {
                     const configsT& configs, // Configs
                     Domain* domain) = 0; // Domain being regrown
 
-            /**
-              * Calculate the Boltzmann weights for all configurations
+            /** Calculate the Boltzmann weights for all configurations
               *
               * Fills the configuration and weights arrays with the Boltzmann
               * weights for all configurations available to the given domain.
@@ -102,7 +99,7 @@ namespace movetypes {
                     const int i, // Index in segment array of domain to regrow
                     vector<Domain*> domains); // Segment being regrown
 
-            /** Select and set a configuration from given configs and weights */
+            /** Select and set configuration from given configs and weights */
             void select_and_set_new_config(
                     const vector<double> weights, // Weights
                     const configsT configs, // Config
@@ -116,8 +113,7 @@ namespace movetypes {
                     Domain& growth_domain_new,
                     Domain& growth_domain_old);
 
-            /**
-              * Test move acceptance and take appropriate action
+            /** Test move acceptance and take appropriate action
               *
               * If accepted it will revert to the new configuration (as the
               * system will currently be in the old configuration), otherwise
@@ -143,9 +139,7 @@ namespace movetypes {
             unordered_map<pair<int, int>, VectorThree> m_old_ore {};
     };
 
-    /**
-      * CB regrowth of staples
-      */
+    /** CB regrowth of staples */
     class CBStapleRegrowthMCMovetype:
         public CBMCMovetype {
 
@@ -185,12 +179,11 @@ namespace movetypes {
                     vector<Domain*> selected_chain);
 
             StapleRegrowthTracking m_tracker {};
-            unordered_map<StapleRegrowthTracking, MovetypeTracking> m_tracking {};
+            unordered_map<StapleRegrowthTracking, MovetypeTracking>
+                    m_tracking {};
     };
 
-    /**
-      * Base for conserved topology CB regrowth moves
-      */
+    /** Base for conserved topology CB regrowth moves */
     class CTCBRegrowthMCMovetype:
         virtual public CBMCMovetype,
         virtual public CTRegrowthMCMovetype {
@@ -230,9 +223,7 @@ namespace movetypes {
                     Domain* growth_domain_old);
     };
 
-    /**
-      * CTCB regrowth of scaffold segments and bound staples
-      */
+    /** CTCB regrowth of a contiguous scaffold segment and bound staples */
     class CTCBScaffoldRegrowthMCMovetype:
         public CTCBRegrowthMCMovetype {
 
@@ -260,7 +251,43 @@ namespace movetypes {
             virtual void add_tracker(bool accepted) override;
 
             CTCBScaffoldRegrowthTracking m_tracker {};
-            unordered_map<CTCBScaffoldRegrowthTracking, MovetypeTracking> m_tracking {};
+            unordered_map<CTCBScaffoldRegrowthTracking, MovetypeTracking>
+                    m_tracking {};
+    };
+
+    /** CTCB regrowth of noncontiguous scaffold segments and bound staples */
+    class CTCBJumpScaffoldRegrowthMCMovetype:
+        public CTCBRegrowthMCMovetype {
+
+        public:
+            CTCBJumpScaffoldRegrowthMCMovetype(
+                    OrigamiSystem& origami_system,
+                    RandomGens& random_gens,
+                    IdealRandomWalks& ideal_random_walks,
+                    vector<OrigamiOutputFile*> config_files,
+                    string label,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params,
+                    int num_excluded_staples,
+                    int max_regrowth,
+                    int max_seg_regrowth);
+            CTCBJumpScaffoldRegrowthMCMovetype(const
+                    CTCBScaffoldRegrowthMCMovetype&) = delete;
+            CTCBJumpScaffoldRegrowthMCMovetype& operator=(const
+                    CTCBScaffoldRegrowthMCMovetype&) = delete;
+
+            void write_log_summary(ostream* log_entry) override;
+
+        private:
+            bool internal_attempt_move() override;
+            virtual void add_tracker(bool accepted) override;
+
+            void set_first_seg_domain(Domain* seg);
+
+            CTCBScaffoldRegrowthTracking m_tracker {};
+            unordered_map<CTCBScaffoldRegrowthTracking, MovetypeTracking>
+                    m_tracking {};
     };
 }
 

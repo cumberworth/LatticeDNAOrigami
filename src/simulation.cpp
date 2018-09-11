@@ -204,7 +204,8 @@ namespace simulation {
                 movetype = setup_staple_regrowth_movetype(i, type, label,
                         movetypes_file, movetype);
             }
-            else if (type == "CTCBScaffoldRegrowth") {
+            else if (type == "CTCBScaffoldRegrowth" or
+                    type == "CTCBJumpScaffoldRegrowth") {
                 movetype = setup_scaffold_regrowth_movetype(i, type, label,
                         movetypes_file, movetype);
             }
@@ -216,7 +217,8 @@ namespace simulation {
                 movetype = setup_scaffold_transform_movetype(i, type, label,
                         movetypes_file, movetype);
             }
-            else if (type == "CTRGScaffoldRegrowth") {
+            else if (type == "CTRGScaffoldRegrowth" or
+                    type == "CTRGJumpScaffoldRegrowth") {
                 movetype = setup_rg_movetype(i, type, label,
                         movetypes_file, movetype);
             }
@@ -292,7 +294,7 @@ namespace simulation {
 
     MCMovetype* GCMCSimulation::setup_scaffold_regrowth_movetype(
             int i,
-            string,
+            string type,
             string label,
             OrigamiMovetypeFile& movetypes_file,
             MCMovetype* movetype) {
@@ -301,11 +303,22 @@ namespace simulation {
         //        "num_excluded_staples")};
         int excluded_staples {0};
         int max_regrowth {movetypes_file.get_int_option(i, "max_regrowth")};
-        movetype = new movetypes::CTCBScaffoldRegrowthMCMovetype {
-                m_origami_system, m_random_gens,
-                m_ideal_random_walks, m_config_per_move_files,
-                label, m_ops, m_biases, m_params, excluded_staples,
-                max_regrowth};
+        if (type == "CTCBScaffoldRegrowth") {
+            movetype = new movetypes::CTCBScaffoldRegrowthMCMovetype {
+                    m_origami_system, m_random_gens,
+                    m_ideal_random_walks, m_config_per_move_files,
+                    label, m_ops, m_biases, m_params, excluded_staples,
+                    max_regrowth};
+        }
+        else if (type == "CTCBJumpScaffoldRegrowth") {
+            int max_seg_regrowth {movetypes_file.get_int_option(i,
+                    "max_seg_regrowth")};
+            movetype = new movetypes::CTCBJumpScaffoldRegrowthMCMovetype {
+                    m_origami_system, m_random_gens,
+                    m_ideal_random_walks, m_config_per_move_files,
+                    label, m_ops, m_biases, m_params, excluded_staples,
+                    max_regrowth, max_seg_regrowth};
+        }
 
         return movetype;
     }
@@ -357,7 +370,7 @@ namespace simulation {
 
     MCMovetype* GCMCSimulation::setup_rg_movetype(
             int i,
-            string,
+            string type,
             string label,
             OrigamiMovetypeFile& movetypes_file,
             MCMovetype* movetype) {
@@ -365,14 +378,28 @@ namespace simulation {
 //        int excluded_staples {movetypes_file.get_int_option(i,
 //                "num_excluded_staples")};
         int excluded_staples {0};
-        int max_num_recoils {movetypes_file.get_int_option(i, "max_num_recoils")};
-        int max_c_attempts {movetypes_file.get_int_option(i, "max_c_attempts")};
+        int max_num_recoils {movetypes_file.get_int_option(i,
+                "max_num_recoils")};
+        int max_c_attempts {movetypes_file.get_int_option(i,
+                "max_c_attempts")};
         int max_regrowth {movetypes_file.get_int_option(i, "max_regrowth")};
-        movetype = new movetypes::CTRGScaffoldRegrowthMCMovetype {
-                m_origami_system, m_random_gens,
-                m_ideal_random_walks, m_config_per_move_files,
-                label, m_ops, m_biases, m_params, excluded_staples,
-                max_num_recoils, max_c_attempts, max_regrowth};
+        if (type == "CTRGScaffoldRegrowth") {
+            movetype = new movetypes::CTRGScaffoldRegrowthMCMovetype {
+                    m_origami_system, m_random_gens,
+                    m_ideal_random_walks, m_config_per_move_files,
+                    label, m_ops, m_biases, m_params, excluded_staples,
+                    max_num_recoils, max_c_attempts, max_regrowth};
+        }
+        else if (type == "CTRGJumpScaffoldRegrowth") {
+            int max_seg_regrowth {movetypes_file.get_int_option(i,
+                    "max_seg_regrowth")};
+            movetype = new movetypes::CTRGJumpScaffoldRegrowthMCMovetype {
+                    m_origami_system, m_random_gens,
+                    m_ideal_random_walks, m_config_per_move_files,
+                    label, m_ops, m_biases, m_params, excluded_staples,
+                    max_num_recoils, max_c_attempts,
+                    max_regrowth, max_seg_regrowth};
+        }
 
         return movetype;
     }
@@ -404,8 +431,8 @@ namespace simulation {
             if (m_centering_freq != 0 and step % m_centering_freq == 0) {
                 m_origami_system.center(m_centering_domain);
             }
-            if (m_constraint_check_freq != 0 and step % m_constraint_check_freq
-                    == 0) {
+            if (m_constraint_check_freq != 0 and step %
+                    m_constraint_check_freq == 0) {
                 //cout << "check\n";
                 try {
                     m_origami_system.check_all_constraints();
@@ -417,6 +444,7 @@ namespace simulation {
                     for (auto output_file: m_output_files) {
                         output_file->write(step, dt.count());
                     }
+                    cout << "Origami misuse at constraint check\n";
                     break;
                 }
             }

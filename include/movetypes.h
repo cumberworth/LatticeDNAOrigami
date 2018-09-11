@@ -3,6 +3,7 @@
 #ifndef MOVETYPES_H
 #define MOVETYPES_H
 
+#include <deque>
 #include <iostream>
 #include <iostream>
 #include <unordered_map>
@@ -25,6 +26,7 @@
 namespace movetypes {
 
     using std::cout;
+    using std::deque;
     using std::ostream;
     using std::unique_ptr;
     using std::pair;
@@ -46,16 +48,13 @@ namespace movetypes {
 
     typedef pair<Domain*, Domain*> domainPairT;
 
-    /**
-      * Tracker for general movetype info
-      */
+    /** Tracker for general movetype info */
     struct MovetypeTracking {
         int attempts;
         int accepts;
     };
 
-    /**
-      * Parent class of all movetypes
+    /** Parent class of all movetypes
       * 
       * It serves both to define the interface and provides some shared
       * implementation details, including shared data.
@@ -121,7 +120,7 @@ namespace movetypes {
             /** Return a random unit orientation vector */
             VectorThree select_random_orientation();
 
-            /** Test if move accepted with given probality */
+            /** Test if move accepted with given probability */
             bool test_acceptance(long double p_ratio);
 
             /** Test if staple is anchoring other staples to the system
@@ -132,6 +131,7 @@ namespace movetypes {
               */
             bool staple_is_connector(vector<Domain*> staple);
 
+            /** Find all staples in bound network to given domains */
             set<int> find_staples(vector<Domain*> domains);
 
             /** Write the config to move file
@@ -198,9 +198,7 @@ namespace movetypes {
             bool attempt_move(long long int) {return true;};
     };
 
-    /**
-      * Parent class of moves with chain regrowth
-      */
+    /** Parent class of moves with chain regrowth */
     class RegrowthMCMovetype:
         virtual public MCMovetype {
 
@@ -218,10 +216,21 @@ namespace movetypes {
             RegrowthMCMovetype& operator=(const RegrowthMCMovetype&) = delete;
 
         protected:
+
+            /** Grow given contiguous domains from a chain */
             virtual void grow_chain(vector<Domain*> domains) = 0;
 
-            double set_growth_point(Domain& growth_domain_new, Domain& growth_domain_old);
-            void grow_staple(int d_i_index, vector<Domain*> selected_chain);
+            /** Set domain to have complementary orientation to given */
+            double set_growth_point(
+                    Domain& growth_domain_new,
+                    Domain& growth_domain_old);
+
+            /** Grow staple out from given index in both directions
+              *
+              * The indices passed to grow chain should include the growth
+              * point.
+              */
+              void grow_staple(int d_i_index, vector<Domain*> selected_chain);
 
             pair<Domain*, Domain*> select_new_growthpoint(
                     vector<Domain*> selected_chain);
@@ -235,9 +244,7 @@ namespace movetypes {
             int num_bound_staple_domains(vector<Domain*> staple);
     };
 
-    /**
-      * Parent class of moves with constant topology chain regrowth
-      */
+    /** Parent class of moves with constant topology regrowth */
     class CTRegrowthMCMovetype:
         virtual public MCMovetype {
 
@@ -252,7 +259,8 @@ namespace movetypes {
                     SystemBiases& biases,
                     InputParameters& params,
                     int num_excluded_staples,
-                    int max_regrowth);
+                    int max_regrowth,
+                    int max_seg_regrowth);
             CTRegrowthMCMovetype(const CTRegrowthMCMovetype&) = delete;
             CTRegrowthMCMovetype& operator=(const CTRegrowthMCMovetype&) = delete;
 
@@ -267,6 +275,28 @@ namespace movetypes {
                     unsigned int min_length,
                     int seg=0);
 
+            /** Select noncontiguous scaffold segments
+              *
+              * Selection begins by selectig a random domain in the given
+              * segment, a random direction, a random maximum segment
+              * length and a random maximum number of domains to regrow length.              * Domains are added to this first segment until the maxium
+              * segment length is reached, the maximum number of domains to
+              * regrow is reached. If an added domain is bound to a staple
+              * that is bound to another scaffold domain is reached, and if the
+              * other scaffold domain is not among those already selected for
+              * regrowth and not contiguous to a domain selected for regrowth,
+              * then two new segments will be created. Creation of a new
+              * segment requires a maximum segment length to be selected. If
+              * this is non-zero, the first domain is added to the segment. The
+              * order of regrowth direction is selected randomly.
+              */
+            void select_noncontig_segs(
+                    vector<Domain*>& given_seg,
+                    vector<vector<Domain*>>& segs,
+                    vector<vector<vector<Domain*>>>& paired_segs,
+                    vector<Domain*>& seg_stems,
+                    vector<int>& dirs);
+
             /** Check if excluded staples are still bound to system */
             bool excluded_staples_bound();
 
@@ -276,7 +306,20 @@ namespace movetypes {
             Constraintpoints m_constraintpoints {m_origami_system,
                     m_ideal_random_walks}; // For fixed end biases
             vector<Domain*> m_scaffold {};
-            unsigned int m_max_regrowth; // Maximum number of scaffold domains to regrow
+
+            // Maximum number of scaffold domains to regrow
+            unsigned int m_max_regrowth;
+
+        private:
+            bool fill_seg(
+                    Domain* start_d,
+                    size_t max_length,
+                    size_t seg_max_length,
+                    int dir,
+                    set<Domain*>& domains,
+                    deque<Domain*>& possible_stems,
+                    vector<Domain*>& seg);
+            unsigned int m_max_seg_regrowth;
     };
 
     /**

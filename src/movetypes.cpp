@@ -13,6 +13,7 @@ namespace movetypes {
     using std::min;
     using std::set;
     using std::find;
+    using std::get;
     using utility::Occupancy;
     using utility::OrigamiMisuse;
 
@@ -53,7 +54,7 @@ namespace movetypes {
 
     void MCMovetype::reset_origami() {
         
-        // Have to deal with added domains, modified domains, and deleted domains
+        // Reset added domains, modified domains, and deleted domains
 
         // Unassign assigned domains
         for (auto c_i_d_i: m_assigned_domains) {
@@ -73,7 +74,6 @@ namespace movetypes {
         }
 
         // Revert modified domains to previous positions
-//        cout << "Reassigning\n";
         for (auto c_i_d_i: m_modified_domains) {
             int c_i {c_i_d_i.first};
             int d_i {c_i_d_i.second};
@@ -327,11 +327,11 @@ namespace movetypes {
         return delta_e;
     }
 
-    void RegrowthMCMovetype::grow_staple(int d_i_index, vector<Domain*> selected_chain) {
-        // Grow staple in both directions out from growth point
-        // The indices passed to grow chain should include the growth point
+    void RegrowthMCMovetype::grow_staple(int d_i_index,
+            vector<Domain*> selected_chain) {
 
-        // Grow in three prime direction (staple domains increase in 3' direction)
+        // Grow in three prime direction
+        // (staple domains increase in 3' direction)
         auto first_iter3 {selected_chain.begin() + d_i_index};
         auto last_iter3 {selected_chain.end()};
         vector<Domain*> domains_three_prime {first_iter3, last_iter3};
@@ -401,13 +401,15 @@ namespace movetypes {
                 SystemBiases& biases,
                 InputParameters& params,
                 int num_excluded_staples,
-                int max_regrowth) :
+                int max_regrowth,
+                int max_seg_regrowth) :
         MCMovetype(origami_system, random_gens, ideal_random_walks,
                 config_files, label, ops, biases, params),
         m_num_excluded_staples {num_excluded_staples},
-        m_max_regrowth {static_cast<unsigned int>(max_regrowth)} {
+        m_max_regrowth {static_cast<unsigned int>(max_regrowth)},
+        m_max_seg_regrowth {static_cast<unsigned int>(max_seg_regrowth)} {
 
-            m_scaffold = m_origami_system.get_chain(m_origami_system.c_scaffold);
+        m_scaffold = m_origami_system.get_chain(m_origami_system.c_scaffold);
     }
 
     void CTRegrowthMCMovetype::reset_internal() {
@@ -475,6 +477,132 @@ namespace movetypes {
         return domains;
     }
 
+    void CTRegrowthMCMovetype::select_noncontig_segs(
+            vector<Domain*>& given_seg,
+            vector<vector<Domain*>>& segs,
+            vector<vector<vector<Domain*>>>& paired_segs,
+            vector<Domain*>& seg_stems,
+            vector<int>& dirs) {
+
+        set<Domain*> domains {};
+        unsigned int max_length {static_cast<unsigned int>(
+                m_random_gens.uniform_int(2, m_max_regrowth))};
+        size_t seg_max {static_cast<unsigned int>(
+                m_random_gens.uniform_int(2, m_max_seg_regrowth + 1))};
+        int start_i {m_random_gens.uniform_int(0, given_seg.size() - 1)};
+        Domain* seg_start_d {given_seg[start_i]};
+        int dir {m_random_gens.uniform_int(0, 1)};
+        if (dir == 0) {
+            dir = -1;
+        }
+        if ((*seg_start_d) + dir == nullptr) {
+            dir *= -1;
+        }
+        vector<Domain*> cur_seg {seg_start_d};
+        domains.insert(seg_start_d);
+        deque<Domain*> possible_stems {};
+        dirs.push_back(dir);
+        bool max_length_reached {fill_seg(seg_start_d, max_length,
+                seg_max, dir, domains, possible_stems, cur_seg)};
+        segs.push_back(cur_seg);
+        Domain* stemd;
+        while (not max_length_reached and possible_stems.size() != 0) {
+            cur_seg.clear();
+
+            // Select a stem domain
+            stemd = possible_stems.front();
+            possible_stems.pop_front();
+            if (domains.count(stemd) != 0) {
+                continue;
+            }
+            bool adjacent_d_bound {false};
+            for (int test_dir: {-1, 1}) {
+                Domain* next_d {*stemd + test_dir};
+                if (next_d != nullptr and domains.count(next_d) != 0) {
+                    adjacent_d_bound = true;
+                    break;
+                }
+            }
+            if (adjacent_d_bound) {
+                continue;
+            }
+            cur_seg.push_back(stemd);
+            domains.insert(stemd);
+            seg_stems.push_back(stemd);
+            if (domains.size() == max_length) {
+                max_length_reached = true;
+                segs.push_back(cur_seg);
+                segs.push_back({});
+                paired_segs.push_back({{}, {}});
+                dirs.push_back(1);
+                dirs.push_back(-1);
+                break;
+            }
+
+            int dir1 {m_random_gens.uniform_int(0, 1)};
+            if (dir1 == 0) {
+                dir1 = -1;
+            }
+            vector<int> dir_pair {dir1, -dir1};
+            dirs.insert(dirs.end(), dir_pair.begin(), dir_pair.end());
+            vector<vector<Domain*>> seg_pair {{}, {}};
+            segs.insert(segs.end(), seg_pair.begin(), seg_pair.end());
+            for (size_t i: {0, 1}) {
+                dir = dir_pair[i];
+                seg_max = static_cast<size_t>(
+                        m_random_gens.uniform_int(0, m_max_seg_regrowth));
+                if (i == 0) {
+                    max_length++;
+                }
+                vector<Domain*> seg {};
+                max_length_reached = fill_seg(stemd, max_length,
+                        seg_max, dir, domains, possible_stems, seg);
+                seg_pair[i] = seg;
+                if (cur_seg.size() != 0) {
+                    seg.insert(seg.begin(), cur_seg[0]);
+                }
+                segs[segs.size() - 2 + i] = seg;
+                if (max_length_reached) {
+                    break;
+                }
+                cur_seg.clear();
+            }
+            paired_segs.push_back(seg_pair);
+        }
+
+        Domain* last_d;
+        last_d = segs[0].back();
+        dir = dirs[0];
+        Domain* next_d {*last_d + dir};
+        if (next_d != nullptr) {
+            m_constraintpoints.add_active_endpoint(next_d, next_d->m_pos, 0);
+        }
+
+        int seg_i {1};
+        for (size_t i {0}; i != paired_segs.size(); i++) {
+            Domain* stem_d {seg_stems[i]};
+            Domain* growthpoint {stem_d->m_bound_domain};
+            m_constraintpoints.add_growthpoint(growthpoint, stem_d);
+            m_constraintpoints.add_stem_seg_pair(stem_d, {seg_i, seg_i + 1});
+            vector<int> stem_seg_pair {};
+            for (auto seg: paired_segs[i]) {
+                int dir {dirs[seg_i]};
+                if (seg.size() != 0) {
+                    last_d = seg.back();
+                }
+                else {
+                    last_d = stem_d;
+                }
+                Domain* next_d {*last_d + dir};
+                if (next_d != nullptr) {
+                    m_constraintpoints.add_active_endpoint(next_d,
+                            next_d->m_pos, seg_i);
+                }
+                seg_i++;
+            }
+        }
+    }
+
     bool CTRegrowthMCMovetype::excluded_staples_bound() {
         bool bound_to_system {false};
         for (auto exs_i: m_excluded_staples) {
@@ -491,4 +619,53 @@ namespace movetypes {
         return bound_to_system;
     }
 
+    bool CTRegrowthMCMovetype::fill_seg(
+            Domain* start_d,
+            size_t max_length,
+            size_t seg_max_length,
+            int dir,
+            set<Domain*>& domains,
+            deque<Domain*>& possible_stems,
+            vector<Domain*>& seg) {
+
+        Domain* cur_d {start_d};
+        Domain* next_d {start_d};
+        Domain* next_next_d {start_d};
+        bool max_length_reached {false};
+        while (seg.size() != seg_max_length and next_d != nullptr) {
+            next_d = *cur_d + dir;
+            if (next_d == nullptr) {
+                break;
+            }
+            next_next_d = *next_d + dir;
+            if (next_next_d != nullptr and
+                    domains.count(next_next_d) != 0) {
+                break;
+            }
+            seg.push_back(next_d);
+            domains.insert(next_d);
+            if (domains.size() == max_length) {
+                max_length_reached = true;
+                break;
+            }
+            cur_d = next_d;
+            if (cur_d->m_state == Occupancy::bound) {
+                Domain* bound_d {cur_d->m_bound_domain};
+                for (int staple_dir: {-1, 1}) {
+                    Domain* neighbour_d {*bound_d + staple_dir};
+                    if (neighbour_d != nullptr and
+                            neighbour_d->m_state == Occupancy::bound) {
+                        Domain* bound_neighbour_d {
+                                neighbour_d->m_bound_domain};
+                        if (bound_neighbour_d->m_c ==
+                                m_origami_system.c_scaffold) {
+                            possible_stems.push_back(bound_neighbour_d);
+                        }
+                    }
+                }
+            }
+        }
+
+        return max_length_reached;
+    }
 }

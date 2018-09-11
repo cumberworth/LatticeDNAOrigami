@@ -103,18 +103,16 @@ namespace topConstraintPoints {
             }
             int bd_ci {bd->m_c}; // Bound domain chain index
 
-            /*
-             * If the staple has not been added to the network, recurse into the
-             * bound staple. Otherwise consider adding potential endpoints
+            /* If the staple has not been added to the network, recurse into 
+             * the bound staple. Otherwise consider adding potential endpoints
              */
             bool bs_excluded {chain_included(m_ex_staples, bd_ci)};
             bool in_network {chain_included(m_net_cs, bd_ci)};
             if (in_network) {
 
-                /*
-                 * If the bound domain is on the scaffold and in the range being
-                 * regrown or on another staple, and nothing is excluded the
-                 * domans are potential endpoints. Otherwise the network is
+                /* If the bound domain is on the scaffold and in the range
+                 * being regrown or on another staple, and nothing is excluded
+                 * the domans are potential endpoints. Otherwise the network is
                  * externally bound
                  */
                 bool d_excluded {false};
@@ -135,8 +133,7 @@ namespace topConstraintPoints {
             }
             else {
 
-                /*
-                 * Add domain to potential growthpoints if bound domain if not
+                /* Add domain to potential growthpoints if bound domain if not
                  * on an excluded staple
                  */
                 if (not bs_excluded) {
@@ -208,12 +205,16 @@ namespace topConstraintPoints {
         m_scaffold_domains.clear();
         m_regrowth_staples.clear();
         m_checked_staples.clear();
+        m_erased_endpoints.clear();
         m_d_stack.clear();
         m_segs.clear();
+        m_domain_to_dir.clear();
         m_growthpoints.clear();
+        m_stemdomains.clear();
         m_active_endpoints.clear();
         m_initial_active_endpoints.clear();
         m_inactive_endpoints.clear();
+        m_stemd_to_segs.clear();
     }
 
     void Constraintpoints::calculate_constraintpoints(
@@ -271,6 +272,10 @@ namespace topConstraintPoints {
         return (m_growthpoints.count(domain) > 0);
     }
 
+    bool Constraintpoints::is_stemdomain(Domain* domain) {
+        return (m_stemdomains.count(domain) > 0);
+    }
+
     void Constraintpoints::add_active_endpoint(
             Domain* d,
             VectorThree pos) {
@@ -291,6 +296,19 @@ namespace topConstraintPoints {
 
     void Constraintpoints::add_inactive_endpoint(Domain* d_i, Domain* d_j) {
         m_inactive_endpoints[d_i] = d_j;
+    }
+
+    void Constraintpoints::add_growthpoint(Domain* growthpoint,
+            Domain* stemd) {
+
+        m_growthpoints[growthpoint] = stemd;
+        m_stemdomains[stemd] = growthpoint;
+    }
+
+    void Constraintpoints::add_stem_seg_pair(Domain* stemd,
+            vector<int> seg_pair) {
+
+        m_stemd_to_segs[stemd] = seg_pair;
     }
 
     void Constraintpoints::reset_active_endpoints() {
@@ -352,6 +370,10 @@ namespace topConstraintPoints {
         return m_growthpoints[domain];
     }
 
+    Domain* Constraintpoints::get_growthpoint(Domain* domain) {
+        return m_stemdomains[domain];
+    }
+
     bool Constraintpoints::endpoint_reached(Domain* domain, VectorThree pos) {
         bool reached {false};
         auto seg = m_segs.at(domain);
@@ -375,11 +397,15 @@ namespace topConstraintPoints {
 
         long double prod_nws {1}; // Product of num ideal walks
 
-        // Loop through all active endpoints on current chain
+        // Loop through all active endpoints on current segment
         pair<int, int> key {domain->m_c, m_segs.at(domain)};
         for (auto endpoint: m_active_endpoints[key]) {
             int end_d_i {endpoint.first};
             int steps {calc_remaining_steps(end_d_i, domain, dir, offset)};
+            if (steps < 0) {
+                cout << "Bad endpoint detected\n";
+                throw utility::SimulationMisuse {};
+            }
             VectorThree end_p {endpoint.second};
             prod_nws *= m_ideal_random_walks.num_walks(pos, end_p, steps);
         }
@@ -390,12 +416,37 @@ namespace topConstraintPoints {
     bool Constraintpoints::walks_remain(
             Domain* domain,
             VectorThree pos,
+            int offset) {
+
+        vector<int> segs {};
+        bool w_remain {true};
+        if (is_stemdomain(domain)) {
+            segs = m_stemd_to_segs[domain];
+        }
+        else {
+            segs = {m_segs.at(domain)};
+        }
+        for (auto seg: segs) {
+            pair<int, int> key {domain->m_c, seg};
+            int dir {m_domain_to_dir[key]};
+            w_remain = walks_remain(key, domain, pos, dir, offset);
+            if (not w_remain) {
+                break;
+            }
+        }
+
+        return w_remain;
+    }
+
+    bool Constraintpoints::walks_remain(
+            pair<int, int> key,
+            Domain* domain,
+            VectorThree pos,
             int dir,
             int offset) {
 
-        // Loop through all active endpoints on current chain
+        // Loop through all active endpoints on current segment
         bool w_remain {true};
-        pair<int, int> key {domain->m_c, m_segs.at(domain)};
         for (auto endpoint: m_active_endpoints[key]) {
             int end_d_i {endpoint.first};
             int steps {calc_remaining_steps(end_d_i, domain, dir, offset)};
@@ -469,6 +520,7 @@ namespace topConstraintPoints {
 
         for (auto growthpoint: potential_growthpoints) {
             m_growthpoints[growthpoint.first] = growthpoint.second;
+            m_stemdomains[growthpoint.second] = growthpoint.first;
         }
     }
 
@@ -533,14 +585,15 @@ namespace topConstraintPoints {
         m_domain_to_dir.insert(dirs.begin(), dirs.end());
     }
 
-    int Constraintpoints::calc_remaining_steps(int endpoint_d_i, Domain* domain,
-            int dir, int step_offset) {
+    int Constraintpoints::calc_remaining_steps(int endpoint_d_i,
+            Domain* domain, int dir, int step_offset) {
         int steps;
         if (m_origami_system.m_cyclic and domain->m_c ==
                 m_origami_system.c_scaffold) {
 
             if (dir > 0 and endpoint_d_i < domain->m_d) {
-                steps = m_origami_system.get_chain(0).size() + endpoint_d_i - domain->m_d;
+                steps = m_origami_system.get_chain(0).size() + endpoint_d_i -
+                        domain->m_d;
             }
             else if (dir < 0 and endpoint_d_i > domain->m_d) {
                 steps = domain->m_d + m_origami_system.get_chain(0).size() -
