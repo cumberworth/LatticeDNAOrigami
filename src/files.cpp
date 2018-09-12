@@ -559,6 +559,7 @@ namespace files {
             m_biases {biases} {
 
         m_file << "step tenergy henthalpy hentropy stacking bias\n";
+        m_file.precision(10);
     }
 
     void OrigamiEnergiesOutputFile::write(long int step, double) {
@@ -601,6 +602,7 @@ namespace files {
         for (auto op_tag: op_tags) {
             OrderParam& op {m_ops.get_order_param(op_tag)};
             m_file << op_tag << ", ";
+            m_file.precision(10);
             m_ops_to_output.emplace_back(op);
         }
         m_file << "\n";

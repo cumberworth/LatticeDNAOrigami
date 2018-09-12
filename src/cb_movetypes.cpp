@@ -599,7 +599,7 @@ namespace movetypes {
 
         m_constraintpoints.calculate_constraintpoints(scaffold_domains,
                 m_dir, m_excluded_staples);
-        if (not (m_origami_system.m_cyclic and scaffold_domains.size() !=
+        if (not (m_origami_system.m_cyclic and scaffold_domains.size() ==
             m_origami_system.get_chain(0).size())) {
             m_constraintpoints.remove_active_endpoint(scaffold_domains[0]);
         }
@@ -634,7 +634,7 @@ namespace movetypes {
         // Regrow in old conformation
         setup_for_regrow_old();
         m_constraintpoints.reset_active_endpoints();
-        if (not (m_origami_system.m_cyclic and scaffold_domains.size() !=
+        if (not (m_origami_system.m_cyclic and scaffold_domains.size() ==
             m_origami_system.get_chain(0).size())) {
             m_constraintpoints.remove_active_endpoint(scaffold_domains[0]);
         }

@@ -114,7 +114,7 @@ namespace movetypes {
 
         // If scaffold is cyclic and the whole range is selected, the endpoints
         // on the first domain are needed, otherwise remove
-        if (not (m_origami_system.m_cyclic and m_sel_scaf_doms.size() !=
+        if (not (m_origami_system.m_cyclic and m_sel_scaf_doms.size() ==
                 m_origami_system.get_chain(0).size())) {
 
             m_constraintpoints.remove_active_endpoint(m_sel_scaf_doms[0]);
@@ -601,7 +601,7 @@ namespace movetypes {
         setup_for_calc_new_weights();
         unassign_and_save_domains();
         m_constraintpoints.reset_active_endpoints();
-        if (not (m_origami_system.m_cyclic and m_regrow_ds.size() !=
+        if (not (m_origami_system.m_cyclic and m_regrow_ds.size() ==
             m_origami_system.get_chain(0).size())) {
             m_constraintpoints.remove_active_endpoint(m_regrow_ds[0]);
         }
@@ -610,7 +610,7 @@ namespace movetypes {
         // Calculate old weights
         unassign_domains();
         m_constraintpoints.reset_active_endpoints();
-        if (not m_origami_system.m_cyclic and m_regrow_ds.size() !=
+        if (not m_origami_system.m_cyclic and m_regrow_ds.size() ==
             m_origami_system.get_chain(0).size()) {
             m_constraintpoints.remove_active_endpoint(m_regrow_ds[0]);
         }
@@ -618,7 +618,7 @@ namespace movetypes {
         setup_for_calc_old_weights();
         unassign_and_save_domains();
         m_constraintpoints.reset_active_endpoints();
-        if (not (m_origami_system.m_cyclic and m_regrow_ds.size() !=
+        if (not (m_origami_system.m_cyclic and m_regrow_ds.size() ==
             m_origami_system.get_chain(0).size())) {
             m_constraintpoints.remove_active_endpoint(m_regrow_ds[0]);
         }
