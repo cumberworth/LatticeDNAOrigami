@@ -711,7 +711,6 @@ namespace movetypes {
                 m_excluded_staples);
         m_constraintpoints.remove_active_endpoint(segs[0][0]);
         for (auto stem_d: seg_stems) {
-            m_constraintpoints.remove_active_endpoint(stem_d);
             Domain* growthpoint {stem_d->m_bound_domain};
             m_constraintpoints.add_growthpoint(growthpoint, stem_d);
         }
@@ -740,26 +739,17 @@ namespace movetypes {
         unassign_and_save_domains();
         m_constraintpoints.reset_active_endpoints();
         m_constraintpoints.remove_active_endpoint(segs[0][0]);
-        for (auto stem_d: seg_stems) {
-            m_constraintpoints.remove_active_endpoint(stem_d);
-        }
         calc_weights();
 
         // Calculate old weights
         unassign_domains();
         m_constraintpoints.reset_active_endpoints();
         m_constraintpoints.remove_active_endpoint(segs[0][0]);
-        for (auto stem_d: seg_stems) {
-            m_constraintpoints.remove_active_endpoint(stem_d);
-        }
         calc_old_c_opens();
         setup_for_calc_old_weights();
         unassign_and_save_domains();
         m_constraintpoints.reset_active_endpoints();
         m_constraintpoints.remove_active_endpoint(segs[0][0]);
-        for (auto stem_d: seg_stems) {
-            m_constraintpoints.remove_active_endpoint(stem_d);
-        }
         calc_weights();
 
         // Test acceptance

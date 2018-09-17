@@ -226,6 +226,18 @@ namespace files {
             void write(long int step, double);
     };
 
+    class OrigamiStaplesBoundOutputFile: public OrigamiOutputFile {
+        public:
+            using OrigamiOutputFile::OrigamiOutputFile;
+            void write(long int step, double);
+    };
+
+    class OrigamiStaplesFullyBoundOutputFile: public OrigamiOutputFile {
+        public:
+            using OrigamiOutputFile::OrigamiOutputFile;
+            void write(long int step, double);
+    };
+
     class OrigamiOrderParamsOutputFile: public  OrigamiOutputFile {
         public:
             OrigamiOrderParamsOutputFile(

@@ -42,6 +42,8 @@ namespace simulation {
     using files::OrigamiMovetypeFile;
     using files::OrigamiTrajOutputFile;
     using files::OrigamiCountsOutputFile;
+    using files::OrigamiStaplesBoundOutputFile;
+    using files::OrigamiStaplesFullyBoundOutputFile;
     using files::OrigamiTimesOutputFile;
     using files::OrigamiEnergiesOutputFile;
     using files::OrigamiOrderParamsOutputFile;
@@ -76,6 +78,16 @@ namespace simulation {
                     output_filebase + ".counts", params.m_counts_output_freq,
                     params.m_max_total_staples, origami};
             outs.push_back(counts_out);
+            OrigamiOutputFile* staples_bound = new OrigamiStaplesBoundOutputFile {
+                    output_filebase + ".staples", params.m_counts_output_freq,
+                    params.m_max_total_staples, origami};
+            outs.push_back(staples_bound);
+            OrigamiOutputFile* staples_fully_bound =
+                    new OrigamiStaplesFullyBoundOutputFile {
+                            output_filebase + ".staplestates",
+                            params.m_counts_output_freq,
+                            params.m_max_total_staples, origami};
+            outs.push_back(staples_fully_bound);
         }
         if (params.m_times_output_freq != 0) {
             OrigamiOutputFile* times_out = new OrigamiTimesOutputFile {

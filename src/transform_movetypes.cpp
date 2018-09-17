@@ -377,7 +377,7 @@ namespace movetypes {
                     Occupancy::unbound) {
                 Domain* unbound_domain {m_origami_system.unbound_domain_at(
                         pos)};
-                
+ 
                 bool scaffold_misbinding {domain->m_c ==
                         m_origami_system.c_scaffold and unbound_domain->m_c ==
                         m_origami_system.c_scaffold};

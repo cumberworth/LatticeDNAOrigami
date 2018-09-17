@@ -549,6 +549,37 @@ namespace files {
         m_file << "\n";
     }
 
+    void OrigamiStaplesBoundOutputFile::write(long int step, double) {
+        m_file << step << " ";
+        for (auto staple_count: m_origami_system.get_staple_counts()) {
+            m_file << staple_count << " ";
+        }
+        m_file << "\n";
+    }
+
+    void OrigamiStaplesFullyBoundOutputFile::write(long int step, double) {
+        m_file << step << " ";
+        for (size_t staple_ident {1}; staple_ident !=
+                m_origami_system.m_identities.size(); staple_ident++) {
+            int staple_state {0};
+            for (auto staple_i: m_origami_system.staples_of_ident(staple_ident)) {
+                bool fully_bound {true};
+                for (auto domain: m_origami_system.get_chain(staple_i)) {
+                    if (domain->m_state != Occupancy::bound) {
+                        fully_bound = false;
+                        break;
+                    }
+                }
+                if (fully_bound) {
+                    staple_state = 1;
+                    break;
+                }
+            }
+            m_file << staple_state << " ";
+        }
+        m_file << "\n";
+    }
+
     OrigamiEnergiesOutputFile::OrigamiEnergiesOutputFile(
             string filename,
             int write_freq,
