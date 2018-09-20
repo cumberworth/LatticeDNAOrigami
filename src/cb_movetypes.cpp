@@ -36,8 +36,6 @@ namespace movetypes {
         m_new_bias = 1;
         m_new_modifier = 1;
         m_regrow_old = false;
-        m_old_pos.clear();
-        m_old_ore.clear();
     }
 
     void CBMCMovetype::add_external_bias() {

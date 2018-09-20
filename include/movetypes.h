@@ -216,6 +216,7 @@ namespace movetypes {
             RegrowthMCMovetype& operator=(const RegrowthMCMovetype&) = delete;
 
         protected:
+            void reset_internal() override;
 
             /** Grow given contiguous domains from a chain */
             virtual void grow_chain(vector<Domain*> domains) = 0;
@@ -242,11 +243,15 @@ namespace movetypes {
 
             /** Number of staple domains (mis)bound to external chains **/
             int num_bound_staple_domains(vector<Domain*> staple);
+
+            // Store old positions and orientations
+            unordered_map<pair<int, int>, VectorThree> m_old_pos {};
+            unordered_map<pair<int, int>, VectorThree> m_old_ore {};
     };
 
     /** Parent class of moves with constant topology regrowth */
     class CTRegrowthMCMovetype:
-        virtual public MCMovetype {
+        virtual public RegrowthMCMovetype {
 
         public:
             CTRegrowthMCMovetype(

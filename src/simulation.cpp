@@ -348,20 +348,21 @@ namespace simulation {
         int max_regrowth {movetypes_file.get_int_option(i, "max_regrowth")};
         int max_linker_length {movetypes_file.get_int_option(i,
                 "max_linker_length")};
+        int num_transforms {movetypes_file.get_int_option(i, "num_transforms")};
         if (type == "CTCBLinkerRegrowth") {
             movetype = new movetypes::CTCBLinkerRegrowthMCMovetype {
                     m_origami_system, m_random_gens, m_ideal_random_walks,
                     m_config_per_move_files, label, m_ops, m_biases, m_params,
                     excluded_staples, max_disp, max_turns,
                     static_cast<unsigned int>(max_regrowth),
-                    static_cast<unsigned int>(max_linker_length)};
+                    static_cast<unsigned int>(max_linker_length), num_transforms};
         }
         else if (type == "CTCBClusteredLinkerRegrowth") {
             movetype = new movetypes::CTCBClusteredLinkerRegrowthMCMovetype {
                     m_origami_system, m_random_gens, m_ideal_random_walks,
                     m_config_per_move_files, label, m_ops, m_biases, m_params,
                     excluded_staples, max_disp, max_turns,
-                    static_cast<unsigned int>(max_linker_length)};
+                    static_cast<unsigned int>(max_linker_length), num_transforms};
         }
         else if (type == "CTRGLinkerRegrowth") {
             int max_num_recoils {movetypes_file.get_int_option(i,
@@ -374,7 +375,7 @@ namespace simulation {
                     excluded_staples, max_num_recoils, max_c_attempts,
                     max_disp, max_turns,
                     static_cast<unsigned int>(max_regrowth),
-                    static_cast<unsigned int>(max_linker_length)};
+                    static_cast<unsigned int>(max_linker_length), num_transforms};
         }
 
         return movetype;

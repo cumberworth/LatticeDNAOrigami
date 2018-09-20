@@ -135,8 +135,6 @@ namespace movetypes {
             long double m_new_bias {1}; // Storage for new config's Rosenbluth
             double m_new_modifier {1}; // Storage for new config's modifier
             bool m_regrow_old {false}; // Regrowing old configuration
-            unordered_map<pair<int, int>, VectorThree> m_old_pos {};
-            unordered_map<pair<int, int>, VectorThree> m_old_ore {};
     };
 
     /** CB regrowth of staples */

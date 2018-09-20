@@ -31,7 +31,8 @@ namespace movetypes {
                     int max_disp,
                     int max_turns,
                     unsigned int max_regrowth,
-                    unsigned int max_linker_length);
+                    unsigned int max_linker_length,
+                    int num_transforms);
             LinkerRegrowthMCMovetype(const
                     LinkerRegrowthMCMovetype&) = delete;
             LinkerRegrowthMCMovetype& operator=(const
@@ -86,22 +87,25 @@ namespace movetypes {
                     VectorThree axis,
                     int turns);
 
+            double revert_transformation(
+                    vector<Domain*> linker1,
+                    vector<Domain*> linker2,
+                    vector<Domain*> central_segment,
+                    vector<Domain*> central_domains);
+
             /** Check if enough steps to regrow linkers */
             bool steps_less_than_distance(
                     vector<Domain*> linker1,
                     vector<Domain*> linker2);
 
-            virtual void revert_transformation(
-                    vector<Domain*> central_domains) = 0;
-
             int m_max_disp;
             int m_max_turns;
             unsigned int m_max_linker_length;
+            int m_k;
 
             CTCBLinkerRegrowthTracking m_tracker {};
             unordered_map<CTCBLinkerRegrowthTracking, MovetypeTracking> m_tracking {};
             vector<Domain*> m_linker_endpoints;
-            bool m_transform_rejected;
     };
 
     /**
@@ -128,7 +132,8 @@ namespace movetypes {
                     int num_excluded_staples,
                     int max_disp,
                     int max_turns,
-                    unsigned int max_linker_length);
+                    unsigned int max_linker_length,
+                    int num_transforms);
             ClusteredLinkerRegrowthMCMovetype(const
                     ClusteredLinkerRegrowthMCMovetype&) = delete;
             ClusteredLinkerRegrowthMCMovetype& operator=(const
@@ -164,7 +169,8 @@ namespace movetypes {
                     int max_disp,
                     int max_turns,
                     unsigned int max_regrowth,
-                    unsigned int max_linker_length);
+                    unsigned int max_linker_length,
+                    int num_transforms);
             CTCBLinkerRegrowthMCMovetype(const
                     CTCBLinkerRegrowthMCMovetype&) = delete;
             CTCBLinkerRegrowthMCMovetype& operator=(const
@@ -173,8 +179,6 @@ namespace movetypes {
             bool internal_attempt_move() override;
 
         protected:
-            void revert_transformation(
-                    vector<Domain*> central_domains) override;
             void reset_internal() override;
     };
 
@@ -198,7 +202,8 @@ namespace movetypes {
                     int num_excluded_staples,
                     int max_disp,
                     int max_turns,
-                    unsigned int max_linker_length);
+                    unsigned int max_linker_length,
+                    int num_transforms);
             CTCBClusteredLinkerRegrowthMCMovetype(const
                     CTCBClusteredLinkerRegrowthMCMovetype&) = delete;
             CTCBClusteredLinkerRegrowthMCMovetype& operator=(const
@@ -229,17 +234,17 @@ namespace movetypes {
                     int max_disp,
                     int max_turns,
                     unsigned int max_regrowth,
-                    unsigned int max_linker_length);
+                    unsigned int max_linker_length,
+                    int num_transforms);
             CTRGLinkerRegrowthMCMovetype(const
                     CTRGLinkerRegrowthMCMovetype&) = delete;
             CTRGLinkerRegrowthMCMovetype& operator=(const
                     CTRGLinkerRegrowthMCMovetype&) = delete;
 
             bool internal_attempt_move() override;
+            void grow_chain(vector<Domain*>) override {} ;
 
         protected:
-            void revert_transformation(
-                    vector<Domain*> central_domains) override;
             void reset_internal() override;
     };
 }

@@ -27,6 +27,9 @@ namespace movetypes {
 
         MCMovetype(origami_system, random_gens, ideal_random_walks,
                 config_files, label, ops, biases, params),
+        RegrowthMCMovetype(origami_system, random_gens,
+                ideal_random_walks, config_files, label, ops, biases,
+                params),
         CTRegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
                 config_files, label, ops, biases, params, num_excluded_staples,
                 max_regrowth, max_regrowth),
@@ -49,8 +52,6 @@ namespace movetypes {
         m_avail_cis_q.clear();
         m_avail_cis_wq.clear();
         m_c_opens.clear();
-        m_old_pos.clear();
-        m_old_ore.clear();
         m_erased_endpoints_q.clear();
 
         m_delta_e = 0;
@@ -524,6 +525,9 @@ namespace movetypes {
 
         MCMovetype(origami_system, random_gens, ideal_random_walks,
                 config_files, label, ops, biases, params),
+        RegrowthMCMovetype(origami_system, random_gens,
+                ideal_random_walks, config_files, label, ops, biases,
+                params),
         CTRegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
                 config_files, label, ops, biases, params, num_excluded_staples,
                 max_regrowth, max_regrowth),
@@ -651,6 +655,9 @@ namespace movetypes {
 
         MCMovetype(origami_system, random_gens, ideal_random_walks,
                 config_files, label, ops, biases, params),
+        RegrowthMCMovetype(origami_system, random_gens,
+                ideal_random_walks, config_files, label, ops, biases,
+                params),
         CTRegrowthMCMovetype(origami_system, random_gens, ideal_random_walks,
                 config_files, label, ops, biases, params, num_excluded_staples,
                 max_regrowth, max_seg_regrowth),

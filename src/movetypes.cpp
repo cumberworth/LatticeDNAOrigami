@@ -306,6 +306,11 @@ namespace movetypes {
                 config_files, label, ops, biases, params) {
 	}
 
+    void RegrowthMCMovetype::reset_internal() {
+        m_old_pos.clear();
+        m_old_ore.clear();
+    }
+
     double RegrowthMCMovetype::set_growth_point(
             Domain& growth_domain_new,
             Domain& growth_domain_old) {
@@ -405,6 +410,9 @@ namespace movetypes {
                 int max_seg_regrowth) :
         MCMovetype(origami_system, random_gens, ideal_random_walks,
                 config_files, label, ops, biases, params),
+        RegrowthMCMovetype(origami_system, random_gens,
+                ideal_random_walks, config_files, label, ops, biases,
+                params),
         m_num_excluded_staples {num_excluded_staples},
         m_max_regrowth {static_cast<unsigned int>(max_regrowth)},
         m_max_seg_regrowth {static_cast<unsigned int>(max_seg_regrowth)} {

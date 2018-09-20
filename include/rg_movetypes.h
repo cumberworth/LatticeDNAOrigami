@@ -75,8 +75,6 @@ namespace movetypes {
             vector<list<int>> m_avail_cis_q {}; // Available configs per domain
             vector<list<int>> m_avail_cis_wq {}; // Store of above for weight calc
             vector<double> m_c_opens; // Configuration open probability
-            unordered_map<pair<int, int>, VectorThree> m_old_pos {};
-            unordered_map<pair<int, int>, VectorThree> m_old_ore {};
             unordered_map<pair<int, int>, VectorThree> m_new_pos {};
             unordered_map<pair<int, int>, VectorThree> m_new_ore {};
             vector<vector<VectorThree>> m_erased_endpoints_q {};
@@ -119,6 +117,7 @@ namespace movetypes {
                     const CTRGScaffoldRegrowthMCMovetype&) = delete;
 
             void write_log_summary(ostream* log_entry) override;
+            void grow_chain(vector<Domain*>) override {} ;
 
         private:
             bool internal_attempt_move() override;
@@ -154,6 +153,7 @@ namespace movetypes {
                     const CTRGScaffoldRegrowthMCMovetype&) = delete;
 
             void write_log_summary(ostream* log_entry) override;
+            void grow_chain(vector<Domain*>) override {} ;
 
         private:
             bool internal_attempt_move() override;

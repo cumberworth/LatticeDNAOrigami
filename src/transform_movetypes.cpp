@@ -25,15 +25,20 @@ namespace movetypes {
             int max_disp,
             int max_turns,
             unsigned int max_regrowth,
-            unsigned int max_linker_length):
+            unsigned int max_linker_length,
+            int num_transforms):
             MCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
+            RegrowthMCMovetype(origami_system, random_gens,
+                    ideal_random_walks, config_files, label, ops, biases,
+                    params),
             CTRegrowthMCMovetype(origami_system, random_gens,
                     ideal_random_walks, config_files, label, ops, biases,
                     params, num_excluded_staples, max_regrowth, max_regrowth),
             m_max_disp {max_disp},
             m_max_turns {max_turns},
-            m_max_linker_length {max_linker_length} {
+            m_max_linker_length {max_linker_length},
+            m_k {num_transforms} {
     }
 
     void LinkerRegrowthMCMovetype::write_log_summary(ostream* log_stream) {
@@ -291,20 +296,14 @@ namespace movetypes {
             vector<Domain*> central_segment,
             vector<Domain*> central_domains) {
 
-        // Try transformations until is not going to be immediately rejected
-        bool regrowth_possible {false};
-
-        // Could make max attempts settable
-        int attempts {0};
-        double delta_e {0};
-        // This probably doesn't strictly obey detailed balance
-        while (not regrowth_possible and attempts != 1000) {
-
-            // Translation component
-            VectorThree disp {};
-            for (int i {0}; i != 3; i++) {
-                disp[i] = m_random_gens.uniform_int(-m_max_disp, m_max_disp);
-            }
+        // I could save the configs after each transformation instead
+        // Unclear whether it would be worth it
+        vector<VectorThree> centers {};
+        vector<VectorThree> axes {};
+        vector<int> turnss {};
+        vector<VectorThree> disps {};
+        vector<double> bfactors {};
+        for (int k_i {0}; k_i != m_k; k_i++) {
 
             // Rotation component
             // Select rotation center (from central scaffold domain positions)
@@ -319,29 +318,59 @@ namespace movetypes {
             VectorThree axis {utility::basis_vectors[axis_i]};
             int turns {m_random_gens.uniform_int(0, m_max_turns)};
 
+            // Translation component
+            VectorThree disp {};
+            for (int i {0}; i != 3; i++) {
+                disp[i] = m_random_gens.uniform_int(-m_max_disp, m_max_disp);
+            }
+
             // Apply transformation
-            delta_e = apply_transformation(central_domains, disp,
-                    center, axis, turns);
+            double bfactor {apply_transformation(central_domains, disp,
+                    center, axis, turns)};
 
             // Check if enough steps to reach endpoints
-            if (not m_transform_rejected) {
+            if (bfactor != 0) {
                 if (steps_less_than_distance(linker1, linker2)) {
-                    reset_segment(central_domains, central_domains.size());
+                    centers.push_back(center);
+                    axes.push_back(axis);
+                    turnss.push_back(turns);
+                    disps.push_back(disp);
+                    bfactors.push_back(bfactor);
                 }
-                else {
-                    regrowth_possible = true;
-                    m_tracker.disp_sum = disp.sum();
-                    m_tracker.rot_turns = turns;
-                }
+                reset_segment(central_domains, central_domains.size());
             }
-            attempts++;
         }
-        if (not regrowth_possible) {
+        // Modified Rosenbluth
+        double bias {0};
+        for (auto bfactor: bfactors) {
+            bias += bfactor;
+        }
+        if (bias == 0) {
             m_rejected = true;
+        }
+        else {
+            double random_real {bias*m_random_gens.uniform_real()};
+            double cum_bias {0};
+            bool transform_selected {false};
+            int transform_i {0};
+            while (not transform_selected) {
+                cum_bias += bfactors[transform_i];
+                if (random_real < cum_bias) {
+                    break;
+                }
+                transform_i++;
+            }
+            VectorThree center {centers[transform_i]};
+            VectorThree axis {axes[transform_i]};
+            int turns {turnss[transform_i]};
+            VectorThree disp {disps[transform_i]};
+            apply_transformation(central_domains, disp, center, axis, turns);
+            m_tracker.rot_turns = turns;
+            m_tracker.disp_sum = disp.sum();
         }
         write_config();
 
-        return delta_e;
+        return bias;
     }
 
     double LinkerRegrowthMCMovetype::apply_transformation(
@@ -351,8 +380,7 @@ namespace movetypes {
             VectorThree axis,
             int turns) {
 
-        m_transform_rejected = false;
-        double delta_e {0};
+        double bfactor {1};
         for (size_t di {0}; di != central_domains.size(); di++) {
             Domain* domain {central_domains[di]};
             pair<int, int> key {domain->m_c, domain->m_d};
@@ -366,12 +394,11 @@ namespace movetypes {
             // Translation
             pos = pos + disp;
 
-            // If position occupied by external domain, try again
             if (m_origami_system.position_occupancy(pos) == Occupancy::bound or
                     m_origami_system.position_occupancy(pos) ==
                     Occupancy::misbound) {
                 reset_segment(central_domains, di);
-                m_transform_rejected = true;
+                bfactor = 0;
                 break;
             }
             else if (m_origami_system.position_occupancy(pos) ==
@@ -387,26 +414,83 @@ namespace movetypes {
                         central_domains.end()};
                 if (not scaffold_misbinding and new_binding_pair) {
                     reset_segment(central_domains, di);
-                    m_transform_rejected = true;
+                    bfactor = 0;
                     break;
                 }
                 else if (scaffold_misbinding and new_binding_pair) {
                     m_origami_system.check_domain_constraints(
                             *domain, pos, ore);
                     if (m_origami_system.m_constraints_violated) {
-                        m_transform_rejected = true;
+                        bfactor = 0;
                         m_origami_system.m_constraints_violated = false;
                         reset_segment(central_domains, di);
                         break;
                     }
                 }
             }
-            delta_e += m_origami_system.set_checked_domain_config(*domain,
-                    pos, ore);
+            double delta_e {m_origami_system.set_checked_domain_config(*domain,
+                    pos, ore)};
+            bfactor = exp(-delta_e);
             m_assigned_domains.push_back(key);
         }
 
-        return delta_e;
+        return bfactor;
+    }
+
+    double LinkerRegrowthMCMovetype::revert_transformation(
+            vector<Domain*> linker1,
+            vector<Domain*> linker2,
+            vector<Domain*> central_segment,
+            vector<Domain*> central_domains) {
+
+        double bias {0};
+        for (int k_i {0}; k_i != m_k - 1; k_i++) {
+            // SUPER BAD JUST COPIED THIS ALL FROM transform_segment!!!
+            // Rotation component
+            // Select rotation center (from central scaffold domain positions)
+            int center_di {m_random_gens.uniform_int(0,
+                    central_segment.size() - 1)};
+            pair<int, int> center_key {central_domains[center_di]->m_c,
+                    central_segment[center_di]->m_d};
+            VectorThree center {m_prev_pos[center_key]};
+
+            // Select axis and number of turns
+            int axis_i {m_random_gens.uniform_int(0, 2)};
+            VectorThree axis {utility::basis_vectors[axis_i]};
+            int turns {m_random_gens.uniform_int(0, m_max_turns)};
+
+            // Translation component
+            VectorThree disp {};
+            for (int i {0}; i != 3; i++) {
+                disp[i] = m_random_gens.uniform_int(-m_max_disp, m_max_disp);
+            }
+
+            // Apply transformation
+            double bfactor {apply_transformation(central_domains, disp,
+                    center, axis, turns)};
+
+            // Check if enough steps to reach endpoints
+            if (bfactor != 0) {
+                if (steps_less_than_distance(linker1, linker2)) {
+                    bias += bfactor;
+                }
+                reset_segment(central_domains, central_domains.size());
+            }
+        }
+
+        // Revert to old configuration and save energy change
+        for (auto domain: central_domains) {
+            pair<int, int> key {domain->m_c, domain->m_d};
+            VectorThree pos {m_old_pos[key]};
+            VectorThree ore {m_old_ore[key]};
+            double delta_e {m_origami_system.set_checked_domain_config(*domain, pos,
+                    ore)};
+            bias += exp(-delta_e);
+            m_assigned_domains.push_back(key);
+        }
+        write_config();
+
+        return bias;
     }
 
     bool LinkerRegrowthMCMovetype::steps_less_than_distance(
@@ -444,7 +528,8 @@ namespace movetypes {
             int num_excluded_staples,
             int max_disp,
             int max_turns,
-            unsigned int max_linker_length):
+            unsigned int max_linker_length,
+            int num_transforms):
             MCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
             CTRegrowthMCMovetype(origami_system, random_gens,
@@ -453,7 +538,7 @@ namespace movetypes {
             LinkerRegrowthMCMovetype(origami_system, random_gens,
                     ideal_random_walks, config_files, label, ops, biases,
                     params, num_excluded_staples, max_disp, max_turns, 0,
-                    max_linker_length) {
+                    max_linker_length, num_transforms) {
     }
 
     set<int> ClusteredLinkerRegrowthMCMovetype::select_and_setup_segments(
@@ -648,19 +733,20 @@ namespace movetypes {
             int max_disp,
             int max_turns,
             unsigned int max_regrowth,
-            unsigned int max_linker_length):
+            unsigned int max_linker_length,
+            int num_transforms):
             MCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
+            RegrowthMCMovetype(origami_system, random_gens,
+                    ideal_random_walks, config_files, label, ops, biases,
+                    params),
             CTRegrowthMCMovetype(origami_system, random_gens,
                     ideal_random_walks, config_files, label, ops, biases,
                     params, num_excluded_staples, max_regrowth, max_regrowth),
             LinkerRegrowthMCMovetype(origami_system, random_gens,
                     ideal_random_walks, config_files, label, ops, biases,
                     params, num_excluded_staples, max_disp, max_turns,
-                    max_regrowth, max_linker_length),
-            RegrowthMCMovetype(origami_system, random_gens,
-                    ideal_random_walks, config_files, label, ops, biases,
-                    params),
+                    max_regrowth, max_linker_length, num_transforms),
             CBMCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
             CTCBRegrowthMCMovetype(origami_system, random_gens,
@@ -704,14 +790,12 @@ namespace movetypes {
         }
 
         // It would be nice if I didn't have to fully unassign them
-        double delta_e {0};
-        delta_e += unassign_domains(central_domains);
+        unassign_domains(central_domains);
 
-        delta_e += transform_segment(linker1, linker2, central_segment, central_domains);
+        m_bias *= transform_segment(linker1, linker2, central_segment, central_domains);
         if (m_rejected) {
             return accepted;
         }
-        m_bias *= exp(-delta_e);
 
         // Grow linkers
         for (auto linker: {linker1, linker2}) {
@@ -736,7 +820,8 @@ namespace movetypes {
         // It would be nice if I didn't have to fully unassign them
         unassign_domains(central_domains);
 
-        revert_transformation(central_domains);
+        m_bias *= revert_transformation(linker1, linker2, central_segment,
+                central_domains);
 
         // Grow linkers
         for (auto linker: {linker1, linker2}) {
@@ -748,19 +833,6 @@ namespace movetypes {
         accepted = test_cb_acceptance();
 
         return accepted;
-    }
-
-    void CTCBLinkerRegrowthMCMovetype::revert_transformation(
-            vector<Domain*> central_domains) {
-
-        for (auto domain: central_domains) {
-            pair<int, int> key {domain->m_c, domain->m_d};
-            VectorThree pos {m_old_pos[key]};
-            VectorThree ore {m_old_ore[key]};
-            m_origami_system.set_checked_domain_config(*domain, pos, ore);
-            m_assigned_domains.push_back(key);
-        }
-        write_config();
     }
 
     void CTCBLinkerRegrowthMCMovetype::reset_internal() {
@@ -780,19 +852,20 @@ namespace movetypes {
             int num_excluded_staples,
             int max_disp,
             int max_turns,
-            unsigned int max_linker_length):
+            unsigned int max_linker_length,
+            int num_transforms):
             MCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
+            RegrowthMCMovetype(origami_system, random_gens,
+                    ideal_random_walks, config_files, label, ops, biases,
+                    params),
             CTRegrowthMCMovetype(origami_system, random_gens,
                     ideal_random_walks, config_files, label, ops, biases,
                     params, num_excluded_staples, 0, 0),
             LinkerRegrowthMCMovetype(origami_system, random_gens,
                     ideal_random_walks, config_files, label, ops, biases,
                     params, num_excluded_staples, max_disp, max_turns, 0,
-                    max_linker_length),
-            RegrowthMCMovetype(origami_system, random_gens,
-                    ideal_random_walks, config_files, label, ops, biases,
-                    params),
+                    max_linker_length, num_transforms),
             CBMCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
             CTCBRegrowthMCMovetype(origami_system, random_gens,
@@ -801,11 +874,11 @@ namespace movetypes {
             CTCBLinkerRegrowthMCMovetype(origami_system, random_gens,
                     ideal_random_walks, config_files, label, ops, biases,
                     params, num_excluded_staples, max_disp, max_turns, 0,
-                    max_linker_length),
+                    max_linker_length, num_transforms),
             ClusteredLinkerRegrowthMCMovetype(origami_system, random_gens,
                     ideal_random_walks, config_files, label, ops, biases,
                     params, num_excluded_staples, max_disp, max_turns,
-                    max_linker_length) {
+                    max_linker_length, num_transforms) {
     }
 
     void CTCBClusteredLinkerRegrowthMCMovetype::reset_internal() {
@@ -828,16 +901,20 @@ namespace movetypes {
             int max_disp,
             int max_turns,
             unsigned int max_regrowth,
-            unsigned int max_linker_length):
+            unsigned int max_linker_length,
+            int num_transforms):
             MCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
+            RegrowthMCMovetype(origami_system, random_gens,
+                    ideal_random_walks, config_files, label, ops, biases,
+                    params),
             CTRegrowthMCMovetype(origami_system, random_gens,
                     ideal_random_walks, config_files, label, ops, biases,
                     params, num_excluded_staples, max_regrowth, max_regrowth),
             LinkerRegrowthMCMovetype(origami_system, random_gens,
                     ideal_random_walks, config_files, label, ops, biases,
                     params, num_excluded_staples, max_disp, max_turns,
-                    max_regrowth, max_linker_length),
+                    max_regrowth, max_linker_length, num_transforms),
             CTRGRegrowthMCMovetype(origami_system, random_gens,
                     ideal_random_walks, config_files, label, ops, biases,
                     params, num_excluded_staples, max_num_recoils,
@@ -873,10 +950,10 @@ namespace movetypes {
         m_regrow_ds = m_constraintpoints.domains_to_be_regrown();
         m_regrow_ds.insert(m_regrow_ds.begin(), linker1.front());
         m_delta_e += unassign_and_save_domains();
-        m_delta_e += unassign_and_save_domains(central_domains);
+        unassign_and_save_domains(central_domains);
 
         // Transform central segment
-        m_delta_e += transform_segment(linker1, linker2, central_segment, central_domains);
+        m_weight *= transform_segment(linker1, linker2, central_segment, central_domains);
         if (m_rejected) {
             return accepted;
         }
@@ -898,7 +975,8 @@ namespace movetypes {
         // Calculate old weights
         unassign_domains();
         unassign_and_save_domains(central_domains);
-        revert_transformation(central_domains);
+        m_weight *= revert_transformation(linker1, linker2, central_segment,
+                central_domains);
         m_constraintpoints.reset_active_endpoints();
         calc_old_c_opens();
         setup_for_calc_old_weights();
@@ -914,19 +992,6 @@ namespace movetypes {
         accepted = test_rg_acceptance();
 
         return accepted;
-    }
-
-    void CTRGLinkerRegrowthMCMovetype::revert_transformation(
-            vector<Domain*> central_domains) {
-
-        for (auto domain: central_domains) {
-            pair<int, int> key {domain->m_c, domain->m_d};
-            VectorThree pos {m_old_pos[key]};
-            VectorThree ore {m_old_ore[key]};
-            m_origami_system.set_checked_domain_config(*domain, pos, ore);
-            m_assigned_domains.push_back(key);
-        }
-        write_config();
     }
 
     void CTRGLinkerRegrowthMCMovetype::reset_internal() {
