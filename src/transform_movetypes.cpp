@@ -532,6 +532,9 @@ namespace movetypes {
             int num_transforms):
             MCMovetype(origami_system, random_gens, ideal_random_walks,
                     config_files, label, ops, biases, params),
+            RegrowthMCMovetype(origami_system, random_gens,
+                    ideal_random_walks, config_files, label, ops, biases,
+                    params),
             CTRegrowthMCMovetype(origami_system, random_gens,
                     ideal_random_walks, config_files, label, ops, biases,
                     params, num_excluded_staples, 0, 0),
