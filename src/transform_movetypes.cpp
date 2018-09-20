@@ -297,12 +297,13 @@ namespace movetypes {
         // Could make max attempts settable
         int attempts {0};
         double delta_e {0};
+        // This probably doesn't strictly obey detailed balance
         while (not regrowth_possible and attempts != 1000) {
 
             // Translation component
             VectorThree disp {};
             for (int i {0}; i != 3; i++) {
-                disp[i] = m_random_gens.uniform_int(0, m_max_disp);
+                disp[i] = m_random_gens.uniform_int(-m_max_disp, m_max_disp);
             }
 
             // Rotation component
@@ -358,12 +359,12 @@ namespace movetypes {
             VectorThree pos {m_prev_pos[key]};
             VectorThree ore {m_prev_ore[key]};
 
-            // Translation
-            pos = pos + disp;
-
             // Rotation
             pos = pos.rotate(center, axis, turns);
             ore = ore.rotate({0, 0, 0}, axis, turns);
+
+            // Translation
+            pos = pos + disp;
 
             // If position occupied by external domain, try again
             if (m_origami_system.position_occupancy(pos) == Occupancy::bound or
