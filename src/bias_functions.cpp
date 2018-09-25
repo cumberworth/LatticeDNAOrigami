@@ -55,19 +55,6 @@ namespace biasFunctions {
         return checked_bias;
     }
 
-    LinearStepWellBiasFunction::LinearStepWellBiasFunction(
-            OrderParam& order_param, int min_param, int max_param,
-            double well_bias, double min_bias, double slope) :
-            m_order_param {order_param},
-            m_min_param {min_param},
-            m_max_param {max_param},
-            m_well_bias {well_bias},
-            m_min_bias {min_bias},
-            m_slope {slope} {
-
-        update_bias();
-    }
-
     LinearStepBiasFunction::LinearStepBiasFunction(OrderParam& order_param,
             int min_param, int max_param, double max_bias) :
             m_order_param {order_param},
