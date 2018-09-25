@@ -381,6 +381,7 @@ namespace movetypes {
             int turns) {
 
         double bfactor {1};
+        double delta_e {0};
         for (size_t di {0}; di != central_domains.size(); di++) {
             Domain* domain {central_domains[di]};
             pair<int, int> key {domain->m_c, domain->m_d};
@@ -428,10 +429,12 @@ namespace movetypes {
                     }
                 }
             }
-            double delta_e {m_origami_system.set_checked_domain_config(*domain,
-                    pos, ore)};
-            bfactor = exp(-delta_e);
+            delta_e += m_origami_system.set_checked_domain_config(*domain,
+                    pos, ore);
             m_assigned_domains.push_back(key);
+        }
+        if (bfactor != 0) {
+            bfactor = exp(-delta_e);
         }
 
         return bfactor;
