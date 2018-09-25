@@ -201,11 +201,14 @@ namespace ptmc {
 
     void PTGCMCSimulation::update_dependent_qs() {
         m_origami_system.update_enthalpy_and_entropy();
+        // THIS IS WRONG!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // YOU NEED TO TAKE THE SUM OF THE HYBRIDIZATION ENTHALPIES AND STACKING ENERGIES
         double DH {m_origami_system.hybridization_enthalpy()};
+        double D_stacking {m_origami_system.stacking_energy()};
         double N {static_cast<double>(m_origami_system.num_staples())};
         double bias_e {m_biases.get_total_bias()};
 
-        m_replica_dependent_qs[m_enthalpy_i] = DH;
+        m_replica_dependent_qs[m_enthalpy_i] = DH + D_stacking;
         m_replica_dependent_qs[m_staples_i] = N;
         m_replica_dependent_qs[m_bias_i] = bias_e;
     }

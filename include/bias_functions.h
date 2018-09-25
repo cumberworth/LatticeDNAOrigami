@@ -45,6 +45,22 @@ namespace biasFunctions {
             double m_bias {0};
     };
 
+    class LinearFunction: public BiasFunction {
+        // Linear function of the order parameter divided by temperature
+        public:
+            LinearFunction(
+                    OrderParam& order_param,
+                    double slope);
+            ~LinearFunction() {};
+            double update_bias();
+            double check_bias();
+        private:
+            OrderParam& m_order_param;
+            double m_slope;
+
+            double calc_bias(int param);
+    };
+
     class LinearStepBiasFunction: public BiasFunction {
         // Constant below a min and above a max value, and linear between
         public:

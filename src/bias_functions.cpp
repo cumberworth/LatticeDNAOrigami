@@ -15,6 +15,59 @@ namespace biasFunctions {
         return m_bias;
     }
 
+    LinearFunction::LinearFunction(OrderParam& order_param, double slope):
+            m_order_param {order_param},
+            m_slope {slope} {
+
+        m_slope = slope;
+        update_bias();
+    }
+
+    double LinearFunction::update_bias() {
+        double new_bias;
+        int param {m_order_param.get_param()};
+        if (m_order_param.defined()) {
+            new_bias = calc_bias(param);
+        }
+        else {
+            new_bias = 0;
+        }
+        m_bias = new_bias;
+        
+        return new_bias;
+    }
+
+    double LinearFunction::calc_bias(int param) {
+        double new_bias {0};
+        new_bias = m_slope*param;
+        return new_bias;
+    }
+
+    double LinearFunction::check_bias() {
+        double checked_bias;
+        int param {m_order_param.get_checked_param()};
+        if (m_order_param.defined()) {
+            checked_bias = calc_bias(param);
+        }
+        else {
+            checked_bias = 0;
+        }
+        return checked_bias;
+    }
+
+    LinearStepWellBiasFunction::LinearStepWellBiasFunction(
+            OrderParam& order_param, int min_param, int max_param,
+            double well_bias, double min_bias, double slope) :
+            m_order_param {order_param},
+            m_min_param {min_param},
+            m_max_param {max_param},
+            m_well_bias {well_bias},
+            m_min_bias {min_bias},
+            m_slope {slope} {
+
+        update_bias();
+    }
+
     LinearStepBiasFunction::LinearStepBiasFunction(OrderParam& order_param,
             int min_param, int max_param, double max_bias) :
             m_order_param {order_param},

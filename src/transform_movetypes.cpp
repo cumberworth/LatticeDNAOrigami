@@ -330,7 +330,7 @@ namespace movetypes {
 
             // Check if enough steps to reach endpoints
             if (bfactor != 0) {
-                if (steps_less_than_distance(linker1, linker2)) {
+                if (not steps_less_than_distance(linker1, linker2)) {
                     centers.push_back(center);
                     axes.push_back(axis);
                     turnss.push_back(turns);
@@ -978,7 +978,7 @@ namespace movetypes {
         // Calculate old weights
         unassign_domains();
         unassign_and_save_domains(central_domains);
-        m_weight *= revert_transformation(linker1, linker2, central_segment,
+        m_weight /= revert_transformation(linker1, linker2, central_segment,
                 central_domains);
         m_constraintpoints.reset_active_endpoints();
         calc_old_c_opens();
