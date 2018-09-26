@@ -340,6 +340,7 @@ namespace movetypes {
                 reset_segment(central_domains, central_domains.size());
             }
         }
+
         // Modified Rosenbluth
         double bias {0};
         for (auto bfactor: bfactors) {
@@ -474,7 +475,7 @@ namespace movetypes {
 
             // Check if enough steps to reach endpoints
             if (bfactor != 0) {
-                if (steps_less_than_distance(linker1, linker2)) {
+                if (not steps_less_than_distance(linker1, linker2)) {
                     bias += bfactor;
                 }
                 reset_segment(central_domains, central_domains.size());
