@@ -148,7 +148,7 @@ namespace origami {
             void set_config(Chains new_config);
 
             // System state modifiers
-            void update_temp(double temp);
+            void update_temp(double temp, double stacking_mult=1);
             void update_staple_u(double u);
             virtual void update_bias_mult(double) {};
 

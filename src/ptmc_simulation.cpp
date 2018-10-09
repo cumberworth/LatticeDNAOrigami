@@ -70,8 +70,6 @@ namespace ptmc {
                 }
             }
         }
-
-        initialize_control_qs(params);
     }
 
     void PTGCMCSimulation::initialize_swap_file(InputParameters& params) {
@@ -79,82 +77,18 @@ namespace ptmc {
             m_swapfile.open(params.m_output_filebase + ".swp");
             for (int rep {0}; rep != m_num_reps; rep++) {
                 for (auto q_i: m_exchange_q_is) {
-                    m_swapfile <<  m_control_qs[q_i][rep];
-                    if (q_i + 1 != static_cast<int>(m_exchange_q_is.size())) {
-                        m_swapfile << "/";
-                    }
-                    else {
-                        m_swapfile << " ";
-                    }
+                    m_swapfile << m_control_qs[q_i][rep];
+                    m_swapfile << "/";
                 }
+                m_swapfile << " ";
             }
             m_swapfile << "\n";
-        }
-    }
-
-    // Could probably break this into two methods
-    void PTGCMCSimulation::initialize_control_qs(InputParameters& params) {
-        if (m_rank == m_master_rep) {
-     
-            //  Temps
-            m_control_qs.push_back(params.m_temps);
-
-            // Chemical potentials and volumes
-            m_control_qs.push_back({});
-            for (int i {0}; i != m_num_reps; i++) {
-
-                // Calculate chemical potential of each replica if constant
-                // staple concentration
-                double staple_u;
-                if (m_params.m_constant_staple_M) {
-                    staple_u = origami::molarity_to_chempot(m_params.m_staple_M,
-                            params.m_temps[i]);
-                }
-                else {
-                    staple_u = origami::molarity_to_chempot(m_params.m_staple_M,
-                            params.m_temp_for_staple_u);
-                    staple_u *= m_params.m_chem_pot_mults[i];
-                }
-                m_control_qs[m_staple_u_i].push_back(staple_u);
-            }
-
-            // Biases
-            m_control_qs.push_back(params.m_bias_mults);
-        }
-
-        // Initialize quantities of each replica (updating on origami happens
-        // in run)
-        for (int i {0}; i != m_num_reps; i++) {
-            if (m_rank == i) {
-                m_replica_control_qs[m_temp_i] = params.m_temps[i];
-                m_replica_control_qs[m_bias_i] = params.m_bias_mults[i];
-
-                // Update chemical potential of each replica if constant
-                // staple concentration
-                // Recalculating for each node rather than sending from master
-                if (m_params.m_constant_staple_M) {
-                    m_replica_control_qs[m_staple_u_i] =
-                            origami::molarity_to_chempot(
-                            m_params.m_staple_M,
-                            m_replica_control_qs[m_temp_i]);
-                }
-                else {
-                    double staple_u {origami::molarity_to_chempot(
-                            m_params.m_staple_M,
-                            params.m_temp_for_staple_u)};
-                    staple_u *= m_params.m_chem_pot_mults[i];
-                    m_replica_control_qs[m_staple_u_i] = staple_u;
-                }
-            }
         }
     }
 
     void PTGCMCSimulation::run() {
         long long int step {0};
 
-        // Keep track of number of attempted and succesful swaps
-        vector<int> attempt_count(m_num_reps - 1, 0);
-        vector<int> swap_count(m_num_reps - 1, 0);
         auto start = steady_clock::now();
         for (int swap_i {1}; swap_i != m_swaps + 1; swap_i++) {
 
@@ -187,22 +121,20 @@ namespace ptmc {
             // Attempt exchanges between replicas
             else {
                 write_swap_entry(step);
-                attempt_exchange(swap_i, attempt_count, swap_count);
+                attempt_exchange(swap_i);
             }
         }
 
         // Write end-of-simulation data
         if (m_rank == m_master_rep) {
             write_swap_entry(step);
-            write_acceptance_freqs(attempt_count, swap_count);
+            write_acceptance_freqs();
             m_swapfile.close();
         }
     }
 
     void PTGCMCSimulation::update_dependent_qs() {
         m_origami_system.update_enthalpy_and_entropy();
-        // THIS IS WRONG!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // YOU NEED TO TAKE THE SUM OF THE HYBRIDIZATION ENTHALPIES AND STACKING ENERGIES
         double DH {m_origami_system.hybridization_enthalpy()};
         double D_stacking {m_origami_system.stacking_energy()};
         double N {static_cast<double>(m_origami_system.num_staples())};
@@ -276,58 +208,10 @@ namespace ptmc {
 
     void PTGCMCSimulation::master_get_dependent_qs(
             vector<vector<double>>& dependent_qs) {
-        m_origami_system.update_enthalpy_and_entropy();
-        double DH {m_origami_system.hybridization_enthalpy()};
-        double staples {static_cast<double>(m_origami_system.num_staples())};
-        double bias {m_biases.get_total_bias()};
-        dependent_qs[m_enthalpy_i].push_back(DH);
-        dependent_qs[m_staples_i].push_back(staples);
-        dependent_qs[m_bias_i].push_back(bias);
-    }
 
-    void PTGCMCSimulation::attempt_exchange(int swap_i,
-            vector<int>& attempt_count, vector<int>& swap_count) {
-        // Alternates between two sets of pairs, allows for changes in T, u, and N
-
-        // Collect results from all replicas
-        vector<vector<double>> dependent_qs {{}, {}, {}};
-        master_receive(swap_i, dependent_qs);
-
-        // Iterate through pairs in current set and attempt swap
-        int swap_set {swap_i % 2};
-        for (int i {swap_set}; i < (m_num_reps - 1); i += 2) {
-            attempt_count[i]++;
-
-            // Collect values
-            vector<pair<double, double>> control_q_pairs {};
-            for (auto control_q: m_control_qs) {
-                double q_1 {control_q[i]};
-                double q_2 {control_q[i + 1]};
-                control_q_pairs.push_back({q_1, q_2});
-            }
-
-            int repi1 {m_q_to_repi[i]};
-            int repi2 {m_q_to_repi[i + 1]};
-            vector<pair<double, double>> dependent_q_pairs {};
-            for (auto dependent_q: dependent_qs) {
-                double q_1 {dependent_q[repi1]};
-                double q_2 {dependent_q[repi2]};
-                dependent_q_pairs.push_back({q_1, q_2});
-            }
-
-            double p_accept {calc_acceptance_p(control_q_pairs, dependent_q_pairs)};
-            bool accept {test_acceptance(p_accept)};
-
-            // If accepted swap indices from quantities to replicas
-            if (accept) {
-                swap_count[i]++;
-                m_q_to_repi[i] = repi2;
-                m_q_to_repi[i + 1] = repi1;
-            }
-        }
-
-        // Send updated temperatures and chem. pots to slaves
-        master_send(swap_i);
+        dependent_qs[m_enthalpy_i].push_back(m_replica_dependent_qs[m_enthalpy_i]);
+        dependent_qs[m_staples_i].push_back(m_replica_dependent_qs[m_staples_i]);
+        dependent_qs[m_bias_i].push_back(m_replica_dependent_qs[m_bias_i]);
     }
 
     bool PTGCMCSimulation::test_acceptance(double p_accept) {
@@ -384,18 +268,308 @@ namespace ptmc {
         }
     }
 
-    void PTGCMCSimulation::write_acceptance_freqs(vector<int> attempt_count,
-            vector<int> swap_count) {
+    OneDPTGCMCSimulation::OneDPTGCMCSimulation(
+            OrigamiSystem& origami_system,
+            SystemOrderParams& ops,
+            SystemBiases& biases,
+            InputParameters& params) :
+            PTGCMCSimulation(origami_system, ops, biases, params),
+            m_attempt_count(params.m_temps.size() - 1, 0),
+            m_swap_count(params.m_temps.size() - 1, 0) {
 
-        for (size_t i {0}; i != attempt_count.size(); i++) {
+        initialize_control_qs(params);
+    }
+
+    // Could probably break this into two methods
+    void OneDPTGCMCSimulation::initialize_control_qs(InputParameters& params) {
+        if (m_rank == m_master_rep) {
+     
+            //  Temps
+            m_control_qs.push_back(params.m_temps);
+
+            // Chemical potentials and volumes
+            m_control_qs.push_back({});
+            for (int i {0}; i != m_num_reps; i++) {
+
+                // Calculate chemical potential of each replica if constant
+                // staple concentration
+                double staple_u;
+                if (m_params.m_constant_staple_M) {
+                    staple_u = origami::molarity_to_chempot(m_params.m_staple_M,
+                            params.m_temps[i]);
+                }
+                else {
+                    staple_u = origami::molarity_to_chempot(m_params.m_staple_M,
+                            params.m_temp_for_staple_u);
+                    staple_u *= m_params.m_chem_pot_mults[i];
+                }
+                m_control_qs[m_staple_u_i].push_back(staple_u);
+            }
+
+            // Biases
+            m_control_qs.push_back(params.m_bias_mults);
+        }
+
+        // Initialize quantities of each replica (updating on origami happens
+        // in run)
+        for (int i {0}; i != m_num_reps; i++) {
+            if (m_rank == i) {
+                m_replica_control_qs[m_temp_i] = params.m_temps[i];
+                m_replica_control_qs[m_bias_i] = params.m_bias_mults[i];
+
+                // Update chemical potential of each replica if constant
+                // staple concentration
+                // Recalculating for each node rather than sending from master
+                if (m_params.m_constant_staple_M) {
+                    m_replica_control_qs[m_staple_u_i] =
+                            origami::molarity_to_chempot(
+                            m_params.m_staple_M,
+                            m_replica_control_qs[m_temp_i]);
+                }
+                else {
+                    double staple_u {origami::molarity_to_chempot(
+                            m_params.m_staple_M,
+                            params.m_temp_for_staple_u)};
+                    staple_u *= m_params.m_chem_pot_mults[i];
+                    m_replica_control_qs[m_staple_u_i] = staple_u;
+                }
+            }
+        }
+    }
+
+    void OneDPTGCMCSimulation::attempt_exchange(int swap_i) {
+
+        // Collect results from all replicas
+        vector<vector<double>> dependent_qs {{}, {}, {}};
+        master_receive(swap_i, dependent_qs);
+
+        // Iterate through pairs in current set and attempt swap
+        int swap_set {swap_i % 2};
+        for (int i {swap_set}; i < (m_num_reps - 1); i += 2) {
+            m_attempt_count[i]++;
+
+            // Collect values
+            vector<pair<double, double>> control_q_pairs {};
+            for (auto control_q: m_control_qs) {
+                double q_1 {control_q[i]};
+                double q_2 {control_q[i + 1]};
+                control_q_pairs.push_back({q_1, q_2});
+            }
+
+            int repi1 {m_q_to_repi[i]};
+            int repi2 {m_q_to_repi[i + 1]};
+            vector<pair<double, double>> dependent_q_pairs {};
+            for (auto dependent_q: dependent_qs) {
+                double q_1 {dependent_q[repi1]};
+                double q_2 {dependent_q[repi2]};
+                dependent_q_pairs.push_back({q_1, q_2});
+            }
+
+            double p_accept {calc_acceptance_p(control_q_pairs, dependent_q_pairs)};
+            bool accept {test_acceptance(p_accept)};
+
+            // If accepted swap indices from quantities to replicas
+            if (accept) {
+                m_swap_count[i]++;
+                m_q_to_repi[i] = repi2;
+                m_q_to_repi[i + 1] = repi1;
+            }
+        }
+
+        // Send updated temperatures and chem. pots to slaves
+        master_send(swap_i);
+    }
+
+    void OneDPTGCMCSimulation::write_acceptance_freqs() {
+
+        for (size_t i {0}; i != m_attempt_count.size(); i++) {
             cout << m_control_qs[m_temp_i][i] << " ";
             cout << m_control_qs[m_temp_i][i + 1] << " ";
-            cout << swap_count[i] << " ";
-            cout << attempt_count[i] << " ";
-            cout << (static_cast<double>(swap_count[i]) / attempt_count[i]) << " ";
+            cout << m_swap_count[i] << " ";
+            cout << m_attempt_count[i] << " ";
+            cout << (static_cast<double>(m_swap_count[i]) / m_attempt_count[i]) << " ";
             cout << "\n";
         }
         cout << "\n";
+    }
+
+    TwoDPTGCMCSimulation::TwoDPTGCMCSimulation(
+            OrigamiSystem& origami_system,
+            SystemOrderParams& ops,
+            SystemBiases& biases,
+            InputParameters& params) :
+            PTGCMCSimulation(origami_system, ops, biases, params),
+            m_v1_dim {static_cast<int>(params.m_temps.size())},
+            m_v2_dim {static_cast<int>(params.m_stacking_mults.size())},
+            m_v1s {params.m_temps},
+            m_v2s {params.m_stacking_mults},
+            m_attempt_count(2, vector<vector<int>>(m_v1_dim, vector<int>(
+                    m_v2_dim, 0))),
+            m_swap_count(2, vector<vector<int>>(m_v1_dim, vector<int>(
+                    m_v2_dim, 0))) {
+
+        initialize_control_qs(params);
+        m_exchange_q_is.push_back(m_temp_i);
+        m_exchange_q_is.push_back(m_staple_u_i);
+        m_exchange_q_is.push_back(m_stacking_mult_i);
+        initialize_swap_file(params);
+    }
+
+    // Could probably break this into two methods
+    // This is a hack version that only works with T as v1 and stacking as v2
+    void TwoDPTGCMCSimulation::initialize_control_qs(InputParameters& params) {
+     
+        vector<double> temps {};
+        vector<double> staple_us {};
+        vector<double> bias_mults {};
+        vector<double> stacking_mults {};
+        for (size_t v1_i {0}; v1_i != params.m_temps.size(); v1_i++) {
+            for (size_t v2_i {0}; v2_i != params.m_stacking_mults.size(); v2_i++) {
+                double temp {params.m_temps[v1_i]};
+                double stacking_mult {params.m_stacking_mults[v2_i]};
+                temps.push_back(temp);
+                double staple_u;
+                if (m_params.m_constant_staple_M) {
+                    staple_u = origami::molarity_to_chempot(m_params.m_staple_M,
+                            temp);
+                }
+                else {
+                    staple_u = origami::molarity_to_chempot(m_params.m_staple_M,
+                            params.m_temp_for_staple_u);
+                }
+                staple_us.push_back(staple_u);
+                bias_mults.push_back(1);
+                stacking_mults.push_back(stacking_mult);
+            }
+        }
+
+        for (int i {0}; i != m_num_reps; i++) {
+
+            // Calculate chemical potential of each replica if constant
+            // staple concentration
+        }
+
+        if (m_rank == m_master_rep) {
+            //  Temps
+            m_control_qs.push_back(temps);
+
+            // Chemical potentials and volumes
+            m_control_qs.push_back(staple_us);
+
+            // Biases
+            vector<double> bias_mults(temps.size(), 1);
+            m_control_qs.push_back(bias_mults);
+
+            // Stacks
+            m_control_qs.push_back(stacking_mults);
+        }
+
+        // Initialize quantities of each replica (updating on origami happens
+        // in run)
+        for (int i {0}; i != m_num_reps; i++) {
+            if (m_rank == i) {
+                m_replica_control_qs[m_temp_i] = temps[i];
+                m_replica_control_qs[m_staple_u_i] = staple_us[i];
+                m_replica_control_qs[m_bias_i] = bias_mults[i];
+                m_replica_control_qs[m_stacking_mult_i] = stacking_mults[i];
+            }
+        }
+    }
+
+    void TwoDPTGCMCSimulation::attempt_exchange(int swap_i) {
+
+        // Collect results from all replicas
+        vector<vector<double>> dependent_qs {{}, {}, {}};
+        master_receive(swap_i, dependent_qs);
+
+        // Iterate through pairs in current set and attempt swap
+        int swap_set {swap_i % 4};
+        int swap_v {swap_i % 2};
+        int i_start {m_i_starts[swap_set]};
+        int j_start {m_j_starts[swap_set]};
+        int i_incr {m_i_incrs[swap_set]};
+        int j_incr {m_j_incrs[swap_set]};
+        int i_end {m_i_ends[swap_set]};
+        int j_end {m_j_ends[swap_set]};
+        int rep_incr {m_rep_incrs[swap_set]};
+        for (int i {i_start}; i < (i_end); i += i_incr) {
+            for (int j {j_start}; j < (j_end); j += j_incr) {
+                int rep_i {i*m_v1_dim + j};
+                int rep_j {rep_i + rep_incr};
+                m_attempt_count[swap_v][i][j]++;
+
+                // Collect values
+                vector<pair<double, double>> control_q_pairs {};
+                for (auto control_q: m_control_qs) {
+                    double q_1 {control_q[rep_i]};
+                    double q_2 {control_q[rep_j]};
+                    control_q_pairs.push_back({q_1, q_2});
+                }
+
+                int repi1 {m_q_to_repi[rep_i]};
+                int repi2 {m_q_to_repi[rep_j]};
+                vector<pair<double, double>> dependent_q_pairs {};
+                for (auto dependent_q: dependent_qs) {
+                    double q_1 {dependent_q[repi1]};
+                    double q_2 {dependent_q[repi2]};
+                    dependent_q_pairs.push_back({q_1, q_2});
+                }
+
+                double p_accept {calc_acceptance_p(control_q_pairs, dependent_q_pairs)};
+                bool accept {test_acceptance(p_accept)};
+
+                // If accepted swap indices from quantities to replicas
+                if (accept) {
+                    m_swap_count[swap_v][i][j]++;
+                    m_q_to_repi[rep_i] = repi2;
+                    m_q_to_repi[rep_j] = repi1;
+                }
+            }
+        }
+
+        // Send updated temperatures and chem. pots to slaves
+        master_send(swap_i);
+    }
+
+    void TwoDPTGCMCSimulation::write_acceptance_freqs() {
+
+        for (size_t v1_i {0}; v1_i != (m_v1_dim - 1); v1_i++) {
+            for (size_t v2_i {0}; v2_i != m_v2_dim; v2_i++) {
+                cout << m_v1s[v1_i] << " ";
+                cout << m_v1s[v1_i + 1] << " ";
+                cout << m_v2s[v2_i] << " ";
+                int swap_count {m_swap_count[0][v1_i][v2_i]};
+                int attempt_count {m_attempt_count[0][v1_i][v2_i]};
+                cout << swap_count << " ";
+                cout << attempt_count << " ";
+                cout << (static_cast<double>(swap_count) / attempt_count) << " ";
+                cout << "\n";
+            }
+        }
+        cout << "\n";
+
+        for (size_t v2_i {0}; v2_i != (m_v2_dim - 1); v2_i++) {
+            for (size_t v1_i {0}; v1_i != m_v1_dim; v1_i++) {
+                cout << m_v2s[v2_i] << " ";
+                cout << m_v2s[v2_i + 1] << " ";
+                cout << m_v1s[v1_i] << " ";
+                int swap_count {m_swap_count[1][v1_i][v2_i]};
+                int attempt_count {m_attempt_count[1][v1_i][v2_i]};
+                cout << swap_count << " ";
+                cout << attempt_count << " ";
+                cout << (static_cast<double>(swap_count) / attempt_count) << " ";
+                cout << "\n";
+            }
+        }
+        cout << "\n";
+    }
+
+    void TwoDPTGCMCSimulation::update_control_qs() {
+        double temp {m_replica_control_qs[m_temp_i]};
+        double stacking_mult {m_replica_control_qs[m_stacking_mult_i]};
+        m_origami_system.update_temp(temp, stacking_mult);
+        double staple_u {m_replica_control_qs[m_staple_u_i]};
+        m_origami_system.update_staple_u(staple_u);
     }
 
     TPTGCMCSimulation::TPTGCMCSimulation(
@@ -403,7 +577,8 @@ namespace ptmc {
             SystemOrderParams& ops, 
             SystemBiases& biases,
             InputParameters& params) :
-            PTGCMCSimulation(origami_system, ops, biases, params) {
+            OneDPTGCMCSimulation(origami_system, ops, biases, params) {
+
         m_exchange_q_is.push_back(m_temp_i);
         initialize_swap_file(params);
     }
@@ -413,7 +588,8 @@ namespace ptmc {
             SystemOrderParams& ops, 
             SystemBiases& biases,
             InputParameters& params) :
-            PTGCMCSimulation(origami_system, ops, biases, params) {
+            OneDPTGCMCSimulation(origami_system, ops, biases, params) {
+
         m_exchange_q_is.push_back(m_temp_i);
         m_exchange_q_is.push_back(m_staple_u_i);
         initialize_swap_file(params);
@@ -424,7 +600,8 @@ namespace ptmc {
             SystemOrderParams& ops, 
             SystemBiases& biases,
             InputParameters& params) :
-            PTGCMCSimulation(origami_system, ops, biases, params) {
+            OneDPTGCMCSimulation(origami_system, ops, biases, params) {
+
         m_exchange_q_is.push_back(m_temp_i);
         m_exchange_q_is.push_back(m_staple_u_i);
         m_exchange_q_is.push_back(m_bias_mult_i);

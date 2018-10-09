@@ -87,6 +87,7 @@ namespace parser {
             long long int m_swaps;
             double m_max_pt_dur;
             vector<double> m_bias_mults {};
+            vector<double> m_stacking_mults {};
             vector<double> m_chem_pot_mults {};
             string m_restart_swap_file;
 

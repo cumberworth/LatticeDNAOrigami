@@ -1306,22 +1306,27 @@ namespace potential {
         delete m_misbinding_pot;
     }
 
-    void OrigamiPotential::update_temp(double temp) {
+    void OrigamiPotential::update_temp(double temp, double stacking_mult) {
 
         // Update hybridization and stacking energy tables
         m_temp = temp;
-        if (m_hybridization_energy_tables.count(temp) == 0) {
+        pair<double, double> key {temp, stacking_mult};
+        if (m_stacking_energies.count(key) == 0) {
+
+            // THIS ONLY WORKS FOR CONSTANT STACKING
+            m_stacking_ene *= stacking_mult;
             get_energies();
+            m_stacking_ene /= stacking_mult;
             m_hybridization_energy_tables[temp] = m_hybridization_energies;
             m_hybridization_enthalpy_tables[temp] = m_hybridization_enthalpies;
             m_hybridization_entropy_tables[temp] = m_hybridization_entropies;
-            m_stacking_energy_tables[temp] = m_stacking_energies;
+            m_stacking_energy_tables[key] = m_stacking_energies;
         }
         else {
             m_hybridization_energies = m_hybridization_energy_tables[temp];
             m_hybridization_enthalpies = m_hybridization_enthalpy_tables[temp];
             m_hybridization_entropies = m_hybridization_entropy_tables[temp];
-            m_stacking_energies = m_stacking_energy_tables[temp];
+            m_stacking_energies = m_stacking_energy_tables[key];
         }
     }
 

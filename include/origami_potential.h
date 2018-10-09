@@ -282,7 +282,7 @@ namespace potential {
 
             bool m_constraints_violated;
 
-            void update_temp(double temp);
+            void update_temp(double temp, double stacking_mult=1);
     
             // Domain interactions
             DeltaConfig bind_domain(Domain& cd_i);
@@ -331,7 +331,7 @@ namespace potential {
                     m_hybridization_enthalpy_tables {};
             unordered_map<double, unordered_map<pair<int, int>, double>> 
                     m_hybridization_entropy_tables {};
-            unordered_map<double, unordered_map<pair<int, int>, double>> 
+            unordered_map<pair<double, double>, unordered_map<pair<int, int>, double>> 
                     m_stacking_energy_tables {};
 
             // Energy table preperation

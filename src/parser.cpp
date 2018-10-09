@@ -221,6 +221,9 @@ namespace parser {
             ("bias_mults",
                 po::value<string>(),
                 "Multiplier for system bias")
+            ("stacking_mults",
+                po::value<string>(),
+                "Multiplier for stacking energy")
             ("restart_swap_file",
                 po::value<string>(&m_restart_swap_file)->default_value(""),
                 "Swap file to restart from")
@@ -364,6 +367,10 @@ namespace parser {
         if (vm.count("bias_mults")) {
             string bias_mults_s {vm["bias_mults"].as<string>()};
             m_bias_mults = string_to_double_vector(bias_mults_s);
+        }
+        if (vm.count("stacking_mults")) {
+            string stacking_mults_s {vm["stacking_mults"].as<string>()};
+            m_stacking_mults = string_to_double_vector(stacking_mults_s);
         }
         if (vm.count("ops_to_output")) {
             string ops_to_output_s {vm["ops_to_output"].as<string>()};

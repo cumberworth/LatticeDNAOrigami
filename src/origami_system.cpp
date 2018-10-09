@@ -559,10 +559,10 @@ namespace origami {
         check_distance_constraints();
     }
 
-    void OrigamiSystem::update_temp(double temp) {
+    void OrigamiSystem::update_temp(double temp, double stacking_mult) {
         m_temp = temp;
         
-        m_pot.update_temp(temp);
+        m_pot.update_temp(temp, stacking_mult);
 
         // Recalculate system energy
         update_energy();

@@ -32,7 +32,6 @@ namespace ptmc {
 
     class PTGCMCSimulation: public GCMCSimulation {
         // Base method for parallel tempering in GC ensemble
-        // Exchange in only 1D, but can exchange any number of quantities
         public:
             PTGCMCSimulation(
                     OrigamiSystem& origami_system,
@@ -62,7 +61,7 @@ namespace ptmc {
             // control and dependent. Then no chance of using index on wrong
             // vector
             // Vectors of current replica quantities
-            vector<double> m_replica_control_qs = vector<double>(3);
+            vector<double> m_replica_control_qs = vector<double>(4);
             vector<double> m_replica_dependent_qs = vector<double>(3);
 
             // Vectors of quantities accross all replicas (used by master only)
@@ -75,6 +74,7 @@ namespace ptmc {
             int m_temp_i {0};
             int m_staple_u_i {1};
             int m_bias_mult_i {2};
+            int m_stacking_mult_i {3};
 
             // Indices into dependent quantities vector for type
             int m_enthalpy_i {0};
@@ -85,7 +85,7 @@ namespace ptmc {
             vector<int> m_exchange_q_is;
 
             // Initialization methods
-            void initialize_control_qs(InputParameters& params);
+            virtual void initialize_control_qs(InputParameters& params) = 0;
             void initialize_swap_file(InputParameters& params);
 
             // Communication methods
@@ -99,10 +99,7 @@ namespace ptmc {
             void update_dependent_qs();
 
             // Exchange methods
-            void attempt_exchange(
-                    int swap_i,
-                    vector<int>& attempt_count,
-                    vector<int>& swap_count);
+            virtual void attempt_exchange(int swap_i) = 0;
             bool test_acceptance(double acceptance_p);
             double calc_acceptance_p(
                     vector<pair<double, double>> control_q_pairs,
@@ -110,14 +107,60 @@ namespace ptmc {
 
             // Output methods
             void write_swap_entry(long long int step);
-            void write_acceptance_freqs(
-                    vector<int> attempt_count,
-                    vector<int> swap_count);
+            virtual void write_acceptance_freqs() = 0;
 
             void update_internal(long long int) {};
     };
 
-    class TPTGCMCSimulation: public PTGCMCSimulation {
+    class OneDPTGCMCSimulation: public PTGCMCSimulation {
+        public:
+            OneDPTGCMCSimulation(
+                    OrigamiSystem& origami_system,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params);
+
+        protected:
+            void initialize_control_qs(InputParameters& params) override;
+            void attempt_exchange(int swap_i) override;
+            void write_acceptance_freqs() override;
+
+            vector<int> m_attempt_count;
+            vector<int> m_swap_count;
+    };
+
+    class TwoDPTGCMCSimulation: public PTGCMCSimulation {
+        public:
+            TwoDPTGCMCSimulation(
+                    OrigamiSystem& origami_system,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params);
+
+        protected:
+            void initialize_control_qs(InputParameters& params) override;
+            void attempt_exchange(int swap_i) override;
+            void write_acceptance_freqs() override;
+
+        private:
+            void update_control_qs() override;
+
+            int m_v1_dim;
+            int m_v2_dim;
+            vector<double> m_v1s;
+            vector<double> m_v2s;
+            vector<int> m_i_starts {0, 0, 1, 0};
+            vector<int> m_j_starts {0, 0, 0, 1};
+            vector<int> m_i_incrs {2, 1, 2, 1};
+            vector<int> m_j_incrs {1, 2, 1, 2};
+            vector<int> m_i_ends {m_v1_dim - 1, m_v1_dim, m_v1_dim - 1, m_v1_dim};
+            vector<int> m_j_ends {m_v2_dim, m_v2_dim - 1, m_v2_dim, m_v2_dim - 1};
+            vector<int> m_rep_incrs {m_v2_dim, 1, m_v2_dim, 1};
+            vector<vector<vector<int>>> m_attempt_count;
+            vector<vector<vector<int>>> m_swap_count;
+    };
+
+    class TPTGCMCSimulation: public OneDPTGCMCSimulation {
         // Exchange temperatures
         public:
             TPTGCMCSimulation(
@@ -127,10 +170,10 @@ namespace ptmc {
                     InputParameters& params);
 
         private:
-            void update_control_qs();
+            void update_control_qs() override;
     };
 
-    class UTPTGCMCSimulation: public PTGCMCSimulation {
+    class UTPTGCMCSimulation: public OneDPTGCMCSimulation {
         // Exchange temperatures and staple chemical potentials
         public:
             UTPTGCMCSimulation(
@@ -140,10 +183,10 @@ namespace ptmc {
                     InputParameters& params);
 
         private:
-            void update_control_qs();
+            void update_control_qs() override;
     };
 
-    class HUTPTGCMCSimulation: public PTGCMCSimulation {
+    class HUTPTGCMCSimulation: public OneDPTGCMCSimulation {
         // Exchange temperatures, staple chemical potentials, and bias multpliers
         public:
             HUTPTGCMCSimulation(
@@ -154,7 +197,7 @@ namespace ptmc {
 
         private:
             void initialize_exchange_vector();
-            void update_control_qs();
+            void update_control_qs() override;
     };
 }
 
