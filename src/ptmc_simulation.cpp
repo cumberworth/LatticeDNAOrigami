@@ -155,7 +155,7 @@ namespace ptmc {
     bool PTGCMCSimulation::slave_receive(int swap_i) {
         for (auto i: m_exchange_q_is) {
             m_world.recv(m_master_rep, swap_i, m_replica_control_qs[i]);
-            if (m_replica_control_qs[i] == 0.0) {
+            if (m_replica_control_qs[i] == 999.0) {
                 return false;
             }
         }
@@ -199,7 +199,7 @@ namespace ptmc {
             }
             else {
                 for (size_t i {0}; i != m_exchange_q_is.size(); i++) {
-                    double msg {0.0};
+                    double msg {999.0};
                     m_world.send(rep_i, swap_i, msg);
                 }
             }
