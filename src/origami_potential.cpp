@@ -1314,9 +1314,10 @@ namespace potential {
         if (m_stacking_energies.count(key) == 0) {
 
             // THIS ONLY WORKS FOR CONSTANT STACKING
+            double old_stacking_ene {m_stacking_ene};
             m_stacking_ene *= stacking_mult;
             get_energies();
-            m_stacking_ene /= stacking_mult;
+            m_stacking_ene = old_stacking_ene;
             m_hybridization_energy_tables[temp] = m_hybridization_energies;
             m_hybridization_enthalpy_tables[temp] = m_hybridization_enthalpies;
             m_hybridization_entropy_tables[temp] = m_hybridization_entropies;

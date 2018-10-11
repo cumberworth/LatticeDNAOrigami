@@ -443,12 +443,6 @@ namespace ptmc {
             }
         }
 
-        for (int i {0}; i != m_num_reps; i++) {
-
-            // Calculate chemical potential of each replica if constant
-            // staple concentration
-        }
-
         if (m_rank == m_master_rep) {
             //  Temps
             m_control_qs.push_back(temps);
@@ -466,14 +460,10 @@ namespace ptmc {
 
         // Initialize quantities of each replica (updating on origami happens
         // in run)
-        for (int i {0}; i != m_num_reps; i++) {
-            if (m_rank == i) {
-                m_replica_control_qs[m_temp_i] = temps[i];
-                m_replica_control_qs[m_staple_u_i] = staple_us[i];
-                m_replica_control_qs[m_bias_i] = bias_mults[i];
-                m_replica_control_qs[m_stacking_mult_i] = stacking_mults[i];
-            }
-        }
+        m_replica_control_qs[m_temp_i] = temps[m_rank];
+        m_replica_control_qs[m_staple_u_i] = staple_us[m_rank];
+        m_replica_control_qs[m_bias_i] = bias_mults[m_rank];
+        m_replica_control_qs[m_stacking_mult_i] = stacking_mults[m_rank];
     }
 
     void TwoDPTGCMCSimulation::attempt_exchange(int swap_i) {
@@ -533,8 +523,8 @@ namespace ptmc {
 
     void TwoDPTGCMCSimulation::write_acceptance_freqs() {
 
-        for (size_t v1_i {0}; v1_i != (m_v1_dim - 1); v1_i++) {
-            for (size_t v2_i {0}; v2_i != m_v2_dim; v2_i++) {
+        for (int v1_i {0}; v1_i != (m_v1_dim - 1); v1_i++) {
+            for (int v2_i {0}; v2_i != m_v2_dim; v2_i++) {
                 cout << m_v1s[v1_i] << " ";
                 cout << m_v1s[v1_i + 1] << " ";
                 cout << m_v2s[v2_i] << " ";
@@ -548,8 +538,8 @@ namespace ptmc {
         }
         cout << "\n";
 
-        for (size_t v2_i {0}; v2_i != (m_v2_dim - 1); v2_i++) {
-            for (size_t v1_i {0}; v1_i != m_v1_dim; v1_i++) {
+        for (int v2_i {0}; v2_i != (m_v2_dim - 1); v2_i++) {
+            for (int v1_i {0}; v1_i != m_v1_dim; v1_i++) {
                 cout << m_v2s[v2_i] << " ";
                 cout << m_v2s[v2_i + 1] << " ";
                 cout << m_v1s[v1_i] << " ";
