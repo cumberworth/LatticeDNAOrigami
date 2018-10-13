@@ -1311,7 +1311,7 @@ namespace potential {
         // Update hybridization and stacking energy tables
         m_temp = temp;
         pair<double, double> key {temp, stacking_mult};
-        if (m_stacking_energies.count(key) == 0) {
+        if (m_stacking_energy_tables.count(key) == 0) {
 
             // THIS ONLY WORKS FOR CONSTANT STACKING
             double old_stacking_ene {m_stacking_ene};
