@@ -1,5 +1,6 @@
-# Autodependency recipe from
+# AUTODEPENDENCY GENERATION DOES NOT WORK
 # http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
+# It is surprising because the guy who wrote the above post in the make maintainer
 
 OPTLEVEL = -O3
 BUILDDIR = build
@@ -17,14 +18,14 @@ OBJECTS := $(subst .cpp,.o,$(SOURCES))
 OBJECTS := $(subst $(SRCDIR),$(BUILDDIR),$(OBJECTS))
 
 CPP = mpicxx
-CPPFLAGS = -std=c++14 -Iinclude $(OPTLEVEL)
+CPPFLAGS = -std=c++14 -I include $(OPTLEVEL)
 LDFLAGS = -lboost_program_options -lboost_mpi -lboost_serialization -lboost_system -lboost_filesystem $(OPTLEVEL)
 
 # For compiling on clusters with local Boost installation
 #CPPFLAGS = -std=c++14 -I/home/amc226/include -Iinclude $(OPTLEVEL)
 #LDFLAGS = -L/home/amc226/lib -lboost_program_options -lboost_mpi -lboost_serialization -lboost_system -lboost_filesystem $(OPTLEVEL)
 
-DEPDIR = .d
+DEPDIR := .d
 $(shell mkdir -p $(DEPDIR) >/dev/null)
 DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.Td
 
@@ -41,11 +42,8 @@ $(BUILDDIR)/%.o: %.cpp $(DEPDIR)/%.d
 	$(COMPILE.cpp) $(OUTPUT_OPTION) $<
 	$(POSTCOMPILE)
 
-
 $(DEPDIR)/%.d: ;
 .PRECIOUS: $(DEPDIR)/%.d
-
-include $(wildcard $(patsubst %,$(DEPDIR)/%.d,$(basename $(sources))))
 
 .PHONY: clean install
 clean:
@@ -54,3 +52,5 @@ clean:
 
 install:
 	cp $(TARGETDIR)/$(TARGET) $(PREFIX)
+
+include $(wildcard $(patsubst %,$(DEPDIR)/%.d,$(basename $(SOURCES))))
