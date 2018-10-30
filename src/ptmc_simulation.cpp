@@ -484,7 +484,7 @@ namespace ptmc {
         int rep_incr {m_rep_incrs[swap_set]};
         for (int i {i_start}; i < (i_end); i += i_incr) {
             for (int j {j_start}; j < (j_end); j += j_incr) {
-                int rep_i {i*m_v1_dim + j};
+                int rep_i {i*m_v2_dim + j};
                 int rep_j {rep_i + rep_incr};
                 m_attempt_count[swap_v][i][j]++;
 
