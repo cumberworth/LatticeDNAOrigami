@@ -259,7 +259,7 @@ namespace ptmc {
         // Energies are actually E/B, so multiply by T
         double DB {1/temp2 - 1/temp1};
         double DH {enthalpy2*temp2 - enthalpy1*temp1};
-        double Dstacking {stacking1*temp2 - stacking2*temp1};
+        double Dstacking {stacking2*temp2 - stacking1*temp1};
         double DBM {stacking_mult2/temp2 - stacking_mult1/temp1};
         double DBias {bias2*temp2 - bias1*temp1};
         double DN {N2 - N1};
