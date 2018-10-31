@@ -140,9 +140,10 @@ namespace ptmc {
         double N {static_cast<double>(m_origami_system.num_staples())};
         double bias_e {m_biases.get_total_bias()};
 
-        m_replica_dependent_qs[m_enthalpy_i] = DH + D_stacking;
+        m_replica_dependent_qs[m_enthalpy_i] = DH;
         m_replica_dependent_qs[m_staples_i] = N;
         m_replica_dependent_qs[m_bias_i] = bias_e;
+        m_replica_dependent_qs[m_stacking_i] = D_stacking;
     }
 
     void PTGCMCSimulation::slave_send(int swap_i) {
@@ -212,6 +213,7 @@ namespace ptmc {
         dependent_qs[m_enthalpy_i].push_back(m_replica_dependent_qs[m_enthalpy_i]);
         dependent_qs[m_staples_i].push_back(m_replica_dependent_qs[m_staples_i]);
         dependent_qs[m_bias_i].push_back(m_replica_dependent_qs[m_bias_i]);
+        dependent_qs[m_stacking_i].push_back(m_replica_dependent_qs[m_stacking_i]);
     }
 
     bool PTGCMCSimulation::test_acceptance(double p_accept) {
@@ -232,6 +234,8 @@ namespace ptmc {
         return accept;
     }
 
+    // This does not do the general bias correctly
+    // I need the bias of both configurations in both states
     double PTGCMCSimulation::calc_acceptance_p(
             vector<pair<double, double>> control_q_pairs,
             vector<pair<double, double>> dependent_q_pairs) {
@@ -240,6 +244,8 @@ namespace ptmc {
         double temp2 {control_q_pairs[m_temp_i].second};
         double staple_u1 {control_q_pairs[m_staple_u_i].first};
         double staple_u2 {control_q_pairs[m_staple_u_i].second};
+        double stacking_mult1 {control_q_pairs[m_stacking_mult_i].first};
+        double stacking_mult2 {control_q_pairs[m_stacking_mult_i].second};
 
         double enthalpy1 {dependent_q_pairs[m_enthalpy_i].first};
         double enthalpy2 {dependent_q_pairs[m_enthalpy_i].second};
@@ -247,14 +253,18 @@ namespace ptmc {
         double N2 {dependent_q_pairs[m_staples_i].second};
         double bias1 {dependent_q_pairs[m_bias_i].first};
         double bias2 {dependent_q_pairs[m_bias_i].second};
+        double stacking1 {dependent_q_pairs[m_stacking_i].first};
+        double stacking2 {dependent_q_pairs[m_stacking_i].second};
 
         // Energies are actually E/B, so multiply by T
         double DB {1/temp2 - 1/temp1};
         double DH {enthalpy2*temp2 - enthalpy1*temp1};
+        double Dstacking {stacking1*temp2 - stacking2*temp1};
+        double DBM {stacking_mult2/temp2 - stacking_mult1/temp1};
         double DBias {bias2*temp2 - bias1*temp1};
         double DN {N2 - N1};
         double DBU {staple_u2 / temp2 - staple_u1 / temp1};
-        double p_accept {min({1.0, exp(DB*(DH + DBias) - DBU*DN)})};
+        double p_accept {min({1.0, exp(DB*(DH + DBias) + DBM*Dstacking - DBU*DN)})};
 
         return p_accept;
     }

@@ -80,6 +80,7 @@ namespace ptmc {
             int m_enthalpy_i {0};
             int m_staples_i {1};
             int m_bias_i {2};
+            int m_stacking_i {3};
 
             // Indices of quantities that will be exchanged
             vector<int> m_exchange_q_is;
