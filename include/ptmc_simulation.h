@@ -62,7 +62,7 @@ namespace ptmc {
             // vector
             // Vectors of current replica quantities
             vector<double> m_replica_control_qs = vector<double>(4);
-            vector<double> m_replica_dependent_qs = vector<double>(3);
+            vector<double> m_replica_dependent_qs = vector<double>(4);
 
             // Vectors of quantities accross all replicas (used by master only)
             vector<vector<double>> m_control_qs {};
