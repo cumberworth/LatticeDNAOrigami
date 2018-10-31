@@ -326,6 +326,7 @@ namespace ptmc {
             if (m_rank == i) {
                 m_replica_control_qs[m_temp_i] = params.m_temps[i];
                 m_replica_control_qs[m_bias_i] = params.m_bias_mults[i];
+                m_replica_control_qs[m_stacking_mult_i] = params.m_stacking_mults[i];
 
                 // Update chemical potential of each replica if constant
                 // staple concentration
@@ -350,7 +351,7 @@ namespace ptmc {
     void OneDPTGCMCSimulation::attempt_exchange(int swap_i) {
 
         // Collect results from all replicas
-        vector<vector<double>> dependent_qs {{}, {}, {}};
+        vector<vector<double>> dependent_qs {{}, {}, {}, {}};
         master_receive(swap_i, dependent_qs);
 
         // Iterate through pairs in current set and attempt swap
@@ -479,7 +480,7 @@ namespace ptmc {
     void TwoDPTGCMCSimulation::attempt_exchange(int swap_i) {
 
         // Collect results from all replicas
-        vector<vector<double>> dependent_qs {{}, {}, {}};
+        vector<vector<double>> dependent_qs {{}, {}, {}, {}};
         master_receive(swap_i, dependent_qs);
 
         // Iterate through pairs in current set and attempt swap
