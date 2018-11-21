@@ -409,7 +409,7 @@ namespace movetypes {
         while (true) {
             configT c; // Trial config for current domain
             bool c_open {false};
-            bool p_c_open;
+            double p_c_open;
             while (not c_open and m_c_attempts != m_d_max_c_attempts) {
                 m_c_attempts++;
                 c = select_trial_config();
