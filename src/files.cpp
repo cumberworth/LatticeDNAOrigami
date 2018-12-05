@@ -449,6 +449,7 @@ namespace files {
 
         m_file << "atom " << scaffold_length << ":" << m_max_num_domains - 1;
         m_file << " radius 0.25 type staple";
+        m_file.flush();
     }
 
     void OrigamiTrajOutputFile::write(long int step, double) {
@@ -469,6 +470,7 @@ namespace files {
             m_file << "\n";
         }
         m_file << "\n";
+        m_file.flush();
     }
 
     void OrigamiVCFOutputFile::write(long int, double) {
@@ -490,6 +492,7 @@ namespace files {
             m_file << "\n";
         }
         m_file << "\n";
+        m_file.flush();
     }
 
     void OrigamiOrientationOutputFile::write(long int, double) {
@@ -512,6 +515,7 @@ namespace files {
             }
         }
         m_file << "\n";
+        m_file.flush();
     }
 
     void OrigamiStateOutputFile::write(long int, double) {
@@ -537,6 +541,7 @@ namespace files {
         }
                 
         m_file << "\n";
+        m_file.flush();
     }
 
     void OrigamiCountsOutputFile::write(long int step, double) {
@@ -547,6 +552,7 @@ namespace files {
         m_file << m_origami_system.num_fully_bound_domain_pairs() << " ";
         m_file << m_origami_system.num_misbound_domain_pairs() << " ";
         m_file << "\n";
+        m_file.flush();
     }
 
     void OrigamiStaplesBoundOutputFile::write(long int step, double) {
@@ -555,6 +561,7 @@ namespace files {
             m_file << staple_count << " ";
         }
         m_file << "\n";
+        m_file.flush();
     }
 
     void OrigamiStaplesFullyBoundOutputFile::write(long int step, double) {
@@ -578,6 +585,7 @@ namespace files {
             m_file << staple_state << " ";
         }
         m_file << "\n";
+        m_file.flush();
     }
 
     OrigamiEnergiesOutputFile::OrigamiEnergiesOutputFile(
@@ -602,6 +610,7 @@ namespace files {
         m_file << m_origami_system.stacking_energy() << " ";
         m_file << m_biases.get_total_bias() << " ";
         m_file << "\n";
+        m_file.flush();
     }
 
     OrigamiTimesOutputFile::OrigamiTimesOutputFile(
@@ -618,6 +627,7 @@ namespace files {
         m_file << step << " ";
         m_file << time;
         m_file << "\n";
+        m_file.flush();
     }
 
     OrigamiOrderParamsOutputFile::OrigamiOrderParamsOutputFile(
@@ -637,6 +647,7 @@ namespace files {
             m_ops_to_output.emplace_back(op);
         }
         m_file << "\n";
+        m_file.flush();
     }
 
     void OrigamiOrderParamsOutputFile::write(long int step, double) {
@@ -645,5 +656,6 @@ namespace files {
             m_file << " " << op.get().calc_param();
         }
         m_file << "\n";
+        m_file.flush();
     }
 }
