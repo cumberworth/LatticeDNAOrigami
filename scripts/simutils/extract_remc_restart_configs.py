@@ -6,13 +6,13 @@ import argparse
 import pdb
 import sys
 
-from origamipy.io import *
+from origamipy import files
 
 
 def main():
     args = parse_args()
     swap_inp_filename = '{}.swp'.format(args.inp_filebase)
-    swap_file = UnparsedSingleLineStepInpFile(swap_inp_filename, headerlines=1)
+    swap_file = files.UnparsedSingleLineStepInpFile(swap_inp_filename, headerlines=1)
     swap_out_filename = '{}.swp.restart'.format(args.out_filebase)
     with open(swap_out_filename, 'w') as out:
         out.write(swap_file.header)
@@ -20,7 +20,7 @@ def main():
 
     for thread in range(args.threads):
         traj_inp_filename = '{}-{}.trj'.format(args.inp_filebase, thread)
-        traj_file = UnparsedMultiLineStepInpFile(traj_inp_filename)
+        traj_file = files.UnparsedMultiLineStepInpFile(traj_inp_filename)
         traj_out_filename = '{}-{}.trj.restart'.format(args.out_filebase, thread)
         with open(traj_out_filename, 'w') as out:
             out.write(traj_file.get_last_step())
