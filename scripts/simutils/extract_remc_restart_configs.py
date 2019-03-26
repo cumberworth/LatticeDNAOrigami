@@ -31,11 +31,11 @@ def parse_args():
     parser.add_argument(
         'inp_filebase',
         type=str,
-        help='Input filename')
+        help='Input filebase')
     parser.add_argument(
         'out_filebase',
         type=str,
-        help='Output filename')
+        help='Output filebase')
     parser.add_argument(
         'threads',
         type=int,
