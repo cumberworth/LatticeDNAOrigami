@@ -423,7 +423,7 @@ namespace simulation {
 
         long long int step {start_step + 1};
         for (; step != (steps + start_step + 1); step ++) {
-            
+
             // Pick movetype and apply
             MCMovetype& movetype {select_movetype()};
             bool accepted;

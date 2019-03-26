@@ -60,39 +60,6 @@ namespace potential {
                     bool doubly_contig) = 0;
     };
 
-    class RestrictiveBindingPotential:
-            public BindingPotential {
-
-        public:
-            using BindingPotential::BindingPotential;
-            DeltaConfig bind_domains(Domain& cd_i, Domain& cd_j) override;
-            void check_pair_stacking(
-                    Domain* cd_1,
-                    Domain* cd_2,
-                    bool doubly_contig) override;
-
-        private:
-            // Top level interaction checks
-            bool check_domain_pair_constraints(Domain& cd_i);
-            bool check_helical_constraints(Domain& cd_1, Domain& cd_2);
-
-            // Linear helix checks
-            bool check_linear_helix(VectorThree ndr_1, Domain& cd_2);
-            bool check_linear_helix_rear(Domain& cd_3);
-
-            // Junction checks
-            bool check_doubly_contiguous_junction(Domain& cd_2, Domain& cd_3);
-            bool doubly_contiguous_junction(Domain& cd_1, Domain& cd_2);
-            bool check_doubly_contiguous_junction(
-                    Domain& cd_1,
-                    Domain& cd_2,
-                    Domain& cd_3,
-                    Domain& cd_4);
-            bool check_junction_front(Domain& cd_1);
-            bool check_junction_rear(Domain& cd_4);
-
-    };
-
     /** Base class for binding potentials that allow bending at backbone nicks
       *
       */
@@ -214,26 +181,6 @@ namespace potential {
                     Domain* cd_1,
                     Domain* cd_2,
                     int i);
-    };
-
-    /** Helices can be fully stacked and nonlinear */
-    class NonLinearFlexibleBindingPotential:
-            public FlexibleBindingPotential {
-
-        public:
-            using FlexibleBindingPotential::FlexibleBindingPotential;
-            void check_pair_stacking(
-                    Domain* cd_1,
-                    Domain* cd_2,
-                    bool doubly_contig) override;
-
-        private:
-            void check_constraints(Domain* cd) override;
-            void check_doubly_contig_junction(
-                    Domain* cd_1,
-                    Domain* cd_2,
-                    Domain* cd_3,
-                    Domain* cd_4) override;
     };
 
     class MisbindingPotential {
