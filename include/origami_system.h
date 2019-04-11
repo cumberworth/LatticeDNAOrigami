@@ -162,6 +162,7 @@ namespace origami {
 
             // Bookeeping stuff, could probably organize better
             vector<vector<Domain*>> m_domains {}; // Domains grouped by chain
+            string m_domain_type;
             int m_num_domains {0}; // Total domains in system
             int m_num_staples {0};
             vector<vector<int>> m_staple_ident_to_scaffold_ds {}; // Staple ID to comp scaffold domain i

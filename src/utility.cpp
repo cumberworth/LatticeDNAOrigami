@@ -81,9 +81,7 @@ namespace utility {
             rot[0] = -rot[0];
             rot[1] = -rot[1];
         }
-//        else {
-//           throw SimulationMisuse {};
-//      }
+
         return rot;
     }
 
@@ -95,22 +93,15 @@ namespace utility {
             return rot;
         }
         rot = rot - origin;
+        VectorThree new_rot {rot.rotate(axis, turns)};
+
+        return new_rot + origin;
+    }
+
+    VectorThree VectorThree::rotate(VectorThree axis, int turns) {
+        VectorThree rot {*this};
         if (turns % 2 == 0) {
-            if (axis == xhat) {
-                rot[1] = -rot[1];
-                rot[2] = -rot[2];
-            }
-            else if (axis == yhat) {
-                rot[0] = -rot[0];
-                rot[2] = -rot[2];
-            }
-            else if (axis == zhat) {
-                rot[0] = -rot[0];
-                rot[1] = -rot[1];
-            }
-            else {
-                throw SimulationMisuse {};
-            }
+            rot = rot.rotate_half(axis);
         }
         else {
             int dir;
@@ -122,28 +113,31 @@ namespace utility {
             else {
                 dir = -1;
             }
-
-            if (axis == xhat) {
+            auto abs_axis {axis.absolute()};
+            if (axis != abs_axis) {
+                dir *= -1;
+            }
+            if (abs_axis == xhat) {
                 std::swap(rot[1], rot[2]);
                 rot[1] *= -dir;
                 rot[2] *= dir;
             }
-            else if (axis == yhat) {
+            else if (abs_axis == yhat) {
                 std::swap(rot[0], rot[2]);
                 rot[0] *= -dir;
                 rot[2] *= dir;
             }
-            else if (axis == zhat) {
+            else if (abs_axis == zhat) {
                 std::swap(rot[0], rot[1]);
                 rot[0] *= -dir;
                 rot[1] *= dir;
             }
-            else {
-                throw SimulationMisuse {};
-            }
+//            else {
+//                throw SimulationMisuse {};
+//            }
         }
 
-        return rot + origin;
+        return rot;
     }
 
     int VectorThree::sum() {

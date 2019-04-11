@@ -60,6 +60,7 @@ namespace simulation {
     void setup_config_files(
             const string filebase,
             const int max_total_staples,
+            const int max_staple_size,
             const int freq,
             OrigamiSystem& origami,
             vector<OrigamiOutputFile*>& files);

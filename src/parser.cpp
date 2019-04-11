@@ -37,6 +37,9 @@ namespace parser {
             ("origami_input_filename",
                 po::value<string>(&m_origami_input_filename),
                 "Origami input filename")
+            ("domain_type",
+                po::value<string>(&m_domain_type),
+                "Domain type")
             ("binding_pot",
                 po::value<string>(&m_binding_pot),
                 "Binding potential to use")
@@ -91,6 +94,9 @@ namespace parser {
             ("max_type_staples",
                 po::value<int>(&m_max_type_staples)->default_value(999),
                 "Max number of staples of a given type")
+            ("max_staple_size",
+                po::value<int>(&m_max_staple_size)->default_value(2),
+                "Max number of domains per staple")
             ("excluded_staples",
                 po::value<string>(),
                 "Staple types to exclude")

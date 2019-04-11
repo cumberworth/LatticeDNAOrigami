@@ -24,6 +24,7 @@ namespace parser {
 
             // System input parameters
             string m_origami_input_filename;
+            string m_domain_type;
             string m_binding_pot;
             string m_misbinding_pot;
             string m_stacking_pot;
@@ -42,6 +43,7 @@ namespace parser {
             int m_min_total_staples;
             int m_max_total_staples;
             int m_max_type_staples;
+            int m_max_staple_size;
             vector<int> m_excluded_staples {};
             bool m_domain_update_biases_present;
             string m_ops_filename;

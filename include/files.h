@@ -144,6 +144,7 @@ namespace files {
                     string filename,
                     int write_freq,
                     int max_num_staples,
+                    int max_staple_size,
                     OrigamiSystem& origami_system);
             virtual ~OrigamiOutputFile() {};
 
@@ -200,6 +201,7 @@ namespace files {
                     string filename,
                     int write_freq,
                     int max_num_staples,
+                    int max_staple_size,
                     OrigamiSystem& origami_system,
                     SystemBiases& m_biases);
             using OrigamiOutputFile::OrigamiOutputFile;
@@ -215,6 +217,7 @@ namespace files {
                     string filename,
                     int write_freq,
                     int max_num_staples,
+                    int max_staple_size,
                     OrigamiSystem& origami_system);
             using OrigamiOutputFile::OrigamiOutputFile;
             void write(long int step, double time);
@@ -244,6 +247,7 @@ namespace files {
                     string filename,
                     int write_freq,
                     int max_num_staples,
+                    int max_staple_size,
                     OrigamiSystem& origami_system,
                     SystemOrderParams& ops,
                     vector<string> op_tags);

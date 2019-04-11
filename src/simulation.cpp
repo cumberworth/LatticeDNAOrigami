@@ -58,54 +58,55 @@ namespace simulation {
         // Hack to get a vsf file
         OrigamiVSFOutputFile vsf_file {
                 output_filebase + ".vsf", 0,
-                params.m_max_total_staples, origami};
+                params.m_max_total_staples, params.m_max_staple_size, origami};
         vsf_file.write(0, 0);
 
         vector<OrigamiOutputFile*> outs {};
         if (params.m_configs_output_freq != 0) {
             OrigamiOutputFile* config_out = new OrigamiTrajOutputFile {
                     output_filebase + ".trj", params.m_configs_output_freq,
-                    params.m_max_total_staples, origami};
+                    params.m_max_total_staples, params.m_max_staple_size, origami};
             outs.push_back(config_out);
         }
         if (params.m_vtf_output_freq != 0) {
             setup_config_files(output_filebase,
-                    params.m_max_total_staples, params.m_vtf_output_freq,
-                    origami, outs);
+                    params.m_max_total_staples, params.m_max_staple_size,
+                    params.m_vtf_output_freq, origami, outs);
         }
         if (params.m_counts_output_freq != 0) {
             OrigamiOutputFile* counts_out = new OrigamiCountsOutputFile {
                     output_filebase + ".counts", params.m_counts_output_freq,
-                    params.m_max_total_staples, origami};
+                    params.m_max_total_staples, params.m_max_staple_size, origami};
             outs.push_back(counts_out);
             OrigamiOutputFile* staples_bound = new OrigamiStaplesBoundOutputFile {
                     output_filebase + ".staples", params.m_counts_output_freq,
-                    params.m_max_total_staples, origami};
+                    params.m_max_total_staples, params.m_max_staple_size, origami};
             outs.push_back(staples_bound);
             OrigamiOutputFile* staples_fully_bound =
                     new OrigamiStaplesFullyBoundOutputFile {
                             output_filebase + ".staplestates",
                             params.m_counts_output_freq,
-                            params.m_max_total_staples, origami};
+                            params.m_max_total_staples, params.m_max_staple_size, origami};
             outs.push_back(staples_fully_bound);
         }
         if (params.m_times_output_freq != 0) {
             OrigamiOutputFile* times_out = new OrigamiTimesOutputFile {
                     output_filebase + ".times", params.m_times_output_freq,
-                    params.m_max_total_staples, origami};
+                    params.m_max_total_staples, params.m_max_staple_size, origami};
             outs.push_back(times_out);
         }
         if (params.m_energies_output_freq != 0) {
             OrigamiOutputFile* energies_out = new OrigamiEnergiesOutputFile {
                     output_filebase + ".ene", params.m_energies_output_freq,
-                    params.m_max_total_staples, origami, biases};
+                    params.m_max_total_staples, params.m_max_staple_size,
+                    origami, biases};
             outs.push_back(energies_out);
         }
         if (params.m_order_params_output_freq != 0) {
             OrigamiOutputFile* order_params_out = new OrigamiOrderParamsOutputFile {
                     output_filebase + ".ops",
                     params.m_order_params_output_freq, params.m_max_total_staples,
-                    origami, ops, params.m_ops_to_output};
+                    params.m_max_staple_size, origami, ops, params.m_ops_to_output};
             outs.push_back(order_params_out);
         }
 
@@ -115,20 +116,24 @@ namespace simulation {
     void setup_config_files (
             const string filebase,
             const int max_total_staples,
+            const int max_staple_size,
             const int freq,
             OrigamiSystem& origami,
             vector<OrigamiOutputFile*>& files) {
 
         OrigamiOutputFile* config_out = new OrigamiVCFOutputFile {
-                filebase + ".vcf", freq, max_total_staples, origami};
+                filebase + ".vcf", freq, max_total_staples, max_staple_size,
+                origami};
         files.push_back(config_out);
 
         config_out = new OrigamiStateOutputFile {
-                filebase + ".states", freq, max_total_staples, origami};
+                filebase + ".states", freq, max_total_staples, max_staple_size,
+                origami};
         files.push_back(config_out);
 
         config_out = new OrigamiOrientationOutputFile {
-                filebase + ".ores", freq, max_total_staples, origami};
+                filebase + ".ores", freq, max_total_staples, max_staple_size,
+                origami};
         files.push_back(config_out);
     }
 
@@ -160,8 +165,9 @@ namespace simulation {
         // HACK (files won't be right if filebase changed in derived constructor)
         if (params.m_vcf_per_domain) {
             setup_config_files(params.m_output_filebase + "_move",
-                    params.m_max_total_staples, params.m_configs_output_freq,
-                    m_origami_system, m_config_per_move_files);
+                    params.m_max_total_staples, params.m_max_staple_size, 
+                    params.m_configs_output_freq, m_origami_system,
+                    m_config_per_move_files);
         }
 
         // Constructor movetypes
@@ -568,19 +574,23 @@ namespace simulation {
         string output_filebase {m_params.m_output_filebase + "_vmd"};
         vmd_struct_file = new OrigamiVSFOutputFile {
                 output_filebase + ".vsf", 0,
-                m_params.m_max_total_staples, m_origami_system};
+                m_params.m_max_total_staples, m_params.m_max_staple_size,
+                m_origami_system};
 
         vmd_coors_file = new OrigamiVCFOutputFile {
                 output_filebase + ".vcf", 0,
-                m_params.m_max_total_staples, m_origami_system};
+                m_params.m_max_total_staples, m_params.m_max_staple_size,
+                m_origami_system};
 
         vmd_states_file = new OrigamiStateOutputFile {
                 output_filebase + ".states", 0,
-                m_params.m_max_total_staples, m_origami_system};
+                m_params.m_max_total_staples, m_params.m_max_staple_size,
+                m_origami_system};
 
         vmd_ores_file = new OrigamiOrientationOutputFile {
                 output_filebase + ".ores", 0,
-                m_params.m_max_total_staples, m_origami_system};
+                m_params.m_max_total_staples, m_params.m_max_staple_size,
+                m_origami_system};
 
         pipe_to_vmd();
         if (m_params.m_create_vmd_instance) {

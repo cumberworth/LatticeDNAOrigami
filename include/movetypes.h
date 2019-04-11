@@ -284,7 +284,8 @@ namespace movetypes {
               *
               * Selection begins by selectig a random domain in the given
               * segment, a random direction, a random maximum segment
-              * length and a random maximum number of domains to regrow length.              * Domains are added to this first segment until the maxium
+              * length and a random maximum number of domains to regrow length.
+              * Domains are added to this first segment until the maxium
               * segment length is reached, the maximum number of domains to
               * regrow is reached. If an added domain is bound to a staple
               * that is bound to another scaffold domain is reached, and if the

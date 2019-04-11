@@ -229,7 +229,7 @@ namespace topConstraintPoints {
         m_domain_to_dir[key] = dir;
         find_growthpoints_endpoints(scaffold_domains, excluded_staples, 0);
 
-        // Save initial active endpionts and remaining steps for regrowing old
+        // Save initial active endpoints and remaining steps for regrowing old
         m_initial_active_endpoints = m_active_endpoints;
     }
 

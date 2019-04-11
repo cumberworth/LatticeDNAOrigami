@@ -263,9 +263,10 @@ namespace movetypes {
             vector<Domain*> selected_chain) {
 
         vector<pair<Domain*, Domain*>> bound_domains {};
+        int chain_index {selected_chain[0]->m_c};
         for (auto domain: selected_chain) {
-            // shouldn't this be only non-self binding (only would effect staple size > 2)
-            if (domain->m_bound_domain != nullptr) {
+            if (domain->m_bound_domain != nullptr and
+                    domain->m_bound_domain->m_c != chain_index) {
 
                 // New domain, old domain
                 bound_domains.push_back({domain, domain->m_bound_domain});
@@ -293,7 +294,7 @@ namespace movetypes {
                 config_files, label, ops, biases, params) {
 	}
 
-	RegrowthMCMovetype::RegrowthMCMovetype(
+    RegrowthMCMovetype::RegrowthMCMovetype(
                 OrigamiSystem& origami_system,
                 RandomGens& random_gens,
                 IdealRandomWalks& ideal_random_walks,

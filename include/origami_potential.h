@@ -40,88 +40,66 @@ namespace potential {
     // Forward declaration
     class OrigamiPotential;
 
+    /** Potential for fully complementary binding domains
+      *
+      * Includes two and three body (linear helix) terms.
+      */
     class BindingPotential {
         public:
             BindingPotential(OrigamiPotential& pot);
             virtual ~BindingPotential() {}
 
-            virtual DeltaConfig bind_domains(Domain& cd_i, Domain& cd_j) = 0;
-            virtual DeltaConfig check_stacking(Domain& cd_i, Domain& cd_j);
+            DeltaConfig bind_domains(Domain& cd_i, Domain& cd_j);
+            DeltaConfig check_stacking(Domain& cd_i, Domain& cd_j);
+
             bool m_constraints_violated;
 
         protected:
             OrigamiPotential& m_pot;
             DeltaConfig m_delta_config;
 
-            virtual void internal_check_stacking(Domain& cd_i, Domain& cd_j);
-            virtual void check_pair_stacking(
-                    Domain* cd_1,
-                    Domain* cd_2,
-                    bool doubly_contig) = 0;
-    };
-
-    /** Base class for binding potentials that allow bending at backbone nicks
-      *
-      */
-    class FlexibleBindingPotential:
-            public BindingPotential {
-
-        public:
-            using BindingPotential::BindingPotential;
-            DeltaConfig bind_domains(Domain& cd_i, Domain& cd_j) override;
-
-        protected:
-            virtual void check_constraints(Domain* cd) = 0;
-            virtual void check_doubly_contig_junction(
-                    Domain* cd_1,
-                    Domain* cd_2,
-                    Domain* cd_3,
-                    Domain* cd_4) = 0;
+            virtual void check_constraints(Domain* cd);
             virtual bool check_regular_pair_constraints(
                     Domain* cd_1,
                     Domain* cd_2,
                     int i);
-            bool check_possible_doubly_contig_helix(
-                    Domain* cd_1,
-                    Domain* cd_2);
-            void check_possible_doubly_contig_junction(
-                    Domain* cd_1,
-                    Domain* cd_2);
             bool check_pair_stacked(Domain* cd_1, Domain* cd_2);
-            void check_edge_pair_junction(Domain* cd_1, Domain* cd_2, int i);
-    };
-
-    /** Helices must be linear to be stacked */
-    class LinearFlexibleBindingPotential:
-            public FlexibleBindingPotential {
-
-        public:
-            using FlexibleBindingPotential::FlexibleBindingPotential;
-            DeltaConfig bind_domains(Domain& cd_i, Domain& cd_j) override;
-            DeltaConfig check_stacking(Domain& cd_i, Domain& cd_j) override;
-            void check_pair_stacking(
-                    Domain* cd_1,
-                    Domain* cd_2,
-                    bool doubly_contig) override;
-
-        private:
-            void check_constraints(Domain* cd) override;
-            void check_doubly_contig_junction(
-                    Domain* cd_1,
-                    Domain* cd_2,
-                    Domain* cd_3,
-                    Domain* cd_4) override;
-            void check_linear_helix(Domain* cd_1, Domain* cd_2, int i);
             void check_linear_helix(
                     Domain* cd_h1,
                     Domain* cd_h2,
                     Domain* cd_h3);
-            void check_central_linear_helix(Domain& cd_i, Domain& cd_j);
+            virtual void check_linear_helices(Domain* cd_1, Domain* cd_2, int i);
+            virtual void check_central_linear_helix(Domain& cd_i, Domain& cd_j);
+    };
 
-        protected:
-            // The following are ugly methods to enforce the ugly four body
-            // stacking rule that would be much easier to enforce if the
-            // domains had explicit helical axis vectors
+    /** Adds four body terms for single and double crossover junctions */
+    class JunctionBindingPotential:
+            public BindingPotential {
+
+        public:
+            using BindingPotential::BindingPotential;
+
+        private:
+            void check_constraints(Domain* cd) override;
+            bool check_regular_pair_constraints(
+                    Domain* cd_1,
+                    Domain* cd_2,
+                    int i) override;
+            void check_linear_helices(Domain* cd_1, Domain* cd_2, int i) override;
+            void check_central_linear_helix(Domain& cd_i, Domain& cd_j) override;
+
+            bool check_possible_doubly_contig_helix(
+                    Domain* cd_1,
+                    Domain* cd_2);
+            void check_doubly_contig_junction(
+                    Domain* cd_1,
+                    Domain* cd_2,
+                    Domain* cd_3,
+                    Domain* cd_4);
+            void check_possible_doubly_contig_junction(
+                    Domain* cd_1,
+                    Domain* cd_2);
+            void check_edge_pair_junction(Domain* cd_1, Domain* cd_2, int i);
 
             /** Check for unstacked single junctions from first two domains
               *
@@ -154,11 +132,8 @@ namespace potential {
 
             /** Check for unstacked single junctions
               *
-              * This will subtract a stacked pair from configurations in which
-              * the next domain vectors of the first and third pairs are
-              * parallel to each other, antiparallel to the kink pair next
-              * domain vector, and the kink pair is not agreeing with where a
-              * crossover should occur given the domain lengths
+              * This will subtract a stacked pair from configuration that are
+              * implied to be less stacked than the other rules would imply.
               */
             void check_single_junction(
                     Domain* cd_j1,
@@ -167,20 +142,6 @@ namespace potential {
                     Domain* cd_j4,
                     Domain* cd_k1,
                     Domain* cd_k2);
-    };
-
-    /** Only some configurations allowed at kinks */
-    class ConKinkLinearFlexibleBindingPotential:
-        public LinearFlexibleBindingPotential {
-
-        public:
-            using LinearFlexibleBindingPotential::
-                    LinearFlexibleBindingPotential;
-
-            bool check_regular_pair_constraints(
-                    Domain* cd_1,
-                    Domain* cd_2,
-                    int i);
     };
 
     class MisbindingPotential {

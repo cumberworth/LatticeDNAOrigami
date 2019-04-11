@@ -41,15 +41,52 @@ namespace domainContainer{
             // Constraint checkers
             virtual bool check_twist_constraint(VectorThree ndr, Domain& cd_j) = 0;
             virtual bool check_kink_constraint(VectorThree ndr, Domain& cd_j) = 0;
+            virtual bool check_junction_constraint(
+                    Domain& cd_j2,
+                    Domain& cd_j3,
+                    Domain& cd_j4,
+                    Domain& cd_k1,
+                    Domain& cd_k2
+                    ) = 0;
     };
 
-    class SixteenDomain: public Domain {
+    class HalfTurnDomain: public Domain {
         using Domain::Domain;
         public:
 
             // Constraint checkers
             bool check_twist_constraint(VectorThree ndr, Domain& cd_j);
             bool check_kink_constraint(VectorThree ndr, Domain& cd_j);
+
+            /** Check four body junction stacking rules
+              *
+              * If the next domain vectors of the first and third pairs are
+              * parallel to each other, antiparallel to the kink pair next
+              * domain vector, and the kink pair is not agreeing with where a
+              * crossover should occur given the domain lengths, then the
+              * junction must have one less stack.
+              */
+            bool check_junction_constraint(
+                    Domain& cd_j2,
+                    Domain& cd_j3,
+                    Domain& cd_j4,
+                    Domain& cd_k1,
+                    Domain& cd_k2);
+    };
+
+    class ThreeQuarterTurnDomain: public Domain {
+        using Domain::Domain;
+        public:
+
+            // Constraint checkers
+            bool check_twist_constraint(VectorThree ndr, Domain& cd_j);
+            bool check_kink_constraint(VectorThree ndr, Domain& cd_j);
+            bool check_junction_constraint(
+                    Domain& cd_j2,
+                    Domain& cd_j3,
+                    Domain& cd_j4,
+                    Domain& cd_k1,
+                    Domain& cd_k2);
     };
 }
 

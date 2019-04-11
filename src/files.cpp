@@ -425,13 +425,14 @@ namespace files {
             string filename,
             int write_freq,
             int max_num_staples,
+            int max_staple_size,
             OrigamiSystem& origami_system) :
             m_filename {filename},
             m_write_freq {write_freq},
             m_origami_system {origami_system} {
 
         // This assumes 2 domain staples
-        m_max_num_domains = 2 * max_num_staples +
+        m_max_num_domains = max_staple_size * max_num_staples +
                 m_origami_system.get_chain(0).size();
         m_file.open(m_filename);
     }
@@ -592,9 +593,11 @@ namespace files {
             string filename,
             int write_freq,
             int max_num_staples,
+            int max_staple_size,
             OrigamiSystem& origami_system,
             SystemBiases& biases) :
-            OrigamiOutputFile {filename, write_freq, max_num_staples, origami_system},
+            OrigamiOutputFile {filename, write_freq, max_num_staples,
+                    max_staple_size, origami_system},
             m_biases {biases} {
 
         m_file << "step tenergy henthalpy hentropy stacking bias\n";
@@ -617,8 +620,10 @@ namespace files {
             string filename,
             int write_freq,
             int max_num_staples,
+            int max_staple_size,
             OrigamiSystem& origami_system):
-            OrigamiOutputFile {filename, write_freq, max_num_staples, origami_system} {
+            OrigamiOutputFile {filename, write_freq, max_num_staples, 
+                    max_staple_size, origami_system} {
 
         m_file << "step time\n";
     }
@@ -634,10 +639,12 @@ namespace files {
             string filename,
             int write_freq,
             int max_num_staples,
+            int max_staple_size,
             OrigamiSystem& origami_system,
             SystemOrderParams& ops,
             vector<string> op_tags) :
-            OrigamiOutputFile {filename, write_freq, max_num_staples, origami_system},
+            OrigamiOutputFile {filename, write_freq, max_num_staples,
+                    max_staple_size, origami_system},
             m_ops {ops} {
 
         for (auto op_tag: op_tags) {

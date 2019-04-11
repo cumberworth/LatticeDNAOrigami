@@ -19,7 +19,8 @@ namespace origami {
     using biasFunctions::SystemBiases;
     using files::OrigamiInputFile;
     using files::OrigamiTrajInputFile;
-    using domainContainer::SixteenDomain;
+    using domainContainer::HalfTurnDomain;
+    using domainContainer::ThreeQuarterTurnDomain;
     using orderParams::SystemOrderParams;
     using utility::NotImplemented;
     using utility::OrigamiMisuse;
@@ -53,6 +54,7 @@ namespace origami {
             m_cation_M {params.m_cation_M},
             m_staple_u {staple_u},
             m_cyclic {cyclic},
+            m_domain_type {params.m_domain_type},
             m_pot {identities, sequences, params} {
 
         initialize_complementary_associations();
@@ -322,6 +324,7 @@ namespace origami {
             Domain& cd_i,
             VectorThree pos,
             VectorThree ore) {
+//        cout << "Checking domain constraints (" << cd_i.m_c << " " << cd_i.m_d << ")\n";
 
         DeltaConfig delta_config {internal_check_domain_constraints(
                 cd_i, pos, ore)};
@@ -349,6 +352,7 @@ namespace origami {
     }
 
     double OrigamiSystem::unassign_domain(Domain& cd_i) {
+//        cout << "Unassigning domain (" << cd_i.m_c << " " << cd_i.m_d << ")\n";
         DeltaConfig delta_config {internal_unassign_domain(cd_i)};
         m_energy += delta_config.e;
         m_num_stacked_domain_pairs += (delta_config.stacked_pairs/2);
@@ -378,14 +382,17 @@ namespace origami {
         for (int d_i {0}; d_i != chain_length; d_i++) {
             int d_i_ident {m_identities[c_i_ident][d_i]};
             Domain* domain;
-            // Assume that all domains are 16
-//            size_t domain_size {m_sequences[c_i_ident][d_i].size()};
-//            if (domain_size == 16 or domain_size == 15) {
-            domain = new SixteenDomain {c_i, c_i_ident, d_i, d_i_ident, chain_length};
-//            }
- //           else {
-  //              throw NotImplemented {};
-   //         }
+            if (m_domain_type == "HalfTurn") {
+                domain = new HalfTurnDomain {c_i, c_i_ident, d_i, d_i_ident,
+                        chain_length};
+            }
+            else if (m_domain_type == "ThreeQuarterTurn") {
+                domain = new ThreeQuarterTurnDomain {c_i, c_i_ident, d_i, d_i_ident,
+                        chain_length};
+            }
+            else {
+                throw OrigamiMisuse {};
+            }
 
             // Set forward and backwards domains
             if (prev_domain != nullptr) {
@@ -438,6 +445,7 @@ namespace origami {
             Domain& cd_i,
             VectorThree pos,
             VectorThree ore) {
+//        cout << "Setting checked domain (" << cd_i.m_c << " " << cd_i.m_d << ")\n";
         update_domain(cd_i, pos, ore);
         update_occupancies(cd_i, pos);
 
@@ -464,6 +472,7 @@ namespace origami {
             Domain& cd_i,
             VectorThree pos,
             VectorThree ore) {
+//        cout << "Setting domain (" << cd_i.m_c << " " << cd_i.m_d << ")\n";
         if (cd_i.m_state != Occupancy::unassigned) {
             cout << "Trying to set an already assigned domain\n";
             throw OrigamiMisuse {};

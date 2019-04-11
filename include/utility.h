@@ -61,6 +61,7 @@ namespace utility {
 
             VectorThree rotate_half(VectorThree axis);
             VectorThree rotate(VectorThree origin, VectorThree axis, int turns);
+            VectorThree rotate(VectorThree axis, int turns);
             int sum();
             int abssum();
             VectorThree absolute();
