@@ -40,10 +40,27 @@ namespace enumerator {
             SystemBiases& biases,
             InputParameters& params);
 
+    class OvercountCalculator {
+        public:
+            virtual double calc_multiplier(Domain* domain, Domain* other_domain) = 0;
+    };
+
+    class MisbindingOnlyOvercountCalculator: public OvercountCalculator {
+        public:
+            double calc_multiplier(Domain* staple_domain, Domain*);
+    };
+
+    class MaxTwoDomainOvercountCalculator: public OvercountCalculator  {
+        public:
+            double calc_multiplier(Domain* domain, Domain* other_domain);
+            int count_involved_staples(Domain* domain);
+    };
+
     class ConformationalEnumerator {
         public:
             ConformationalEnumerator(
                     OrigamiSystem& origami_system,
+                    OvercountCalculator& m_overcount_calculator,
                     SystemOrderParams& ops,
                     SystemBiases& biases,
                     vector<string> optags);
@@ -81,12 +98,11 @@ namespace enumerator {
             virtual void grow_next_domain(Domain* domain, VectorThree p_new);
             virtual void create_domains_stack();
             void create_staple_stack(Domain* domain);
-            double calc_multiplier(Domain* domain, Domain* other_domain);
-            int count_involved_staples(Domain* domain);
             void calc_and_save_weights();
             void add_weight_matrix_entry();
   
             OrigamiSystem& m_origami_system;
+            OvercountCalculator& m_overcount_calculator;
             SystemOrderParams& m_ops;
             SystemBiases& m_biases;
 
@@ -100,8 +116,8 @@ namespace enumerator {
             // Domain stack for growing
             vector<Domain*> m_domains;
 
-            // Previous growthpoint position
-            VectorThree m_prev_growthpoint_p;
+            // Previous growthpoint position stack
+            vector<VectorThree> m_prev_growthpoint_ps;
 
             // Total system energies
             long double m_energy {0};
@@ -125,6 +141,7 @@ namespace enumerator {
         public:
             StapleConformationalEnumerator(
                     OrigamiSystem& origami_system,
+                    OvercountCalculator& overcount_calculator,
                     SystemOrderParams& ops,
                     SystemBiases& biases,
                     vector<string> optags);
@@ -141,10 +158,22 @@ namespace enumerator {
 
     class GrowthpointEnumerator {
         public:
+            GrowthpointEnumerator(
+                    ConformationalEnumerator& conformational_enumerator,
+                    OrigamiSystem& m_origami_system);
             virtual ~GrowthpointEnumerator() {}
-            virtual void enumerate() = 0;
+            void enumerate();
 
         protected:
+            void iterate_staple_identities();
+            virtual void iterate_domain_growthpoints(int staple_ident) = 0;
+
+            ConformationalEnumerator& m_conformational_enumerator;
+            OrigamiSystem& m_origami_system;
+            vector<pair<int, int>> m_staples {}; // identity, number copies
+
+            // Set of all previously enumerated set of growthpoints
+            vector<vector<pair<pair<int, int>, pair<int, int>>>> m_enumerated_growthpoints {};
     };
 
     class MisbindingGrowthpointEnumerator: public GrowthpointEnumerator {
@@ -156,25 +185,20 @@ namespace enumerator {
             void enumerate();
 
         private:
-            bool growthpoints_repeated();
-            void enumerate_internal();
+            void iterate_domain_growthpoints(int staple_ident);
             void recurse_or_enumerate_conf(
                     int staple_ident,
                     int d_i,
                     size_t staple_length,
                     Domain* old_domain);
+            bool growthpoints_repeated();
 
-            ConformationalEnumerator& m_conformational_enumerator;
-  
-            vector<pair<int, int>> m_staples {}; // identity, number copies
-            vector<Domain*> m_unbound_system_domains {}; // keep track of available domains
-            OrigamiSystem& m_origami_system;
+            // keep track of available domains
+            vector<Domain*> m_unbound_system_domains {};
 
-            // Current set of growthpoints (each growthpoint is a chain id and a domain index)
+            // Current set of growthpoints
+            // Growthpoints are a chain id and a domain index
             vector<pair<pair<int, int>, pair<int, int>>> m_growthpoints {};
-
-            // Set of all previously enumerated set of growthpoints
-            vector<vector<pair<pair<int, int>, pair<int, int>>>> m_enumerated_growthpoints {};
     };
 
     class NoMisbindingGrowthpointEnumerator: public GrowthpointEnumerator {
@@ -186,25 +210,20 @@ namespace enumerator {
             void enumerate();
 
         private:
-            bool growthpoints_repeated();
-            void enumerate_internal();
+            void iterate_domain_growthpoints(int staple_ident);
             void recurse_or_enumerate_conf(
                     int staple_ident,
                     int d_i,
                     size_t staple_length,
                     Domain* old_domain);
+            bool growthpoints_repeated();
 
-            ConformationalEnumerator& m_conformational_enumerator;
-  
-            vector<pair<int, int>> m_staples {}; // identity, number copies
-            vector<vector<Domain*>> m_unbound_system_domains {}; // keep track of available domains
-            OrigamiSystem& m_origami_system;
+             // keep track of available domains
+            vector<vector<Domain*>> m_unbound_system_domains {};
 
-            // Current set of growthpoints (each growthpoint is a chain id and a domain index)
+            // Current set of growthpoints
+            // Growthpoints are a chain id and a domain index
             vector<pair<pair<int, int>, pair<int, int>>> m_growthpoints {};
-
-            // Set of all previously enumerated set of growthpoints
-            vector<vector<pair<pair<int, int>, pair<int, int>>>> m_enumerated_growthpoints {};
     };
 
     class StapleEnumerator {

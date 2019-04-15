@@ -603,7 +603,7 @@ namespace origami {
                         m_identities[c_scaffold].end(), -staple_d_i) ==
                         m_identities[c_scaffold].end()) {
 
-                    scaffold_d_is.push_back(0);
+//                    scaffold_d_is.push_back(0);
                 }
                 else {
                     int scaffold_d_i {utility::index(m_identities[c_scaffold],

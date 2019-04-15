@@ -19,17 +19,26 @@ namespace enumerator {
             SystemOrderParams& ops,
             SystemBiases& biases,
             InputParameters& params) {
-        cout << "\nWARNING: Not for staples other than length 2.\n\n";
 
-        // Enumerate configurations
-        ConformationalEnumerator* conf_enumerator;
-        if (params.m_enumerate_staples_only) {
-            conf_enumerator = new StapleConformationalEnumerator {origami, ops,
-               biases, params.m_ops_to_output};
+        OvercountCalculator* overcount_calculator;
+        if (params.m_max_staple_size == 2) {
+            overcount_calculator = new MaxTwoDomainOvercountCalculator {};
+        }
+        else if (params.m_misbinding_pot == "Disallowed") {
+            overcount_calculator = new MisbindingOnlyOvercountCalculator {};
         }
         else {
-            conf_enumerator = new ConformationalEnumerator {origami, ops,
-                biases, params.m_ops_to_output};
+            cout << "No enumerator available for system.\n";
+            return;
+        }
+        ConformationalEnumerator* conf_enumerator;
+        if (params.m_enumerate_staples_only) {
+            conf_enumerator = new StapleConformationalEnumerator {origami,
+                *overcount_calculator, ops, biases, params.m_ops_to_output};
+        }
+        else {
+            conf_enumerator = new ConformationalEnumerator {origami,
+                *overcount_calculator, ops, biases, params.m_ops_to_output};
         }
         GrowthpointEnumerator* growthpoint_enumerator;
         if (params.m_misbinding_pot == "Disallowed") {
@@ -55,6 +64,76 @@ namespace enumerator {
         delete conf_enumerator;
     }
 
+    double MisbindingOnlyOvercountCalculator::calc_multiplier(
+            Domain* staple_domain, Domain*) {
+
+        double multiplier {1};
+        Domain* next_domain {staple_domain->m_forward_domain};
+        while (next_domain != nullptr) {
+            if (next_domain->m_state == Occupancy::bound) {
+                multiplier++;
+            }
+            next_domain = next_domain->m_forward_domain;
+        }
+        next_domain = staple_domain->m_backward_domain;
+        while (next_domain != nullptr) {
+            if (next_domain->m_state == Occupancy::bound) {
+                multiplier++;
+            }
+            next_domain = next_domain->m_backward_domain;
+        }
+
+        return multiplier;
+    }
+
+    double MaxTwoDomainOvercountCalculator::calc_multiplier(Domain* domain,
+            Domain* other_domain) {
+
+        // This only works for staples that are only two domains
+        double multiplier {1};
+        //  No overcounting if binding to self
+        if (domain->m_c == other_domain->m_c) {
+            multiplier = 1;
+        }
+        else {
+            int involved_staples {0};
+            involved_staples += count_involved_staples(domain);
+            involved_staples += count_involved_staples(other_domain);
+            multiplier /= (involved_staples + 1);
+        }
+        return multiplier;
+    }
+
+    int MaxTwoDomainOvercountCalculator::count_involved_staples(Domain* domain) {
+        int involved_staples {0};
+
+        // Count staples associated with domain
+        bool domain_on_scaffold {false};
+        if (domain->m_c == 0) {
+            domain_on_scaffold = true;
+        }
+        else {
+            involved_staples++;
+        }
+        Domain* next_domain {domain};
+        while (not domain_on_scaffold) {
+            if (next_domain->m_forward_domain == nullptr) {
+                next_domain = next_domain->m_backward_domain;
+            }
+            else {
+                next_domain = next_domain->m_forward_domain;
+            }
+            next_domain = next_domain->m_bound_domain;
+            if (next_domain->m_c == 0) {
+                domain_on_scaffold = true;
+            }
+            else {
+                involved_staples++;
+            }
+        }
+        return involved_staples;
+    }
+
     void print_matrix(vector<vector<long double>> matrix, string filename) {
         // Print in full matrix format
         ofstream output {filename};
@@ -70,10 +149,12 @@ namespace enumerator {
 
     ConformationalEnumerator::ConformationalEnumerator(
             OrigamiSystem& origami_system,
+            OvercountCalculator& overcount_calculator,
             SystemOrderParams& ops,
             SystemBiases& biases,
             vector<string> optags) :
             m_origami_system {origami_system},
+            m_overcount_calculator {overcount_calculator},
             m_ops {ops},
             m_biases {biases},
             m_optags {optags} {
@@ -125,7 +206,7 @@ namespace enumerator {
         Domain* next_domain {m_domains.back()};
         m_domains.pop_back();
         if (is_growthpoint) {
-            m_prev_growthpoint_p = p_new;
+            m_prev_growthpoint_ps.push_back(p_new);
             o_new = -o_new;
             m_identities_to_num_unassigned[next_domain->m_d_ident]--;
             m_energy += m_origami_system.set_domain_config(*next_domain, p_new, o_new);
@@ -134,6 +215,7 @@ namespace enumerator {
             enumerate_domain(next_next_domain, p_new);
             m_identities_to_num_unassigned[next_domain->m_d_ident] += 1;
             m_energy += m_origami_system.unassign_domain(*next_domain);
+            m_prev_growthpoint_ps.pop_back();
         }
 
         // Otherwise directly call recursive enumerator
@@ -156,6 +238,7 @@ namespace enumerator {
         
         // Setup shortcut stuff
         for (auto d_ident: m_origami_system.m_identities[staple]) {
+            // DOESN'T THIS GET DONE ON CONSTRUCTION?
             if (m_identities_to_num_unassigned.count(d_ident) == 0) {
                 m_identities_to_num_unassigned[d_ident] = 1;
             }
@@ -280,12 +363,21 @@ namespace enumerator {
             Domain* domain,
             VectorThree p_new) {
 
-        // Store scaffold position for terminal domains
-        // (would need to do for each staple for staples longer than 2)
-        VectorThree prev_prev_growthpoint_p;
-        if (domain->m_c == 0) {
-            prev_prev_growthpoint_p = m_prev_growthpoint_p;
-            m_prev_growthpoint_p = p_new;
+        // Store position for domains that are not terminal
+        bool domain_is_terminal {false};
+        if (domain->m_forward_domain != nullptr and
+                domain->m_forward_domain->m_state == Occupancy::unassigned) {
+            if (domain->m_backward_domain != nullptr) {
+                domain_is_terminal = true;
+            }
+        }
+        else {
+            if (domain->m_forward_domain != nullptr) {
+                domain_is_terminal = true;
+            }
+        }
+        if (domain_is_terminal) {
+            m_prev_growthpoint_ps.push_back(p_new);
         }
         Domain* bound_domain {m_domains.back()};
         m_domains.pop_back();
@@ -300,8 +392,8 @@ namespace enumerator {
         m_domains.push_back(bound_domain);
 
         // Revert position for terminal domains
-        if (domain->m_c == 0) {
-            m_prev_growthpoint_p = prev_prev_growthpoint_p;
+        if (domain_is_terminal) {
+            m_prev_growthpoint_ps.pop_back();
         }
     }
 
@@ -359,7 +451,8 @@ namespace enumerator {
             return;
         }
         else {
-            double pos_multiplier {calc_multiplier(domain, occ_domain)};
+            double pos_multiplier {m_overcount_calculator.calc_multiplier(
+                    domain, occ_domain)};
             m_multiplier *= pos_multiplier;
             m_identities_to_num_unassigned[domain->m_d_ident] -= 1;
             grow_next_domain(domain, p_new);
@@ -405,18 +498,18 @@ namespace enumerator {
             Domain* next_domain {m_domains.back()};
             m_domains.pop_back();
             VectorThree new_p_prev;
-
-            // Previous domain is last growthpoint if end-of-staple reached
-            // Note this assumes that growthpoints are done together
-            // Another place where only correct for two domain staples
             bool domain_is_terminal {domain->m_c != next_domain->m_c};
             if (domain_is_terminal) {
-                new_p_prev = m_prev_growthpoint_p;
+                new_p_prev = m_prev_growthpoint_ps.back();
+                m_prev_growthpoint_ps.pop_back();
             }
             else {
                 new_p_prev = p_new;
             }
             enumerate_domain(next_domain, new_p_prev);
+            if (domain_is_terminal) {
+                m_prev_growthpoint_ps.push_back(new_p_prev);
+            }
         }
 
         // Save relevant values if system fully grown
@@ -483,54 +576,6 @@ namespace enumerator {
         return;
     }
 
-    double ConformationalEnumerator::calc_multiplier(Domain* domain,
-            Domain* other_domain) {
-
-        // This only works for staples that are only 2 domains
-        double multiplier {1};
-        //  No overcounting if binding to self
-        if (domain->m_c == other_domain->m_c) {
-            multiplier = 1;
-        }
-        else {
-            int involved_staples {0};
-            involved_staples += count_involved_staples(domain);
-            involved_staples += count_involved_staples(other_domain);
-            multiplier /= (involved_staples + 1);
-        }
-        return multiplier;
-    }
-
-    int ConformationalEnumerator::count_involved_staples(Domain* domain) {
-        int involved_staples {0};
-
-        // Count staples associated with domain
-        bool domain_on_scaffold {false};
-        if (domain->m_c == 0) {
-            domain_on_scaffold = true;
-        }
-        else {
-            involved_staples++;
-        }
-        Domain* next_domain {domain};
-        while (not domain_on_scaffold) {
-            if (next_domain->m_forward_domain == nullptr) {
-                next_domain = next_domain->m_backward_domain;
-            }
-            else {
-                next_domain = next_domain->m_forward_domain;
-            }
-            next_domain = next_domain->m_bound_domain;
-            if (next_domain->m_c == 0) {
-                domain_on_scaffold = true;
-            }
-            else {
-                involved_staples++;
-            }
-        }
-        return involved_staples;
-    }
-
     void ConformationalEnumerator::calc_and_save_weights() {
         m_num_configs += m_multiplier;
 
@@ -560,10 +605,12 @@ namespace enumerator {
 
     StapleConformationalEnumerator::StapleConformationalEnumerator(
             OrigamiSystem& origami_system,
+            OvercountCalculator& overcount_calculator,
             SystemOrderParams& ops,
             SystemBiases& biases,
             vector<string> optags):
-            ConformationalEnumerator(origami_system, ops, biases, optags) {
+            ConformationalEnumerator(origami_system, overcount_calculator,
+                    ops, biases, optags) {
 
         // Reassign scaffold domains
         for (auto d: m_origami_system.get_chain(0)) {
@@ -584,9 +631,14 @@ namespace enumerator {
         VectorThree p_new {m_inverse_growthpoints[starting_domain]->m_pos};
         VectorThree o_new {-m_inverse_growthpoints[starting_domain]->m_ore};
         m_energy += m_origami_system.set_domain_config(*starting_domain, p_new, o_new);
-        Domain* next_domain = m_domains.back();
-        m_domains.pop_back();
-        enumerate_domain(next_domain, p_new);
+        if (m_domains.size() != 0) {
+            Domain* next_domain = m_domains.back();
+            m_domains.pop_back();
+            enumerate_domain(next_domain, p_new);
+        }
+        else {
+            calc_and_save_weights();
+        }
         m_energy += m_origami_system.unassign_domain(*starting_domain);
     }
 
@@ -672,22 +724,18 @@ namespace enumerator {
         std::reverse(m_domains.begin(), m_domains.end());
     }
 
-    MisbindingGrowthpointEnumerator::MisbindingGrowthpointEnumerator(
-            ConformationalEnumerator& conformational_enumerator,
+    GrowthpointEnumerator::GrowthpointEnumerator(
+            ConformationalEnumerator& conf_enumerator,
             OrigamiSystem& origami_system):
-            m_conformational_enumerator {conformational_enumerator},
+            m_conformational_enumerator {conf_enumerator},
             m_origami_system {origami_system} {
+            }
 
-        // Domains available to be used as growthpoints
-        m_unbound_system_domains = m_origami_system.get_chain(0);
-    }
-
-    void MisbindingGrowthpointEnumerator::enumerate() {
-        // Recursively enumerate all configurations for given scaffold and staple set
-
+    void GrowthpointEnumerator::enumerate() {
         m_enumerated_growthpoints.clear();
-        // Collect number of staples and chain ids for each staple type
         m_staples.clear();
+
+        // Collect number of staples and chain ids for each staple type
         for (size_t c_ident {1}; c_ident != m_origami_system.m_identities.size();
                 c_ident++) {
             int num_staples_c_i {m_origami_system.num_staples_of_ident(c_ident)};
@@ -695,10 +743,10 @@ namespace enumerator {
                 m_staples.push_back({c_ident, num_staples_c_i});
             }
         }
-        enumerate_internal();
+        iterate_staple_identities();
     }
 
-    void MisbindingGrowthpointEnumerator::enumerate_internal() {
+    void GrowthpointEnumerator::iterate_staple_identities() {
 
         // Iterate through staple identities
         for (size_t i {0}; i != m_staples.size(); i++) {
@@ -714,24 +762,7 @@ namespace enumerator {
             }
 
             // Iterate through available domains for growthpoint
-            for (size_t j {0}; j != m_unbound_system_domains.size(); j++) {
-
-                // Update available system domain list (so can recurse)
-                Domain* old_domain {m_unbound_system_domains[j]};
-                m_unbound_system_domains.erase(m_unbound_system_domains.begin() + j);
-                size_t staple_length {m_origami_system.m_identities[
-                        staple_ident].size()};
-
-                // Iterate through staple domains for growthpoint
-                for (size_t d_i {0}; d_i != staple_length; d_i++) {
-                    recurse_or_enumerate_conf(staple_ident, d_i, staple_length,
-                            old_domain);
-                }
-
-                // Revert unbound domain list
-                m_unbound_system_domains.insert(m_unbound_system_domains.begin() + j,
-                        old_domain);
-            }
+            iterate_domain_growthpoints(staple_ident);
             
             // Revert staple identity list
             bool staple_remain {false};
@@ -750,6 +781,36 @@ namespace enumerator {
         }
     }
 
+    MisbindingGrowthpointEnumerator::MisbindingGrowthpointEnumerator(
+            ConformationalEnumerator& conformational_enumerator,
+            OrigamiSystem& origami_system):
+            GrowthpointEnumerator(conformational_enumerator, origami_system) {
+
+        // Domains available to be used as growthpoints
+        m_unbound_system_domains = m_origami_system.get_chain(0);
+    }
+
+    void MisbindingGrowthpointEnumerator::iterate_domain_growthpoints(int staple_ident) {
+        for (size_t j {0}; j != m_unbound_system_domains.size(); j++) {
+
+            // Update available system domain list (so can recurse)
+            Domain* old_domain {m_unbound_system_domains[j]};
+            m_unbound_system_domains.erase(m_unbound_system_domains.begin() + j);
+            size_t staple_length {m_origami_system.m_identities[
+                    staple_ident].size()};
+
+            // Iterate through staple domains for growthpoint
+            for (size_t d_i {0}; d_i != staple_length; d_i++) {
+                recurse_or_enumerate_conf(staple_ident, d_i, staple_length,
+                        old_domain);
+            }
+
+            // Revert unbound domain list
+            m_unbound_system_domains.insert(m_unbound_system_domains.begin() + j,
+                    old_domain);
+        }
+    }
+
     void MisbindingGrowthpointEnumerator::recurse_or_enumerate_conf(int staple_ident,
             int d_i, size_t staple_length, Domain* old_domain) {
 
@@ -764,11 +825,13 @@ namespace enumerator {
         if (not m_staples.empty()) {
 
             // Only update this if further growthpoint enumeration needed
+            // WHY DO I INVERT THE LIST?
             m_unbound_system_domains.insert(m_unbound_system_domains.end(),
                     new_unbound_domains.begin(), new_unbound_domains.end());
-            enumerate_internal();
+            iterate_staple_identities();
 
             // Revert available domain list
+            // WHAT IS HAPPENING HERE?
             for (size_t k {0}; k != staple_length - 1; k++) {
                 m_unbound_system_domains.pop_back();
             }
@@ -810,6 +873,80 @@ namespace enumerator {
         return repeated;
     }
 
+    NoMisbindingGrowthpointEnumerator::NoMisbindingGrowthpointEnumerator(
+            ConformationalEnumerator& conformational_enumerator,
+            OrigamiSystem& origami_system):
+            GrowthpointEnumerator(conformational_enumerator, origami_system) {
+
+        // Domains available to be used as growthpoints
+        for (size_t c_ident {1}; c_ident != m_origami_system.m_identities.size(); c_ident++) {
+            vector<int> scaffold_domain_is {m_origami_system.complementary_scaffold_domains(c_ident)};
+            m_unbound_system_domains.push_back({});
+            for (auto domain_i: scaffold_domain_is) {
+                Domain* scaffold_domain {m_origami_system.get_domain(0, domain_i)};
+                m_unbound_system_domains[c_ident - 1].push_back(scaffold_domain);
+            }
+        }
+    }
+
+    void NoMisbindingGrowthpointEnumerator::iterate_domain_growthpoints(
+            int staple_ident) {
+
+        for (size_t j {0}; j != m_unbound_system_domains[staple_ident -
+                1].size(); j++) {
+
+            // Update available system domain list (so can recurse)
+            Domain* old_domain {m_unbound_system_domains[staple_ident - 1][j]};
+            m_unbound_system_domains[staple_ident - 1].erase(
+                    m_unbound_system_domains[
+                            staple_ident - 1].begin() + j);
+            size_t staple_length {
+                    m_origami_system.m_identities[staple_ident].size()};
+
+            // Iterate through staple domains for growthpoint
+            for (size_t d_i {0}; d_i != staple_length; d_i++) {
+                int staple_d_ident {
+                        m_origami_system.m_identities[staple_ident][d_i]};
+                if (staple_d_ident != -old_domain->m_d_ident) {
+                    continue;
+                }
+                recurse_or_enumerate_conf(staple_ident, d_i, staple_length,
+                        old_domain);
+            }
+
+            // Revert unbound domain list
+            m_unbound_system_domains[staple_ident - 1].insert(
+                    m_unbound_system_domains[staple_ident - 1].begin() + j,
+                            old_domain);
+        }
+    }
+
+    void NoMisbindingGrowthpointEnumerator::recurse_or_enumerate_conf(int staple_ident,
+            int d_i, size_t, Domain* old_domain) {
+
+        // Update current growthpoint set and add growpoint to conf enumerator
+        m_growthpoints.push_back({{staple_ident, d_i},
+                {old_domain->m_c, old_domain->m_d}});
+        m_conformational_enumerator.add_growthpoint(staple_ident, d_i, old_domain);
+
+        // Recurse if staples remain, otherwise enumerate conformations
+        if (not m_staples.empty()) {
+            iterate_staple_identities();
+        }
+        else {
+
+            // Skip if growthpoint set already enumerated
+            if (not growthpoints_repeated()) {
+                m_conformational_enumerator.enumerate();
+                cout << "   Growthpoint set " << m_enumerated_growthpoints.size() + 1
+                        << "\n";
+                m_enumerated_growthpoints.push_back(m_growthpoints);
+            }
+        }
+        m_conformational_enumerator.remove_growthpoint(old_domain);
+        m_growthpoints.pop_back();
+    }
+
     bool NoMisbindingGrowthpointEnumerator::growthpoints_repeated() {
         // Check if growthpoint set already counted
         bool repeated {false};
@@ -830,122 +967,6 @@ namespace enumerator {
             i++;
         }
         return repeated;
-    }
-
-    NoMisbindingGrowthpointEnumerator::NoMisbindingGrowthpointEnumerator(
-            ConformationalEnumerator& conformational_enumerator,
-            OrigamiSystem& origami_system):
-            m_conformational_enumerator {conformational_enumerator},
-            m_origami_system {origami_system} {
-
-        // Domains available to be used as growthpoints
-        for (size_t c_ident {1}; c_ident != m_origami_system.m_identities.size(); c_ident++) {
-            vector<int> scaffold_domain_is {m_origami_system.complementary_scaffold_domains(c_ident)};
-            m_unbound_system_domains.push_back({});
-            for (auto domain_i: scaffold_domain_is) {
-                Domain* scaffold_domain {m_origami_system.get_domain(0, domain_i)};
-                m_unbound_system_domains[c_ident - 1].push_back(scaffold_domain);
-            }
-        }
-    }
-
-    void NoMisbindingGrowthpointEnumerator::enumerate() {
-        // Recursively enumerate all configurations for given scaffold and staple set
-
-        m_enumerated_growthpoints.clear();
-        // Collect number of staples and chain ids for each staple type
-        m_staples.clear();
-        for (size_t c_ident {1}; c_ident != m_origami_system.m_identities.size(); c_ident++) {
-            int num_staples_c_i {m_origami_system.num_staples_of_ident(c_ident)};
-            if (num_staples_c_i != 0) {
-                m_staples.push_back({c_ident, num_staples_c_i});
-            }
-        }
-        enumerate_internal();
-    }
-
-    void NoMisbindingGrowthpointEnumerator::enumerate_internal() {
-
-        // Iterate through staple identities
-        for (size_t i {0}; i != m_staples.size(); i++) {
-
-            // Update number of staples per staple identity list
-            int staple_ident {m_staples[i].first};
-            int num_remaining {m_staples[i].second - 1};
-            if (num_remaining == 0) {
-                m_staples.erase(m_staples.begin() + i);
-            }
-            else {
-                m_staples[i] = {staple_ident, num_remaining};
-            }
-
-            // Iterate through available domains for growthpoint
-            for (size_t j {0}; j != m_unbound_system_domains[staple_ident -
-                    1].size(); j++) {
-
-                // Update available system domain list (so can recurse)
-                Domain* old_domain {m_unbound_system_domains[staple_ident - 1][j]};
-                m_unbound_system_domains[staple_ident - 1].erase(
-                        m_unbound_system_domains[
-                                staple_ident - 1].begin() + j);
-                size_t staple_length {
-                        m_origami_system.m_identities[staple_ident].size()};
-
-                // Iterate through staple domains for growthpoint
-                for (size_t d_i {0}; d_i != staple_length; d_i++) {
-                    recurse_or_enumerate_conf(staple_ident, d_i, staple_length,
-                            old_domain);
-                }
-
-                // Revert unbound domain list
-                m_unbound_system_domains[staple_ident - 1].insert(
-                        m_unbound_system_domains[staple_ident - 1].begin() + j,
-                                old_domain);
-            }
-            
-            // Revert staple identity list
-            bool staple_remain {false};
-            for (size_t staple_ident_i {0}; staple_ident_i != m_staples.size();
-                    staple_ident_i++) {
-                if (m_staples[staple_ident_i].first == staple_ident) {
-                    m_staples[staple_ident_i].second++;
-                    staple_remain = true;
-                    break;
-                }
-            }
-            if (not staple_remain) {
-                m_staples.insert(m_staples.begin() + i, {staple_ident, num_remaining +
-                        1});
-            }
-        }
-    }
-
-    void NoMisbindingGrowthpointEnumerator::recurse_or_enumerate_conf(int staple_ident,
-            int d_i, size_t, Domain* old_domain) {
-
-        // Update current growthpoint set and add growpoint to conf enumerator
-        m_growthpoints.push_back({{staple_ident, d_i},
-                {old_domain->m_c, old_domain->m_d}});
-        vector<Domain*> new_unbound_domains {
-                m_conformational_enumerator.add_growthpoint(staple_ident,
-                        d_i, old_domain)};
-
-        // Recurse if staples remain, otherwise enumerate conformations
-        if (not m_staples.empty()) {
-            enumerate_internal();
-        }
-        else {
-
-            // Skip if growthpoint set already enumerated
-            if (not growthpoints_repeated()) {
-                m_conformational_enumerator.enumerate();
-                cout << "   Growthpoint set " << m_enumerated_growthpoints.size() + 1
-                        << "\n";
-                m_enumerated_growthpoints.push_back(m_growthpoints);
-            }
-        }
-        m_conformational_enumerator.remove_growthpoint(old_domain);
-        m_growthpoints.pop_back();
     }
 
     StapleEnumerator::StapleEnumerator(GrowthpointEnumerator& growthpoint_enumerator,
@@ -973,7 +994,7 @@ namespace enumerator {
         m_max_type_staples = max_type_staples;
         while (m_cur_max_total_staples <= max_total_staples) {
             recurse(0, 1, 0);
-            m_cur_max_total_staples ++;
+            m_cur_max_total_staples++;
         }
     }
 

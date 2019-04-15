@@ -1225,6 +1225,23 @@ namespace potential {
             delta_config.e += m_misbinding_pot->bind_domains(cd_i, cd_j);
             m_constraints_violated = m_misbinding_pot->m_constraints_violated;
         }
+        // DEBUG
+        /*if (not m_constraints_violated) {
+            if (cd_i.m_backward_domain != nullptr and cd_i.m_backward_domain->m_state != Occupancy::unassigned) {
+                VectorThree ndr {cd_i.m_pos - cd_i.m_backward_domain->m_pos};
+                if (ndr.abssum() != 1) {
+                    cout << "Contiguous domains not on adjacent sites\n";
+                    throw OrigamiMisuse {};
+                }
+            }
+            if (cd_i.m_forward_domain != nullptr and cd_i.m_forward_domain->m_state != Occupancy::unassigned) {
+                VectorThree ndr {cd_i.m_pos - cd_i.m_forward_domain->m_pos};
+                if (ndr.abssum() != 1) {
+                    cout << "Contiguous domains not on adjacent sites\n";
+                    throw OrigamiMisuse {};
+                }
+            }
+        }*/
 
         return delta_config;
     }
