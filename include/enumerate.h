@@ -152,6 +152,7 @@ namespace enumerator {
             void grow_next_domain(Domain* domain, VectorThree p_new);
             void create_domains_stack();
             void set_unbound_domain(Domain* domain, VectorThree p_new);
+            void grow_off_scaffold(Domain* next_domain);
 
             unordered_map<Domain*, Domain*> m_inverse_growthpoints {};
     };

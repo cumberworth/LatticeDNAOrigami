@@ -634,7 +634,13 @@ namespace enumerator {
         if (m_domains.size() != 0) {
             Domain* next_domain = m_domains.back();
             m_domains.pop_back();
-            enumerate_domain(next_domain, p_new);
+            bool growth_off_scaffold {m_inverse_growthpoints.count(next_domain) > 0};
+            if (growth_off_scaffold) {
+                grow_off_scaffold(next_domain);
+            }
+            else {
+                enumerate_domain(next_domain, p_new);
+            }
         }
         else {
             calc_and_save_weights();
@@ -659,26 +665,9 @@ namespace enumerator {
         if (not m_domains.empty()) {
             Domain* next_domain {m_domains.back()};
             m_domains.pop_back();
-
             bool growth_off_scaffold {m_inverse_growthpoints.count(next_domain) > 0};
             if (growth_off_scaffold) {
-                VectorThree p_new {m_inverse_growthpoints[next_domain]->m_pos};
-                VectorThree o_new {-m_inverse_growthpoints[next_domain]->m_ore};
-                m_energy += m_origami_system.set_domain_config(*next_domain, p_new,
-                        o_new);
-                if (m_origami_system.m_constraints_violated == true) {
-                    m_origami_system.m_constraints_violated = false;
-                    m_domains.push_back(next_domain);
-                }
-                else {
-                    if (not m_domains.empty()) {
-                        Domain* next_next_domain = m_domains.back();
-                        m_domains.pop_back();
-                        enumerate_domain(next_next_domain, p_new);
-                        m_domains.push_back(next_domain);
-                    }
-                    m_energy += m_origami_system.unassign_domain(*next_domain);
-                }
+                grow_off_scaffold(next_domain);
             }
             else {
                 enumerate_domain(next_domain, p_new);
@@ -690,6 +679,33 @@ namespace enumerator {
             calc_and_save_weights();
         }
         m_energy += m_origami_system.unassign_domain(*domain);
+    }
+
+    void StapleConformationalEnumerator::grow_off_scaffold(Domain* next_domain) {
+
+        VectorThree p_new {m_inverse_growthpoints[next_domain]->m_pos};
+        VectorThree o_new {-m_inverse_growthpoints[next_domain]->m_ore};
+        m_energy += m_origami_system.set_domain_config(*next_domain, p_new,
+                o_new);
+        if (m_origami_system.m_constraints_violated == true) {
+            m_origami_system.m_constraints_violated = false;
+            m_domains.push_back(next_domain);
+        }
+        else {
+            if (not m_domains.empty()) {
+                Domain* next_next_domain = m_domains.back();
+                m_domains.pop_back();
+                bool growth_off_scaffold {m_inverse_growthpoints.count(next_next_domain) > 0};
+                if (growth_off_scaffold) {
+                    grow_off_scaffold(next_next_domain);
+                }
+                else {
+                    enumerate_domain(next_next_domain, p_new);
+                }
+                m_domains.push_back(next_domain);
+            }
+            m_energy += m_origami_system.unassign_domain(*next_domain);
+        }
     }
 
     void StapleConformationalEnumerator::set_unbound_domain(
