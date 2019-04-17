@@ -1,6 +1,7 @@
 // enumerate.cpp
 
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <fstream>
 
@@ -73,12 +74,18 @@ namespace enumerator {
             if (next_domain->m_state == Occupancy::bound) {
                 multiplier++;
             }
+            else if (next_domain->m_state == Occupancy::unassigned) {
+                return 1;
+            }
             next_domain = next_domain->m_forward_domain;
         }
         next_domain = staple_domain->m_backward_domain;
         while (next_domain != nullptr) {
             if (next_domain->m_state == Occupancy::bound) {
                 multiplier++;
+            }
+            else if (next_domain->m_state == Occupancy::unassigned) {
+                return 1;
             }
             next_domain = next_domain->m_backward_domain;
         }
@@ -234,6 +241,8 @@ namespace enumerator {
         // Only one of the N! combos is calculated, so don't divide by N!
         m_prefix /= m_origami_system.m_volume;
         int c_i {m_origami_system.add_chain(staple)};
+        auto staple_length = m_origami_system.m_identities[staple].size();
+        m_prefix /= static_cast<long double>(std::pow(6, 2*(staple_length - 1)));
         m_identity_to_indices[staple].push_back(c_i);
         
         // Setup shortcut stuff
@@ -253,6 +262,8 @@ namespace enumerator {
 
         // Only one of the N! combos is calculated, so don't divide by N!
         m_prefix *= m_origami_system.m_volume;
+        auto staple_length = m_origami_system.m_identities[staple].size();
+        m_prefix *= static_cast<long double>(std::pow(6, 2*(staple_length - 1)));
 
         int c_i {m_identity_to_indices[staple].back()};
         m_identity_to_indices[staple].pop_back();

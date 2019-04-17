@@ -184,9 +184,9 @@ namespace movetypes {
 
         // Correct for extra states from additional staple domains
         size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
-        int extra_df {2 * static_cast<int>(staple_length) - 1 - preconstrained_df};
-        double extra_states {staple_length * pow(6, extra_df)};
-        double pratio {extra_states / Ni_new * boltz_factor};
+        //int extra_df {2 * static_cast<int>(staple_length) - 1 - preconstrained_df};
+        //double extra_states {staple_length * pow(6, extra_df)};
+        double pratio {staple_length / Ni_new * boltz_factor};
 
         // Correct for insertion into subset of volume
         pratio *= m_insertion_sites / m_origami_system.m_volume;
@@ -236,9 +236,9 @@ namespace movetypes {
 
         // Correct for extra states from additional staple domains
         size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
-        double extra_df {2 * static_cast<double>(staple_length) - 1 - preconstrained_df};
-        double extra_states {staple_length * pow(6, extra_df)};
-        double pratio {Ni / extra_states * boltz_factor};
+        //double extra_df {2 * static_cast<double>(staple_length) - 1 - preconstrained_df};
+        //double extra_states {staple_length * pow(6, extra_df)};
+        double pratio {Ni / staple_length * boltz_factor};
 
         // Correct for insertion into subset of volume
         pratio *= m_origami_system.m_volume / (m_insertion_sites -
