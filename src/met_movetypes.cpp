@@ -181,17 +181,9 @@ namespace movetypes {
         add_external_bias();
         double boltz_factor {exp(-m_delta_e)};
         int Ni_new {m_origami_system.num_staples_of_ident(c_i_ident)};
-
-        // Correct for extra states from additional staple domains
         size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
-        int extra_df {2 * static_cast<int>(staple_length) - 1 - preconstrained_df};
-        //double extra_states {staple_length * pow(6, extra_df)};
-        double extra_states {static_cast<double>(staple_length)};
-        double pratio {extra_states / Ni_new * boltz_factor};
-
+        double pratio {static_cast<double>(staple_length) / Ni_new * boltz_factor};
         pratio *= m_insertion_sites / m_origami_system.m_volume;
-
-        // Correct for overcounting multiply bound staples
         pratio /= num_staple_bd;
 
         // Exchange probability multiplier
@@ -233,18 +225,10 @@ namespace movetypes {
         m_origami_system.undo_reduce_staples_by_one();
         double boltz_factor {exp(-m_delta_e)};
         int Ni {m_origami_system.num_staples_of_ident(c_i_ident)};
-
-        // Correct for extra states from additional staple domains
         size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
-        double extra_df {2 * static_cast<double>(staple_length) - 1 - preconstrained_df};
-        //double extra_states {staple_length * pow(6, extra_df)};
-        double extra_states {static_cast<double>(staple_length)};
-        double pratio {Ni / extra_states * boltz_factor};
-
+        double pratio {Ni / static_cast<double>(staple_length) * boltz_factor};
         pratio *= m_origami_system.m_volume / (m_insertion_sites -
                 staple_length);
-
-        // Correct for overcounting multiply bound staples
         pratio *= num_staple_bd;
 
         // Exchange probability multiplier
