@@ -41,6 +41,8 @@ namespace origami {
     OrigamiSystem::OrigamiSystem(
             const vector<vector<int>>& identities,
             const vector<vector<string>>& sequences,
+            const vector<double> enthalpies,
+            const vector<double> entropies,
             const Chains& chains,
             bool cyclic,
             double volume,
@@ -55,7 +57,7 @@ namespace origami {
             m_staple_u {staple_u},
             m_cyclic {cyclic},
             m_domain_type {params.m_domain_type},
-            m_pot {identities, sequences, params} {
+            m_pot {identities, sequences, enthalpies, entropies, params} {
 
         initialize_complementary_associations();
         initialize_scaffold(chains[0]);
@@ -793,6 +795,8 @@ namespace origami {
     OrigamiSystemWithBias::OrigamiSystemWithBias(
             const vector<vector<int>>& identities,
             const vector<vector<string>>& sequences,
+            const vector<double> enthalpies,
+            const vector<double> entropies,
             const Chains& chains,
             bool cyclic,
             double volume,
@@ -801,6 +805,8 @@ namespace origami {
             OrigamiSystem(
                     identities,
                     sequences,
+                    enthalpies,
+                    entropies,
                     chains,
                     cyclic,
                     volume,
@@ -901,6 +907,8 @@ namespace origami {
         OrigamiInputFile origami_input {params.m_origami_input_filename};
         vector<vector<int>> identities {origami_input.get_identities()};
         vector<vector<string>> sequences {origami_input.get_sequences()};
+        vector<double> enthalpies {origami_input.get_enthalpies()};
+        vector<double> entropies {origami_input.get_entropies()};
         vector<Chain> configs = origami_input.get_config();
         bool cyclic {origami_input.is_cyclic()};
         if (params.m_restart_traj_file != "") {
@@ -916,12 +924,13 @@ namespace origami {
 
         OrigamiSystem* origami;
         if (params.m_domain_update_biases_present) {
-            origami = new OrigamiSystemWithBias {identities, sequences, configs,
-                    cyclic, volume, staple_u, params};
+            origami = new OrigamiSystemWithBias {identities, sequences,
+                enthalpies, entropies, configs, cyclic, volume, staple_u,
+                params};
         }
         else {
-            origami = new OrigamiSystem {identities, sequences, configs, cyclic,
-                volume, staple_u, params};
+            origami = new OrigamiSystem {identities, sequences, enthalpies,
+                entropies, configs, cyclic, volume, staple_u, params};
         }
 
         return origami;

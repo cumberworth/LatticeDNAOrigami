@@ -61,6 +61,8 @@ namespace origami {
             OrigamiSystem(
                     const vector<vector<int>>& identities,
                     const vector<vector<string>>& sequences,
+                    const vector<double> enthalpies,
+                    const vector<double> entropies,
                     const Chains& chains,
                     bool cyclic,
                     double volume,
@@ -216,6 +218,8 @@ namespace origami {
             OrigamiSystemWithBias(
                     const vector<vector<int>>& identities,
                     const vector<vector<string>>& sequences,
+                    const vector<double> enthalpies,
+                    const vector<double> entropies,
                     const Chains& chains,
                     bool cyclic,
                     double volume,

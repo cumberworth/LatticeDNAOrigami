@@ -34,11 +34,27 @@ namespace files {
         jsonraw >> jsonroot;
 
         // Extract sequences
-        Json::Value jsonseqs {jsonroot["origami"]["sequences"]};
-        for (unsigned int i {0}; i != jsonseqs.size(); i++) {
-            m_sequences.push_back({});
-            for (unsigned int j {0}; j != jsonseqs[i].size(); j++) {
-                m_sequences[i].push_back(jsonseqs[i][j].asString());
+        if (jsonroot["origami"].isMember("sequences")) {
+            Json::Value jsonseqs {jsonroot["origami"]["sequences"]};
+            for (unsigned int i {0}; i != jsonseqs.size(); i++) {
+                m_sequences.push_back({});
+                for (unsigned int j {0}; j != jsonseqs[i].size(); j++) {
+                    m_sequences[i].push_back(jsonseqs[i][j].asString());
+                }
+            }
+        }
+
+        // Extract free energies
+        if (jsonroot["origami"].isMember("enthalpies")) {
+            Json::Value jsonenthalpies {jsonroot["origami"]["enthalpies"]};
+            for (unsigned int i {0}; i != jsonenthalpies.size(); i++) {
+                m_enthalpies.push_back(jsonenthalpies[i].asDouble());
+            }
+        }
+        if (jsonroot["origami"].isMember("entropies")) {
+            Json::Value jsonentropies {jsonroot["origami"]["entropies"]};
+            for (unsigned int i {0}; i != jsonentropies.size(); i++) {
+                m_enthalpies.push_back(jsonentropies[i].asDouble());
             }
         }
 
@@ -87,6 +103,14 @@ namespace files {
 
     vector<vector<string>> OrigamiInputFile::get_sequences() {
         return m_sequences;
+    }
+
+    vector<double> OrigamiInputFile::get_enthalpies() {
+        return m_enthalpies;
+    }
+
+    vector<double> OrigamiInputFile::get_entropies() {
+        return m_entropies;
     }
 
     vector<Chain> OrigamiInputFile::get_config() {

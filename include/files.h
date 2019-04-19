@@ -38,6 +38,8 @@ namespace files {
 
             vector<vector<int>> get_identities();
             vector<vector<string>> get_sequences();
+            vector<double> get_enthalpies();
+            vector<double> get_entropies();
             vector<Chain> get_config();
             bool is_cyclic();
 
@@ -46,6 +48,8 @@ namespace files {
 
             vector<vector<int>> m_identities;
             vector<vector<string>> m_sequences;
+            vector<double> m_enthalpies;
+            vector<double> m_entropies;
             vector<Chain> m_chains;
             bool m_cyclic;
     };

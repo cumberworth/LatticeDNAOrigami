@@ -185,6 +185,8 @@ namespace potential {
             OrigamiPotential(
                     const vector<vector<int>> m_identities,
                     const vector<vector<string>>& sequences,
+                    const vector<double> enthaplies,
+                    const vector<double> entropies,
                     InputParameters& params);
             ~OrigamiPotential();
 
@@ -209,6 +211,8 @@ namespace potential {
             const double m_cation_M; // Cation concentration (mol/L)
             const vector<vector<int>> m_identities; // Domain identities
             const vector<vector<string>> m_sequences; // Domain sequences
+            const vector<double> m_complementary_enthalpies;
+            const vector<double> m_complementary_entropies;
 
             // Containers for binding rules
             BindingPotential* m_binding_pot;
@@ -252,6 +256,7 @@ namespace potential {
                     string seq_j,
                     pair<int, int> key);
             void calc_hybridization_energy(pair<int, int> key);
+            void set_hybridization_energy(pair<int, int> key);
             void calc_stacking_energy(
                     string seq_i,
                     string seq_j,

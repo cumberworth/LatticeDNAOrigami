@@ -944,12 +944,16 @@ namespace potential {
     OrigamiPotential::OrigamiPotential(
             const vector<vector<int>> identities,
             const vector<vector<string>>& sequences,
+            const vector<double> enthalpies,
+            const vector<double> entropies,
             InputParameters& params) :
             m_energy_filebase {params.m_energy_filebase},
             m_temp {params.m_temp},
             m_cation_M {params.m_cation_M},
             m_identities {identities},
             m_sequences {sequences},
+            m_complementary_enthalpies {enthalpies},
+            m_complementary_entropies {entropies},
             m_stacking_pot {params.m_stacking_pot},
             m_hybridization_pot {params.m_hybridization_pot} {
 
@@ -1051,6 +1055,9 @@ namespace potential {
                         else if (m_hybridization_pot == "Uniform") {
                             calc_hybridization_energy(key);
                         }
+                        else if (m_hybridization_pot == "Specified") {
+                            set_hybridization_energy(key);
+                        }
                         else {
                             std::cout << "No such hybridization potential";
                         }
@@ -1131,6 +1138,23 @@ namespace potential {
         if (key.first == -key.second) {
             H_hyb = m_binding_h / m_temp;
             S_hyb = m_binding_s;
+        }
+        else {
+            H_hyb = m_misbinding_h / m_temp;
+            S_hyb = m_misbinding_s;
+        }
+        m_hybridization_enthalpies[key] = H_hyb;
+        m_hybridization_entropies[key] = S_hyb;
+        m_hybridization_energies[key] = H_hyb - S_hyb;
+    }
+
+    void OrigamiPotential::set_hybridization_energy(pair<int, int> key) {
+        double H_hyb {0};
+        double S_hyb {0};
+        if (key.first == -key.second) {
+            int i {std::abs(key.first) - 1};
+            H_hyb = m_complementary_enthalpies[i] / m_temp;
+            S_hyb = m_complementary_entropies[i];
         }
         else {
             H_hyb = m_misbinding_h / m_temp;
