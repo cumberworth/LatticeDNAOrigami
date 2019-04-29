@@ -1,0 +1,53 @@
+# System input and parameters
+origami_input_filename=%SYSFILE
+temp=%TEMP
+hybridization_pot=%HYBRIDPOT
+domain_type=%DOMAINTYPE
+binding_pot=%BINDPOT
+misbinding_pot=%MISBINDPOT
+stacking_pot=%STACKPOT
+staple_M=%STAPLEM
+cation_M=%CATIONM
+temp_for_staple_u=%TEMP
+staple_u_mult=1
+binding_h=%BINDH
+binding_s=%BINDS
+misbinding_h=%MISBINDH
+misbinding_s=%MISBINDS
+stacking_ene=%STACKENE
+max_total_staples=%MAXSTAPLES
+max_type_staples=%MAXTYPESTAPLES
+max_staple_size=%MAXSIZESTAPLE
+domain_update_biases_present=%DOMAINBIASES
+order_parameter_file=%OPFILE
+bias_functions_file=%BIASFILE
+bias_functions_mult=1
+energy_filebase=%INPDIR/%SYSTEM
+simulation_type=constant_temp
+
+# General simulation parameters
+movetype_file=%MOVETYPEFILE
+num_walks_filename=%INPDIR/num_walks.arch
+restart_traj_file=%INPDIR/%RESTARTFILE
+restart_step=%RESTARTSTEP
+#vmd_file_dir=
+centering_freq=%CENTERINGFREQ
+constraint_check_freq=%CONCHECKFREQ
+
+# Constant T options
+ct_steps=%STEPS
+max_duration=%MAXDUR
+
+# Output options
+output_filebase=%OUTPUTFILEDIR/%OUTPUTFILEBASE
+logging_freq=%LOGGINGFREQ
+configs_output_freq=%CONFIGSFREQ
+vtf_output_freq=%CONFIGSFREQ
+vcf_per_domain=false
+counts_output_freq=%COUNTSFREQ
+ops_to_output=%OPS
+order_params_output_freq=%OPFREQ
+times_output_freq=%TIMEFREQ
+energies_output_freq=%ENERGYFREQ
+#vmd_pipe_freq=
+create_vmd_instance=false

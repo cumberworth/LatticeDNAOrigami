@@ -1,0 +1,269 @@
+#!/bin/bash
+
+# Script to create input files for constant temperature runs from template
+
+# Note the variables being added to the array must be in quotes,
+# otherwise it will add nothing
+
+fields=()
+vars=()
+
+echo "Input directory:"; read inpdir
+#inpdir=inps
+fields+=(INPDIR)
+vars+=("$inpdir")
+
+echo "System:"; read system
+#system=
+fields+=(SYSTEM)
+vars+=("$system")
+
+echo "State (unbound or assembled):"; read state
+#state=unbound
+fields+=(STATE)
+vars+=("$state")
+
+sysfile=$inpdir/${system}_${state}.json
+fields+=(SYSFILE)
+vars+=("$sysfile")
+
+echo "Variant:"; read variant
+#variant=
+fields+=(VARIANT)
+vars+=("$variant")
+
+echo "Run number:"; read run
+#run=0
+fields+=(RUN)
+vars+=("$run")
+
+echo "Reps:"; read reps
+#reps=1
+
+echo "Temps (seperate with spaces:"; read temps
+#temps=
+temps=($temps)
+
+#echo "Queue:"; read queue
+queue=l1
+fields+=(QUEUE)
+vars+=("$queue")
+
+echo "Walltime hours:"; read walltime
+#walltime=30
+fields+=(WALLTIME)
+vars+=("$walltime")
+
+echo "Output file directory:"; read outputfiledir
+#outputfiledir=`pwd | sed "s;home/alexc;scratch/amc226;"`/outs
+fields+=(OUTPUTFILEDIR)
+vars+=("$outputfiledir")
+
+echo "Sceduler (pbs or slurm):"; read sched
+#sched=pbs
+
+echo "Hybridization potential:"; read hybridpot
+#hybridpot=NearestNeighbour
+fields+=(HYBRIDPOT)
+vars+=("$hybridpot")
+
+echo "Domain type:"; read domaintype
+#domaintype=ThreeQuarterTurn
+fields+=(DOMAINTYPE)
+vars+=("$domaintype")
+
+echo "Binding potential:"; read bindpot
+#bindpot=FourBody
+fields+=(BINDPOT)
+vars+=("$bindpot")
+
+echo "Misbinding potential:"; read misbindpot
+#misbindpot=Opposing
+fields+=(MISBINDPOT)
+vars+=("$misbindpot")
+
+#echo "Stacking potential:"; read stackpot
+stackpot=Constant
+fields+=(STACKPOT)
+vars+=("$stackpot")
+
+echo "Staple concentration (mol/L):"; read staplem
+#staplem=1e-7
+fields+=(STAPLEM)
+vars+=("$staplem")
+
+echo "Cation concentration (mol/L):"; read cationm
+#cationm=0.5
+fields+=(CATIONM)
+vars+=("$cationm")
+
+echo "Maximum number of total staples:"; read maxstaples
+#maxstaples=24
+fields+=(MAXSTAPLES)
+vars+=("$maxstaples")
+
+echo "Maximum number of staples of given type:"; read maxtypestaples
+#maxtypestaples=$maxstaples
+fields+=(MAXTYPESTAPLES)
+vars+=("$maxtypestaples")
+
+echo "Maximum number of domains per staple:"; read maxsizestaple
+#maxstaplesize=$maxstaplesize
+fields+=(MAXSIZESTAPLE)
+vars+=("$maxsizestaple")
+
+#echo "Domain level biases present?"; read domainbiases
+domainbiases=false
+fields+=(DOMAINBIASES)
+vars+=("$domainbiases")
+
+echo "Binding enthalpy for uniform potential"; read bindh
+#bindh=-60059.27167992321
+#bindh=0
+fields+=(BINDH)
+vars+=("$bindh")
+
+echo "Binding entropy for uniform potential"; read binds
+#binds=-164.0135846334504
+#binds=0
+fields+=(BINDS)
+vars+=("$binds")
+
+echo "Misbinding enthalpy for uniform potential"; read misbindh
+#misbindh=-8989.354123837773
+#misbindh=0
+fields+=(MISBINDH)
+vars+=("$misbindh")
+
+echo "Misbinding entropy for uniform potential"; read misbinds
+#misbinds=-26.857736488186973
+#misbinds=0
+fields+=(MISBINDS)
+vars+=("$misbinds")
+
+echo "Stacking energy"; read stackene
+#stackene=
+fields+=(STACKENE)
+vars+=("$stackene")
+
+echo "Order parameter file:"; read opfile
+#opfile=ops_default.json
+fields+=(OPFILE)
+if [ -z $opfile ]
+then
+    vars+=("")
+else
+    vars+=("$inpdir/$opfile")
+fi
+
+#echo "Bias function file:"; read biasfile
+biasfile=
+fields+=(BIASFILE)
+if [ -z $biasfile ]
+then
+    vars+=("")
+else
+    vars+=("$inpdir/$biasfile")
+fi
+
+#echo "Restart step:"; read restartstep
+restartstep=0
+fields+=(RESTARTSTEP)
+vars+=("$restartstep")
+
+echo "Default check/center/write/etc freq:"; read defaultint
+#defaultint=100000
+
+#echo "Centering freq:"; read centeringfreq
+centeringfreq=$defaultint
+fields+=(CENTERINGFREQ)
+vars+=("$centeringfreq")
+
+#echo "Constraint check freq:"; read concheckfreq
+concheckfreq=1000000
+fields+=(CONCHECKFREQ)
+vars+=("$concheckfreq")
+
+#echo "Steps:"; read steps
+steps=1000000000000000000
+fields+=(STEPS)
+vars+=("$steps")
+
+echo "Maximum duration (s):"; read maxdur
+#maxdur=100000
+fields+=(MAXDUR)
+vars+=("$maxdur")
+
+#echo "Logging freq:"; read loggingfreq
+loggingfreq=$defaultint
+fields+=(LOGGINGFREQ)
+vars+=("$loggingfreq")
+
+#echo "Config write freq (all formats):"; read configsfreq
+configsfreq=$defaultint
+fields+=(CONFIGSFREQ)
+vars+=("$configsfreq")
+
+#echo "Counts write freq:"; read countsfreq
+countsfreq=$defaultint
+fields+=(COUNTSFREQ)
+vars+=("$countsfreq")
+
+echo "Tags of order parameters to output"; read ops
+#ops="numfulldomains nummisdomains numstackedpairs numstaples numlinearhelices numstackedpairs"
+fields+=(OPS)
+vars+=("$ops")
+
+#echo "Order parameter write freq:"; read opfreq
+opfreq=$defaultint
+fields+=(OPFREQ)
+vars+=("$opfreq")
+
+#echo "Timing write freq:"; read timefreq
+timefreq=$defaultint
+fields+=(TIMEFREQ)
+vars+=("$timefreq")
+
+#echo "Energy write freq:"; read energyfreq
+energyfreq=$defaultint
+fields+=(ENERGYFREQ)
+vars+=("$energyfreq")
+
+echo "Movetype file:"; read movetypefile
+#movetypefile=${inpdir}/moveset_default.json
+fields+=(MOVETYPEFILE)
+vars+=("$movetypefile")
+
+numfields=${#fields[@]}
+fields+=(OUTPUTFILEBASE)
+fields+=(REP)
+fields+=(TEMP)
+fields+=(RESTARTFILE)
+for ((rep=0; $rep<$reps; rep += 1))
+do
+    for temp in ${temps[@]}
+    do
+        outputfilebase=${system}-${variant}_run-${run}_rep-${rep}-${temp}
+        restartfile=${outputfilebase}.trj.restart
+        vars[$numfields]=$outputfilebase
+        vars[$numfields + 1]=$rep
+        vars[$numfields + 2]=$temp
+        vars[$numfields + 3]=$restartfile
+
+        sedcommand=""
+        for i in ${!fields[@]}
+        do
+            sedcommand+="s:%${fields[i]}:${vars[i]}:g;"
+        done
+
+        if (( $run > 0 ))
+        then
+            input_template=serial_restart_template.inp
+        else
+            input_template=serial_template.inp
+        fi
+
+        sed "$sedcommand" serial_template_${sched}.sh > $inpdir/$outputfilebase.sh
+        sed "$sedcommand" $input_template > $inpdir/$outputfilebase.inp
+    done
+done

@@ -1,19 +1,20 @@
 # Name of job
-#PBS -N %VARIANT-%RUN-%REP-%TEMP
+#PBS -N %OUTPUTFILEBASE
 
 # Queue to use
 #PBS -q %QUEUE
 
-# Nodes and procs
-#PBS -l nodes=%NODENAMES:ppn=1
-
 # Walltime limit (hours:mins:secs)
 #PBS -l walltime=%WALLTIME:00:00
+
+# Nodes and procs
+#PBS -l nodes=%NODES:ppn=%PROCS
 
 # Standard error and out files
 #PBS -o outs/%OUTPUTFILEBASE.o
 #PBS -e outs/%OUTPUTFILEBASE.e
 
+# Environment setup
 cd ${PBS_O_WORKDIR}
 module unload gcc
 module load gcc/6.2.0
@@ -25,15 +26,16 @@ cat $PBS_NODEFILE
 echo
 
 export LD_LIBRARY_PATH=~/lib:$LD_LIBRARY_PATH
-export PATH=~/bin/$PATH
+export PATH=~/bin:$PATH
+mpirun -n %PROCS mkdir -p %OUTPUTFILEDIR
 
 # Main job
-latticeDNAOrigami -i %INPDIR/%OUTPUTFILEBASE.inp > %OUTPUTFILEDIR/%OUTPUTFILEBASE.out
+mpirun -n %NUMREPS latticeDNAOrigami -i %INPDIR/%OUTPUTFILEBASE.inp > %OUTPUTFILEDIR/%OUTPUTFILEBASE.out
 
-# Copy results to slowscratch mirror
+# Copy results to sharedscratch
 targetdir=$(pwd | sed "s:home:sharedscratch:")/outs/
 mkdir -p $targetdir
-cp %OUTPUTFILEDIR/%OUTPUTFILEBASE.* $targetdir/
+cp %OUTPUTFILEDIR/%OUTPUTFILEBASE* $targetdir/
 
 echo
 echo "Job finished. PBS details are:"
