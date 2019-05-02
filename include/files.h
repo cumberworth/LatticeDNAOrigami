@@ -157,6 +157,7 @@ namespace files {
 
             const string m_filename;
             const int m_write_freq;
+            const int m_max_staple_size;
 
         protected:
             OrigamiSystem& m_origami_system;
