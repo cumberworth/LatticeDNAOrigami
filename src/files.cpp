@@ -453,6 +453,7 @@ namespace files {
             OrigamiSystem& origami_system) :
             m_filename {filename},
             m_write_freq {write_freq},
+            m_max_staple_size {max_staple_size},
             m_origami_system {origami_system} {
 
         // This assumes 2 domain staples
@@ -500,17 +501,27 @@ namespace files {
 
     void OrigamiVCFOutputFile::write(long int, double) {
         m_file << "timestep\n";
+        int num_written_domains {0};
         for (auto chain: m_origami_system.get_chains()) {
+            int num_domains {0};
             for (auto domain: chain) {
+                num_domains++;
                 for (int i {0}; i != 3; i++) {
                     m_file << domain->m_pos[i] << " ";
                 }
                 m_file << "\n";
             }
+            while (num_domains < m_max_staple_size) {
+                num_domains++;
+                for (int i {0}; i !=3; i++) {
+                    m_file << 0 << " ";
+                }
+                m_file << "\n";
+            }
+            num_written_domains += num_domains;
         }
 
-        int num_doms {m_origami_system.num_domains()};
-        for (int dom_i {num_doms}; dom_i != m_max_num_domains; dom_i++) {
+        for (int dom_i {num_written_domains}; dom_i != m_max_num_domains; dom_i++) {
             for (int i {0}; i !=3; i++) {
                 m_file << 0 << " ";
             }
@@ -521,8 +532,11 @@ namespace files {
     }
 
     void OrigamiOrientationOutputFile::write(long int, double) {
+        int num_written_domains {0};
         for (auto chain: m_origami_system.get_chains()) {
+            int num_domains {0};
             for (auto domain: chain) {
+                num_domains++;
                 for (int i {0}; i != 3; i++) {
                     if (domain->m_state != Occupancy::unassigned) {
                         m_file << domain->m_ore[i] << " ";
@@ -532,9 +546,15 @@ namespace files {
                     }
                 }
             }
+            while (num_domains < m_max_staple_size) {
+                num_domains++;
+                for (int i {0}; i !=3; i++) {
+                    m_file << 0 << " ";
+                }
+            }
+            num_written_domains += num_domains;
         }
-        int num_doms {m_origami_system.num_domains()};
-        for (int dom_i {num_doms}; dom_i != m_max_num_domains; dom_i++) {
+        for (int dom_i {num_written_domains}; dom_i != m_max_num_domains; dom_i++) {
             for (int i {0}; i !=3; i++) {
                 m_file << 0 << " ";
             }
@@ -544,8 +564,11 @@ namespace files {
     }
 
     void OrigamiStateOutputFile::write(long int, double) {
+        int num_written_domains {0};
         for (auto chain: m_origami_system.get_chains()) {
+            int num_domains {0};
             for (auto domain: chain) {
+                num_domains++;
                 if (domain->m_state == Occupancy::unbound) {
                     m_file << "1 ";
                 }
@@ -559,9 +582,13 @@ namespace files {
                     m_file << "0 ";
                 }
             }
+            while (num_domains < m_max_staple_size) {
+                num_domains++;
+                m_file << "-1 ";
+            }
+            num_written_domains += num_domains;
         }
-        int num_doms {m_origami_system.num_domains()};
-        for (int dom_i {num_doms}; dom_i != m_max_num_domains; dom_i++) {
+        for (int dom_i {num_written_domains}; dom_i != m_max_num_domains; dom_i++) {
             m_file << "-1 ";
         }
                 
