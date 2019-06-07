@@ -54,7 +54,7 @@ namespace files {
         if (jsonroot["origami"].isMember("entropies")) {
             Json::Value jsonentropies {jsonroot["origami"]["entropies"]};
             for (unsigned int i {0}; i != jsonentropies.size(); i++) {
-                m_enthalpies.push_back(jsonentropies[i].asDouble());
+                m_entropies.push_back(jsonentropies[i].asDouble());
             }
         }
 
