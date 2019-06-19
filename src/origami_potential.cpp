@@ -987,6 +987,10 @@ namespace potential {
             m_misbinding_h = params.m_misbinding_h;
             m_misbinding_s = params.m_misbinding_s;
         }
+        if (m_hybridization_pot == "Specified") {
+            m_misbinding_h = params.m_misbinding_h;
+            m_misbinding_s = params.m_misbinding_s;
+        }
 
         get_energies();
     }
