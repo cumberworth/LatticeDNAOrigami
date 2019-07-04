@@ -35,7 +35,7 @@ mpirun -n %NUMREPS latticeDNAOrigami -i %INPDIR/%OUTPUTFILEBASE.inp > %OUTPUTFIL
 # Copy results to sharedscratch
 targetdir=$(pwd | sed "s:home:sharedscratch:")/outs/
 mkdir -p $targetdir
-cp %OUTPUTFILEDIR/%OUTPUTFILEBASE* $targetdir/
+mpirun -n %PROCS cp %OUTPUTFILEDIR/%OUTPUTFILEBASE* $targetdir/
 
 echo
 echo "Job finished. PBS details are:"

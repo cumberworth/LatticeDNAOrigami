@@ -1,5 +1,5 @@
 # Name of job
-#PBS -N %VARIANT-%RUN-%REP-%TEMP
+#PBS -N %OUTPUTFILEBASE
 
 # Queue to use
 #PBS -q %QUEUE
