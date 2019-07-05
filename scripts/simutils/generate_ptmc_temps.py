@@ -36,7 +36,7 @@ def main():
     np.set_printoptions(formatter={'float': '{:0.3f}'.format}, linewidth=200)
     new_temps = np.around(new_temps, decimals=3)
     temps_string = ''
-    for temp in temps:
+    for temp in new_temps:
         temps_string = temps_string + '{:.3f} '.format(temp)
 
     print(temps_string)
