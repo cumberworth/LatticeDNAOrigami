@@ -34,7 +34,12 @@ def main():
     high_temps = [high_temp + 1]
     new_temps = np.concatenate([low_temps, new_temps, high_temps])
     np.set_printoptions(formatter={'float': '{:0.3f}'.format}, linewidth=200)
-    print(np.around(new_temps, decimals=3))
+    new_temps = np.around(new_temps, decimals=3)
+    temps_string = ''
+    for temp in temps:
+        temps_string = temps_string + '{:.3f} '.format(temp)
+
+    print(temps_string)
 
 
 #def sum_of_squared_errors(temps, desired_ops, spline_params):
