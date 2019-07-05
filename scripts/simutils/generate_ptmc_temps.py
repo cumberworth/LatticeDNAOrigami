@@ -16,6 +16,9 @@ def main():
     aves = pd.read_csv(args.inp_filename, sep=' ')
     old_temps = aves['temp']
     old_ops = aves[args.tag]
+
+    # Prevent instabilities in minimization (need monotonically decreasing)
+    old_ops = old_ops.sort_values()[::-1]
 #    spline_params = interpolate.splrep(old_temps, old_ops)
     interpolated_ops_f = interpolate.interp1d(old_temps, old_ops, kind='linear',
             fill_value='extrapolate')
