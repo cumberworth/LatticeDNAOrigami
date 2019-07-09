@@ -326,6 +326,10 @@ namespace movetypes {
                     deque<Domain*>& possible_stems,
                     vector<Domain*>& seg);
             unsigned int m_max_seg_regrowth;
+
+            void check_for_stemds(
+                    Domain* cur_d,
+                    deque<Domain*>& possible_stems);
     };
 
     /**

@@ -638,6 +638,7 @@ namespace movetypes {
             vector<Domain*>& seg) {
 
         Domain* cur_d {start_d};
+        check_for_stemds(cur_d, possible_stems);
         Domain* next_d {start_d};
         Domain* next_next_d {start_d};
         bool max_length_reached {false};
@@ -658,23 +659,30 @@ namespace movetypes {
                 break;
             }
             cur_d = next_d;
-            if (cur_d->m_state == Occupancy::bound) {
-                Domain* bound_d {cur_d->m_bound_domain};
-                for (int staple_dir: {-1, 1}) {
-                    Domain* neighbour_d {*bound_d + staple_dir};
-                    if (neighbour_d != nullptr and
-                            neighbour_d->m_state == Occupancy::bound) {
-                        Domain* bound_neighbour_d {
-                                neighbour_d->m_bound_domain};
-                        if (bound_neighbour_d->m_c ==
-                                m_origami_system.c_scaffold) {
-                            possible_stems.push_back(bound_neighbour_d);
-                        }
+            check_for_stemds(cur_d, possible_stems);
+        }
+
+        return max_length_reached;
+    }
+
+    void CTRegrowthMCMovetype::check_for_stemds(
+            Domain* cur_d,
+            deque<Domain*>& possible_stems) {
+
+        if (cur_d->m_state == Occupancy::bound) {
+            Domain* bound_d {cur_d->m_bound_domain};
+            for (int staple_dir: {-1, 1}) {
+                Domain* neighbour_d {*bound_d + staple_dir};
+                if (neighbour_d != nullptr and
+                        neighbour_d->m_state == Occupancy::bound) {
+                    Domain* bound_neighbour_d {
+                            neighbour_d->m_bound_domain};
+                    if (bound_neighbour_d->m_c ==
+                            m_origami_system.c_scaffold) {
+                        possible_stems.push_back(bound_neighbour_d);
                     }
                 }
             }
         }
-
-        return max_length_reached;
     }
 }
