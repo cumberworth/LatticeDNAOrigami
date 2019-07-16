@@ -197,9 +197,22 @@ namespace ptmc {
                     InputParameters& params);
 
         private:
-            void initialize_exchange_vector();
             void update_control_qs() override;
     };
+
+    class STPTGCMCSimulation: public OneDPTGCMCSimulation {
+        // Exchange temperature and stacking multipliers
+        public:
+            STPTGCMCSimulation(
+                    OrigamiSystem& origami_system,
+                    SystemOrderParams& ops,
+                    SystemBiases& biases,
+                    InputParameters& params);
+
+        private:
+            void update_control_qs() override;
+    };
+
 }
 
 #endif // PTMC_SIMULATION_H

@@ -584,6 +584,18 @@ namespace ptmc {
         initialize_swap_file(params);
     }
 
+    STPTGCMCSimulation::STPTGCMCSimulation(
+            OrigamiSystem& origami_system,
+            SystemOrderParams& ops, 
+            SystemBiases& biases,
+            InputParameters& params) :
+            OneDPTGCMCSimulation(origami_system, ops, biases, params) {
+
+        m_exchange_q_is.push_back(m_temp_i);
+        m_exchange_q_is.push_back(m_stacking_mult_i);
+        initialize_swap_file(params);
+    }
+
     UTPTGCMCSimulation::UTPTGCMCSimulation(
             OrigamiSystem& origami_system,
             SystemOrderParams& ops, 
@@ -628,5 +640,11 @@ namespace ptmc {
         m_origami_system.update_staple_u(staple_u);
         double bias_mult {m_replica_control_qs[m_bias_mult_i]};
         m_origami_system.update_bias_mult(bias_mult);
+    }
+
+    void STPTGCMCSimulation::update_control_qs() {
+        double temp {m_replica_control_qs[m_temp_i]};
+        double stacking_mult {m_replica_control_qs[m_stacking_mult_i]};
+        m_origami_system.update_temp(temp, stacking_mult);
     }
 }
