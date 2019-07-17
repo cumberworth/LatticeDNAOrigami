@@ -318,6 +318,7 @@ namespace ptmc {
 
             // Biases
             m_control_qs.push_back(params.m_bias_mults);
+            m_control_qs.push_back(params.m_stacking_mults);
         }
 
         // Initialize quantities of each replica (updating on origami happens
