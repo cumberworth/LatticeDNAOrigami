@@ -54,6 +54,10 @@ int main(int argc, char* argv[]) {
             cout << "Running HuT parallel tempering simulation\n";
             sim = new ptmc::HUTPTGCMCSimulation {*origami, ops, biases, params};
         }
+        else if (params.m_simulation_type == "st_parallel_tempering") {
+            cout << "Running ST parallel tempering simulation\n";
+            sim = new ptmc::STPTGCMCSimulation {*origami, ops, biases, params};
+        }
         else if (params.m_simulation_type == "2d_parallel_tempering") {
             cout << "Running 2D (T and stacking) parallel tempering simulation\n";
             sim = new ptmc::TwoDPTGCMCSimulation {*origami, ops, biases, params};
