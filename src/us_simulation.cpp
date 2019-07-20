@@ -32,7 +32,6 @@ namespace us {
             m_max_iter_dur {params.m_max_iter_dur},
             m_prod_steps {params.m_prod_steps},
             m_max_prod_dur {params.m_max_prod_dur},
-            m_max_rel_P_diff {params.m_max_rel_P_diff},
             m_grid_bias {biases.get_grid_bias(params.m_us_grid_bias_tag)},
             m_max_D_bias {params.m_max_D_bias} {
 

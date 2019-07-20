@@ -81,7 +81,6 @@ namespace us {
             long long int m_prod_steps;
             long long int m_max_prod_dur;
             long long int m_steps;
-            double m_max_rel_P_diff;
             GridBiasFunction& m_grid_bias;
             double m_max_D_bias;
             vector<int> m_equil_dif;
