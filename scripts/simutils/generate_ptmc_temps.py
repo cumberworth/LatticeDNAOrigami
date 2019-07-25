@@ -14,6 +14,9 @@ from origamipy import files
 def main():
     args = parse_args()
     aves = pd.read_csv(args.inp_filename, sep=' ')
+    if args.rtag:
+        aves = aves[aves[args.rtag] == args.rvalue].reset_index()
+
     old_temps = aves['temp']
     old_ops = aves[args.tag]
 
@@ -72,6 +75,14 @@ def parse_args():
         'threads',
         type=int,
         help='Number of threads/replicas')
+    parser.add_argument(
+            '--rtag',
+            type=str,
+            help='Tag to slice on')
+    parser.add_argument(
+            '--rvalue',
+            type=float,
+            help='Slice value')
 
     return parser.parse_args()
 
