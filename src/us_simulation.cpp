@@ -41,6 +41,7 @@ namespace us {
             if (bias_file.good()) {
                 *m_us_stream << "Reading biases from file\n";
                 read_weights(params.m_biases_file);
+                m_grid_bias.replace_biases(m_E_w);
             }
         }
         else {
