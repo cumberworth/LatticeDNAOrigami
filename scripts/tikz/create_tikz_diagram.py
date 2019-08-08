@@ -10,15 +10,17 @@ import argparse
 import sys
 import string
 
-from origamipy.origami_io import JSONInputFile, PlainTextTrajFile
+from origamipy.files import JSONStructInpFile, TxtTrajInpFile
 
 
 TEMPLATE_FILENAME = 'tikz_template.tex'
 
 
-def make_tikz_position_bond_orientation_list(chains):
+def make_tikz_position_bond_orientation_list(chains, orelen):
     scaffold_list = ''
+    scaffold_list_ndr = ''
     staple_list = ''
+    staple_list_ndr = ''
     for chain in chains:
         for domain_index in range(len(chain['positions'])):
             rix = chain['positions'][domain_index][0]
@@ -36,31 +38,42 @@ def make_tikz_position_bond_orientation_list(chains):
                 aiy = 0
                 aiz = 0
 
-            bix = chain['orientations'][domain_index][0] * 0.5
-            biy = chain['orientations'][domain_index][1] * 0.5
-            biz = chain['orientations'][domain_index][2] * 0.5
+            bix = chain['orientations'][domain_index][0] * orelen
+            biy = chain['orientations'][domain_index][1] * orelen
+            biz = chain['orientations'][domain_index][2] * orelen
 
+            entry = '{} / {} / {} / {} / {} / {} / {} / {} / {}, '.format(
+                    rix, riy, riz, aix, aiy, aiz, bix, biy, biz)
             if chain['identity'] == 0:
-                scaffold_list = scaffold_list + '{} / {} / {} / {} / {} / {} / {} / {} / {}, '.format(
-                        rix, riy, riz, aix, aiy, aiz, bix, biy, biz)
+                scaffold_list = scaffold_list + entry
             else:
-                staple_list = staple_list + '{} / {} / {} / {} / {} / {} / {} / {} / {}, '.format(
-                        rix, riy, riz, aix, aiy, aiz, bix, biy, biz)
+                staple_list = staple_list + entry
+
+            if domain_index != len(chain['positions']) - 1:
+                if chain['identity'] == 0:
+                    scaffold_list_ndr = scaffold_list_ndr + entry
+                else:
+                    staple_list_ndr = staple_list_ndr + entry
 
     # Remove last comma and space
     scaffold_list = scaffold_list[:-2]
     staple_list = staple_list[:-2]
+    scaffold_list_ndr = scaffold_list_ndr[:-2]
+    staple_list_ndr = staple_list_ndr[:-2]
 
-    return scaffold_list, staple_list
+    return scaffold_list, staple_list, scaffold_list_ndr, staple_list_ndr
 
 
-def insert_list_and_write(scaffold_list, staple_list, output_filename, coor1,
-        coor2, axis):
+def insert_list_and_write(scaffold_list, staple_list, scaffold_list_ndr,
+        staple_list_ndr, output_filename, coor1, coor2, axis):
+
     with open(TEMPLATE_FILENAME) as input:
         template = string.Template(input.read())
 
     template = template.substitute(scaffold_list=scaffold_list,
-            staple_list=staple_list, coor1=coor1, coor2=coor2, axis=axis)
+            staple_list=staple_list, scaffold_list_ndr=scaffold_list_ndr,
+            staple_list_ndr=staple_list_ndr, coor1=coor1, coor2=coor2,
+            axis=axis)
     with open(output_filename, 'w') as output:
         output.write(template)
 
@@ -75,11 +88,13 @@ def main():
             help='Tex filename')
     parser.add_argument('step', type=int,
             help='Step in configuration file to draw')
-    parser.add_argument('--coor1', dest='coor1', default=40,
-            help='First perspective coordinate (default 40)')
-    parser.add_argument('--coor2', dest='coor2', default=110,
-            help='First perspective coordinate (default 110)')
-    parser.add_argument('--noaxis', dest='noaxis', action='store_true',
+    parser.add_argument('--coor1', dest='coor1', default=0,
+            help='First perspective coordinate (default 0)')
+    parser.add_argument('--coor2', dest='coor2', default=0,
+            help='Second perspective coordinate (default 0)')
+    parser.add_argument('--orelen', dest='orelen', default=0.5, type=float,
+            help='Length of orientation vector (default 0.5)')
+    parser.add_argument('--axis', dest='axis', action='store_true',
             default=False,
             help='Switch off axis')
 
@@ -90,19 +105,22 @@ def main():
     step = args.step
     coor1 = args.coor1
     coor2 = args.coor2
-    noaxis = args.noaxis
-    if noaxis:
+    axis = args.axis
+    orelen = args.orelen
+    if not axis:
         axis = '%'
     else:
         axis = ''
-        
 
-    system_file = JSONInputFile(system_filename)
-    traj_file = PlainTextTrajFile(traj_filename, system_file)
+
+#    system_file = JSONStructInpFile(system_filename)
+    traj_file = JSONStructInpFile(traj_filename)
     chains = traj_file.chains(step)
-    scaffold_list, staple_list = make_tikz_position_bond_orientation_list(chains)
-    insert_list_and_write(scaffold_list, staple_list, output_filename, coor1,
-            coor2, axis)
+    scaffold_list, staple_list, scaffold_list_ndr, staple_list_ndr = (
+            make_tikz_position_bond_orientation_list(chains, orelen))
+    insert_list_and_write(scaffold_list, staple_list, scaffold_list_ndr,
+            staple_list_ndr, output_filename, coor1, coor2, axis)
+
 
 if __name__ == '__main__':
     main()
