@@ -1,8 +1,10 @@
-\documentclass[border=10pt,tikz=true]{standalone}
+\documentclass[tikz=true]{standalone}
 
 \usepackage{tikz}
 \usepackage{tikz-3dplot}
 \usepackage{xcolor}
+
+\usetikzlibrary{colorbrewer}
 
 % Set colours
 
@@ -10,7 +12,7 @@
 \newcommand{\drawAxes}{
 
     % Draw axes
-    \newcommand{\axesSize}{10}
+    \newcommand{\axesSize}{2}
     \foreach \coor in {(-\axesSize, 0, 0),
         (\axesSize, 0, 0),
         (0, -\axesSize, 0),
@@ -18,7 +20,7 @@
         (0, 0, -\axesSize),
         (0, 0, \axesSize)
     }{
-        \draw[gray,thin,->,>=stealth] (0, 0, 0) -- \coor;
+        \draw[gray,thin,->,>=stealth, line width=0.75pt] (0, 0, 0) -- \coor;
     }
 }
 
@@ -35,7 +37,7 @@
     }
 }
 
-\newcommand{\drawDomain}[3]{
+\newcommand{\drawDomain}[4]{
 
     % Draw a domain.
     %
@@ -43,33 +45,58 @@
     % 2 -- y coordinate
     % 3 -- z coordinate
     \tdplottransformmainscreen{#1}{#2}{#3}
-    \fill[tdplot_screen_coords, opacity=0.8] (\tdplotresx, \tdplotresy) circle (0.2);
+    \fill[tdplot_screen_coords, #4] (\tdplotresx, \tdplotresy) circle (0.2);
 }
 
 \begin{document}
 
 % Set viewing angle
-\tdplotsetmaincoords{40}{110}
+\tdplotsetmaincoords{$coor1}{$coor2}
 
-\begin{tikzpicture}[tdplot_main_coords, scale=1.5,
-    %
-    % Styles
-    domainVector/.style={red, line width=1, ->, >=stealth},
-    fivePrimeVector/.style={blue, line width=1, ->, >=stealth}]
+\begin{tikzpicture}[tdplot_main_coords,
+    scaffoldDomain/.style={Dark2-A, opacity=1},
+    stapleDomain/.style={Dark2-B, opacity=1},
+    scaffoldDomainVector/.style={Dark2-F, line width=1.3pt, ->, >=stealth},
+    scaffoldFivePrimeVector/.style={Dark2-D, line width=1.3pt, ->, >=stealth},
+    stapleDomainVector/.style={Dark2-C, line width=1.3pt, ->, >=stealth},
+    stapleFivePrimeVector/.style={Dark2-E, line width=1.3pt, ->, >=stealth}]
 
-    \drawAxes
+    $axis\drawAxes
 
-    \foreach \rix / \riy / \riz / \aix / \aiy / \aiz / \bix / \biy / \biz in {$tikz_list}{
+%    \begin{scope}[transparency group]
+%    \begin{scope}[blend mode=multiply]
 
-    % Next domain vector
-    \draw[domainVector] (\rix, \riy, \riz) -- (\rix + \aix, \riy + \aiy, \riz + \aiz);
+    % Staple domain position
+    \foreach \rix / \riy / \riz / \aix / \aiy / \aiz / \bix / \biy / \biz in {$staple_list}{
+        \drawDomain{\rix}{\riy}{\riz}{stapleDomain}
+    }
 
-    % Five prime vector
-    \draw[fivePrimeVector] (\rix, \riy, \riz) -- (\rix + \bix, \riy + \biy, \riz + \biz);
+    % Scaffold domain position
+    \foreach \rix / \riy / \riz / \aix / \aiy / \aiz / \bix / \biy / \biz in {$scaffold_list}{
+        \drawDomain{\rix}{\riy}{\riz}{scaffoldDomain}
+    }
 
-    % Domain position
-    \drawDomain{\rix}{\riy}{\riz}
+%    \end{scope}
+%    \end{scope}
 
+    % Staple next domain vector
+    \foreach \rix / \riy / \riz / \aix / \aiy / \aiz / \bix / \biy / \biz in {$staple_list_ndr}{
+        \draw[stapleDomainVector] (\rix, \riy, \riz) -- (\rix + \aix, \riy + \aiy, \riz + \aiz);
+    }
+
+    % Scaffold next domain vector
+    \foreach \rix / \riy / \riz / \aix / \aiy / \aiz / \bix / \biy / \biz in {$scaffold_list_ndr}{
+        \draw[scaffoldDomainVector] (\rix, \riy, \riz) -- (\rix + \aix, \riy + \aiy, \riz + \aiz);
+    }
+
+    % Staple orientation vector
+    \foreach \rix / \riy / \riz / \aix / \aiy / \aiz / \bix / \biy / \biz in {$staple_list}{
+        \draw[stapleFivePrimeVector] (\rix, \riy, \riz) -- (\rix + \bix, \riy + \biy, \riz + \biz);
+    }
+
+    % Scaffold orientation vector
+    \foreach \rix / \riy / \riz / \aix / \aiy / \aiz / \bix / \biy / \biz in {$scaffold_list}{
+        \draw[scaffoldFivePrimeVector] (\rix, \riy, \riz) -- (\rix + \bix, \riy + \biy, \riz + \biz);
     }
 
 \end{tikzpicture}
