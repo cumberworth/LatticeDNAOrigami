@@ -2,9 +2,9 @@
 # http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
 # It is surprising because the guy who wrote the above post in the make maintainer
 
-OPTLEVEL = -O3
+OPTLEVEL = -g
 BUILDDIR = build
-PREFIX = ../../bin/latticeDNAOrigami
+PREFIX = ~/bin/latticeDNAOrigami
 TARGET = latticeDNAOrigami
 TARGETDIR = bin
 SRCDIR = src

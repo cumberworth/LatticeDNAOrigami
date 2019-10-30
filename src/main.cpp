@@ -2,17 +2,17 @@
 
 #include <iostream>
 
-#include "bias_functions.h"
-#include "parser.h"
-#include "nearest_neighbour.h"
-#include "domain.h"
-#include "files.h"
-#include "constant_temp_simulation.h"
 #include "annealing_simulation.h"
+#include "bias_functions.h"
+#include "constant_temp_simulation.h"
+#include "domain.h"
+#include "enumerate.h"
+#include "files.h"
+#include "nearest_neighbour.h"
+#include "order_params.h"
+#include "parser.h"
 #include "ptmc_simulation.h"
 #include "us_simulation.h"
-#include "order_params.h"
-#include "enumerate.h"
 
 int main(int argc, char* argv[]) {
 
@@ -34,13 +34,13 @@ int main(int argc, char* argv[]) {
         simulation::GCMCSimulation* sim;
         if (params.m_simulation_type == "constant_temp") {
             cout << "Running serial constant temperature simulation\n";
-            sim = new constantTemp::ConstantTGCMCSimulation {*origami, ops,
-                    biases, params};
+            sim = new constantTemp::ConstantTGCMCSimulation {
+                    *origami, ops, biases, params};
         }
         else if (params.m_simulation_type == "annealing") {
             cout << "Running serial annealing simulation\n";
-            sim = new annealing::AnnealingGCMCSimulation {*origami, ops, biases,
-                    params};
+            sim = new annealing::AnnealingGCMCSimulation {
+                    *origami, ops, biases, params};
         }
         else if (params.m_simulation_type == "t_parallel_tempering") {
             cout << "Running T parallel tempering simulation\n";
@@ -59,12 +59,15 @@ int main(int argc, char* argv[]) {
             sim = new ptmc::STPTGCMCSimulation {*origami, ops, biases, params};
         }
         else if (params.m_simulation_type == "2d_parallel_tempering") {
-            cout << "Running 2D (T and stacking) parallel tempering simulation\n";
-            sim = new ptmc::TwoDPTGCMCSimulation {*origami, ops, biases, params};
+            cout << "Running 2D (T and stacking) parallel tempering "
+                    "simulation\n";
+            sim = new ptmc::TwoDPTGCMCSimulation {
+                    *origami, ops, biases, params};
         }
         else if (params.m_simulation_type == "umbrella_sampling") {
             cout << "Running single window US simulation\n";
-            sim = new us::SimpleUSGCMCSimulation {*origami, ops, biases, params};
+            sim = new us::SimpleUSGCMCSimulation {
+                    *origami, ops, biases, params};
         }
         else if (params.m_simulation_type == "mw_umbrella_sampling") {
             cout << "Running multi window US simulation\n";
