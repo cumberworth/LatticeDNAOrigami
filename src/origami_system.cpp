@@ -46,16 +46,17 @@ OrigamiSystem::OrigamiSystem(
         const vector<double> entropies,
         const Chains& chains,
         bool cyclic,
-        double volume,
-        double staple_u,
+        double staple_M,
         InputParameters& params):
 
         m_identities {identities},
         m_sequences {sequences},
         m_temp {params.m_temp},
-        m_volume {volume},
         m_cation_M {params.m_cation_M},
-        m_staple_u {staple_u},
+        m_staple_M {staple_M},
+        m_staple_us {molarity_to_chempots(staple_M, m_temp, identities)},
+        m_reduced_staple_us {chempots_to_reduced_chempots(m_staple_us, m_temp)},
+        m_reduced_fugacity {staple_M},
         m_cyclic {cyclic},
         m_domain_type {params.m_domain_type},
         m_pot {identities, sequences, enthalpies, entropies, params} {
@@ -553,21 +554,14 @@ void OrigamiSystem::set_all_domains(Chains config) {
 
 void OrigamiSystem::update_temp(double temp, double stacking_mult) {
     m_temp = temp;
-
     m_pot.update_temp(temp, stacking_mult);
-
-    // Recalculate system energy
     update_energy();
-
-    // Update volume such that it cancels fugacity
-    m_volume = exp(-m_staple_u / temp);
 }
 
-void OrigamiSystem::update_staple_u(double u) {
-    m_staple_u = u;
-
-    // Update volume such that it cancels fugacity
-    m_volume = exp(-u / m_temp);
+void OrigamiSystem::update_staple_us(double temp, double staple_u_mult) {
+    for (size_t i {0}; i != m_staple_us.size(); i++) {
+        m_staple_us[i] = m_reduced_staple_us[i] * temp * staple_u_mult;
+    }
 }
 
 void OrigamiSystem::initialize_complementary_associations() {
@@ -780,8 +774,7 @@ OrigamiSystemWithBias::OrigamiSystemWithBias(
         const vector<double> entropies,
         const Chains& chains,
         bool cyclic,
-        double volume,
-        double staple_u,
+        double staple_M,
         InputParameters& params):
         OrigamiSystem(
                 identities,
@@ -790,8 +783,7 @@ OrigamiSystemWithBias::OrigamiSystemWithBias(
                 entropies,
                 chains,
                 cyclic,
-                volume,
-                staple_u,
+                staple_M,
                 params) {}
 
 double OrigamiSystemWithBias::check_domain_constraints(
@@ -867,24 +859,29 @@ double OrigamiSystemWithBias::set_domain_config(
 //    delta_e += m_biases->calc_one_domain(cd_i);
 //}
 
-double molarity_to_lattice_volume(double molarity) {
-    // Volume is in units of number of lattice sites.
-    // u = KB*T*ln(p), where p is the number of particles per lattice site
-    // z = exp(1/(KB*T)*u) = exp(ln(p)) = p
-    // V * p = 1, V = 1 / p
-    // So just convert molarity to number of particles per lattice site
-    // The lattice site volume removes the units
-    double V {1 / molarity};
-    return V;
+vector<double> molarity_to_chempots(
+        double molarity,
+        double temp,
+        vector<vector<int>> identities) {
+    vector<double> chempots {};
+    for (auto ident: identities) {
+        auto staple_n {ident.size()};
+        auto extra_states {2 * (staple_n - 1) * log(6)};
+        chempots.push_back(temp * (log(molarity) - extra_states));
+    }
+
+    return chempots;
 }
 
-double molarity_to_chempot(double molarity, double temp) {
-    double chempot {temp * log(molarity)};
-    return chempot;
-}
+vector<double> chempots_to_reduced_chempots(
+        vector<double> chempots,
+        double temp) {
 
-double chempot_to_volume(double chempot, double temp) {
-    return exp(-chempot / temp);
+    for (size_t i {0}; i != chempots.size(); i++) {
+        chempots[i] /= temp;
+    }
+
+    return chempots;
 }
 
 OrigamiSystem* setup_origami(InputParameters& params) {
@@ -901,12 +898,6 @@ OrigamiSystem* setup_origami(InputParameters& params) {
         configs = traj_file.read_config(params.m_restart_step);
     }
 
-    // Calculate chemical potential from specified staple concentration
-    double staple_u {
-            molarity_to_chempot(params.m_staple_M, params.m_temp_for_staple_u)};
-    staple_u *= params.m_staple_u_mult;
-    double volume {chempot_to_volume(staple_u, params.m_temp)};
-
     OrigamiSystem* origami;
     if (params.m_domain_update_biases_present) {
         origami = new OrigamiSystemWithBias {identities,
@@ -915,8 +906,7 @@ OrigamiSystem* setup_origami(InputParameters& params) {
                                              entropies,
                                              configs,
                                              cyclic,
-                                             volume,
-                                             staple_u,
+                                             params.m_staple_M,
                                              params};
     }
     else {
@@ -926,8 +916,7 @@ OrigamiSystem* setup_origami(InputParameters& params) {
                                      entropies,
                                      configs,
                                      cyclic,
-                                     volume,
-                                     staple_u,
+                                     params.m_staple_M,
                                      params};
     }
 

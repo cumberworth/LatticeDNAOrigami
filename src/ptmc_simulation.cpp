@@ -136,11 +136,9 @@ void PTGCMCSimulation::update_dependent_qs() {
     m_origami_system.update_enthalpy_and_entropy();
     double DH {m_origami_system.hybridization_enthalpy()};
     double D_stacking {m_origami_system.stacking_energy()};
-    double N {static_cast<double>(m_origami_system.num_staples())};
     double bias_e {m_biases.get_total_bias()};
 
     m_replica_dependent_qs[m_enthalpy_i] = DH;
-    m_replica_dependent_qs[m_staples_i] = N;
     m_replica_dependent_qs[m_bias_i] = bias_e;
     m_replica_dependent_qs[m_stacking_i] = D_stacking;
 }
@@ -149,6 +147,13 @@ void PTGCMCSimulation::slave_send(int swap_i) {
     for (size_t q_i {0}; q_i != m_replica_dependent_qs.size(); q_i++) {
         double q {m_replica_dependent_qs[q_i]};
         m_world.send(m_master_rep, swap_i, q);
+    }
+    for (auto staple_u: m_origami_system.m_staple_us) {
+        m_world.send(m_master_rep, swap_i, staple_u);
+    }
+    for (auto staple_n: m_origami_system.get_staple_counts()) {
+        double staple_n_d {static_cast<double>(staple_n)};
+        m_world.send(m_master_rep, swap_i, staple_n_d);
     }
 }
 
@@ -165,13 +170,23 @@ bool PTGCMCSimulation::slave_receive(int swap_i) {
 
 void PTGCMCSimulation::master_receive(
         int swap_i,
-        vector<vector<double>>& dependent_qs) {
-    master_get_dependent_qs(dependent_qs);
+        vector<vector<double>>& dependent_qs,
+        vector<vector<vector<double>>>& per_staple_dependent_qs) {
+    master_get_dependent_qs(dependent_qs, per_staple_dependent_qs);
+    size_t num_staple_types {m_origami_system.m_identities.size()};
     for (int rep_i {1}; rep_i != m_num_reps; rep_i++) {
         for (size_t i {0}; i != dependent_qs.size(); i++) {
             double q;
             m_world.recv(rep_i, swap_i, q);
             dependent_qs[i].push_back(q);
+        }
+        for (size_t i {0}; i != dependent_qs.size(); i++) {
+            per_staple_dependent_qs.push_back({});
+            for (size_t j {0}; j != num_staple_types; j++) {
+                double q;
+                m_world.recv(rep_i, swap_i, q);
+                per_staple_dependent_qs[i][j].push_back(q);
+            }
         }
     }
 }
@@ -208,12 +223,15 @@ void PTGCMCSimulation::master_send_kill(int swap_i) {
 }
 
 void PTGCMCSimulation::master_get_dependent_qs(
-        vector<vector<double>>& dependent_qs) {
-
+        vector<vector<double>>& dependent_qs,
+        vector<vector<vector<double>>>& per_staple_dependent_qs) {
     dependent_qs[m_enthalpy_i].push_back(m_replica_dependent_qs[m_enthalpy_i]);
-    dependent_qs[m_staples_i].push_back(m_replica_dependent_qs[m_staples_i]);
     dependent_qs[m_bias_i].push_back(m_replica_dependent_qs[m_bias_i]);
     dependent_qs[m_stacking_i].push_back(m_replica_dependent_qs[m_stacking_i]);
+    per_staple_dependent_qs[0].push_back(m_origami_system.m_staple_us);
+    vector<int> staple_ns {m_origami_system.get_staple_counts()};
+    vector<double> staple_ns_d {staple_ns.begin(), staple_ns.end()};
+    per_staple_dependent_qs[1].push_back(staple_ns_d);
 }
 
 bool PTGCMCSimulation::test_acceptance(double p_accept) {
@@ -238,23 +256,31 @@ bool PTGCMCSimulation::test_acceptance(double p_accept) {
 // I need the bias of both configurations in both states
 double PTGCMCSimulation::calc_acceptance_p(
         vector<pair<double, double>> control_q_pairs,
-        vector<pair<double, double>> dependent_q_pairs) {
+        vector<pair<double, double>> dependent_q_pairs,
+        vector<pair<vector<double>, vector<double>>>
+                per_staple_dependent_q_pairs) {
 
     double temp1 {control_q_pairs[m_temp_i].first};
     double temp2 {control_q_pairs[m_temp_i].second};
-    double staple_u1 {control_q_pairs[m_staple_u_i].first};
-    double staple_u2 {control_q_pairs[m_staple_u_i].second};
     double stacking_mult1 {control_q_pairs[m_stacking_mult_i].first};
     double stacking_mult2 {control_q_pairs[m_stacking_mult_i].second};
 
     double enthalpy1 {dependent_q_pairs[m_enthalpy_i].first};
     double enthalpy2 {dependent_q_pairs[m_enthalpy_i].second};
-    double N1 {dependent_q_pairs[m_staples_i].first};
-    double N2 {dependent_q_pairs[m_staples_i].second};
     double bias1 {dependent_q_pairs[m_bias_i].first};
     double bias2 {dependent_q_pairs[m_bias_i].second};
     double stacking1 {dependent_q_pairs[m_stacking_i].first};
     double stacking2 {dependent_q_pairs[m_stacking_i].second};
+
+    size_t num_staple_types {m_origami_system.m_identities.size()};
+    double DBU_DN {0};
+    for (size_t i {0}; i != num_staple_types; i++) {
+        double N1 {per_staple_dependent_q_pairs[1].first[i]};
+        double N2 {per_staple_dependent_q_pairs[1].second[i]};
+        double staple_u1 {per_staple_dependent_q_pairs[0].first[i]};
+        double staple_u2 {per_staple_dependent_q_pairs[0].second[i]};
+        DBU_DN += (staple_u2 / temp2 - staple_u1 / temp1) * (N2 - N1);
+    }
 
     // Energies are actually E/B, so multiply by T
     double DB {1 / temp2 - 1 / temp1};
@@ -262,10 +288,8 @@ double PTGCMCSimulation::calc_acceptance_p(
     double Dstacking {stacking2 * temp2 - stacking1 * temp1};
     double DBM {stacking_mult2 / temp2 - stacking_mult1 / temp1};
     double DBias {bias2 * temp2 - bias1 * temp1};
-    double DN {N2 - N1};
-    double DBU {staple_u2 / temp2 - staple_u1 / temp1};
     double p_accept {
-            min({1.0, exp(DB * (DH + DBias) + DBM * Dstacking - DBU * DN)})};
+            min({1.0, exp(DB * (DH + DBias) + DBM * Dstacking - DBU_DN)})};
 
     return p_accept;
 }
@@ -293,59 +317,24 @@ OneDPTGCMCSimulation::OneDPTGCMCSimulation(
 
 // Could probably break this into two methods
 void OneDPTGCMCSimulation::initialize_control_qs(InputParameters& params) {
+
+    // Initialize master variables
     if (m_rank == m_master_rep) {
-
-        //  Temps
         m_control_qs.push_back(params.m_temps);
-
-        // Chemical potentials and volumes
-        m_control_qs.push_back({});
-        for (int i {0}; i != m_num_reps; i++) {
-
-            // Calculate chemical potential of each replica if constant
-            // staple concentration
-            double staple_u;
-            if (m_params.m_constant_staple_M) {
-                staple_u = origami::molarity_to_chempot(
-                        m_params.m_staple_M, params.m_temps[i]);
-            }
-            else {
-                staple_u = origami::molarity_to_chempot(
-                        m_params.m_staple_M, params.m_temp_for_staple_u);
-                staple_u *= m_params.m_chem_pot_mults[i];
-            }
-            m_control_qs[m_staple_u_i].push_back(staple_u);
-        }
-
-        // Biases
+        m_control_qs.push_back(params.m_chem_pot_mults);
         m_control_qs.push_back(params.m_bias_mults);
         m_control_qs.push_back(params.m_stacking_mults);
     }
 
-    // Initialize quantities of each replica (updating on origami happens
-    // in run)
+    // Initialize quantities of each replica (updating origami happens in run)
     for (int i {0}; i != m_num_reps; i++) {
         if (m_rank == i) {
             m_replica_control_qs[m_temp_i] = params.m_temps[i];
+            m_replica_control_qs[m_staple_u_mult_i] =
+                    params.m_chem_pot_mults[i];
             m_replica_control_qs[m_bias_i] = params.m_bias_mults[i];
             m_replica_control_qs[m_stacking_mult_i] =
                     params.m_stacking_mults[i];
-
-            // Update chemical potential of each replica if constant
-            // staple concentration
-            // Recalculating for each node rather than sending from master
-            if (m_params.m_constant_staple_M) {
-                m_replica_control_qs[m_staple_u_i] =
-                        origami::molarity_to_chempot(
-                                m_params.m_staple_M,
-                                m_replica_control_qs[m_temp_i]);
-            }
-            else {
-                double staple_u {origami::molarity_to_chempot(
-                        m_params.m_staple_M, params.m_temp_for_staple_u)};
-                staple_u *= m_params.m_chem_pot_mults[i];
-                m_replica_control_qs[m_staple_u_i] = staple_u;
-            }
         }
     }
 }
@@ -354,7 +343,8 @@ void OneDPTGCMCSimulation::attempt_exchange(int swap_i) {
 
     // Collect results from all replicas
     vector<vector<double>> dependent_qs {{}, {}, {}, {}};
-    master_receive(swap_i, dependent_qs);
+    vector<vector<vector<double>>> per_staple_dependent_qs {{}, {}};
+    master_receive(swap_i, dependent_qs, per_staple_dependent_qs);
 
     // Iterate through pairs in current set and attempt swap
     int swap_set {swap_i % 2};
@@ -377,8 +367,18 @@ void OneDPTGCMCSimulation::attempt_exchange(int swap_i) {
             double q_2 {dependent_q[repi2]};
             dependent_q_pairs.push_back({q_1, q_2});
         }
+        vector<pair<vector<double>, vector<double>>>
+                per_staple_dependent_q_pairs {};
+        for (auto per_staple_dependent_q: per_staple_dependent_qs) {
+            vector<double> q_1 {per_staple_dependent_q[repi1]};
+            vector<double> q_2 {per_staple_dependent_q[repi2]};
+            per_staple_dependent_q_pairs.push_back({q_1, q_2});
+        }
 
-        double p_accept {calc_acceptance_p(control_q_pairs, dependent_q_pairs)};
+        double p_accept {calc_acceptance_p(
+                control_q_pairs,
+                dependent_q_pairs,
+                per_staple_dependent_q_pairs)};
         bool accept {test_acceptance(p_accept)};
 
         // If accepted swap indices from quantities to replicas
@@ -426,7 +426,7 @@ TwoDPTGCMCSimulation::TwoDPTGCMCSimulation(
 
     initialize_control_qs(params);
     m_exchange_q_is.push_back(m_temp_i);
-    m_exchange_q_is.push_back(m_staple_u_i);
+    m_exchange_q_is.push_back(m_staple_u_mult_i);
     m_exchange_q_is.push_back(m_stacking_mult_i);
     initialize_swap_file(params);
 }
@@ -442,19 +442,11 @@ void TwoDPTGCMCSimulation::initialize_control_qs(InputParameters& params) {
     for (size_t v1_i {0}; v1_i != params.m_temps.size(); v1_i++) {
         for (size_t v2_i {0}; v2_i != params.m_stacking_mults.size(); v2_i++) {
             double temp {params.m_temps[v1_i]};
-            double stacking_mult {params.m_stacking_mults[v2_i]};
             temps.push_back(temp);
-            double staple_u;
-            if (m_params.m_constant_staple_M) {
-                staple_u =
-                        origami::molarity_to_chempot(m_params.m_staple_M, temp);
-            }
-            else {
-                staple_u = origami::molarity_to_chempot(
-                        m_params.m_staple_M, params.m_temp_for_staple_u);
-            }
-            staple_us.push_back(staple_u);
+            double staple_u_mult;
+            staple_us.push_back(params.m_staple_u_mult);
             bias_mults.push_back(1);
+            double stacking_mult {params.m_stacking_mults[v2_i]};
             stacking_mults.push_back(stacking_mult);
         }
     }
@@ -477,7 +469,7 @@ void TwoDPTGCMCSimulation::initialize_control_qs(InputParameters& params) {
     // Initialize quantities of each replica (updating on origami happens
     // in run)
     m_replica_control_qs[m_temp_i] = temps[m_rank];
-    m_replica_control_qs[m_staple_u_i] = staple_us[m_rank];
+    m_replica_control_qs[m_staple_u_mult_i] = staple_us[m_rank];
     m_replica_control_qs[m_bias_i] = bias_mults[m_rank];
     m_replica_control_qs[m_stacking_mult_i] = stacking_mults[m_rank];
 }
@@ -486,7 +478,8 @@ void TwoDPTGCMCSimulation::attempt_exchange(int swap_i) {
 
     // Collect results from all replicas
     vector<vector<double>> dependent_qs {{}, {}, {}, {}};
-    master_receive(swap_i, dependent_qs);
+    vector<vector<vector<double>>> per_staple_dependent_qs {{}, {}};
+    master_receive(swap_i, dependent_qs, per_staple_dependent_qs);
 
     // Iterate through pairs in current set and attempt swap
     int swap_set {swap_i % 4};
@@ -520,9 +513,19 @@ void TwoDPTGCMCSimulation::attempt_exchange(int swap_i) {
                 double q_2 {dependent_q[repi2]};
                 dependent_q_pairs.push_back({q_1, q_2});
             }
+            vector<pair<vector<double>, vector<double>>>
+                    per_staple_dependent_q_pairs {};
+            for (auto per_staple_dependent_q: per_staple_dependent_qs) {
+                vector<double> q_1 {per_staple_dependent_q[repi1]};
+                vector<double> q_2 {per_staple_dependent_q[repi2]};
+                per_staple_dependent_q_pairs.push_back({q_1, q_2});
+            }
 
-            double p_accept {
-                    calc_acceptance_p(control_q_pairs, dependent_q_pairs)};
+            double p_accept {calc_acceptance_p(
+                    control_q_pairs,
+                    dependent_q_pairs,
+                    per_staple_dependent_q_pairs)};
+
             bool accept {test_acceptance(p_accept)};
 
             // If accepted swap indices from quantities to replicas
@@ -575,8 +578,8 @@ void TwoDPTGCMCSimulation::update_control_qs() {
     double temp {m_replica_control_qs[m_temp_i]};
     double stacking_mult {m_replica_control_qs[m_stacking_mult_i]};
     m_origami_system.update_temp(temp, stacking_mult);
-    double staple_u {m_replica_control_qs[m_staple_u_i]};
-    m_origami_system.update_staple_u(staple_u);
+    double staple_u_mult {m_replica_control_qs[m_staple_u_mult_i]};
+    m_origami_system.update_staple_us(temp, staple_u_mult);
 }
 
 TPTGCMCSimulation::TPTGCMCSimulation(
@@ -610,7 +613,7 @@ UTPTGCMCSimulation::UTPTGCMCSimulation(
         OneDPTGCMCSimulation(origami_system, ops, biases, params) {
 
     m_exchange_q_is.push_back(m_temp_i);
-    m_exchange_q_is.push_back(m_staple_u_i);
+    m_exchange_q_is.push_back(m_staple_u_mult_i);
     initialize_swap_file(params);
 }
 
@@ -622,7 +625,7 @@ HUTPTGCMCSimulation::HUTPTGCMCSimulation(
         OneDPTGCMCSimulation(origami_system, ops, biases, params) {
 
     m_exchange_q_is.push_back(m_temp_i);
-    m_exchange_q_is.push_back(m_staple_u_i);
+    m_exchange_q_is.push_back(m_staple_u_mult_i);
     m_exchange_q_is.push_back(m_bias_mult_i);
     initialize_swap_file(params);
 }
@@ -630,20 +633,22 @@ HUTPTGCMCSimulation::HUTPTGCMCSimulation(
 void TPTGCMCSimulation::update_control_qs() {
     double temp {m_replica_control_qs[m_temp_i]};
     m_origami_system.update_temp(temp);
+    double staple_u_mult {m_replica_control_qs[m_staple_u_mult_i]};
+    m_origami_system.update_staple_us(temp, staple_u_mult);
 }
 
 void UTPTGCMCSimulation::update_control_qs() {
     double temp {m_replica_control_qs[m_temp_i]};
     m_origami_system.update_temp(temp);
-    double staple_u {m_replica_control_qs[m_staple_u_i]};
-    m_origami_system.update_staple_u(staple_u);
+    double staple_u_mult {m_replica_control_qs[m_staple_u_mult_i]};
+    m_origami_system.update_staple_us(temp, staple_u_mult);
 }
 
 void HUTPTGCMCSimulation::update_control_qs() {
     double temp {m_replica_control_qs[m_temp_i]};
     m_origami_system.update_temp(temp);
-    double staple_u {m_replica_control_qs[m_staple_u_i]};
-    m_origami_system.update_staple_u(staple_u);
+    double staple_u_mult {m_replica_control_qs[m_staple_u_mult_i]};
+    m_origami_system.update_staple_us(temp, staple_u_mult);
     double bias_mult {m_replica_control_qs[m_bias_mult_i]};
     m_origami_system.update_bias_mult(bias_mult);
 }
@@ -652,5 +657,7 @@ void STPTGCMCSimulation::update_control_qs() {
     double temp {m_replica_control_qs[m_temp_i]};
     double stacking_mult {m_replica_control_qs[m_stacking_mult_i]};
     m_origami_system.update_temp(temp, stacking_mult);
+    double staple_u_mult {m_replica_control_qs[m_staple_u_mult_i]};
+    m_origami_system.update_staple_us(temp, staple_u_mult);
 }
 } // namespace ptmc

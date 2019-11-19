@@ -255,7 +255,7 @@ void ConformationalEnumerator::add_staple(int staple) {
     // Add staple of given type and update weight prefix
 
     // Only one of the N! combos is calculated, so don't divide by N!
-    m_prefix /= m_origami_system.m_volume;
+    m_prefix *= m_origami_system.m_reduced_fugacity;
     int c_i {m_origami_system.add_chain(staple)};
     auto staple_length = m_origami_system.m_identities[staple].size();
     m_prefix /= static_cast<long double>(std::pow(6, 2 * (staple_length - 1)));
@@ -277,7 +277,7 @@ void ConformationalEnumerator::remove_staple(int staple) {
     // Remove staple of given type and update weight prefix
 
     // Only one of the N! combos is calculated, so don't divide by N!
-    m_prefix *= m_origami_system.m_volume;
+    m_prefix /= m_origami_system.m_reduced_fugacity;
     auto staple_length = m_origami_system.m_identities[staple].size();
     m_prefix *= static_cast<long double>(std::pow(6, 2 * (staple_length - 1)));
 

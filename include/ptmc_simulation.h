@@ -71,15 +71,14 @@ class PTGCMCSimulation: public GCMCSimulation {
 
     // Indices into control quantities vector for type
     int m_temp_i {0};
-    int m_staple_u_i {1};
+    int m_staple_u_mult_i {1};
     int m_bias_mult_i {2};
     int m_stacking_mult_i {3};
 
     // Indices into dependent quantities vector for type
     int m_enthalpy_i {0};
-    int m_staples_i {1};
-    int m_bias_i {2};
-    int m_stacking_i {3};
+    int m_bias_i {1};
+    int m_stacking_i {2};
 
     // Indices of quantities that will be exchanged
     vector<int> m_exchange_q_is;
@@ -91,10 +90,15 @@ class PTGCMCSimulation: public GCMCSimulation {
     // Communication methods
     void slave_send(int swap_i);
     bool slave_receive(int swap_i);
-    void master_receive(int swap_i, vector<vector<double>>& quantities);
+    void master_receive(
+            int swap_i,
+            vector<vector<double>>& quantities,
+            vector<vector<vector<double>>>&);
     void master_send(int swap_i);
     void master_send_kill(int swap_i);
-    void master_get_dependent_qs(vector<vector<double>>&);
+    void master_get_dependent_qs(
+            vector<vector<double>>&,
+            vector<vector<vector<double>>>&);
     virtual void update_control_qs() = 0;
     void update_dependent_qs();
 
@@ -104,7 +108,9 @@ class PTGCMCSimulation: public GCMCSimulation {
     double calc_acceptance_p(
             vector<pair<double, double>> control_q_pairs,
             vector<pair<double, double>>
-                    dependent_q_pairs); // rep1 and rep2 values
+                    dependent_q_pairs,
+        vector<pair<vector<double>, vector<double>>>
+                per_staple_dependent_q_pairs);
 
     // Output methods
     void write_swap_entry(long long int step);

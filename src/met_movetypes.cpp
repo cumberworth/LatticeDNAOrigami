@@ -217,7 +217,7 @@ bool MetStapleExchangeMCMovetype::staple_insertion_accepted(
     int Ni_new {m_origami_system.num_staples_of_ident(c_i_ident)};
     size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
     double pratio {static_cast<double>(staple_length) / Ni_new * boltz_factor};
-    pratio *= m_insertion_sites / m_origami_system.m_volume;
+    pratio *= m_insertion_sites * m_origami_system.m_reduced_fugacity;
     pratio /= num_staple_bd;
 
     // Exchange probability multiplier
@@ -262,7 +262,8 @@ bool MetStapleExchangeMCMovetype::staple_deletion_accepted(
     int Ni {m_origami_system.num_staples_of_ident(c_i_ident)};
     size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
     double pratio {Ni / static_cast<double>(staple_length) * boltz_factor};
-    pratio *= m_origami_system.m_volume / (m_insertion_sites - staple_length);
+    pratio /= m_origami_system.m_reduced_fugacity /
+              (m_insertion_sites - staple_length);
     pratio *= num_staple_bd;
 
     // Exchange probability multiplier

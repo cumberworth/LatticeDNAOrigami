@@ -64,24 +64,25 @@ class OrigamiSystem {
             const vector<double> entropies,
             const Chains& chains,
             bool cyclic,
-            double volume,
-            double staple_u,
+            double staple_M,
             InputParameters& params);
     virtual ~OrigamiSystem();
 
     // THESE NEED TO BE IMPLEMENTED TO DEAL WITH THE DOMAIN POINTER VECTOR
-//    OrigamiSystem(const OrigamiSystem&) = default;
-//    OrigamiSystem& operator=(const OrigamiSystem&) = default;
+    //    OrigamiSystem(const OrigamiSystem&) = default;
+    //    OrigamiSystem& operator=(const OrigamiSystem&) = default;
     OrigamiSystem(OrigamiSystem&&) = default;
-//    OrigamiSystem& operator=(OrigamiSystem&&) = default;
+    //    OrigamiSystem& operator=(OrigamiSystem&&) = default;
 
     // Configuration independent system properties
     const vector<vector<int>> m_identities; // Domain identities
     const vector<vector<string>> m_sequences; // Domain sequences
     double m_temp; // System temperature (K)
-    double m_volume; // System volume (num lattice sites)
-    const double m_cation_M; // Cation concentration (mol/V)
-    double m_staple_u; // Staple chemical potential (K)
+    const double m_cation_M; // Cation concentration (mol/L)
+    double m_staple_M; // Staple concentration (mol/L)
+    vector<double> m_staple_us;
+    vector<double> m_reduced_staple_us;
+    double m_reduced_fugacity; // Also removes staple length dependence
     const bool m_cyclic; // Cyclic scaffold
     const int c_scaffold {0}; // Unique chain index of scaffold
 
@@ -150,7 +151,7 @@ class OrigamiSystem {
 
     // System state modifiers
     void update_temp(double temp, double stacking_mult = 1);
-    void update_staple_u(double u);
+    void update_staple_us(double temp, double staple_u_mult);
     virtual void update_bias_mult(double) {};
 
     // Constraints state
@@ -221,8 +222,7 @@ class OrigamiSystemWithBias: public OrigamiSystem {
             const vector<double> entropies,
             const Chains& chains,
             bool cyclic,
-            double volume,
-            double staple_u,
+            double staple_M,
             InputParameters& params);
 
     // Constraint checkers
@@ -251,11 +251,16 @@ class OrigamiSystemWithBias: public OrigamiSystem {
 // Moved from main
 OrigamiSystem* setup_origami(InputParameters& params);
 
-double molarity_to_lattice_volume(double molarity);
-
 // Convert concentration to reduced (u/kb) chemical potential
-double molarity_to_chempot(double molarity, double temp);
-double chempot_to_volume(double chempot, double temp);
+vector<double> molarity_to_chempots(
+        double molarity,
+        double temp,
+        vector<vector<int>> identities);
+
+vector<double> chempots_to_reduced_chempots(
+        vector<double> staple_us,
+        double temp);
+
 } // namespace origami
 
 #endif // ORIGAMI_SYSTEM_H
