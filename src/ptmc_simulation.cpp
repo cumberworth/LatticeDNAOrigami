@@ -180,13 +180,14 @@ void PTGCMCSimulation::master_receive(
             m_world.recv(rep_i, swap_i, q);
             dependent_qs[i].push_back(q);
         }
-        for (size_t i {0}; i != dependent_qs.size(); i++) {
-            per_staple_dependent_qs.push_back({});
+        for (size_t i {0}; i != per_staple_dependent_qs.size(); i++) {
+            vector<double> q_per_staple {};
             for (size_t j {0}; j != num_staple_types; j++) {
                 double q;
                 m_world.recv(rep_i, swap_i, q);
-                per_staple_dependent_qs[i][j].push_back(q);
+                q_per_staple.push_back(q);
             }
+            per_staple_dependent_qs[i].push_back(q_per_staple);
         }
     }
 }
