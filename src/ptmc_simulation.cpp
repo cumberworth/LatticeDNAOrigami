@@ -173,7 +173,7 @@ void PTGCMCSimulation::master_receive(
         vector<vector<double>>& dependent_qs,
         vector<vector<vector<double>>>& per_staple_dependent_qs) {
     master_get_dependent_qs(dependent_qs, per_staple_dependent_qs);
-    size_t num_staple_types {m_origami_system.m_identities.size()};
+    size_t num_staple_types {m_origami_system.m_identities.size() - 1};
     for (int rep_i {1}; rep_i != m_num_reps; rep_i++) {
         for (size_t i {0}; i != dependent_qs.size(); i++) {
             double q;
