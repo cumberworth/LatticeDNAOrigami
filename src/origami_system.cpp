@@ -864,7 +864,8 @@ vector<double> molarity_to_chempots(
         double temp,
         vector<vector<int>> identities) {
     vector<double> chempots {};
-    for (auto ident: identities) {
+    for (size_t i {1}; i != identities.size(); i++) {
+        auto ident {identities[i]};
         auto staple_n {ident.size()};
         auto extra_states {2 * (staple_n - 1) * log(6)};
         chempots.push_back(temp * (log(molarity) - extra_states));
