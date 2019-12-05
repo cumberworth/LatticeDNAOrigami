@@ -24,7 +24,7 @@ def main():
     old_ops = old_ops.sort_values()
     boundary_reached = False
     for i, op in old_ops.items():
-        if op == 0:
+        if op == 1:
             if boundary_reached:
                 old_ops = old_ops.drop(i, 0)
                 old_temps = old_temps.drop(i, 0)
@@ -34,7 +34,7 @@ def main():
     old_ops = old_ops[::-1]
     boundary_reached = False
     for i, op in old_ops.items():
-        if op == 1:
+        if op == 0:
             if boundary_reached:
                 old_ops = old_ops.drop(i, 0)
                 old_temps = old_temps.drop(i, 0)
