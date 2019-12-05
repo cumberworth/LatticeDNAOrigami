@@ -24,7 +24,7 @@ def main():
     old_ops = old_ops.sort_values()[::-1]
     for i, op in old_ops.items():
         if op in [args.max_op, 0]:
-            old_ops[i] -= i*0.00001
+            old_ops[i] -= (i + 1)*0.00001
 
 #    spline_params = interpolate.splrep(old_temps, old_ops)
     interpolated_ops_f = interpolate.interp1d(old_temps, old_ops, kind='linear',
@@ -36,9 +36,10 @@ def main():
 #             args=(desired_ops, spline_params))
              args=(desired_ops, interpolated_ops_f)).x
     new_temps.sort()
-    low_temps = [new_temps[0] - 5]
     high_temp = new_temps[len(new_temps) - 1]
-    high_temps = [high_temp + 5]
+    temp_diff = high_temp - new_temps[0]
+    low_temps = [new_temps[0] - temp_diff/4]
+    high_temps = [high_temp + temp_diff/4]
     new_temps = np.concatenate([low_temps, new_temps, high_temps])
     np.set_printoptions(formatter={'float': '{:0.3f}'.format}, linewidth=200)
     new_temps = np.around(new_temps, decimals=3)
