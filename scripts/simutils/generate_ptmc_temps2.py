@@ -44,17 +44,16 @@ def main():
 #    spline_params = interpolate.splrep(old_temps, old_ops)
     interpolated_ops_f = interpolate.interp1d(old_temps, old_ops, kind='linear',
             fill_value='extrapolate')
-    guess_temps = np.linspace(old_temps[0], old_temps[len(old_temps) - 1],
+    guess_temps = np.linspace(old_temps.iloc[0], old_temps.iloc[-1],
             num=args.threads - 2)
     desired_ops = np.linspace(args.max_op - args.max_op*0.05, args.max_op*0.05, num=args.threads - 2)
     new_temps = minimize(sum_of_squared_errors, guess_temps,
 #             args=(desired_ops, spline_params))
              args=(desired_ops, interpolated_ops_f)).x
     new_temps.sort()
-    high_temp = new_temps[len(new_temps) - 1]
-    temp_diff = high_temp - new_temps[0]
-    low_temps = [new_temps[0] - temp_diff/4]
-    high_temps = [high_temp + temp_diff/4]
+    temp_diff = new_temps.iloc[-1] - new_temps.iloc[0]
+    low_temps = [new_temps.iloc[0] - temp_diff/4]
+    high_temps = [new_temps.iloc[-1] + temp_diff/4]
     new_temps = np.concatenate([low_temps, new_temps, high_temps])
     np.set_printoptions(formatter={'float': '{:0.3f}'.format}, linewidth=200)
     new_temps = np.around(new_temps, decimals=3)
