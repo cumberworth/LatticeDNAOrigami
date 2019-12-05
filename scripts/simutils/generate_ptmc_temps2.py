@@ -21,7 +21,7 @@ def main():
     old_ops = aves[args.tag]
 
     # Prevent instabilities in minimization (need monotonically decreasing)
-    old_ops = old_ops.sort_values()
+    old_ops = old_ops[::-1].sort_values()
     boundary_reached = False
     for i, op in old_ops.items():
         if op == 1:
