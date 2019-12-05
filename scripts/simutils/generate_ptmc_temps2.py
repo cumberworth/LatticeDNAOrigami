@@ -21,10 +21,25 @@ def main():
     old_ops = aves[args.tag]
 
     # Prevent instabilities in minimization (need monotonically decreasing)
-    old_ops = old_ops.sort_values()[::-1]
+    old_ops = old_ops.sort_values()
+    boundary_reached = False
     for i, op in old_ops.items():
-        if op in [args.max_op, 0]:
-            old_ops[i] -= (i + 1)*0.01
+        if op == 0:
+            if boundary_reached:
+                old_ops = old_ops.drop(i, 0)
+                old_temps = old_temps.drop(i, 0)
+            else:
+                boundary_reached = True
+
+    old_ops = old_ops[::-1]
+    boundary_reached = False
+    for i, op in old_ops.items():
+        if op == 1:
+            if boundary_reached:
+                old_ops = old_ops.drop(i, 0)
+                old_temps = old_temps.drop(i, 0)
+            else:
+                boundary_reached = True
 
 #    spline_params = interpolate.splrep(old_temps, old_ops)
     interpolated_ops_f = interpolate.interp1d(old_temps, old_ops, kind='linear',
