@@ -22,6 +22,10 @@ def main():
 
     # Prevent instabilities in minimization (need monotonically decreasing)
     old_ops = old_ops.sort_values()[::-1]
+    for i, op in old_ops.items():
+        if op in [args.max_op, 0]:
+            old_ops[i] -= i*0.00001
+
 #    spline_params = interpolate.splrep(old_temps, old_ops)
     interpolated_ops_f = interpolate.interp1d(old_temps, old_ops, kind='linear',
             fill_value='extrapolate')
