@@ -24,7 +24,7 @@ def main():
     old_ops = old_ops[::-1].sort_values()
     boundary_reached = False
     for i, op in old_ops.items():
-        if op == 1:
+        if op > args.max_op*0.95:
             if boundary_reached:
                 old_ops = old_ops.drop(i, 0)
                 old_temps = old_temps.drop(i, 0)
@@ -34,7 +34,7 @@ def main():
     old_ops = old_ops[::-1]
     boundary_reached = False
     for i, op in old_ops.items():
-        if op == 0:
+        if op < args.max_op*0.05:
             if boundary_reached:
                 old_ops = old_ops.drop(i, 0)
                 old_temps = old_temps.drop(i, 0)
@@ -46,7 +46,7 @@ def main():
             fill_value='extrapolate')
     guess_temps = np.linspace(old_temps[0], old_temps[len(old_temps) - 1],
             num=args.threads - 2)
-    desired_ops = np.linspace(args.max_op - args.max_op*0.05, 0.05, num=args.threads - 2)
+    desired_ops = np.linspace(args.max_op - args.max_op*0.05, args.max_op*0.05, num=args.threads - 2)
     new_temps = minimize(sum_of_squared_errors, guess_temps,
 #             args=(desired_ops, spline_params))
              args=(desired_ops, interpolated_ops_f)).x
