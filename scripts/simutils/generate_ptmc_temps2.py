@@ -24,7 +24,7 @@ def main():
     old_ops = old_ops.sort_values()[::-1]
     for i, op in old_ops.items():
         if op in [args.max_op, 0]:
-            old_ops[i] -= (i + 1)*0.00001
+            old_ops[i] -= (i + 1)*0.01
 
 #    spline_params = interpolate.splrep(old_temps, old_ops)
     interpolated_ops_f = interpolate.interp1d(old_temps, old_ops, kind='linear',
