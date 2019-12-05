@@ -51,9 +51,9 @@ def main():
 #             args=(desired_ops, spline_params))
              args=(desired_ops, interpolated_ops_f)).x
     new_temps.sort()
-    temp_diff = new_temps.iloc[-1] - new_temps.iloc[0]
-    low_temps = [new_temps.iloc[0] - temp_diff/4]
-    high_temps = [new_temps.iloc[-1] + temp_diff/4]
+    temp_diff = new_temps[-1] - new_temps[0]
+    low_temps = [new_temps[0] - temp_diff/4]
+    high_temps = [new_temps[-1] + temp_diff/4]
     new_temps = np.concatenate([low_temps, new_temps, high_temps])
     np.set_printoptions(formatter={'float': '{:0.3f}'.format}, linewidth=200)
     new_temps = np.around(new_temps, decimals=3)
