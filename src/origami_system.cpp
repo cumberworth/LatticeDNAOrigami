@@ -448,7 +448,7 @@ double OrigamiSystem::set_checked_domain_config(
 
     // Mean field entropy correction for first scaffold domains
     if (m_num_bound_domain_pairs == 1) {
-        delta_e += log(6);
+        delta_e += 2 * log(6);
     }
     else if (m_num_bound_domain_pairs == 2) {
         delta_e += log(4);
@@ -666,7 +666,7 @@ DeltaConfig OrigamiSystem::internal_unassign_domain(Domain& cd_i) {
 
     // Mean field entropy correction for first scaffold domains
     if (m_num_bound_domain_pairs == 0) {
-        delta_config.e -= log(6);
+        delta_config.e -= 2 * log(6);
     }
     else if (m_num_bound_domain_pairs == 1) {
         delta_config.e -= log(4);
@@ -785,7 +785,7 @@ DeltaConfig OrigamiSystem::internal_check_domain_constraints(
 
     // Mean field entropy correction for first scaffold domains
     if (m_num_bound_domain_pairs == 1) {
-        delta_config.e += log(6);
+        delta_config.e += 2 * log(6);
     }
     else if (m_num_bound_domain_pairs == 2) {
         delta_config.e += log(4);
