@@ -1119,6 +1119,11 @@ void OrigamiPotential::calc_hybridization_energy(
         H_hyb /= N;
         S_hyb /= N;
 
+        S_hyb -= log(6);
+
+        // Make this an option for mean field approach to assembly entropy
+        S_hyb -= 3 *log(6);
+
         // Check that sequences are complementary if they should be
         if (key.first == -key.second) {
             if (comp_seqs[0].size() != seq_i.size() and
@@ -1154,6 +1159,12 @@ void OrigamiPotential::calc_hybridization_energy(pair<int, int> key) {
         H_hyb = m_misbinding_h / m_temp;
         S_hyb = m_misbinding_s;
     }
+
+    S_hyb -= log(6);
+
+    // Make this an option for mean field approach to assembly entropy
+    S_hyb -= 3 *log(6);
+
     m_hybridization_enthalpies[key] = H_hyb;
     m_hybridization_entropies[key] = S_hyb;
     m_hybridization_energies[key] = H_hyb - S_hyb;
@@ -1171,6 +1182,12 @@ void OrigamiPotential::set_hybridization_energy(pair<int, int> key) {
         H_hyb = m_misbinding_h / m_temp;
         S_hyb = m_misbinding_s;
     }
+
+    S_hyb -= log(6);
+
+    // Make this an option for mean field approach to assembly entropy
+    S_hyb -= 3 *log(6);
+
     m_hybridization_enthalpies[key] = H_hyb;
     m_hybridization_entropies[key] = S_hyb;
     m_hybridization_energies[key] = H_hyb - S_hyb;

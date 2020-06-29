@@ -445,6 +445,15 @@ double OrigamiSystem::set_checked_domain_config(
         m_num_linear_helix_trips += delta_config.linear_helices;
         m_num_stacked_junct_quads += delta_config.stacked_juncts;
     }
+
+    // Mean field entropy correction for first scaffold domains
+    if (m_num_bound_domain_pairs == 1) {
+        delta_e += log(6);
+    }
+    else if (m_num_bound_domain_pairs == 2) {
+        delta_e += log(4);
+    }
+
     m_energy += delta_e;
     m_num_unassigned_domains--;
     return delta_e;
@@ -654,6 +663,15 @@ DeltaConfig OrigamiSystem::internal_unassign_domain(Domain& cd_i) {
         m_num_unassigned_domains--;
         break;
     }
+
+    // Mean field entropy correction for first scaffold domains
+    if (m_num_bound_domain_pairs == 0) {
+        delta_config.e -= log(6);
+    }
+    else if (m_num_bound_domain_pairs == 1) {
+        delta_config.e -= log(4);
+    }
+
     return delta_config;
 }
 
@@ -764,6 +782,15 @@ DeltaConfig OrigamiSystem::internal_check_domain_constraints(
         update_domain(cd_i, pos, ore);
         update_occupancies(cd_i, pos);
     }
+
+    // Mean field entropy correction for first scaffold domains
+    if (m_num_bound_domain_pairs == 1) {
+        delta_config.e += log(6);
+    }
+    else if (m_num_bound_domain_pairs == 2) {
+        delta_config.e += log(4);
+    }
+
     return delta_config;
 }
 
@@ -867,7 +894,7 @@ vector<double> molarity_to_chempots(
     for (size_t i {1}; i != identities.size(); i++) {
         auto ident {identities[i]};
         auto staple_n {ident.size()};
-        auto extra_states {2 * (staple_n - 1) * log(6)};
+        auto extra_states {(2 * staple_n - 1) * log(6)};
         chempots.push_back(temp * (log(molarity) - extra_states));
     }
 
