@@ -213,15 +213,26 @@ void OrigamiSystem::update_enthalpy_and_entropy() {
                          accounted_domains.end(),
                          domain) == accounted_domains.end()) {
                     Domain& bound_domain {*domain->m_bound_domain};
-
                     m_hyb_enthalpy +=
                             m_pot.hybridization_enthalpy(*domain, bound_domain);
                     m_hyb_entropy +=
                             m_pot.hybridization_entropy(*domain, bound_domain);
                     accounted_domains.insert(domain->m_bound_domain);
                 }
+                // Fix overcorrection for first chain relative entropy
+                m_hyb_entropy -= log(6);
             }
         }
+    }
+
+    // Mean field entropy correction for first scaffold domains
+    if (m_num_fully_bound_domain_pairs >= 1) {
+        m_hyb_entropy -= 2 * log(6);
+    }
+    if (m_num_fully_bound_domain_pairs >= 2) {
+
+        // The penalty should be log2, so I add back log6 and subtract log 2
+        m_hyb_entropy -= log(3);
     }
     m_stacking_energy = m_energy - (m_hyb_enthalpy - m_hyb_entropy);
 }
@@ -447,11 +458,13 @@ double OrigamiSystem::set_checked_domain_config(
     }
 
     // Mean field entropy correction for first scaffold domains
-    if (m_num_bound_domain_pairs == 1) {
+    if (m_num_fully_bound_domain_pairs == 1) {
         delta_e += 2 * log(6);
     }
-    else if (m_num_bound_domain_pairs == 2) {
-        delta_e += log(4);
+    else if (m_num_fully_bound_domain_pairs == 2) {
+
+        // The penalty should be log2, so I add back log6 and subtract log 2
+        delta_e += log(3);
     }
 
     m_energy += delta_e;
@@ -665,11 +678,13 @@ DeltaConfig OrigamiSystem::internal_unassign_domain(Domain& cd_i) {
     }
 
     // Mean field entropy correction for first scaffold domains
-    if (m_num_bound_domain_pairs == 0) {
+    if (m_num_fully_bound_domain_pairs == 0) {
         delta_config.e -= 2 * log(6);
     }
-    else if (m_num_bound_domain_pairs == 1) {
-        delta_config.e -= log(4);
+    else if (m_num_fully_bound_domain_pairs == 1) {
+
+        // The penalty should be log2, so I add back log6 and subtract log 2
+        delta_config.e -= log(3);
     }
 
     return delta_config;
@@ -784,11 +799,13 @@ DeltaConfig OrigamiSystem::internal_check_domain_constraints(
     }
 
     // Mean field entropy correction for first scaffold domains
-    if (m_num_bound_domain_pairs == 1) {
+    if (m_num_fully_bound_domain_pairs == 1) {
         delta_config.e += 2 * log(6);
     }
-    else if (m_num_bound_domain_pairs == 2) {
-        delta_config.e += log(4);
+    else if (m_num_fully_bound_domain_pairs == 2) {
+
+        // The penalty should be log2, so I add back log6 and subtract log 2
+        delta_config.e += log(3);
     }
 
     return delta_config;
@@ -928,24 +945,26 @@ OrigamiSystem* setup_origami(InputParameters& params) {
 
     OrigamiSystem* origami;
     if (params.m_domain_update_biases_present) {
-        origami = new OrigamiSystemWithBias {identities,
-                                             sequences,
-                                             enthalpies,
-                                             entropies,
-                                             configs,
-                                             cyclic,
-                                             params.m_staple_M,
-                                             params};
+        origami = new OrigamiSystemWithBias {
+                identities,
+                sequences,
+                enthalpies,
+                entropies,
+                configs,
+                cyclic,
+                params.m_staple_M,
+                params};
     }
     else {
-        origami = new OrigamiSystem {identities,
-                                     sequences,
-                                     enthalpies,
-                                     entropies,
-                                     configs,
-                                     cyclic,
-                                     params.m_staple_M,
-                                     params};
+        origami = new OrigamiSystem {
+                identities,
+                sequences,
+                enthalpies,
+                entropies,
+                configs,
+                cyclic,
+                params.m_staple_M,
+                params};
     }
 
     return origami;
