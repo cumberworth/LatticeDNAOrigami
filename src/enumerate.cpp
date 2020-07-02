@@ -258,7 +258,7 @@ void ConformationalEnumerator::add_staple(int staple) {
     m_prefix *= m_origami_system.m_reduced_fugacity;
     int c_i {m_origami_system.add_chain(staple)};
     auto staple_length = m_origami_system.m_identities[staple].size();
-    m_prefix /= static_cast<long double>(std::pow(6, 2 * (staple_length - 1)));
+    m_prefix /= static_cast<long double>(std::pow(6, 2 * staple_length - 1));
     m_identity_to_indices[staple].push_back(c_i);
 
     // Setup shortcut stuff
@@ -279,7 +279,7 @@ void ConformationalEnumerator::remove_staple(int staple) {
     // Only one of the N! combos is calculated, so don't divide by N!
     m_prefix /= m_origami_system.m_reduced_fugacity;
     auto staple_length = m_origami_system.m_identities[staple].size();
-    m_prefix *= static_cast<long double>(std::pow(6, 2 * (staple_length - 1)));
+    m_prefix *= static_cast<long double>(std::pow(6, 2 * staple_length - 1));
 
     int c_i {m_identity_to_indices[staple].back()};
     m_identity_to_indices[staple].pop_back();
