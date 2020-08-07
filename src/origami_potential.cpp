@@ -1122,7 +1122,7 @@ void OrigamiPotential::calc_hybridization_energy(
         S_hyb += log(6);
 
         // Make this an option for mean field approach to assembly entropy
-        S_hyb += 3 *log(6);
+//        S_hyb += 3 * log(6);
 
         // Check that sequences are complementary if they should be
         if (key.first == -key.second) {
@@ -1163,7 +1163,7 @@ void OrigamiPotential::calc_hybridization_energy(pair<int, int> key) {
     S_hyb += log(6);
 
     // Make this an option for mean field approach to assembly entropy
-    S_hyb += 3 *log(6);
+//    S_hyb += 3 * log(6);
 
     m_hybridization_enthalpies[key] = H_hyb;
     m_hybridization_entropies[key] = S_hyb;
@@ -1186,7 +1186,7 @@ void OrigamiPotential::set_hybridization_energy(pair<int, int> key) {
     S_hyb += log(6);
 
     // Make this an option for mean field approach to assembly entropy
-    S_hyb += 3 *log(6);
+ //   S_hyb += 3 * log(6);
 
     m_hybridization_enthalpies[key] = H_hyb;
     m_hybridization_entropies[key] = S_hyb;
@@ -1225,8 +1225,8 @@ bool OrigamiPotential::read_energies_from_file() {
     std::ifstream hsenergy_file {henergy_filename};
     std::ifstream senergy_file {senergy_filename};
 
-    bool files_present {henergy_file and hhenergy_file and hsenergy_file and
-                        senergy_file};
+    bool files_present {
+            henergy_file and hhenergy_file and hsenergy_file and senergy_file};
     if (files_present) {
         boost::archive::text_iarchive h_arch {henergy_file};
         h_arch >> m_hybridization_energies;

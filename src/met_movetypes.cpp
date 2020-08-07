@@ -316,7 +316,7 @@ bool MetStapleExchangeMCMovetype::insert_staple() {
     int c_i {m_origami_system.add_chain(c_i_ident)};
 
     // Hack
-    m_delta_e += log(6);
+//    m_delta_e += log(6);
     m_added_chains.push_back(c_i);
 
     // Assume that add_chain always adds to end of m_domains
@@ -378,7 +378,7 @@ bool MetStapleExchangeMCMovetype::delete_staple() {
     unassign_domains(staple);
 
     // Hack
-    m_delta_e -= log(6);
+//    m_delta_e -= log(6);
     accepted = staple_deletion_accepted(c_i_ident, num_staple_bd);
     if (accepted) {
         m_origami_system.delete_chain(c_i);

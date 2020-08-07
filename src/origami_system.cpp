@@ -223,9 +223,10 @@ void OrigamiSystem::update_enthalpy_and_entropy() {
         }
 
         // Fix overcorrection for first chain relative entropy
-        m_hyb_entropy -= log(6);
+//        m_hyb_entropy -= log(6);
     }
 
+    /*
     // Mean field entropy correction for first scaffold domains
     if (m_num_bound_domain_pairs - m_num_self_bound_domain_pairs >= 1) {
         m_hyb_entropy -= log(6);
@@ -238,6 +239,7 @@ void OrigamiSystem::update_enthalpy_and_entropy() {
         // The penalty should be log2, so I add back log6 and subtract log 2
         m_hyb_entropy -= log(3);
     }
+    */
     m_stacking_energy = m_energy - (m_hyb_enthalpy - m_hyb_entropy);
 }
 
@@ -275,11 +277,11 @@ void OrigamiSystem::check_all_constraints() {
             }
         }
         // Fix overcorrection for first chain relative entropy
-        m_energy -= log(6);
+//        m_energy -= log(6);
     }
 
     // Mean field entropy correction for first scaffold domains
-    m_energy += log(6);
+//    m_energy += log(6);
 
     // Check that number of stacked pairs is consistent
     if (m_num_stacked_domain_pairs != 0) {
@@ -305,7 +307,7 @@ void OrigamiSystem::check_all_constraints() {
 
     // Reset configuration
     set_all_domains();
-    m_energy += (m_domains.size() - 1) * log(6);
+//    m_energy += (m_domains.size() - 1) * log(6);
 }
 
 void OrigamiSystem::set_config(Chains chains) {
@@ -374,7 +376,7 @@ int OrigamiSystem::add_chain(int c_i_ident) {
     m_current_c_i += 1;
 
     // Hack
-    m_energy += log(6);
+//    m_energy += log(6);
     return add_chain(c_i_ident, m_current_c_i);
 }
 
@@ -442,7 +444,7 @@ void OrigamiSystem::delete_chain(int c_i) {
     m_domains.erase(m_domains.begin() + c_i_index);
 
     // Hack
-    m_energy -= log(6);
+//    m_energy -= log(6);
 }
 
 void OrigamiSystem::temp_reduce_staples_by_one() { m_num_staples--; }
@@ -473,6 +475,7 @@ double OrigamiSystem::set_checked_domain_config(
         m_num_stacked_junct_quads += delta_config.stacked_juncts;
     }
 
+    /*
     // Mean field entropy correction for first scaffold domains
     if (cd_i.m_state == Occupancy::bound || cd_i.m_state == Occupancy::misbound) {
         if (m_num_bound_domain_pairs - m_num_self_bound_domain_pairs == 1) {
@@ -484,6 +487,7 @@ double OrigamiSystem::set_checked_domain_config(
             delta_e += log(3);
         }
     }
+    */
 
     m_energy += delta_e;
     m_num_unassigned_domains--;
@@ -643,7 +647,7 @@ void OrigamiSystem::initialize_staples(Chains chains) {
         add_chain(c_i_ident, c_i);
 
         // Hack
-        m_energy += log(6);
+//        m_energy += log(6);
     }
 
     // Current unique chain index
@@ -698,6 +702,7 @@ DeltaConfig OrigamiSystem::internal_unassign_domain(Domain& cd_i) {
         break;
     }
 
+    /*
     // Mean field entropy correction for first scaffold domains
     if (occupancy == Occupancy::bound || occupancy == Occupancy::misbound) {
         if (m_num_bound_domain_pairs - m_num_self_bound_domain_pairs == 0) {
@@ -709,6 +714,7 @@ DeltaConfig OrigamiSystem::internal_unassign_domain(Domain& cd_i) {
             delta_config.e -= log(3);
         }
     }
+    */
 
     return delta_config;
 }
@@ -788,9 +794,9 @@ void OrigamiSystem::update_energy() {
             unassign_domain(*domain);
         }
     }
-    m_energy -= (m_domains.size() - 1) * log(6);
+//    m_energy -= (m_domains.size() - 1) * log(6);
     m_energy = 0;
-    m_energy += (m_domains.size() - 1) * log(6);
+ //   m_energy += (m_domains.size() - 1) * log(6);
     set_all_domains();
 }
 
@@ -823,6 +829,7 @@ DeltaConfig OrigamiSystem::internal_check_domain_constraints(
         update_occupancies(cd_i, pos);
     }
 
+    /*
     // Mean field entropy correction for first scaffold domains
     if (occupancy == Occupancy::unbound) {
         if (m_num_bound_domain_pairs - m_num_self_bound_domain_pairs == 1) {
@@ -834,6 +841,7 @@ DeltaConfig OrigamiSystem::internal_check_domain_constraints(
             delta_config.e += log(3);
         }
     }
+    */
 
     return delta_config;
 }
