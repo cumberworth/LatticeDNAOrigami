@@ -63,7 +63,8 @@ class ConformationalEnumerator {
             OvercountCalculator& m_overcount_calculator,
             SystemOrderParams& ops,
             SystemBiases& biases,
-            vector<string> optags);
+            vector<string> optags,
+            bool apply_mean_field_cor);
     virtual ~ConformationalEnumerator() {};
     virtual void enumerate();
     void add_staple(int staple);
@@ -110,6 +111,7 @@ class ConformationalEnumerator {
     OvercountCalculator& m_overcount_calculator;
     SystemOrderParams& m_ops;
     SystemBiases& m_biases;
+    bool m_apply_mean_field_cor;
 
     // Order parameters to record and output
     vector<string> m_optags;
@@ -148,7 +150,8 @@ class StapleConformationalEnumerator: public ConformationalEnumerator {
             OvercountCalculator& overcount_calculator,
             SystemOrderParams& ops,
             SystemBiases& biases,
-            vector<string> optags);
+            vector<string> optags,
+            bool apply_mean_field_cor);
     void enumerate();
 
   private:

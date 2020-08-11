@@ -199,6 +199,7 @@ class OrigamiPotential {
     MisbindingPotential* m_misbinding_pot;
     string m_stacking_pot;
     string m_hybridization_pot;
+    bool m_apply_mean_field_cor;
 
     // Stacking energy if constant
     double m_stacking_ene {0};

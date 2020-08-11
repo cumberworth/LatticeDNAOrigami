@@ -191,6 +191,7 @@ class OrigamiSystem {
     double m_hyb_enthalpy;
     double m_hyb_entropy;
     double m_stacking_energy;
+    bool m_apply_mean_field_cor;
     OrigamiPotential m_pot;
 
     // Intializers

@@ -960,7 +960,8 @@ OrigamiPotential::OrigamiPotential(
         m_complementary_enthalpies {enthalpies},
         m_complementary_entropies {entropies},
         m_stacking_pot {params.m_stacking_pot},
-        m_hybridization_pot {params.m_hybridization_pot} {
+        m_hybridization_pot {params.m_hybridization_pot},
+        m_apply_mean_field_cor {params.m_apply_mean_field_cor} {
 
     if (params.m_binding_pot == "ThreeBody") {
         m_binding_pot = new BindingPotential(*this);
@@ -1121,8 +1122,9 @@ void OrigamiPotential::calc_hybridization_energy(
 
         S_hyb += log(6);
 
-        // Make this an option for mean field approach to assembly entropy
-//        S_hyb += 3 * log(6);
+        if (m_apply_mean_field_cor) {
+            S_hyb += 3 * log(6);
+        }
 
         // Check that sequences are complementary if they should be
         if (key.first == -key.second) {
@@ -1162,8 +1164,9 @@ void OrigamiPotential::calc_hybridization_energy(pair<int, int> key) {
 
     S_hyb += log(6);
 
-    // Make this an option for mean field approach to assembly entropy
-//    S_hyb += 3 * log(6);
+    if (m_apply_mean_field_cor) {
+        S_hyb += 3 * log(6);
+    }
 
     m_hybridization_enthalpies[key] = H_hyb;
     m_hybridization_entropies[key] = S_hyb;
@@ -1185,8 +1188,9 @@ void OrigamiPotential::set_hybridization_energy(pair<int, int> key) {
 
     S_hyb += log(6);
 
-    // Make this an option for mean field approach to assembly entropy
- //   S_hyb += 3 * log(6);
+    if (m_apply_mean_field_cor) {
+        S_hyb += 3 * log(6);
+    }
 
     m_hybridization_enthalpies[key] = H_hyb;
     m_hybridization_entropies[key] = S_hyb;

@@ -85,6 +85,7 @@ class MetStapleExchangeMCMovetype: public MetMCMovetype {
     bool m_allow_nonsensical_ps;
     bool m_staple_bound {false};
     vector<double> m_exchange_mults;
+    bool m_apply_mean_field_cor;
     StapleExchangeTracking m_tracker {};
     unordered_map<StapleExchangeTracking, MovetypeTracking> m_tracking {};
 

@@ -78,6 +78,9 @@ InputParameters::InputParameters(int argc, char* argv[]) {
             "misbinding_s",
             po::value<double>(&m_misbinding_s)->default_value(1),
             "Hybridization entropy for misbound domains")(
+            "apply_mean_field_cor",
+            po::value<bool>(&m_apply_mean_field_cor)->default_value(false),
+            "Apply mean field correction")(
             "min_total_staples",
             po::value<int>(&m_min_total_staples)->default_value(0),
             "Min number of total staples")(

@@ -40,6 +40,7 @@ class InputParameters {
     double m_binding_s;
     double m_misbinding_h;
     double m_misbinding_s;
+    bool m_apply_mean_field_cor;
     int m_min_total_staples;
     int m_max_total_staples;
     int m_max_type_staples;

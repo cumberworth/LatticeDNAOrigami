@@ -34,19 +34,22 @@ void enumerate_main(
     }
     ConformationalEnumerator* conf_enumerator;
     if (params.m_enumerate_staples_only) {
-        conf_enumerator =
-                new StapleConformationalEnumerator {origami,
-                                                    *overcount_calculator,
-                                                    ops,
-                                                    biases,
-                                                    params.m_ops_to_output};
+        conf_enumerator = new StapleConformationalEnumerator {
+                origami,
+                *overcount_calculator,
+                ops,
+                biases,
+                params.m_ops_to_output,
+                params.m_apply_mean_field_cor};
     }
     else {
-        conf_enumerator = new ConformationalEnumerator {origami,
-                                                        *overcount_calculator,
-                                                        ops,
-                                                        biases,
-                                                        params.m_ops_to_output};
+        conf_enumerator = new ConformationalEnumerator {
+                origami,
+                *overcount_calculator,
+                ops,
+                biases,
+                params.m_ops_to_output,
+                params.m_apply_mean_field_cor};
     }
     GrowthpointEnumerator* growthpoint_enumerator;
     if (params.m_misbinding_pot == "Disallowed") {
@@ -57,10 +60,11 @@ void enumerate_main(
         growthpoint_enumerator =
                 new MisbindingGrowthpointEnumerator {*conf_enumerator, origami};
     }
-    StapleEnumerator staple_enumerator {*growthpoint_enumerator,
-                                        *conf_enumerator,
-                                        origami,
-                                        params.m_excluded_staples};
+    StapleEnumerator staple_enumerator {
+            *growthpoint_enumerator,
+            *conf_enumerator,
+            origami,
+            params.m_excluded_staples};
     staple_enumerator.enumerate(
             params.m_min_total_staples,
             params.m_max_total_staples,
@@ -172,12 +176,14 @@ ConformationalEnumerator::ConformationalEnumerator(
         OvercountCalculator& overcount_calculator,
         SystemOrderParams& ops,
         SystemBiases& biases,
-        vector<string> optags):
+        vector<string> optags,
+        bool apply_mean_field_cor):
         m_origami_system {origami_system},
         m_overcount_calculator {overcount_calculator},
         m_ops {ops},
         m_biases {biases},
-        m_optags {optags} {
+        m_optags {optags},
+        m_apply_mean_field_cor {apply_mean_field_cor} {
 
     for (auto tag: optags) {
         m_ops_to_output.emplace_back(m_ops.get_order_param(tag));
@@ -257,6 +263,11 @@ void ConformationalEnumerator::add_staple(int staple) {
     // Only one of the N! combos is calculated, so don't divide by N!
     m_prefix *= m_origami_system.m_reduced_fugacity;
     int c_i {m_origami_system.add_chain(staple)};
+
+    // Mean field correction hack
+    if (m_apply_mean_field_cor) {
+        m_energy += log(6);
+    }
     auto staple_length = m_origami_system.m_identities[staple].size();
     m_prefix /= static_cast<long double>(std::pow(6, 2 * staple_length - 1));
     m_identity_to_indices[staple].push_back(c_i);
@@ -284,6 +295,11 @@ void ConformationalEnumerator::remove_staple(int staple) {
     int c_i {m_identity_to_indices[staple].back()};
     m_identity_to_indices[staple].pop_back();
     m_origami_system.delete_chain(c_i);
+
+    // Mean field correction hack
+    if (m_apply_mean_field_cor) {
+        m_energy -= log(6);
+    }
 
     // Update shortcut stuff
     for (auto d_ident: m_origami_system.m_identities[staple]) {
@@ -365,8 +381,8 @@ void ConformationalEnumerator::enumerate_domain(
         bool is_growthpoint {m_growthpoints.count(domain) > 0};
         Occupancy p_occ {m_origami_system.position_occupancy(p_new)};
         bool is_occupied {p_occ == Occupancy::unbound};
-        bool is_bound {p_occ == Occupancy::bound or
-                       p_occ == Occupancy::misbound};
+        bool is_bound {
+                p_occ == Occupancy::bound or p_occ == Occupancy::misbound};
 
         // Cannot have more than two domains bound at a given position
         if ((is_growthpoint and is_occupied) or is_bound) {
@@ -645,13 +661,15 @@ StapleConformationalEnumerator::StapleConformationalEnumerator(
         OvercountCalculator& overcount_calculator,
         SystemOrderParams& ops,
         SystemBiases& biases,
-        vector<string> optags):
+        vector<string> optags,
+        bool apply_mean_field_cor):
         ConformationalEnumerator(
                 origami_system,
                 overcount_calculator,
                 ops,
                 biases,
-                optags) {
+                optags,
+                apply_mean_field_cor) {
 
     // Reassign scaffold domains
     for (auto d: m_origami_system.get_chain(0)) {
@@ -676,8 +694,8 @@ void StapleConformationalEnumerator::enumerate() {
     if (m_domains.size() != 0) {
         Domain* next_domain = m_domains.back();
         m_domains.pop_back();
-        bool growth_off_scaffold {m_inverse_growthpoints.count(next_domain) >
-                                  0};
+        bool growth_off_scaffold {
+                m_inverse_growthpoints.count(next_domain) > 0};
         if (growth_off_scaffold) {
             grow_off_scaffold(next_domain);
         }
@@ -709,8 +727,8 @@ void StapleConformationalEnumerator::grow_next_domain(
     if (not m_domains.empty()) {
         Domain* next_domain {m_domains.back()};
         m_domains.pop_back();
-        bool growth_off_scaffold {m_inverse_growthpoints.count(next_domain) >
-                                  0};
+        bool growth_off_scaffold {
+                m_inverse_growthpoints.count(next_domain) > 0};
         if (growth_off_scaffold) {
             grow_off_scaffold(next_domain);
         }
@@ -1086,11 +1104,11 @@ void StapleEnumerator::recurse(
     }
     else {
         while (staple_type_i != m_num_staple_types + 1) {
-            bool staple_excluded {std::find(
-                                          m_excluded_staples.begin(),
-                                          m_excluded_staples.end(),
-                                          staple_type_i) !=
-                                  m_excluded_staples.end()};
+            bool staple_excluded {
+                    std::find(
+                            m_excluded_staples.begin(),
+                            m_excluded_staples.end(),
+                            staple_type_i) != m_excluded_staples.end()};
             if (cur_num_staples_i < m_max_type_staples and
                 not staple_excluded) {
                 m_conf_enumerator.add_staple(staple_type_i);

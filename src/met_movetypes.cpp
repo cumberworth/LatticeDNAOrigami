@@ -124,10 +124,11 @@ MetStapleExchangeMCMovetype::MetStapleExchangeMCMovetype(
                 params),
         m_adaptive_exchange {adaptive_exchange},
         m_allow_nonsensical_ps {m_params.m_allow_nonsensical_ps},
-        m_exchange_mults {exchange_mults} {
+        m_exchange_mults {exchange_mults},
+        m_apply_mean_field_cor {params.m_apply_mean_field_cor} {
 
-    size_t num_missing_exchange_mults {m_origami_system.m_identities.size() -
-                                       m_exchange_mults.size() - 1};
+    size_t num_missing_exchange_mults {
+            m_origami_system.m_identities.size() - m_exchange_mults.size() - 1};
     if (num_missing_exchange_mults > 0) {
         for (size_t i {0}; i != num_missing_exchange_mults; i++) {
             m_exchange_mults.push_back(1);
@@ -216,7 +217,8 @@ bool MetStapleExchangeMCMovetype::staple_insertion_accepted(
     double boltz_factor {exp(-m_delta_e)};
     int Ni_new {m_origami_system.num_staples_of_ident(c_i_ident)};
     size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
-    double pratio {static_cast<double>(staple_length) / 6.0 / Ni_new * boltz_factor};
+    double pratio {
+            static_cast<double>(staple_length) / 6.0 / Ni_new * boltz_factor};
     pratio *= m_insertion_sites * m_origami_system.m_reduced_fugacity;
     pratio /= num_staple_bd;
 
@@ -261,7 +263,8 @@ bool MetStapleExchangeMCMovetype::staple_deletion_accepted(
     double boltz_factor {exp(-m_delta_e)};
     int Ni {m_origami_system.num_staples_of_ident(c_i_ident)};
     size_t staple_length {m_origami_system.m_identities[c_i_ident].size()};
-    double pratio {Ni * 6.0 / static_cast<double>(staple_length) * boltz_factor};
+    double pratio {
+            Ni * 6.0 / static_cast<double>(staple_length) * boltz_factor};
     pratio /= m_origami_system.m_reduced_fugacity *
               (m_insertion_sites - staple_length);
     pratio *= num_staple_bd;
@@ -315,8 +318,10 @@ bool MetStapleExchangeMCMovetype::insert_staple() {
 
     int c_i {m_origami_system.add_chain(c_i_ident)};
 
-    // Hack
-//    m_delta_e += log(6);
+    // Mean field correction hack
+    if (m_apply_mean_field_cor) {
+        m_delta_e += log(6);
+    }
     m_added_chains.push_back(c_i);
 
     // Assume that add_chain always adds to end of m_domains
@@ -377,8 +382,10 @@ bool MetStapleExchangeMCMovetype::delete_staple() {
     int num_staple_bd {num_bound_staple_domains(staple)};
     unassign_domains(staple);
 
-    // Hack
-//    m_delta_e -= log(6);
+    // Mean field correction hack
+    if (m_apply_mean_field_cor) {
+        m_delta_e -= log(6);
+    }
     accepted = staple_deletion_accepted(c_i_ident, num_staple_bd);
     if (accepted) {
         m_origami_system.delete_chain(c_i);
