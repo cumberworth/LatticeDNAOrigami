@@ -230,12 +230,10 @@ void OrigamiSystem::update_enthalpy_and_entropy() {
         m_hyb_entropy -= (m_domains.size() - 1) * log(6);
 
         // Mean field entropy correction for first scaffold domains
-        if (m_num_bound_domain_pairs - m_num_self_bound_domain_pairs >= 1) {
+        if (m_num_fully_bound_domain_pairs >= 1) {
             m_hyb_entropy -= 2 * log(6);
         }
-        if (m_num_bound_domain_pairs - m_num_self_bound_domain_pairs >= 2) {
-
-            // The penalty should be log2, so I add back log6 and subtract log 2
+        if (m_num_fully_bound_domain_pairs >= 2) {
             m_hyb_entropy -= log(3);
         }
     }
@@ -485,17 +483,11 @@ double OrigamiSystem::set_checked_domain_config(
 
     // Mean field entropy correction for first scaffold domains
     if (m_apply_mean_field_cor) {
-        if (cd_i.m_state == Occupancy::bound ||
-            cd_i.m_state == Occupancy::misbound) {
-            if (m_num_bound_domain_pairs - m_num_self_bound_domain_pairs == 1) {
+        if (cd_i.m_state == Occupancy::bound) {
+            if (m_num_fully_bound_domain_pairs == 1) {
                 delta_e += 2 * log(6);
             }
-            else if (
-                    m_num_bound_domain_pairs - m_num_self_bound_domain_pairs ==
-                    2) {
-
-                // The penalty should be log2, so I add back log6 and subtract
-                // log 2
+            else if (m_num_fully_bound_domain_pairs == 2) {
                 delta_e += log(3);
             }
         }
@@ -657,9 +649,6 @@ void OrigamiSystem::initialize_staples(Chains chains) {
         int c_i {chain.index};
         int c_i_ident {chain.identity};
         add_chain(c_i_ident, c_i);
-
-        // Hack
-        //        m_energy += log(6);
     }
 
     // Current unique chain index
@@ -685,12 +674,13 @@ void OrigamiSystem::initialize_scaffold(Chain scaffold_chain) {
 DeltaConfig OrigamiSystem::internal_unassign_domain(Domain& cd_i) {
     // Deletes positions, orientations, and removes/unassigns occupancies.
     Occupancy occupancy {cd_i.m_state};
+    Domain* cd_j {cd_i.m_bound_domain};
     DeltaConfig delta_config {};
     switch (occupancy) {
     case Occupancy::bound:
         m_num_fully_bound_domain_pairs -= 1;
         m_num_bound_domain_pairs -= 1;
-        delta_config = m_pot.check_stacking(cd_i, *cd_i.m_bound_domain);
+        delta_config = m_pot.check_stacking(cd_i, *cd_j);
         delta_config.e *= -1;
         delta_config.stacked_pairs *= -1;
         delta_config.linear_helices *= -1;
@@ -699,7 +689,7 @@ DeltaConfig OrigamiSystem::internal_unassign_domain(Domain& cd_i) {
         break;
     case Occupancy::misbound:
         m_num_bound_domain_pairs -= 1;
-        if (cd_i.m_bound_domain->m_c == cd_i.m_c) {
+        if (cd_j->m_c == cd_i.m_c) {
             m_num_self_bound_domain_pairs -= 1;
         }
         delta_config.e += unassign_bound_domain(cd_i);
@@ -716,16 +706,11 @@ DeltaConfig OrigamiSystem::internal_unassign_domain(Domain& cd_i) {
 
     // Mean field entropy correction for first scaffold domains
     if (m_apply_mean_field_cor) {
-        if (occupancy == Occupancy::bound || occupancy == Occupancy::misbound) {
-            if (m_num_bound_domain_pairs - m_num_self_bound_domain_pairs == 0) {
+        if (occupancy == Occupancy::bound) {
+            if (m_num_fully_bound_domain_pairs == 0) {
                 delta_config.e -= 2 * log(6);
             }
-            else if (
-                    m_num_bound_domain_pairs - m_num_self_bound_domain_pairs ==
-                    1) {
-
-                // The penalty should be log2, so I add back log6 and subtract
-                // log 2
+            else if (m_num_fully_bound_domain_pairs == 1) {
                 delta_config.e -= log(3);
             }
         }
@@ -848,17 +833,13 @@ DeltaConfig OrigamiSystem::internal_check_domain_constraints(
     }
 
     // Mean field entropy correction for first scaffold domains
-    if (m_apply_mean_field_cor) {
-        if (occupancy == Occupancy::unbound) {
-            if (m_num_bound_domain_pairs - m_num_self_bound_domain_pairs == 1) {
+    if (m_apply_mean_field_cor and not m_constraints_violated) {
+        Occupancy new_occupancy {cd_i.m_state};
+        if (new_occupancy == Occupancy::bound) {
+            if (m_num_fully_bound_domain_pairs == 1) {
                 delta_config.e += 2 * log(6);
             }
-            else if (
-                    m_num_bound_domain_pairs - m_num_self_bound_domain_pairs ==
-                    2) {
-
-                // The penalty should be log2, so I add back log6 and subtract
-                // log 2
+            else if (m_num_fully_bound_domain_pairs == 2) {
                 delta_config.e += log(3);
             }
         }
