@@ -1122,12 +1122,12 @@ void OrigamiPotential::calc_hybridization_energy(
 
         S_hyb += log(6);
 
-        if (m_apply_mean_field_cor) {
-            S_hyb += 3 * log(6);
-        }
-
-        // Check that sequences are complementary if they should be
         if (key.first == -key.second) {
+            if (m_apply_mean_field_cor) {
+                S_hyb += 3 * log(6);
+            }
+
+            // Check that sequences are complementary if they should be
             if (comp_seqs[0].size() != seq_i.size() and
                 seq_i.size() == seq_j.size()) {
                 cout << "Sequences that should be complementary are not\n";
@@ -1156,6 +1156,9 @@ void OrigamiPotential::calc_hybridization_energy(pair<int, int> key) {
     if (key.first == -key.second) {
         H_hyb = m_binding_h / m_temp;
         S_hyb = m_binding_s;
+        if (m_apply_mean_field_cor) {
+            S_hyb += 3 * log(6);
+        }
     }
     else {
         H_hyb = m_misbinding_h / m_temp;
@@ -1163,10 +1166,6 @@ void OrigamiPotential::calc_hybridization_energy(pair<int, int> key) {
     }
 
     S_hyb += log(6);
-
-    if (m_apply_mean_field_cor) {
-        S_hyb += 3 * log(6);
-    }
 
     m_hybridization_enthalpies[key] = H_hyb;
     m_hybridization_entropies[key] = S_hyb;
@@ -1180,6 +1179,9 @@ void OrigamiPotential::set_hybridization_energy(pair<int, int> key) {
         int i {std::abs(key.first) - 1};
         H_hyb = m_complementary_enthalpies[i] / m_temp;
         S_hyb = m_complementary_entropies[i];
+        if (m_apply_mean_field_cor) {
+            S_hyb += 3 * log(6);
+        }
     }
     else {
         H_hyb = m_misbinding_h / m_temp;
@@ -1187,10 +1189,6 @@ void OrigamiPotential::set_hybridization_energy(pair<int, int> key) {
     }
 
     S_hyb += log(6);
-
-    if (m_apply_mean_field_cor) {
-        S_hyb += 3 * log(6);
-    }
 
     m_hybridization_enthalpies[key] = H_hyb;
     m_hybridization_entropies[key] = S_hyb;
