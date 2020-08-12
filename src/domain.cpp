@@ -47,11 +47,11 @@ bool HalfTurnDomain::check_kink_constraint(VectorThree ndr, Domain& cd_2) {
         kink_constraint_obeyed = false;
     }
     else if (ndr == m_ore) {
-        if (cd_2.m_ore != m_ore) {
+        if (cd_2.m_ore == -m_ore) {
             kink_constraint_obeyed = false;
         }
     }
-    else if (cd_2.m_ore == ndr or cd_2.m_ore == -ndr) {
+    else if (ndr == cd_2.m_ore or ndr == -cd_2.m_ore) {
         kink_constraint_obeyed = false;
     }
 
@@ -115,12 +115,12 @@ bool ThreeQuarterTurnDomain::check_kink_constraint(
     if (ndr == -m_ore) {
         kink_constraint_obeyed = false;
     }
-    //        else if (ndr == m_ore) {
-    //            if (cd_2.m_ore != m_ore.rotate(m_ore, 1)) {
-    //                kink_constraint_obeyed = false;
-    //            }
-    //        }
-    else if (cd_2.m_ore == ndr or cd_2.m_ore == -ndr) {
+    else if (ndr == m_ore) {
+        if (m_ore == cd_2.m_ore or m_ore == -cd_2.m_ore) {
+            kink_constraint_obeyed = false;
+        }
+    }
+    else if (ndr == cd_2.m_ore or ndr == -cd_2.m_ore) {
         kink_constraint_obeyed = false;
     }
 
