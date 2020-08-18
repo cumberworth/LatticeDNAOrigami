@@ -27,7 +27,15 @@ using utility::VectorThree;
 bool check_domain_orientations_opposing(Domain& cd_i, Domain& cd_j);
 bool check_doubly_contig(Domain* cd_1, Domain* cd_2);
 bool check_domains_exist_and_bound(vector<Domain*> cdv);
-bool doubly_contiguous_helix(Domain* cd_1, Domain* cd_2);
+bool doubly_contiguous(Domain* cd_1, Domain* cd_2);
+bool check_pair_stacked(Domain* cd_1, Domain* cd_2);
+int check_junction_stacking_penalty(
+        Domain& cd_j1,
+        Domain& cd_j2,
+        Domain& cd_j3,
+        Domain& cd_j4,
+        Domain& cd_k1,
+        Domain& cd_k2);
 
 struct DeltaConfig {
     double e {0};
@@ -57,46 +65,43 @@ class BindingPotential {
     OrigamiPotential& m_pot;
     DeltaConfig m_delta_config;
 
-    virtual void check_constraints(Domain* cd);
-    virtual bool check_regular_pair_constraints(
-            Domain* cd_1,
-            Domain* cd_2,
-            int i);
-    bool check_pair_stacked(Domain* cd_1, Domain* cd_2);
-    void check_linear_helix(Domain* cd_h1, Domain* cd_h2, Domain* cd_h3);
-    virtual void check_linear_helices(Domain* cd_1, Domain* cd_2, int i);
-    virtual void check_central_linear_helix(Domain& cd_i, Domain& cd_j);
+    virtual void calc_stacking_and_steric_terms(Domain& cd_i, Domain& cd_j) = 0;
+    void check_triplet_single_stacking(
+            Domain* cd_h1,
+            Domain* cd_h2,
+            Domain* cd_h3);
+    void check_triplet_double_stacking(
+            Domain* cd_h1,
+            Domain* cd_h2,
+            Domain* cd_h3);
+    void check_triply_contig_helix(Domain* cd_h1, Domain* cd_h2, Domain* cd_h3);
 };
 
-/** Adds four body terms for single and double crossover junctions */
 class JunctionBindingPotential: public BindingPotential {
 
   public:
     using BindingPotential::BindingPotential;
 
   private:
-    void check_constraints(Domain* cd) override;
-    bool check_regular_pair_constraints(Domain* cd_1, Domain* cd_2, int i)
-            override;
-    void check_linear_helices(Domain* cd_1, Domain* cd_2, int i) override;
-    void check_central_linear_helix(Domain& cd_i, Domain& cd_j) override;
+    void calc_stacking_and_steric_terms(Domain& cd_i, Domain& cd_j) override;
 
-    bool check_possible_doubly_contig_helix(Domain* cd_1, Domain* cd_2);
-    void check_doubly_contig_junction(
+    void check_constraints(Domain* cd, int j);
+    void check_regular_pair_constraints(Domain* cd_1, Domain* cd_2, int i);
+    void check_doubly_contig_helix_pair(
             Domain* cd_1,
             Domain* cd_2,
-            Domain* cd_3,
-            Domain* cd_4);
-    void check_possible_doubly_contig_junction(Domain* cd_1, Domain* cd_2);
-    void check_edge_pair_junction(Domain* cd_1, Domain* cd_2, int i);
-
-    /** Check for unstacked single junctions from first two domains
-     *
-     * The domains passed are the first two domains of the junction.
-     * A total of nine combinations of domains will be tested,
-     * including two different kink pairs
-     */
-    void check_forward_single_junction(Domain* cd_1, Domain* cd_2);
+            int i,
+            int j);
+    void check_doubly_contig_junction_pair(Domain* cd_1, Domain* cd_2);
+    void check_forward_triplet_stacking_combos(
+            Domain* cd_1,
+            Domain* cd_2,
+            int i);
+    void check_backward_triplet_stacking_combos(
+            Domain* cd_1,
+            Domain* cd_2,
+            int i);
+    void check_central_triplet_stacking_combos(Domain& cd_i, Domain& cd_j);
 
     /** Check for unstacked single junctions from last two domains
      *
@@ -105,6 +110,14 @@ class JunctionBindingPotential: public BindingPotential {
      * including two different kink pairs
      */
     void check_backward_single_junction(Domain* cd_1, Domain* cd_2);
+
+    /** Check for unstacked single junctions from first two domains
+     *
+     * The domains passed are the first two domains of the junction.
+     * A total of nine combinations of domains will be tested,
+     * including two different kink pairs
+     */
+    void check_forward_single_junction(Domain* cd_1, Domain* cd_2);
 
     /** Check for unstacked single junctions from kink pair
      *
@@ -118,7 +131,7 @@ class JunctionBindingPotential: public BindingPotential {
      * This will subtract a stacked pair from configuration that are
      * implied to be less stacked than the other rules would imply.
      */
-    void check_single_junction(
+    void check_junction(
             Domain* cd_j1,
             Domain* cd_j2,
             Domain* cd_j3,
@@ -184,6 +197,9 @@ class OrigamiPotential {
     double hybridization_enthalpy(const Domain& cd_i, const Domain& cd_j) const;
     double hybridization_entropy(const Domain& cd_i, const Domain& cd_j) const;
     double stacking_energy(const Domain& cd_i, const Domain& cd_j) const;
+    double init_enthalpy() const;
+    double init_entropy() const;
+    double init_energy() const;
 
   private:
     string m_energy_filebase;
@@ -226,6 +242,11 @@ class OrigamiPotential {
             m_hybridization_entropy_tables {};
     unordered_map<pair<double, double>, unordered_map<pair<int, int>, double>>
             m_stacking_energy_tables {};
+
+    // Initiation enthalpy and entropy
+    double m_init_enthalpy;
+    double m_init_entropy;
+    double m_init_energy;
 
     // Energy table preperation
     void get_energies();

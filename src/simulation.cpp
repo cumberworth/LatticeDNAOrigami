@@ -548,7 +548,7 @@ long long int GCMCSimulation::simulate(
         double old_ene {m_origami_system.energy()};
         accepted = movetype.attempt_move(step);
         if (not accepted) {
-            // cout << "reset\n";
+//            cout << "\nReseting configuration\n";
             movetype.reset_origami();
             m_ops.update_move_params();
             m_biases.calc_move();
@@ -574,6 +574,7 @@ long long int GCMCSimulation::simulate(
                 for (auto output_file: m_output_files) {
                     output_file->write(step, dt.count());
                 }
+                pipe_to_vmd();
                 cout << "Origami misuse at constraint check\n";
                 break;
             }

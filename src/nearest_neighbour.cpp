@@ -57,6 +57,14 @@ double calc_unitless_hybridization_energy(
     return DH_DS.enthalpy - DH_DS.entropy;
 }
 
+ThermoOfHybrid calc_unitless_init_thermo(double temp) {
+    ThermoOfHybrid DH_DS {NN_Enthalpy.at("INITIATION"), NN_Entropy.at("INITIATION")};
+    DH_DS.enthalpy = DH_DS.enthalpy * J_Per_Cal * 1000 / R / temp;
+    DH_DS.entropy = DH_DS.entropy * J_Per_Cal * 1000 / R;
+
+    return DH_DS;
+}
+
 ThermoOfHybrid calc_hybridization_H_and_S(string seq, double cation_M) {
     string comp_seq {calc_comp_seq(seq)};
 

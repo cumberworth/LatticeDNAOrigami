@@ -118,6 +118,7 @@ class OrigamiSystem {
     double stacking_energy();
     bool configuration_fully_set();
     int num_unassigned_domains();
+    double init_energy();
 
     // Constraint checkers
     void check_all_constraints();

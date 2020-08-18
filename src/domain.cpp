@@ -65,36 +65,7 @@ bool HalfTurnDomain::check_junction_constraint(
         Domain& cd_k1,
         Domain& cd_k2) {
 
-    bool junction_stacked {true};
-    VectorThree ndr_k1 {cd_k2.m_pos - cd_k1.m_pos};
-
-    // Check if kinked pair forms crossover angle
-    if (ndr_k1 != cd_k1.m_ore) {
-        VectorThree ndr_1 {cd_j2.m_pos - this->m_pos};
-        VectorThree ndr_3 {cd_j4.m_pos - cd_j3.m_pos};
-
-        // Check that the kink next domain vector is orthoganal to the
-        // junction pair next domain vector and that the junction pair next
-        // domain vector are parallel (sign is unimportant here)
-        if ((ndr_1 != ndr_k1 and ndr_1 != -ndr_k1) and
-            (ndr_1 == ndr_3 or ndr_1 == -ndr_3)) {
-            bool pair1_stacked {false};
-            if (ndr_1 != this->m_ore and ndr_1 != -this->m_ore) {
-                pair1_stacked = this->check_twist_constraint(ndr_1, cd_j2);
-            }
-            if (pair1_stacked) {
-                bool pair2_stacked {false};
-                if (ndr_3 != cd_j3.m_ore and ndr_3 != -cd_j3.m_ore) {
-                    pair2_stacked = cd_j3.check_twist_constraint(ndr_3, cd_j4);
-                }
-                if (pair2_stacked) {
-                    junction_stacked = false;
-                }
-            }
-        }
-    }
-
-    return junction_stacked;
+    return true;
 }
 
 bool ThreeQuarterTurnDomain::check_twist_constraint(
@@ -134,35 +105,46 @@ bool ThreeQuarterTurnDomain::check_junction_constraint(
         Domain& cd_k1,
         Domain& cd_k2) {
 
-    bool junction_stacked {true};
+    bool kink_constraint_obeyed {true};
     VectorThree ndr_k1 {cd_k2.m_pos - cd_k1.m_pos};
-
-    // Check if kinked pair forms crossover angle
-    if (ndr_k1 != cd_k1.m_ore) {
+    if (ndr_k1 == cd_k1.m_ore) {
         VectorThree ndr_1 {cd_j2.m_pos - this->m_pos};
         VectorThree ndr_3 {cd_j4.m_pos - cd_j3.m_pos};
-
-        // Check that the kink next domain vector is orthoganal to the
-        // junction pair next domain vector and that the junction pair next
-        // domain vector are parallel (sign is unimportant here)
-        if ((ndr_1 != ndr_k1 and ndr_1 != -ndr_k1) and
-            (ndr_1 == ndr_3 or ndr_1 == -ndr_3)) {
-            bool pair1_stacked {false};
-            if (ndr_1 != this->m_ore and ndr_1 != -this->m_ore) {
-                pair1_stacked = this->check_twist_constraint(ndr_1, cd_j2);
+        bool pair1_stacked {false};
+        if (ndr_1 != this->m_ore and ndr_1 != -this->m_ore) {
+            pair1_stacked = this->check_twist_constraint(ndr_1, cd_j2);
+        }
+        if (pair1_stacked) {
+            bool pair2_stacked {false};
+            if (ndr_3 != cd_j3.m_ore and ndr_3 != -cd_j3.m_ore) {
+                pair2_stacked = cd_j3.check_twist_constraint(ndr_3, cd_j4);
             }
-            if (pair1_stacked) {
-                bool pair2_stacked {false};
-                if (ndr_3 != cd_j3.m_ore and ndr_3 != -cd_j3.m_ore) {
-                    pair2_stacked = cd_j3.check_twist_constraint(ndr_3, cd_j4);
+            if (pair2_stacked) {
+                if (this->m_d > cd_j2.m_d) {
+                    ndr_1 = -ndr_1;
                 }
-                if (pair2_stacked) {
-                    junction_stacked = false;
+                if (not cd_k1.check_twist_constraint(ndr_1, cd_k2)) {
+                    kink_constraint_obeyed = false;
                 }
             }
         }
     }
+    return kink_constraint_obeyed;
+}
 
-    return junction_stacked;
+bool check_pair_stacked(Domain* cd_1, Domain* cd_2) {
+
+    bool stacked {false};
+    if (cd_1->m_d > cd_2->m_d) {
+        Domain* hold {cd_1};
+        cd_1 = cd_2;
+        cd_2 = hold;
+    }
+    VectorThree ndr {cd_2->m_pos - cd_1->m_pos};
+    if (ndr != cd_1->m_ore and ndr != -cd_1->m_ore) {
+        stacked = cd_1->check_twist_constraint(ndr, *cd_2);
+    }
+
+    return stacked;
 }
 } // namespace domainContainer

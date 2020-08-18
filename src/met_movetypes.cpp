@@ -322,6 +322,10 @@ bool MetStapleExchangeMCMovetype::insert_staple() {
     if (m_apply_mean_field_cor) {
         m_delta_e += log(6);
     }
+
+    // Initiation energy hack
+    m_delta_e += m_origami_system.init_energy();
+
     m_added_chains.push_back(c_i);
 
     // Assume that add_chain always adds to end of m_domains
@@ -386,6 +390,10 @@ bool MetStapleExchangeMCMovetype::delete_staple() {
     if (m_apply_mean_field_cor) {
         m_delta_e -= log(6);
     }
+
+    // Initiation energy hack
+    m_delta_e -= m_origami_system.init_energy();
+
     accepted = staple_deletion_accepted(c_i_ident, num_staple_bd);
     if (accepted) {
         m_origami_system.delete_chain(c_i);

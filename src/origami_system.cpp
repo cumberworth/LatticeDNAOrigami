@@ -238,6 +238,10 @@ void OrigamiSystem::update_enthalpy_and_entropy() {
         }
     }
 
+    // Initiation energy
+    m_hyb_enthalpy += (m_domains.size() - 1) * m_pot.init_enthalpy();
+    m_hyb_entropy += (m_domains.size() - 1) * m_pot.init_entropy();
+
     m_stacking_energy = m_energy - (m_hyb_enthalpy - m_hyb_entropy);
 }
 
@@ -258,8 +262,11 @@ bool OrigamiSystem::configuration_fully_set() {
 
 int OrigamiSystem::num_unassigned_domains() { return m_num_unassigned_domains; }
 
+double OrigamiSystem::init_energy() { return m_pot.init_energy(); }
+
 void OrigamiSystem::check_all_constraints() {
 
+    //    cout << "\nChecking all constraints\n";
     // Unassign everything (and check nothing was already unassigned)
     if (m_num_unassigned_domains != 0) {
         throw OrigamiMisuse {};
@@ -281,6 +288,9 @@ void OrigamiSystem::check_all_constraints() {
         // This is only corrected for when removing and adding chains
         m_energy -= (m_domains.size() - 1) * log(6);
     }
+
+    // Initiation energy only added when removing and adding chains
+    m_energy -= (m_domains.size() - 1) * m_pot.init_energy();
 
     // Check that number of stacked pairs is consistent
     if (m_num_stacked_domain_pairs != 0) {
@@ -309,6 +319,9 @@ void OrigamiSystem::check_all_constraints() {
     if (m_apply_mean_field_cor) {
         m_energy += (m_domains.size() - 1) * log(6);
     }
+
+    // Initiation energy only added when removing and adding chains
+    m_energy += (m_domains.size() - 1) * m_pot.init_energy();
 }
 
 void OrigamiSystem::set_config(Chains chains) {
@@ -331,8 +344,8 @@ double OrigamiSystem::check_domain_constraints(
         Domain& cd_i,
         VectorThree pos,
         VectorThree ore) {
-    //        cout << "Checking domain constraints (" << cd_i.m_c << " " <<
-    //        cd_i.m_d << ")\n";
+    //    cout << m_num_stacked_domain_pairs << " Checking domain constraints ("
+    //         << cd_i.m_c << " " << cd_i.m_d << ")\n";
 
     DeltaConfig delta_config {
             internal_check_domain_constraints(cd_i, pos, ore)};
@@ -360,13 +373,12 @@ void OrigamiSystem::check_distance_constraints() {
 }
 
 double OrigamiSystem::unassign_domain(Domain& cd_i) {
-    //        cout << "Unassigning domain (" << cd_i.m_c << " " << cd_i.m_d <<
-    //        ")\n";
+    //    cout << m_num_stacked_domain_pairs << " Unassigning domain (" <<
+    //    cd_i.m_c
+    //         << " " << cd_i.m_d << ")\n";
     DeltaConfig delta_config {internal_unassign_domain(cd_i)};
     m_energy += delta_config.e;
-    m_num_stacked_domain_pairs += (delta_config.stacked_pairs / 2);
-    m_num_linear_helix_trips += delta_config.linear_helices;
-    m_num_stacked_junct_quads += delta_config.stacked_juncts;
+    m_num_stacked_domain_pairs += delta_config.stacked_pairs;
     m_num_unassigned_domains++;
 
     return delta_config.e;
@@ -380,6 +392,9 @@ int OrigamiSystem::add_chain(int c_i_ident) {
     if (m_apply_mean_field_cor) {
         m_energy += log(6);
     }
+
+    // Initiation energy hack
+    m_energy += m_pot.init_energy();
 
     return add_chain(c_i_ident, m_current_c_i);
 }
@@ -451,6 +466,9 @@ void OrigamiSystem::delete_chain(int c_i) {
     if (m_apply_mean_field_cor) {
         m_energy -= log(6);
     }
+
+    // Initiation energy hack
+    m_energy -= m_pot.init_energy();
 }
 
 void OrigamiSystem::temp_reduce_staples_by_one() { m_num_staples--; }
@@ -461,8 +479,8 @@ double OrigamiSystem::set_checked_domain_config(
         Domain& cd_i,
         VectorThree pos,
         VectorThree ore) {
-    //        cout << "Setting checked domain (" << cd_i.m_c << " " << cd_i.m_d
-    //        << ")\n";
+    //    cout << m_num_stacked_domain_pairs << " Setting checked domain ("
+    //         << cd_i.m_c << " " << cd_i.m_d << ")\n";
     update_domain(cd_i, pos, ore);
     update_occupancies(cd_i, pos);
 
@@ -476,9 +494,7 @@ double OrigamiSystem::set_checked_domain_config(
         DeltaConfig delta_config;
         delta_config = m_pot.check_stacking(cd_i, *cd_i.m_bound_domain);
         delta_e += delta_config.e;
-        m_num_stacked_domain_pairs += (delta_config.stacked_pairs / 2);
-        m_num_linear_helix_trips += delta_config.linear_helices;
-        m_num_stacked_junct_quads += delta_config.stacked_juncts;
+        m_num_stacked_domain_pairs += delta_config.stacked_pairs;
     }
 
     // Mean field entropy correction for first scaffold domains
@@ -502,8 +518,9 @@ double OrigamiSystem::set_domain_config(
         Domain& cd_i,
         VectorThree pos,
         VectorThree ore) {
-    //        cout << "Setting domain (" << cd_i.m_c << " " << cd_i.m_d <<
-    //        ")\n";
+    //    cout << m_num_stacked_domain_pairs << " Setting domain (" << cd_i.m_c
+    //    << " "
+    //         << cd_i.m_d << ")\n";
     if (cd_i.m_state != Occupancy::unassigned) {
         cout << "Trying to set an already assigned domain\n";
         throw OrigamiMisuse {};
@@ -517,9 +534,7 @@ double OrigamiSystem::set_domain_config(
     }
     else {
         m_energy += delta_config.e;
-        m_num_stacked_domain_pairs += (delta_config.stacked_pairs / 2);
-        m_num_linear_helix_trips += delta_config.linear_helices;
-        m_num_stacked_junct_quads += delta_config.stacked_juncts;
+        m_num_stacked_domain_pairs += delta_config.stacked_pairs;
         m_num_unassigned_domains--;
     }
     return delta_config.e;
@@ -650,6 +665,12 @@ void OrigamiSystem::initialize_staples(Chains chains) {
         int c_i_ident {chain.identity};
         add_chain(c_i_ident, c_i);
     }
+    if (m_apply_mean_field_cor) {
+        m_energy += (chains.size() - 1) * log(6);
+    }
+
+    // Initiation energy hack
+    m_energy += (m_domains.size() - 1) * m_pot.init_energy();
 
     // Current unique chain index
     m_current_c_i =
@@ -683,8 +704,6 @@ DeltaConfig OrigamiSystem::internal_unassign_domain(Domain& cd_i) {
         delta_config = m_pot.check_stacking(cd_i, *cd_j);
         delta_config.e *= -1;
         delta_config.stacked_pairs *= -1;
-        delta_config.linear_helices *= -1;
-        delta_config.stacked_juncts *= -1;
         delta_config.e += unassign_bound_domain(cd_i);
         break;
     case Occupancy::misbound:
@@ -794,12 +813,16 @@ void OrigamiSystem::update_energy() {
             unassign_domain(*domain);
         }
     }
-
     m_energy = 0;
+
     // This is only corrected for when removing and adding chains
     if (m_apply_mean_field_cor) {
         m_energy += (m_domains.size() - 1) * log(6);
     }
+
+    // Initiation energy hack
+    m_energy += (m_domains.size() - 1) * m_pot.init_energy();
+
     set_all_domains();
 }
 
