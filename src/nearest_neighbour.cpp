@@ -110,7 +110,7 @@ ThermoOfHybrid calc_hybridization_H_and_S(string seq, double cation_M) {
 
     // Consider specifying num phosphates to account for sequences with terminal
     // residues
-    DS_hybrid += 0.368 * (seq.size() / 2) * log(cation_M) / 1000;
+    DS_hybrid += 0.368 * seq.size() * log(cation_M) / 1000;
 
     ThermoOfHybrid DH_DS {DH_hybrid, DS_hybrid};
     return DH_DS;
