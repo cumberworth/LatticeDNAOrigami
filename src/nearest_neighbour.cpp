@@ -58,7 +58,8 @@ double calc_unitless_hybridization_energy(
 }
 
 ThermoOfHybrid calc_unitless_init_thermo(double temp) {
-    ThermoOfHybrid DH_DS {NN_Enthalpy.at("INITIATION"), NN_Entropy.at("INITIATION")};
+    ThermoOfHybrid DH_DS {
+            NN_Enthalpy.at("INITIATION"), NN_Entropy.at("INITIATION")};
     DH_DS.enthalpy = DH_DS.enthalpy * J_Per_Cal * 1000 / R / temp;
     DH_DS.entropy = DH_DS.entropy * J_Per_Cal * 1000 / R;
 
