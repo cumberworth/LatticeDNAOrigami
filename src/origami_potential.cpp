@@ -127,6 +127,9 @@ DeltaConfig BindingPotential::bind_domains(Domain& cd_i, Domain& cd_j) {
     }
 
     calc_stacking_and_steric_terms(cd_i, cd_j);
+    if (m_constraints_violated) {
+        return {};
+    }
     m_delta_config.e += m_pot.hybridization_energy(cd_i, cd_j);
 
     return m_delta_config;
@@ -565,7 +568,7 @@ void JunctionBindingPotential::check_backward_single_junction(
 
     // Add kink pair that is the same chain as the first junction pair
     Domain* cd_j3_bac {cd_j3->m_backward_domain};
-    first_sel.push_back({cd_j3, cd_j3->m_backward_domain});
+    first_sel.push_back({cd_j3, cd_j3_bac});
 
     // Add kink pairs that are on the chain bound to j3
     Domain* cd_j3_bound {cd_j3->m_bound_domain};
@@ -588,12 +591,14 @@ void JunctionBindingPotential::check_backward_single_junction(
         }
     }
     else if (
-            check_domains_exist_and_bound({cd_j3_bound_bac}) and
+            check_domains_exist_and_bound(
+                    {cd_j3_bac, cd_j3_bound_bac}) and
             cd_j3_bac->m_bound_domain == cd_j3_bound_bac) {
         first_sel.push_back({cd_j3_bound, cd_j3_bound_for});
     }
     else if (
-            check_domains_exist_and_bound({cd_j3_bound_for}) and
+            check_domains_exist_and_bound(
+                    {cd_j3_bac, cd_j3_bound_for}) and
             cd_j3_bac->m_bound_domain == cd_j3_bound_for) {
         first_sel.push_back({cd_j3_bound, cd_j3_bound_bac});
     }
@@ -692,12 +697,14 @@ void JunctionBindingPotential::check_forward_single_junction(
     }
     // What if it is doubly contig on both sides?
     else if (
-            check_domains_exist_and_bound({cd_j2_bound_bac}) and
+            check_domains_exist_and_bound(
+                    {cd_j2_for, cd_j2_bound_bac}) and
             cd_j2_for->m_bound_domain == cd_j2_bound_bac) {
         first_sel.push_back({cd_j2_bound, cd_j2_bound_for});
     }
     else if (
-            check_domains_exist_and_bound({cd_j2_bound_for}) and
+            check_domains_exist_and_bound(
+                    {cd_j2_for, cd_j2_bound_for}) and
             cd_j2_for->m_bound_domain == cd_j2_bound_for) {
         first_sel.push_back({cd_j2_bound, cd_j2_bound_bac});
     }
