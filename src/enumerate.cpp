@@ -268,6 +268,10 @@ void ConformationalEnumerator::add_staple(int staple) {
     if (m_apply_mean_field_cor) {
         m_energy += log(6);
     }
+
+    // Initiation energy
+    m_energy += m_origami_system.init_energy();
+
     auto staple_length = m_origami_system.m_identities[staple].size();
     m_prefix /= static_cast<long double>(std::pow(6, 2 * staple_length - 1));
     m_identity_to_indices[staple].push_back(c_i);
@@ -300,6 +304,9 @@ void ConformationalEnumerator::remove_staple(int staple) {
     if (m_apply_mean_field_cor) {
         m_energy -= log(6);
     }
+
+    // Initiation energy
+    m_energy -= m_origami_system.init_energy();
 
     // Update shortcut stuff
     for (auto d_ident: m_origami_system.m_identities[staple]) {
