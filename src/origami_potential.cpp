@@ -1013,7 +1013,7 @@ void OrigamiPotential::calc_energies() {
 
     ThermoOfHybrid DH_DS {nearestNeighbour::calc_unitless_init_thermo(m_temp)};
     m_init_enthalpy = DH_DS.enthalpy;
-    m_init_enthalpy = DH_DS.entropy;
+    m_init_entropy = DH_DS.entropy;
     m_init_energy = m_init_enthalpy - m_init_entropy;
 
     // Loop through all pairs of sequences
