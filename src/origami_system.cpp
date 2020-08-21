@@ -344,8 +344,9 @@ double OrigamiSystem::check_domain_constraints(
         Domain& cd_i,
         VectorThree pos,
         VectorThree ore) {
-    //    cout << m_num_stacked_domain_pairs << " Checking domain constraints ("
-    //         << cd_i.m_c << " " << cd_i.m_d << ")\n";
+    //        cout << m_num_stacked_domain_pairs << " Checking domain
+    //        constraints ("
+    //             << cd_i.m_c << " " << cd_i.m_d << ")\n";
 
     DeltaConfig delta_config {
             internal_check_domain_constraints(cd_i, pos, ore)};
@@ -373,9 +374,9 @@ void OrigamiSystem::check_distance_constraints() {
 }
 
 double OrigamiSystem::unassign_domain(Domain& cd_i) {
-    //    cout << m_num_stacked_domain_pairs << " Unassigning domain (" <<
-    //    cd_i.m_c
-    //         << " " << cd_i.m_d << ")\n";
+    //        cout << m_num_stacked_domain_pairs << " Unassigning domain (" <<
+    //        cd_i.m_c
+    //             << " " << cd_i.m_d << ")\n";
     DeltaConfig delta_config {internal_unassign_domain(cd_i)};
     m_energy += delta_config.e;
     m_num_stacked_domain_pairs += delta_config.stacked_pairs;
@@ -479,8 +480,8 @@ double OrigamiSystem::set_checked_domain_config(
         Domain& cd_i,
         VectorThree pos,
         VectorThree ore) {
-    //    cout << m_num_stacked_domain_pairs << " Setting checked domain ("
-    //         << cd_i.m_c << " " << cd_i.m_d << ")\n";
+    //        cout << m_num_stacked_domain_pairs << " Setting checked domain ("
+    //             << cd_i.m_c << " " << cd_i.m_d << ")\n";
     update_domain(cd_i, pos, ore);
     update_occupancies(cd_i, pos);
 
@@ -518,9 +519,10 @@ double OrigamiSystem::set_domain_config(
         Domain& cd_i,
         VectorThree pos,
         VectorThree ore) {
-    //    cout << m_num_stacked_domain_pairs << " Setting domain (" << cd_i.m_c
-    //    << " "
-    //         << cd_i.m_d << ")\n";
+    //        cout << m_num_stacked_domain_pairs << " Setting domain (" <<
+    //        cd_i.m_c
+    //        << " "
+    //             << cd_i.m_d << ")\n";
     if (cd_i.m_state != Occupancy::unassigned) {
         cout << "Trying to set an already assigned domain\n";
         throw OrigamiMisuse {};
