@@ -1,0 +1,34 @@
+{
+    "origami": {
+        "bias_functions": [
+            {
+                "label": "Linear distance step function 1",
+                "tag": "lds1",
+                "type": "LinearStep",
+                "min_op": 0,
+                "max_op": 5,
+                "max_bias": 1,
+                "ops": ["sd1"],
+                "update_per_domain": true
+            }, {
+                "label": "Linear distance step function 2",
+                "tag": "lds2",
+                "type": "LinearStep",
+                "min_op": 0,
+                "max_op": 5,
+                "max_bias": 1,
+                "ops": ["sd2"],
+                "update_per_domain": true
+            }, {
+                "label": "Linear distance step function 3",
+                "tag": "lds3",
+                "type": "LinearStep",
+                "min_op": 0,
+                "max_op": 1,
+                "max_bias": 1,
+                "ops": ["sd3"],
+                "update_per_domain": true
+            }
+        ]
+    }
+}
