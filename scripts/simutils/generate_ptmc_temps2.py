@@ -22,9 +22,11 @@ def main():
 
     # Prevent instabilities in minimization (need monotonically decreasing)
     old_ops = old_ops[::-1].sort_values()
+
+    # Discard temperatures that resulted in OPs outside desired range
     boundary_reached = False
     for i, op in old_ops.items():
-        if op > args.max_op*0.95:
+        if op > args.max_op - args.max_op*args.op_margin:
             if boundary_reached:
                 old_ops = old_ops.drop(i, 0)
                 old_temps = old_temps.drop(i, 0)
@@ -34,26 +36,24 @@ def main():
     old_ops = old_ops[::-1]
     boundary_reached = False
     for i, op in old_ops.items():
-        if op < args.max_op*0.05:
+        if op < args.max_op*args.op_margin:
             if boundary_reached:
                 old_ops = old_ops.drop(i, 0)
                 old_temps = old_temps.drop(i, 0)
             else:
                 boundary_reached = True
 
-#    spline_params = interpolate.splrep(old_temps, old_ops)
     interpolated_ops_f = interpolate.interp1d(old_temps, old_ops, kind='linear',
-            fill_value='extrapolate')
+                                              fill_value='extrapolate')
     guess_temps = np.linspace(old_temps.iloc[0], old_temps.iloc[-1],
-            num=args.threads - 2)
-    desired_ops = np.linspace(args.max_op - args.max_op*0.05, args.max_op*0.05, num=args.threads - 2)
+                              num=args.threads - 2)
+    desired_ops = np.linspace(args.max_op - args.max_op*args.op_margin,
+                              args.max_op*args.op_margin, num=args.threads - 2)
     new_temps = minimize(sum_of_squared_errors, guess_temps,
-#             args=(desired_ops, spline_params))
-             args=(desired_ops, interpolated_ops_f)).x
+                         args=(desired_ops, interpolated_ops_f)).x
     new_temps.sort()
-    temp_diff = new_temps[-1] - new_temps[0]
-    low_temps = [new_temps[0] - temp_diff/4]
-    high_temps = [new_temps[-1] + temp_diff/4]
+    low_temps = [new_temps[0] - args.temp_cap]
+    high_temps = [new_temps[-1] + args.temp_cap]
     new_temps = np.concatenate([low_temps, new_temps, high_temps])
     np.set_printoptions(formatter={'float': '{:0.3f}'.format}, linewidth=200)
     new_temps = np.around(new_temps, decimals=3)
@@ -64,9 +64,6 @@ def main():
     print(temps_string)
 
 
-#def sum_of_squared_errors(temps, desired_ops, spline_params):
-#    new_ops = interpolate.splev(temps, spline_params, der=0)
-#    return ((new_ops - desired_ops)**2).sum()
 def sum_of_squared_errors(temps, desired_ops, interpolated_ops_f):
     squared_error = 0
     for temp, op in zip(temps, desired_ops):
@@ -91,17 +88,25 @@ def parse_args():
         type=float,
         help='Maximum value of order parameter')
     parser.add_argument(
+        'op_margin',
+        type=float,
+        help='Percentage of order parameter to use for range margins')
+    parser.add_argument(
+        'temp_cap',
+        type=float,
+        help='Additional temperature to add to bottom and top of range')
+    parser.add_argument(
         'threads',
         type=int,
         help='Number of threads/replicas')
     parser.add_argument(
-            '--rtag',
-            type=str,
-            help='Tag to slice on')
+        '--rtag',
+        type=str,
+        help='Tag to slice on')
     parser.add_argument(
-            '--rvalue',
-            type=float,
-            help='Slice value')
+        '--rvalue',
+        type=float,
+        help='Slice value')
 
     return parser.parse_args()
 

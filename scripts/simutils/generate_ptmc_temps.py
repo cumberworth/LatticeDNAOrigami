@@ -22,14 +22,12 @@ def main():
 
     # Prevent instabilities in minimization (need monotonically decreasing)
     old_ops = old_ops.sort_values()[::-1]
-#    spline_params = interpolate.splrep(old_temps, old_ops)
     interpolated_ops_f = interpolate.interp1d(old_temps, old_ops, kind='linear',
             fill_value='extrapolate')
     guess_temps = np.linspace(old_temps[1], old_temps[len(old_temps) - 1],
             num=args.threads - 6)
     desired_ops = np.linspace(args.max_op - 1, 1, num=args.threads - 6)
     new_temps = minimize(sum_of_squared_errors, guess_temps,
-#             args=(desired_ops, spline_params))
              args=(desired_ops, interpolated_ops_f)).x
     new_temps.sort()
     low_temps = [new_temps[0] - 3, new_temps[0] - 1, new_temps[0] - 0.3]
@@ -45,9 +43,6 @@ def main():
     print(temps_string)
 
 
-#def sum_of_squared_errors(temps, desired_ops, spline_params):
-#    new_ops = interpolate.splev(temps, spline_params, der=0)
-#    return ((new_ops - desired_ops)**2).sum()
 def sum_of_squared_errors(temps, desired_ops, interpolated_ops_f):
     squared_error = 0
     for temp, op in zip(temps, desired_ops):
