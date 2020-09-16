@@ -13,6 +13,9 @@ INCLUDEDIR = include
 vpath %.h $(INCLUDEDIR)/
 vpath %.cpp $(SRCDIR)/
 
+# Put git commit hash in code
+$(shell echo -e "#include \"version.h\"\n\nchar const *const GIT_COMMIT = \"$$(git rev-parse HEAD)\";" > src/version.cpp.tmp; if diff -q src/version.cpp.tmp src/version.cpp >/dev/null 2>&1; then rm src/version.cpp.tmp; else mv src/version.cpp.tmp src/version.cpp; fi)
+
 SOURCES := $(wildcard $(SRCDIR)/*.cpp)
 OBJECTS := $(subst .cpp,.o,$(SOURCES))
 OBJECTS := $(subst $(SRCDIR),$(BUILDDIR),$(OBJECTS))

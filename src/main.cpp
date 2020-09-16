@@ -13,6 +13,7 @@
 #include "parser.h"
 #include "ptmc_simulation.h"
 #include "us_simulation.h"
+#include "version.h"
 
 int main(int argc, char* argv[]) {
 
@@ -22,6 +23,8 @@ int main(int argc, char* argv[]) {
     origami::OrigamiSystem* origami {origami::setup_origami(params)};
     orderParams::SystemOrderParams& ops {origami->get_system_order_params()};
     biasFunctions::SystemBiases& biases {origami->get_system_biases()};
+
+    cout << "Git commit hash: " << GIT_COMMIT << "\n";
 
     // Enumerate or simulate
     if (params.m_simulation_type == "enumerate") {
