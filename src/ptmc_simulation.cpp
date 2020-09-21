@@ -34,8 +34,9 @@ PTGCMCSimulation::PTGCMCSimulation(
 
     // Update starting configs if restarting
     if (m_params.m_restart_traj_filebase != "") {
-        string filename {params.m_restart_traj_filebase + "-" + string_rank +
-                         params.m_restart_traj_postfix};
+        string filename {
+                params.m_restart_traj_filebase + "-" + string_rank +
+                params.m_restart_traj_postfix};
         OrigamiTrajInputFile traj_inp {filename};
         Chains restart_config {traj_inp.read_config(params.m_restart_step)};
         m_origami_system.set_config(restart_config);
@@ -43,7 +44,12 @@ PTGCMCSimulation::PTGCMCSimulation(
 
     string output_filebase {params.m_output_filebase + "-" + string_rank};
     m_output_files = simulation::setup_output_files(
-            params, output_filebase, m_origami_system, m_ops, m_biases);
+            params,
+            output_filebase,
+            m_origami_system,
+            m_ops,
+            m_biases,
+            m_random_gens);
     m_logging_stream = new ofstream {output_filebase + ".out"};
 
     // Initialize quantity index to replica index vectors

@@ -32,7 +32,8 @@ AnnealingGCMCSimulation::AnnealingGCMCSimulation(
             params.m_output_filebase,
             m_origami_system,
             m_ops,
-            m_biases);
+            m_biases,
+            m_random_gens);
 }
 
 void AnnealingGCMCSimulation::run() {

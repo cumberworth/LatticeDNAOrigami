@@ -22,7 +22,8 @@ ConstantTGCMCSimulation::ConstantTGCMCSimulation(
             params.m_output_filebase,
             m_origami_system,
             m_ops,
-            m_biases);
+            m_biases,
+            m_random_gens);
 }
 
 vector<double> ConstantTGCMCSimulation::get_energies() { return m_enes; }

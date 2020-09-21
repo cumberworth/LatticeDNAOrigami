@@ -75,7 +75,12 @@ void USGCMCSimulation::run_equilibration() {
     string postfix {"_iter-equil"};
     string output_filebase {m_params.m_output_filebase + postfix};
     m_output_files = simulation::setup_output_files(
-            m_params, output_filebase, m_origami_system, m_ops, m_biases);
+            m_params,
+            output_filebase,
+            m_origami_system,
+            m_ops,
+            m_biases,
+            m_random_gens);
     m_logging_stream = new ofstream {output_filebase + ".out"};
 
     m_steps = m_equil_steps;
@@ -93,7 +98,7 @@ void USGCMCSimulation::run_iteration(int n) {
     string prefix {"_iter-" + std::to_string(n)};
     string output_filebase {m_params.m_output_filebase + prefix};
     m_output_files = simulation::setup_output_files(
-            m_params, output_filebase, m_origami_system, m_ops, m_biases);
+            m_params, output_filebase, m_origami_system, m_ops, m_biases, m_random_gens);
     m_logging_stream = new ofstream {output_filebase + ".out"};
 
     m_steps = m_iter_steps;
@@ -129,7 +134,7 @@ void USGCMCSimulation::run_production(int n) {
     string postfix {"_iter-prod"};
     string output_filebase {m_params.m_output_filebase + postfix};
     m_output_files = simulation::setup_output_files(
-            m_params, output_filebase, m_origami_system, m_ops, m_biases);
+            m_params, output_filebase, m_origami_system, m_ops, m_biases, m_random_gens);
     m_logging_stream = new ofstream {output_filebase + ".out"};
 
     m_steps = m_prod_steps;
@@ -507,15 +512,16 @@ void MWUSGCMCSimulation::update_master_order_params(int n) {
 void MWUSGCMCSimulation::copy_files_to_central_dir(int n) {
 
     // Move most recent iteration's files to central dir
-    string filebase_cur {m_output_filebases[m_rank] + "_iter-" +
-                         std::to_string(n)};
-    string move_command {"mv " + m_local_dir + "/" + filebase_cur + "* " +
-                         m_central_dir + "/"};
+    string filebase_cur {
+            m_output_filebases[m_rank] + "_iter-" + std::to_string(n)};
+    string move_command {
+            "mv " + m_local_dir + "/" + filebase_cur + "* " + m_central_dir +
+            "/"};
     std::system(move_command.c_str());
 
     // Remove previous iteration files from central dir
-    string filebase_prev {m_output_filebases[m_rank] + "_iter-" +
-                          std::to_string(n - 1)};
+    string filebase_prev {
+            m_output_filebases[m_rank] + "_iter-" + std::to_string(n - 1)};
     string del_command {"rm -f " + m_central_dir + "/" + filebase_prev + "*"};
     std::system(del_command.c_str());
 }
@@ -579,9 +585,10 @@ void MWUSGCMCSimulation::select_starting_configs(int n) {
                 m_order_param_to_configs[point]};
         int sel_i {m_random_gens.uniform_int(0, possible_configs.size() - 1)};
         pair<int, int> selected_config {possible_configs[sel_i]};
-        string filename {m_central_dir + "/" +
-                         m_output_filebases[selected_config.first] + "_iter-" +
-                         std::to_string(n) + ".trj"};
+        string filename {
+                m_central_dir + "/" +
+                m_output_filebases[selected_config.first] + "_iter-" +
+                std::to_string(n) + ".trj"};
         m_starting_files[i] = filename;
         m_starting_steps[i] = selected_config.second;
     }
@@ -597,8 +604,9 @@ void MWUSGCMCSimulation::sort_configs_by_ops() {
             // Would need to modify to allow the use of a subset of
             // the ops collected during the simulation
             GridPoint point {m_points[i][step]};
-            bool point_sampled {m_order_param_to_configs.find(point) !=
-                                m_order_param_to_configs.end()};
+            bool point_sampled {
+                    m_order_param_to_configs.find(point) !=
+                    m_order_param_to_configs.end()};
             if (point_sampled) {
                 m_order_param_to_configs[point].push_back({i, step});
             }

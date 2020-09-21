@@ -201,6 +201,24 @@ void OrigamiTrajInputFile::go_to_step(unsigned int step) {
     //}
 }
 
+RandomEngineStateInputFile::RandomEngineStateInputFile(string filename) {
+    m_file.open(filename);
+}
+
+string RandomEngineStateInputFile::read_state(int step) {
+    m_file.seekg(std::ios::beg);
+    string line;
+    for (unsigned int i = 0; i != step; ++i) {
+        std::getline(m_file, line);
+        if (m_file.eof()) {
+            throw FileMisuse {};
+        }
+    }
+    std::getline(m_file, line);
+
+    return line;
+}
+
 OrigamiMovetypeFile::OrigamiMovetypeFile(string filename):
         m_filename {filename} {
 
@@ -631,11 +649,12 @@ OrigamiEnergiesOutputFile::OrigamiEnergiesOutputFile(
         int max_staple_size,
         OrigamiSystem& origami_system,
         SystemBiases& biases):
-        OrigamiOutputFile {filename,
-                           write_freq,
-                           max_num_staples,
-                           max_staple_size,
-                           origami_system},
+        OrigamiOutputFile {
+                filename,
+                write_freq,
+                max_num_staples,
+                max_staple_size,
+                origami_system},
         m_biases {biases} {
 
     m_file << "step tenergy henthalpy hentropy stacking bias\n";
@@ -660,11 +679,12 @@ OrigamiTimesOutputFile::OrigamiTimesOutputFile(
         int max_num_staples,
         int max_staple_size,
         OrigamiSystem& origami_system):
-        OrigamiOutputFile {filename,
-                           write_freq,
-                           max_num_staples,
-                           max_staple_size,
-                           origami_system} {
+        OrigamiOutputFile {
+                filename,
+                write_freq,
+                max_num_staples,
+                max_staple_size,
+                origami_system} {
 
     m_file << "step time\n";
 }
@@ -684,11 +704,12 @@ OrigamiOrderParamsOutputFile::OrigamiOrderParamsOutputFile(
         OrigamiSystem& origami_system,
         SystemOrderParams& ops,
         vector<string> op_tags):
-        OrigamiOutputFile {filename,
-                           write_freq,
-                           max_num_staples,
-                           max_staple_size,
-                           origami_system},
+        OrigamiOutputFile {
+                filename,
+                write_freq,
+                max_num_staples,
+                max_staple_size,
+                origami_system},
         m_ops {ops} {
 
     for (auto op_tag: op_tags) {
@@ -706,6 +727,20 @@ void OrigamiOrderParamsOutputFile::write(long int step, double) {
     for (auto op: m_ops_to_output) {
         m_file << " " << op.get().calc_param();
     }
+    m_file << "\n";
+    m_file.flush();
+}
+
+RandomEngineStateOutputFile::RandomEngineStateOutputFile(
+        string filename,
+        int write_freq,
+        RandomGens& random_gens,
+        OrigamiSystem& origami_system):
+        m_random_gens {random_gens},
+        OrigamiOutputFile {filename, write_freq, 0, 0, origami_system} {}
+
+void RandomEngineStateOutputFile::write(long int, double) {
+    m_file << m_random_gens.m_random_engine;
     m_file << "\n";
     m_file.flush();
 }

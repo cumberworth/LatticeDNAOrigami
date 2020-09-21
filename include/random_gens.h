@@ -22,9 +22,9 @@ class RandomGens {
     void set_seed(int seed);
     double uniform_real();
     int uniform_int(int lower, int upper);
+    std::mt19937_64 m_random_engine {};
 
   private:
-    std::mt19937_64 m_random_engine {};
     std::uniform_real_distribution<double> m_uniform_real_dist;
     unordered_map<pair<int, int>, std::uniform_int_distribution<int>&>
             m_uniform_int_dists {};

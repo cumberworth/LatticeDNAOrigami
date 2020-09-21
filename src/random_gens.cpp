@@ -14,6 +14,7 @@ RandomGens::RandomGens() {
     // Seed random number generator
     std::random_device true_random_engine {};
     auto seed {true_random_engine()};
+    cout << "Truly random seed: " << seed << "\n";
     m_random_engine.seed(seed);
 }
 

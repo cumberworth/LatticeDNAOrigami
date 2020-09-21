@@ -14,6 +14,7 @@
 #include "bias_functions.h"
 #include "order_params.h"
 #include "origami_system.h"
+#include "random_gens.h"
 
 namespace files {
 
@@ -29,6 +30,7 @@ using orderParams::OrderParam;
 using orderParams::SystemOrderParams;
 using origami::Chain;
 using origami::OrigamiSystem;
+using randomGen::RandomGens;
 
 // Input file for OrigamiSystem configuration and topology
 class OrigamiInputFile {
@@ -67,6 +69,15 @@ class OrigamiTrajInputFile {
     ifstream m_file;
 
     void go_to_step(unsigned int num);
+};
+
+class RandomEngineStateInputFile {
+  public:
+    RandomEngineStateInputFile(string filename);
+    string read_state(int step);
+
+  private:
+    ifstream m_file;
 };
 
 class OrigamiMovetypeFile {
@@ -259,6 +270,19 @@ class OrigamiOrderParamsOutputFile: public OrigamiOutputFile {
   private:
     SystemOrderParams& m_ops;
     vector<reference_wrapper<OrderParam>> m_ops_to_output {};
+};
+
+class RandomEngineStateOutputFile: public OrigamiOutputFile {
+  public:
+    RandomEngineStateOutputFile(
+            string filename,
+            int write_freq,
+            RandomGens& random_gens,
+            OrigamiSystem& origami_system);
+    void write(long int, double);
+
+  private:
+    RandomGens& m_random_gens;
 };
 
 } // namespace files

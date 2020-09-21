@@ -63,6 +63,7 @@ class InputParameters {
     string m_restart_traj_postfix;
     int m_restart_step;
     vector<int> m_restart_steps;
+    string m_rand_engine_state_file;
     string m_vmd_file_dir;
     int m_logging_freq;
     int m_centering_freq;
@@ -122,6 +123,7 @@ class InputParameters {
     int m_energies_output_freq;
     vector<string> m_ops_to_output {};
     int m_order_params_output_freq;
+    int m_rand_engine_state_output_freq;
     int m_vmd_pipe_freq;
     bool m_create_vmd_instance;
 

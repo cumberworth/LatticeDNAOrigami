@@ -55,7 +55,8 @@ vector<OrigamiOutputFile*> setup_output_files(
         string output_filebase,
         OrigamiSystem& origami,
         SystemOrderParams& ops,
-        SystemBiases& biases);
+        SystemBiases& biases,
+        RandomGens& random_gens);
 
 void setup_config_files(
         const string filebase,

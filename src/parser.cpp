@@ -152,6 +152,9 @@ InputParameters::InputParameters(int argc, char* argv[]) {
             "restart_steps",
             po::value<string>(),
             "Restart step for each replicate")(
+            "rand_engine_state_file",
+            po::value<string>(&m_rand_engine_state_file)->default_value(""),
+            "Random engine state file")(
             "vmd_file_dir",
             po::value<string>(&m_vmd_file_dir)->default_value(""),
             "Directory containing VMD scripts for viewing simulations")(
@@ -306,6 +309,9 @@ InputParameters::InputParameters(int argc, char* argv[]) {
             "order_params_output_freq",
             po::value<int>(&m_order_params_output_freq)->default_value(0),
             "Order parameters write frequency")(
+            "rand_engine_state_output_freq",
+            po::value<int>(&m_rand_engine_state_output_freq)->default_value(0),
+            "Random engine state write frequency")(
             "vmd_pipe_freq",
             po::value<int>(&m_vmd_pipe_freq)->default_value(0),
             "Realtime VMD visualization updating frequency")(
