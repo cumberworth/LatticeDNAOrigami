@@ -108,15 +108,13 @@ int check_junction_stacking_penalty(
         else {
             stacking_penalty = 1;
         }
-        //                cout << stacking_penalty << " (" << cd_j1.m_c << " "
-        //                << cd_j1.m_d
-        //                     << "), (" << cd_j2.m_c << " " << cd_j2.m_d << "),
-        //                     (" << cd_j3.m_c
-        //                     << " " << cd_j3.m_d << "), (" << cd_j4.m_c << " "
-        //                     << cd_j4.m_d
-        //                     << "), (" << cd_k1.m_c << " " << cd_k1.m_d << "),
-        //                     (" << cd_k2.m_c
-        //                     << " " << cd_k2.m_d << ")\n";
+        // cout << stacking_penalty << " (" << cd_j1.m_c << " "
+        // << cd_j1.m_d
+        // << "), (" << cd_j2.m_c << " " << cd_j2.m_d << "), (" << cd_j3.m_c
+        // << " " << cd_j3.m_d << "), (" << cd_j4.m_c << " "
+        // << cd_j4.m_d
+        // << "), (" << cd_k1.m_c << " " << cd_k1.m_d << "), (" << cd_k2.m_c
+        // << " " << cd_k2.m_d << ")\n";
     }
     return stacking_penalty;
 }
@@ -163,11 +161,10 @@ void BindingPotential::check_triplet_single_stacking(
     if (ndr_1 != ndr_2) {
         m_delta_config.e -= m_pot.stacking_energy(*cd_h2, *cd_h3);
         m_delta_config.stacked_pairs -= 1;
-        //                cout << "(" << cd_h1->m_c << " " << cd_h1->m_d << "),
-        //                (" << cd_h2->m_c
-        //                     << " " << cd_h2->m_d << "), (" << cd_h3->m_c << "
-        //                     " << cd_h3->m_d
-        //                     << ")\n";
+        // cout << "(" << cd_h1->m_c << " " << cd_h1->m_d << "), (" <<
+        // cd_h2->m_c
+        // << " " << cd_h2->m_d << "), (" << cd_h3->m_c << " " << cd_h3->m_d
+        // << ")\n";
     }
 }
 
@@ -182,11 +179,10 @@ void BindingPotential::check_triplet_double_stacking(
         m_delta_config.e -= m_pot.stacking_energy(*cd_h1, *cd_h2) / 2;
         m_delta_config.e -= m_pot.stacking_energy(*cd_h2, *cd_h3) / 2;
         m_delta_config.stacked_pairs -= 1;
-        //                cout << "(" << cd_h1->m_c << " " << cd_h1->m_d << "),
-        //                (" << cd_h2->m_c
-        //                     << " " << cd_h2->m_d << "), (" << cd_h3->m_c << "
-        //                     " << cd_h3->m_d
-        //                     << ")\n";
+        // cout << "(" << cd_h1->m_c << " " << cd_h1->m_d << "), (" <<
+        // cd_h2->m_c
+        // << " " << cd_h2->m_d << "), (" << cd_h3->m_c << " " << cd_h3->m_d
+        // << ")\n";
     }
 }
 
@@ -236,7 +232,7 @@ void JunctionBindingPotential::check_constraints(Domain* cd, int j) {
 
             // Crossover case
             else if (cd_bound_1.m_d == cd_bound_2.m_d + 1) {
-                check_doubly_contig_junction_pair(cd_1, cd_2);
+                check_doubly_contig_junction_pair(cd_1, cd_2, j);
             }
 
             // Not doubly contiguous
@@ -285,9 +281,9 @@ void JunctionBindingPotential::check_regular_pair_constraints(
     if (check_pair_stacked(cd_1, cd_2)) {
         m_delta_config.e += m_pot.stacking_energy(*cd_1, *cd_2);
         m_delta_config.stacked_pairs += 1;
-        //                cout << cd_1->m_c << " " << cd_1->m_d << ", " <<
-        //                cd_2->m_c << " "
-        //                     << cd_2->m_d << "\n";
+        // cout << cd_1->m_c << " " << cd_1->m_d << ", " <<
+        // cd_2->m_c << " "
+        // << cd_2->m_d << "\n";
         if (i == -1) {
             check_backward_single_junction(cd_1, cd_2);
         }
@@ -321,9 +317,9 @@ void JunctionBindingPotential::check_doubly_contig_helix_pair(
         if (j == 0) {
             m_delta_config.e += m_pot.stacking_energy(*cd_1, *cd_2);
             m_delta_config.stacked_pairs += 1;
-            //                        cout << cd_1->m_c << " " << cd_1->m_d <<
-            //                        ", " << cd_2->m_c << " "
-            //                             << cd_2->m_d << "\n";
+            // cout << cd_1->m_c << " " << cd_1->m_d <<
+            // ", " << cd_2->m_c << " "
+            // << cd_2->m_d << "\n";
         }
         if (i == -1) {
             check_backward_triplet_stacking_combos(cd_1, cd_2, i);
@@ -341,10 +337,11 @@ void JunctionBindingPotential::check_doubly_contig_helix_pair(
 
 void JunctionBindingPotential::check_doubly_contig_junction_pair(
         Domain* cd_1,
-        Domain* cd_2) {
+        Domain* cd_2,
+        int j) {
 
-    Domain* cd_j1 {*cd_1 + -1};
-    Domain* cd_j2 {cd_1};
+    Domain* cd_j1;
+    Domain* cd_j2;
     Domain* cd_j3;
     Domain* cd_j4;
     Domain* cd_k1 {cd_1};
@@ -354,25 +351,30 @@ void JunctionBindingPotential::check_doubly_contig_junction_pair(
         m_constraints_violated = true;
         return;
     }
-    cd_j3 = cd_k2;
-    cd_j4 = *cd_k2 + 1;
-    if (check_domains_exist_and_bound({cd_j4})) {
-        if (check_domains_exist_and_bound({cd_j1})) {
-            check_junction(cd_j1, cd_j2, cd_j3, cd_j4, cd_k1, cd_k2);
-        }
-        if (check_pair_stacked(cd_j3, cd_j4)) {
-            check_triplet_single_stacking(cd_k1, cd_k2, cd_j4);
-        }
+    if (j == 1) {
+        return;
     }
 
-    cd_j3 = cd_k2->m_bound_domain;
-    cd_j4 = *cd_j3 + -1;
-    if (check_domains_exist_and_bound({cd_j4})) {
-        if (check_domains_exist_and_bound({cd_j1})) {
-            check_junction(cd_j1, cd_j2, cd_j3, cd_j4, cd_k1, cd_k2);
+    vector<pair<Domain*, Domain*>> first_sel {};
+    first_sel.push_back({*cd_1 + -1, cd_1});
+    first_sel.push_back({*cd_1->m_bound_domain + 1, cd_1->m_bound_domain});
+    for (auto sel1: first_sel) {
+        cd_j1 = sel1.first;
+        cd_j2 = sel1.second;
+        cd_j3 = cd_k2;
+        cd_j4 = *cd_k2 + 1;
+        if (check_domains_exist_and_bound({cd_j4})) {
+            if (check_domains_exist_and_bound({cd_j1})) {
+                check_junction(cd_j1, cd_j2, cd_j3, cd_j4, cd_k1, cd_k2);
+            }
         }
-        if (check_pair_stacked(cd_j4, cd_j3)) {
-            check_triplet_single_stacking(cd_k1, cd_k2, cd_j4);
+
+        cd_j3 = cd_k2->m_bound_domain;
+        cd_j4 = *cd_j3 + -1;
+        if (check_domains_exist_and_bound({cd_j4})) {
+            if (check_domains_exist_and_bound({cd_j1})) {
+                check_junction(cd_j1, cd_j2, cd_j3, cd_j4, cd_k1, cd_k2);
+            }
         }
     }
 }

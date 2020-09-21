@@ -92,7 +92,7 @@ class JunctionBindingPotential: public BindingPotential {
             Domain* cd_2,
             int i,
             int j);
-    void check_doubly_contig_junction_pair(Domain* cd_1, Domain* cd_2);
+    void check_doubly_contig_junction_pair(Domain* cd_1, Domain* cd_2, int j);
     void check_forward_triplet_stacking_combos(
             Domain* cd_1,
             Domain* cd_2,
