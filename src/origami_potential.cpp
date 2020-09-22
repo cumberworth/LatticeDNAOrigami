@@ -108,13 +108,11 @@ int check_junction_stacking_penalty(
         else {
             stacking_penalty = 1;
         }
-        // cout << stacking_penalty << " (" << cd_j1.m_c << " "
-        // << cd_j1.m_d
-        // << "), (" << cd_j2.m_c << " " << cd_j2.m_d << "), (" << cd_j3.m_c
-        // << " " << cd_j3.m_d << "), (" << cd_j4.m_c << " "
-        // << cd_j4.m_d
-        // << "), (" << cd_k1.m_c << " " << cd_k1.m_d << "), (" << cd_k2.m_c
-        // << " " << cd_k2.m_d << ")\n";
+        //cout << stacking_penalty << " (" << cd_j1.m_c << " " << cd_j1.m_d
+        //     << "), (" << cd_j2.m_c << " " << cd_j2.m_d << "), (" << cd_j3.m_c
+        //     << " " << cd_j3.m_d << "), (" << cd_j4.m_c << " " << cd_j4.m_d
+        //     << "), (" << cd_k1.m_c << " " << cd_k1.m_d << "), (" << cd_k2.m_c
+        //     << " " << cd_k2.m_d << ")\n";
     }
     return stacking_penalty;
 }
@@ -161,10 +159,9 @@ void BindingPotential::check_triplet_single_stacking(
     if (ndr_1 != ndr_2) {
         m_delta_config.e -= m_pot.stacking_energy(*cd_h2, *cd_h3);
         m_delta_config.stacked_pairs -= 1;
-        // cout << "(" << cd_h1->m_c << " " << cd_h1->m_d << "), (" <<
-        // cd_h2->m_c
-        // << " " << cd_h2->m_d << "), (" << cd_h3->m_c << " " << cd_h3->m_d
-        // << ")\n";
+        //cout << "(" << cd_h1->m_c << " " << cd_h1->m_d << "), (" << cd_h2->m_c
+        //     << " " << cd_h2->m_d << "), (" << cd_h3->m_c << " " << cd_h3->m_d
+        //     << ")\n";
     }
 }
 
@@ -179,10 +176,9 @@ void BindingPotential::check_triplet_double_stacking(
         m_delta_config.e -= m_pot.stacking_energy(*cd_h1, *cd_h2) / 2;
         m_delta_config.e -= m_pot.stacking_energy(*cd_h2, *cd_h3) / 2;
         m_delta_config.stacked_pairs -= 1;
-        // cout << "(" << cd_h1->m_c << " " << cd_h1->m_d << "), (" <<
-        // cd_h2->m_c
-        // << " " << cd_h2->m_d << "), (" << cd_h3->m_c << " " << cd_h3->m_d
-        // << ")\n";
+        //cout << "(" << cd_h1->m_c << " " << cd_h1->m_d << "), (" << cd_h2->m_c
+        //     << " " << cd_h2->m_d << "), (" << cd_h3->m_c << " " << cd_h3->m_d
+        //     << ")\n";
     }
 }
 
@@ -281,9 +277,8 @@ void JunctionBindingPotential::check_regular_pair_constraints(
     if (check_pair_stacked(cd_1, cd_2)) {
         m_delta_config.e += m_pot.stacking_energy(*cd_1, *cd_2);
         m_delta_config.stacked_pairs += 1;
-        // cout << cd_1->m_c << " " << cd_1->m_d << ", " <<
-        // cd_2->m_c << " "
-        // << cd_2->m_d << "\n";
+        //cout << cd_1->m_c << " " << cd_1->m_d << ", " << cd_2->m_c << " "
+        //     << cd_2->m_d << "\n";
         if (i == -1) {
             check_backward_single_junction(cd_1, cd_2);
         }
@@ -317,9 +312,8 @@ void JunctionBindingPotential::check_doubly_contig_helix_pair(
         if (j == 0) {
             m_delta_config.e += m_pot.stacking_energy(*cd_1, *cd_2);
             m_delta_config.stacked_pairs += 1;
-            // cout << cd_1->m_c << " " << cd_1->m_d <<
-            // ", " << cd_2->m_c << " "
-            // << cd_2->m_d << "\n";
+            //cout << cd_1->m_c << " " << cd_1->m_d << ", " << cd_2->m_c << " "
+            //     << cd_2->m_d << "\n";
         }
         if (i == -1) {
             check_backward_triplet_stacking_combos(cd_1, cd_2, i);
@@ -583,20 +577,10 @@ void JunctionBindingPotential::check_backward_single_junction(
     Domain* cd_j4_bound {cd_j4->m_bound_domain};
     Domain* cd_j3_bound_for {cd_j3_bound->m_forward_domain};
     Domain* cd_j3_bound_bac {cd_j3_bound->m_backward_domain};
-    if (cd_j3->m_bound_domain->m_c == cd_j4->m_bound_domain->m_c) {
-        int diff {cd_j4_bound->m_d - cd_j3_bound->m_d};
-
-        // Must prevent double counting
-        if (abs(diff) == 1 and cd_j3->m_c > cd_j3_bound->m_c) {
-            return;
-        }
-        if (diff == 1) {
-            first_sel.push_back({cd_j3_bound, cd_j3_bound_bac});
-        }
-        else {
-            first_sel.push_back({cd_j3_bound, cd_j3_bound_for});
-            first_sel.push_back({cd_j3_bound, cd_j3_bound_bac});
-        }
+    if (cd_j3->m_bound_domain->m_c == cd_j4->m_bound_domain->m_c and
+        cd_j4_bound->m_d - cd_j3_bound->m_d == 1 and
+        cd_j3->m_c < cd_j3_bound->m_c) {
+        first_sel.push_back({cd_j3_bound, cd_j3_bound_bac});
     }
     else if (
             check_domains_exist_and_bound({cd_j3_bac, cd_j3_bound_bac}) and
@@ -686,22 +670,13 @@ void JunctionBindingPotential::check_forward_single_junction(
     Domain* cd_j2_bound {cd_j2->m_bound_domain};
     Domain* cd_j2_bound_for {cd_j2_bound->m_forward_domain};
     Domain* cd_j2_bound_bac {cd_j2_bound->m_backward_domain};
-    if (cd_j1_bound->m_c == cd_j2_bound->m_c) {
-        int diff {cd_j2_bound->m_d - cd_j1_bound->m_d};
 
-        // Must prevent double counting
-        if (abs(diff) == 1 and cd_j1->m_c > cd_j1_bound->m_c) {
-            return;
-        }
-        if (diff == 1) {
-            first_sel.push_back({cd_j2_bound, cd_j2_bound_for});
-        }
-        else {
-            first_sel.push_back({cd_j2_bound, cd_j2_bound_for});
-            first_sel.push_back({cd_j2_bound, cd_j2_bound_bac});
-        }
+    // Prevent double counting
+    if (cd_j1_bound->m_c == cd_j2_bound->m_c and
+        cd_j2_bound->m_d - cd_j1_bound->m_d == 1 and
+        cd_j1->m_c < cd_j1_bound->m_c) {
+        first_sel.push_back({cd_j2_bound, cd_j2_bound_for});
     }
-    // What if it is doubly contig on both sides?
     else if (
             check_domains_exist_and_bound({cd_j2_for, cd_j2_bound_bac}) and
             cd_j2_for->m_bound_domain == cd_j2_bound_bac) {

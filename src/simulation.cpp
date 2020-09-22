@@ -574,7 +574,7 @@ long long int GCMCSimulation::simulate(
         double old_ene {m_origami_system.energy()};
         accepted = movetype.attempt_move(step);
         if (not accepted) {
-            // cout << "\nReseting configuration\n";
+            //cout << "\nReseting configuration\n";
             movetype.reset_origami();
             m_ops.update_move_params();
             m_biases.calc_move();
