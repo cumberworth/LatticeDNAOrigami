@@ -90,7 +90,12 @@ int check_junction_stacking_penalty(
 
     int stacking_penalty {0};
     VectorThree ndr_k1 {cd_k2.m_pos - cd_k1.m_pos};
+
+    // Junction penalty only applies if kink pair have one particular config
+    // This is also known as the crossover config
     if (ndr_k1 == cd_k1.m_ore) {
+
+        // Change next domain vector signs to match domain order
         VectorThree ndr_1 {cd_j2.m_pos - cd_j1.m_pos};
         if (cd_j1.m_d > cd_j2.m_d) {
             ndr_1 = -ndr_1;
@@ -108,7 +113,7 @@ int check_junction_stacking_penalty(
         else {
             stacking_penalty = 1;
         }
-        //cout << stacking_penalty << " (" << cd_j1.m_c << " " << cd_j1.m_d
+        // cout << stacking_penalty << " (" << cd_j1.m_c << " " << cd_j1.m_d
         //     << "), (" << cd_j2.m_c << " " << cd_j2.m_d << "), (" << cd_j3.m_c
         //     << " " << cd_j3.m_d << "), (" << cd_j4.m_c << " " << cd_j4.m_d
         //     << "), (" << cd_k1.m_c << " " << cd_k1.m_d << "), (" << cd_k2.m_c
@@ -152,6 +157,8 @@ void BindingPotential::check_triplet_single_stacking(
         Domain* cd_h3) {
 
     VectorThree ndr_1 {cd_h2->m_pos - cd_h1->m_pos};
+
+    // Does not apply to crossover configuration
     if (ndr_1 == cd_h1->m_ore) {
         return;
     }
@@ -159,7 +166,8 @@ void BindingPotential::check_triplet_single_stacking(
     if (ndr_1 != ndr_2) {
         m_delta_config.e -= m_pot.stacking_energy(*cd_h2, *cd_h3);
         m_delta_config.stacked_pairs -= 1;
-        //cout << "(" << cd_h1->m_c << " " << cd_h1->m_d << "), (" << cd_h2->m_c
+        // cout << "(" << cd_h1->m_c << " " << cd_h1->m_d << "), (" <<
+        // cd_h2->m_c
         //     << " " << cd_h2->m_d << "), (" << cd_h3->m_c << " " << cd_h3->m_d
         //     << ")\n";
     }
@@ -176,7 +184,8 @@ void BindingPotential::check_triplet_double_stacking(
         m_delta_config.e -= m_pot.stacking_energy(*cd_h1, *cd_h2) / 2;
         m_delta_config.e -= m_pot.stacking_energy(*cd_h2, *cd_h3) / 2;
         m_delta_config.stacked_pairs -= 1;
-        //cout << "(" << cd_h1->m_c << " " << cd_h1->m_d << "), (" << cd_h2->m_c
+        // cout << "(" << cd_h1->m_c << " " << cd_h1->m_d << "), (" <<
+        // cd_h2->m_c
         //     << " " << cd_h2->m_d << "), (" << cd_h3->m_c << " " << cd_h3->m_d
         //     << ")\n";
     }
@@ -198,6 +207,7 @@ void JunctionBindingPotential::calc_stacking_and_steric_terms(
         Domain& cd_i,
         Domain& cd_j) {
 
+    // This will be used to not overcount from doubly contig things
     int j {0};
     for (auto cd: {&cd_i, &cd_j}) {
         check_constraints(cd, j);
@@ -206,6 +216,9 @@ void JunctionBindingPotential::calc_stacking_and_steric_terms(
         }
         j++;
     }
+
+    // Some triplets have still not been checked
+    // Check here to prevent double counting
     check_central_triplet_stacking_combos(cd_i, cd_j);
 }
 
@@ -245,6 +258,8 @@ void JunctionBindingPotential::check_constraints(Domain* cd, int j) {
     }
     Domain* cd_prev {*cd + -1};
     Domain* cd_forw {*cd + 1};
+
+    // Have not checked the middle triplet on the same chain
     if (check_domains_exist_and_bound({cd_prev, cd_forw})) {
         if (check_pair_stacked(cd, cd_forw)) {
             if (check_pair_stacked(cd_prev, cd)) {
@@ -277,7 +292,7 @@ void JunctionBindingPotential::check_regular_pair_constraints(
     if (check_pair_stacked(cd_1, cd_2)) {
         m_delta_config.e += m_pot.stacking_energy(*cd_1, *cd_2);
         m_delta_config.stacked_pairs += 1;
-        //cout << cd_1->m_c << " " << cd_1->m_d << ", " << cd_2->m_c << " "
+        // cout << cd_1->m_c << " " << cd_1->m_d << ", " << cd_2->m_c << " "
         //     << cd_2->m_d << "\n";
         if (i == -1) {
             check_backward_single_junction(cd_1, cd_2);
@@ -304,28 +319,34 @@ void JunctionBindingPotential::check_doubly_contig_helix_pair(
         int i,
         int j) {
 
+    // Only check once to prevent double counting
+    if (j == 1) {
+        return;
+    }
+
+    // Twist constraint needs this to be checked first
     VectorThree ndr {cd_2->m_pos - cd_1->m_pos};
     if (ndr == cd_1->m_ore or ndr == -cd_1->m_ore) {
         m_constraints_violated = true;
+        return;
     }
-    else if (cd_1->check_twist_constraint(ndr, *cd_2)) {
-        if (j == 0) {
-            m_delta_config.e += m_pot.stacking_energy(*cd_1, *cd_2);
-            m_delta_config.stacked_pairs += 1;
-            //cout << cd_1->m_c << " " << cd_1->m_d << ", " << cd_2->m_c << " "
-            //     << cd_2->m_d << "\n";
-        }
-        if (i == -1) {
-            check_backward_triplet_stacking_combos(cd_1, cd_2, i);
-            check_backward_single_junction(cd_1, cd_2);
-        }
-        else {
-            check_forward_triplet_stacking_combos(cd_1, cd_2, i);
-            check_forward_single_junction(cd_1, cd_2);
-        }
+    if (cd_1->check_twist_constraint(ndr, *cd_2)) {
+        m_delta_config.e += m_pot.stacking_energy(*cd_1, *cd_2);
+        m_delta_config.stacked_pairs += 1;
+        // cout << cd_1->m_c << " " << cd_1->m_d << ", " << cd_2->m_c << " "
+        //     << cd_2->m_d << "\n";
     }
     else {
         m_constraints_violated = true;
+        return;
+    }
+    if (i == -1) {
+        check_backward_triplet_stacking_combos(cd_1, cd_2, i);
+        check_backward_single_junction(cd_1, cd_2);
+    }
+    else {
+        check_forward_triplet_stacking_combos(cd_1, cd_2, i);
+        check_forward_single_junction(cd_1, cd_2);
     }
 }
 
@@ -341,14 +362,26 @@ void JunctionBindingPotential::check_doubly_contig_junction_pair(
     Domain* cd_k1 {cd_1};
     Domain* cd_k2 {cd_2};
     VectorThree ndr {cd_k2->m_pos - cd_k1->m_pos};
+
+    // They just have the crossover config
     if (cd_k1->m_ore != ndr) {
         m_constraints_violated = true;
         return;
     }
+
+    // Only check once to prevent double counting
+    // Unlike doubly contig helix, must check the hard constraint as the
+    // directions oppose
     if (j == 1) {
         return;
     }
 
+    // Must check all four combinations of j1/j2 and j3/j4 pairs
+    // Don't have to worry about j1/j2 or j3/j4 being doubly contiguous,
+    // because either it is a junction, so the junction penalty won't apply,
+    // or it is a helix, which means it is not possible as there cannot be a
+    // triply conitigous set which is a helix with one pair and junction with
+    // another.
     vector<pair<Domain*, Domain*>> first_sel {};
     first_sel.push_back({*cd_1 + -1, cd_1});
     first_sel.push_back({*cd_1->m_bound_domain + 1, cd_1->m_bound_domain});
@@ -371,6 +404,55 @@ void JunctionBindingPotential::check_doubly_contig_junction_pair(
             }
         }
     }
+    // Obviously there can be no double stacked triplets, but single stacked
+    // triplets are also not necessary to check as the unstacked pair must have
+    // a crossover config, which the single stacked triplet term does not apply
+    // to
+}
+
+void JunctionBindingPotential::check_junction(
+        Domain* cd_j1,
+        Domain* cd_j2,
+        Domain* cd_j3,
+        Domain* cd_j4,
+        Domain* cd_k1,
+        Domain* cd_k2) {
+
+    // Put domains in order along chain
+    Domain* hold;
+    if (cd_k1->m_d > cd_k2->m_d) {
+        hold = cd_k1;
+        cd_k1 = cd_k2;
+        cd_k2 = hold;
+        hold = cd_j1;
+        cd_j1 = cd_j4;
+        cd_j4 = hold;
+        hold = cd_j2;
+        cd_j2 = cd_j3;
+        cd_j3 = hold;
+    }
+    // this is inefficient for three quarter domains
+    if (not(check_pair_stacked(cd_j1, cd_j2) and
+            check_pair_stacked(cd_j3, cd_j4))) {
+        return;
+    }
+    if (not cd_j1->check_junction_constraint(
+                *cd_j2, *cd_j3, *cd_j4, *cd_k1, *cd_k2)) {
+        m_constraints_violated = true;
+        return;
+    }
+    auto stacking_penalty {check_junction_stacking_penalty(
+            *cd_j1, *cd_j2, *cd_j3, *cd_j4, *cd_k1, *cd_k2)};
+    if (stacking_penalty == 1) {
+        m_delta_config.e -= m_pot.stacking_energy(*cd_j1, *cd_j2) / 2;
+        m_delta_config.e -= m_pot.stacking_energy(*cd_j3, *cd_j4) / 2;
+        m_delta_config.stacked_pairs -= 1;
+    }
+    else if (stacking_penalty == 2) {
+        m_delta_config.e -= m_pot.stacking_energy(*cd_j1, *cd_j2);
+        m_delta_config.e -= m_pot.stacking_energy(*cd_j3, *cd_j4);
+        m_delta_config.stacked_pairs -= 2;
+    }
 }
 
 void JunctionBindingPotential::check_backward_triplet_stacking_combos(
@@ -386,13 +468,17 @@ void JunctionBindingPotential::check_backward_triplet_stacking_combos(
     if (not check_pair_stacked(cd_h2, cd_h3)) {
         return;
     }
-    bool h2_h3_doubly_contig {doubly_contiguous(cd_h2, cd_h3)};
 
     // Check same chain
     cd_h1 = *cd_1 + -1;
+
+    // It can only be doubly contig in this direction
+    bool h1_h2_doubly_contig {false};
+    bool h2_h3_doubly_contig {doubly_contiguous(cd_h2, cd_h3)};
     if (check_domains_exist_and_bound({cd_h1})) {
+        h1_h2_doubly_contig = doubly_contiguous(cd_h1, cd_h2);
         if (check_pair_stacked(cd_h1, cd_h2)) {
-            if (h2_h3_doubly_contig and doubly_contiguous(cd_h1, cd_h2)) {
+            if (h1_h2_doubly_contig and h2_h3_doubly_contig) {
                 check_triply_contig_helix(cd_h1, cd_h2, cd_h3);
                 if (m_constraints_violated) {
                     return;
@@ -408,15 +494,13 @@ void JunctionBindingPotential::check_backward_triplet_stacking_combos(
     // Check helices that extend to bound chain
     Domain* cd_h2_prev {cd_h1};
     cd_h1 = *(cd_1->m_bound_domain) + 1;
-    if (check_domains_exist_and_bound({cd_h1}) and
-        cd_h1->m_bound_domain != cd_h3 and not h2_h3_doubly_contig) {
+    if (check_domains_exist_and_bound({cd_h1}) and not h2_h3_doubly_contig) {
         if (check_pair_stacked(cd_1->m_bound_domain, cd_h1)) {
             check_triplet_double_stacking(cd_h1, cd_h2, cd_h3);
         }
     }
     cd_h1 = *(cd_1->m_bound_domain) + -1;
-    if (check_domains_exist_and_bound({cd_h1}) and
-        cd_h1->m_bound_domain != cd_h2_prev and not h2_h3_doubly_contig) {
+    if (check_domains_exist_and_bound({cd_h1}) and not h1_h2_doubly_contig) {
         if (check_pair_stacked(cd_h1, cd_1->m_bound_domain)) {
             check_triplet_double_stacking(cd_h1, cd_h2, cd_h3);
         }
@@ -437,14 +521,18 @@ void JunctionBindingPotential::check_forward_triplet_stacking_combos(
     cd_h2 = cd_2;
     cd_h1 = cd_1;
     bool first_pair_stacked {check_pair_stacked(cd_h1, cd_h2)};
-    bool h1_h2_doubly_contig {doubly_contiguous(cd_h1, cd_h2)};
 
     // Check same chain
     cd_h3 = *(cd_2) + 1;
+    bool h1_h2_doubly_contig {doubly_contiguous(cd_h1, cd_h2)};
+
+    // Can only be doubly contig in this direction
+    bool h2_h3_doubly_contig {false};
     if (check_domains_exist_and_bound({cd_h3})) {
+        h2_h3_doubly_contig = doubly_contiguous(cd_h2, cd_h3);
         bool second_pair_stacked {check_pair_stacked(cd_h2, cd_h3)};
         if (first_pair_stacked and second_pair_stacked) {
-            if (h1_h2_doubly_contig and doubly_contiguous(cd_h2, cd_h3)) {
+            if (h1_h2_doubly_contig and h2_h3_doubly_contig) {
                 check_triply_contig_helix(cd_h1, cd_h2, cd_h3);
                 if (m_constraints_violated) {
                     return;
@@ -460,8 +548,7 @@ void JunctionBindingPotential::check_forward_triplet_stacking_combos(
     // Check helices that extend to bound chain
     Domain* cd_h2_next {cd_h3};
     cd_h3 = *(cd_2->m_bound_domain) + 1;
-    if (check_domains_exist_and_bound({cd_h3}) and
-        cd_h3->m_bound_domain != cd_h2_next and not h1_h2_doubly_contig) {
+    if (check_domains_exist_and_bound({cd_h3}) and not h2_h3_doubly_contig) {
         if (check_pair_stacked(cd_2->m_bound_domain, cd_h3)) {
             if (first_pair_stacked) {
                 check_triplet_double_stacking(cd_h1, cd_h2, cd_h3);
@@ -472,8 +559,7 @@ void JunctionBindingPotential::check_forward_triplet_stacking_combos(
         }
     }
     cd_h3 = *(cd_2->m_bound_domain) + -1;
-    if (check_domains_exist_and_bound({cd_h3}) and
-        cd_h3->m_bound_domain != cd_h1 and not h1_h2_doubly_contig) {
+    if (check_domains_exist_and_bound({cd_h3}) and not h1_h2_doubly_contig) {
         if (check_pair_stacked(cd_h3, cd_2->m_bound_domain)) {
             if (first_pair_stacked) {
                 check_triplet_double_stacking(cd_h1, cd_h2, cd_h3);
@@ -492,6 +578,8 @@ void JunctionBindingPotential::check_central_triplet_stacking_combos(
         Domain& cd_i,
         Domain& cd_j) {
 
+    // Doubly contig of either h1/h2 or h2/h3 should be exluded because it will
+    // have already been checked by the same chain central triplet check
     Domain* cd_h1 {cd_i + -1};
     Domain* cd_h2 {&cd_i};
     Domain* cd_h3;
@@ -577,11 +665,14 @@ void JunctionBindingPotential::check_backward_single_junction(
     Domain* cd_j4_bound {cd_j4->m_bound_domain};
     Domain* cd_j3_bound_for {cd_j3_bound->m_forward_domain};
     Domain* cd_j3_bound_bac {cd_j3_bound->m_backward_domain};
-    if (cd_j3->m_bound_domain->m_c == cd_j4->m_bound_domain->m_c and
-        cd_j4_bound->m_d - cd_j3_bound->m_d == 1 and
-        cd_j3->m_c < cd_j3_bound->m_c) {
+
+    // Only one direction if doubly contig helix
+    if (cd_j3_bound_for == cd_j4->m_bound_domain) {
         first_sel.push_back({cd_j3_bound, cd_j3_bound_bac});
     }
+
+    // Otherwise have to consider possibily of next pair being doubly contig
+    // Will already be included with the same chain above
     else if (
             check_domains_exist_and_bound({cd_j3_bac, cd_j3_bound_bac}) and
             cd_j3_bac->m_bound_domain == cd_j3_bound_bac) {
@@ -671,12 +762,13 @@ void JunctionBindingPotential::check_forward_single_junction(
     Domain* cd_j2_bound_for {cd_j2_bound->m_forward_domain};
     Domain* cd_j2_bound_bac {cd_j2_bound->m_backward_domain};
 
-    // Prevent double counting
-    if (cd_j1_bound->m_c == cd_j2_bound->m_c and
-        cd_j2_bound->m_d - cd_j1_bound->m_d == 1 and
-        cd_j1->m_c < cd_j1_bound->m_c) {
+    // Only one direction if doubly contig helix
+    if (*cd_j1_bound + 1 == cd_j2_bound) {
         first_sel.push_back({cd_j2_bound, cd_j2_bound_for});
     }
+
+    // Otherwise have to consider possibily of next pair being doubly contig
+    // Will already be included with the same chain above
     else if (
             check_domains_exist_and_bound({cd_j2_for, cd_j2_bound_bac}) and
             cd_j2_for->m_bound_domain == cd_j2_bound_bac) {
@@ -828,51 +920,6 @@ void JunctionBindingPotential::check_central_single_junction(
             }
             check_junction(cd_j1, cd_j2, cd_j3, cd_j4, cd_k1, cd_k2);
         }
-    }
-}
-
-void JunctionBindingPotential::check_junction(
-        Domain* cd_j1,
-        Domain* cd_j2,
-        Domain* cd_j3,
-        Domain* cd_j4,
-        Domain* cd_k1,
-        Domain* cd_k2) {
-
-    // Put domains in order along chain
-    Domain* hold;
-    if (cd_k1->m_d > cd_k2->m_d) {
-        hold = cd_k1;
-        cd_k1 = cd_k2;
-        cd_k2 = hold;
-        hold = cd_j1;
-        cd_j1 = cd_j4;
-        cd_j4 = hold;
-        hold = cd_j2;
-        cd_j2 = cd_j3;
-        cd_j3 = hold;
-    }
-    // this is inefficient for three quarter domains
-    if (not(check_pair_stacked(cd_j1, cd_j2) and
-            check_pair_stacked(cd_j3, cd_j4))) {
-        return;
-    }
-    if (not cd_j1->check_junction_constraint(
-                *cd_j2, *cd_j3, *cd_j4, *cd_k1, *cd_k2)) {
-        m_constraints_violated = true;
-        return;
-    }
-    auto stacking_penalty {check_junction_stacking_penalty(
-            *cd_j1, *cd_j2, *cd_j3, *cd_j4, *cd_k1, *cd_k2)};
-    if (stacking_penalty == 1) {
-        m_delta_config.e -= m_pot.stacking_energy(*cd_j1, *cd_j2) / 2;
-        m_delta_config.e -= m_pot.stacking_energy(*cd_j3, *cd_j4) / 2;
-        m_delta_config.stacked_pairs -= 1;
-    }
-    else if (stacking_penalty == 2) {
-        m_delta_config.e -= m_pot.stacking_energy(*cd_j1, *cd_j2);
-        m_delta_config.e -= m_pot.stacking_energy(*cd_j3, *cd_j4);
-        m_delta_config.stacked_pairs -= 2;
     }
 }
 

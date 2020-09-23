@@ -23,12 +23,14 @@ using nearestNeighbour::ThermoOfHybrid;
 using parser::InputParameters;
 using utility::VectorThree;
 
-// Shared constraint checkers
 bool check_domain_orientations_opposing(Domain& cd_i, Domain& cd_j);
-bool check_doubly_contig(Domain* cd_1, Domain* cd_2);
 bool check_domains_exist_and_bound(vector<Domain*> cdv);
 bool doubly_contiguous(Domain* cd_1, Domain* cd_2);
+
+// Domain order will be checked
 bool check_pair_stacked(Domain* cd_1, Domain* cd_2);
+
+// Domain order of j1 to j4 will be checked, but not k1 and k2
 int check_junction_stacking_penalty(
         Domain& cd_j1,
         Domain& cd_j2,
@@ -44,19 +46,22 @@ struct DeltaConfig {
     int stacked_juncts {0};
 };
 
-// Forward declaration
 class OrigamiPotential;
 
 /** Potential for fully complementary binding domains
  *
- * Includes two and three body (linear helix) terms.
+ * Intended as a parent to specific potentials. Needs to be reworked to make
+ * that a reality.
  */
 class BindingPotential {
   public:
     BindingPotential(OrigamiPotential& pot);
     virtual ~BindingPotential() {}
 
+    /** Calculate full potential energy change */
     DeltaConfig bind_domains(Domain& cd_i, Domain& cd_j);
+
+    /** Calculate stacking term energy change only */
     DeltaConfig check_stacking(Domain& cd_i, Domain& cd_j);
 
     bool m_constraints_violated;
@@ -65,71 +70,78 @@ class BindingPotential {
     OrigamiPotential& m_pot;
     DeltaConfig m_delta_config;
 
+    /** Change in stacking and steric energy when changing one domain */
     virtual void calc_stacking_and_steric_terms(Domain& cd_i, Domain& cd_j) = 0;
+
+    /** Penalty for triplets with one stacked pair
+     *
+     *  Order is not checked. Assumes second pair are stacked.
+     */
     void check_triplet_single_stacking(
             Domain* cd_h1,
             Domain* cd_h2,
             Domain* cd_h3);
+
+    /** Penalty for triplets with two stacked pairs
+     *
+     *  Order is not checked, but does not matter. Assumes both pairs are
+     *  stacked.
+     */
     void check_triplet_double_stacking(
             Domain* cd_h1,
             Domain* cd_h2,
             Domain* cd_h3);
+
+    // Order is not checked, but does not matter
     void check_triply_contig_helix(Domain* cd_h1, Domain* cd_h2, Domain* cd_h3);
 };
 
+/** Potential as defined in PhD thesis of Alexander Cumberworth */
 class JunctionBindingPotential: public BindingPotential {
-
   public:
     using BindingPotential::BindingPotential;
 
   private:
     void calc_stacking_and_steric_terms(Domain& cd_i, Domain& cd_j) override;
 
+    /** Checks many stacking and steric terms that involve the given domain
+     *
+     *  However, not all combinations involving this domain are checked. Some
+     *  that equally involve it and its bound domain are checked in the calling
+     *  function. j is used to check terms involving doubly contiguous domain
+     *  only once to prevent double counting.
+     */
     void check_constraints(Domain* cd, int j);
+
+    /** Checks stacking and steric terms of a pair of adjacent bound domains
+     *
+     *  i tells if it is looking backwards from the change domain or forwards.
+     *  This determines which triplet and junction combinations to check. The
+     *  order of the domains is not checked.
+     */
     void check_regular_pair_constraints(Domain* cd_1, Domain* cd_2, int i);
+
+    /** Checks stacking and steric terms adjacent doubly contig helix domains
+     *
+     *  i and j are as in the above functions. The order of the domains is not
+     *  checked.
+     */
     void check_doubly_contig_helix_pair(
             Domain* cd_1,
             Domain* cd_2,
             int i,
             int j);
+
+    /** Checks stacking and steric terms adjacent doubly contig junction domains
+     *
+     *  i and j are as in the above functions. The order of the domains is not
+     *  checked.
+     */
     void check_doubly_contig_junction_pair(Domain* cd_1, Domain* cd_2, int j);
-    void check_forward_triplet_stacking_combos(
-            Domain* cd_1,
-            Domain* cd_2,
-            int i);
-    void check_backward_triplet_stacking_combos(
-            Domain* cd_1,
-            Domain* cd_2,
-            int i);
-    void check_central_triplet_stacking_combos(Domain& cd_i, Domain& cd_j);
 
-    /** Check for unstacked single junctions from last two domains
+    /** Checks junction steric and stacking constraints
      *
-     * The domains passed are the last two domains of the junction.
-     * A total of nine combinations of domains will be tested,
-     * including two different kink pairs
-     */
-    void check_backward_single_junction(Domain* cd_1, Domain* cd_2);
-
-    /** Check for unstacked single junctions from first two domains
-     *
-     * The domains passed are the first two domains of the junction.
-     * A total of nine combinations of domains will be tested,
-     * including two different kink pairs
-     */
-    void check_forward_single_junction(Domain* cd_1, Domain* cd_2);
-
-    /** Check for unstacked single junctions from kink pair
-     *
-     * The domains passed are the kink pair. A total of nine
-     * combinations of domains will be tested.
-     */
-    void check_central_single_junction(Domain* cd_1, Domain* cd_2);
-
-    /** Check for unstacked single junctions
-     *
-     * This will subtract a stacked pair from configuration that are
-     * implied to be less stacked than the other rules would imply.
+     *  Domain order of k1 and k2 is checked, but not order of j1/j2 and j3/j4.
      */
     void check_junction(
             Domain* cd_j1,
@@ -138,6 +150,57 @@ class JunctionBindingPotential: public BindingPotential {
             Domain* cd_j4,
             Domain* cd_k1,
             Domain* cd_k2);
+
+    /** Check forward combinations of triplet stacking terms
+     *
+     *  The third domain is either the next along the chain, or either the
+     *  next or the previous on the chain bound to cd_2. Assumes the domains
+     *  are ordered.
+     */
+    void check_forward_triplet_stacking_combos(
+            Domain* cd_1,
+            Domain* cd_2,
+            int i);
+
+    /** Check backward combinations of triplet stacking terms
+     *
+     *  The third domain is either the previous along the chain, or either the
+     *  next or the previous on the chain bound to cd_1. Assumes the domains
+     *  are ordered.
+     */
+    void check_backward_triplet_stacking_combos(
+            Domain* cd_1,
+            Domain* cd_2,
+            int i);
+    /** Check triplet combinations around a bound pair
+     *
+     *  Does not check triplets of all three on one or the other chain, as this
+     *  is check separately. There are four combinations to check.
+     */
+    void check_central_triplet_stacking_combos(Domain& cd_i, Domain& cd_j);
+
+    /** Check for unstacked single junctions from last two domains
+     *
+     * The domains passed are the last two domains of the junction.
+     * A total of nine combinations of domains will be tested,
+     * including two different kink pairs. Domains assumed ordered.
+     */
+    void check_backward_single_junction(Domain* cd_1, Domain* cd_2);
+
+    /** Check for unstacked single junctions from first two domains
+     *
+     * The domains passed are the first two domains of the junction.
+     * A total of nine combinations of domains will be tested,
+     * including two different kink pairs. Domains assumed ordered.
+     */
+    void check_forward_single_junction(Domain* cd_1, Domain* cd_2);
+
+    /** Check for unstacked single junctions from kink pair
+     *
+     * The domains passed are the kink pair. A total of nine
+     * combinations of domains will be tested. Domains assumed ordered.
+     */
+    void check_central_single_junction(Domain* cd_1, Domain* cd_2);
 };
 
 class MisbindingPotential {
