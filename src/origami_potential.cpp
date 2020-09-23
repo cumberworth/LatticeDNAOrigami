@@ -113,7 +113,7 @@ int check_junction_stacking_penalty(
         else {
             stacking_penalty = 1;
         }
-        // cout << stacking_penalty << " (" << cd_j1.m_c << " " << cd_j1.m_d
+        //cout << stacking_penalty << " (" << cd_j1.m_c << " " << cd_j1.m_d
         //     << "), (" << cd_j2.m_c << " " << cd_j2.m_d << "), (" << cd_j3.m_c
         //     << " " << cd_j3.m_d << "), (" << cd_j4.m_c << " " << cd_j4.m_d
         //     << "), (" << cd_k1.m_c << " " << cd_k1.m_d << "), (" << cd_k2.m_c
@@ -166,8 +166,7 @@ void BindingPotential::check_triplet_single_stacking(
     if (ndr_1 != ndr_2) {
         m_delta_config.e -= m_pot.stacking_energy(*cd_h2, *cd_h3);
         m_delta_config.stacked_pairs -= 1;
-        // cout << "(" << cd_h1->m_c << " " << cd_h1->m_d << "), (" <<
-        // cd_h2->m_c
+        //cout << "(" << cd_h1->m_c << " " << cd_h1->m_d << "), (" << cd_h2->m_c
         //     << " " << cd_h2->m_d << "), (" << cd_h3->m_c << " " << cd_h3->m_d
         //     << ")\n";
     }
@@ -184,8 +183,7 @@ void BindingPotential::check_triplet_double_stacking(
         m_delta_config.e -= m_pot.stacking_energy(*cd_h1, *cd_h2) / 2;
         m_delta_config.e -= m_pot.stacking_energy(*cd_h2, *cd_h3) / 2;
         m_delta_config.stacked_pairs -= 1;
-        // cout << "(" << cd_h1->m_c << " " << cd_h1->m_d << "), (" <<
-        // cd_h2->m_c
+        //cout << "(" << cd_h1->m_c << " " << cd_h1->m_d << "), (" << cd_h2->m_c
         //     << " " << cd_h2->m_d << "), (" << cd_h3->m_c << " " << cd_h3->m_d
         //     << ")\n";
     }
@@ -292,7 +290,7 @@ void JunctionBindingPotential::check_regular_pair_constraints(
     if (check_pair_stacked(cd_1, cd_2)) {
         m_delta_config.e += m_pot.stacking_energy(*cd_1, *cd_2);
         m_delta_config.stacked_pairs += 1;
-        // cout << cd_1->m_c << " " << cd_1->m_d << ", " << cd_2->m_c << " "
+        //cout << cd_1->m_c << " " << cd_1->m_d << ", " << cd_2->m_c << " "
         //     << cd_2->m_d << "\n";
         if (i == -1) {
             check_backward_single_junction(cd_1, cd_2);
@@ -333,7 +331,7 @@ void JunctionBindingPotential::check_doubly_contig_helix_pair(
     if (cd_1->check_twist_constraint(ndr, *cd_2)) {
         m_delta_config.e += m_pot.stacking_energy(*cd_1, *cd_2);
         m_delta_config.stacked_pairs += 1;
-        // cout << cd_1->m_c << " " << cd_1->m_d << ", " << cd_2->m_c << " "
+        //cout << cd_1->m_c << " " << cd_1->m_d << ", " << cd_2->m_c << " "
         //     << cd_2->m_d << "\n";
     }
     else {
@@ -472,11 +470,9 @@ void JunctionBindingPotential::check_backward_triplet_stacking_combos(
     // Check same chain
     cd_h1 = *cd_1 + -1;
 
-    // It can only be doubly contig in this direction
-    bool h1_h2_doubly_contig {false};
     bool h2_h3_doubly_contig {doubly_contiguous(cd_h2, cd_h3)};
     if (check_domains_exist_and_bound({cd_h1})) {
-        h1_h2_doubly_contig = doubly_contiguous(cd_h1, cd_h2);
+        bool h1_h2_doubly_contig {doubly_contiguous(cd_h1, cd_h2)};
         if (check_pair_stacked(cd_h1, cd_h2)) {
             if (h1_h2_doubly_contig and h2_h3_doubly_contig) {
                 check_triply_contig_helix(cd_h1, cd_h2, cd_h3);
@@ -494,13 +490,17 @@ void JunctionBindingPotential::check_backward_triplet_stacking_combos(
     // Check helices that extend to bound chain
     Domain* cd_h2_prev {cd_h1};
     cd_h1 = *(cd_1->m_bound_domain) + 1;
-    if (check_domains_exist_and_bound({cd_h1}) and not h2_h3_doubly_contig) {
+    if (check_domains_exist_and_bound({cd_h1}) and
+            cd_h1->m_bound_domain != cd_h2_prev and
+            cd_h1->m_bound_domain != cd_h3) {
         if (check_pair_stacked(cd_1->m_bound_domain, cd_h1)) {
             check_triplet_double_stacking(cd_h1, cd_h2, cd_h3);
         }
     }
     cd_h1 = *(cd_1->m_bound_domain) + -1;
-    if (check_domains_exist_and_bound({cd_h1}) and not h1_h2_doubly_contig) {
+    if (check_domains_exist_and_bound({cd_h1}) and
+            cd_h1->m_bound_domain != cd_h2_prev and
+            cd_h1->m_bound_domain != cd_h3) {
         if (check_pair_stacked(cd_h1, cd_1->m_bound_domain)) {
             check_triplet_double_stacking(cd_h1, cd_h2, cd_h3);
         }
@@ -526,12 +526,10 @@ void JunctionBindingPotential::check_forward_triplet_stacking_combos(
     cd_h3 = *(cd_2) + 1;
     bool h1_h2_doubly_contig {doubly_contiguous(cd_h1, cd_h2)};
 
-    // Can only be doubly contig in this direction
-    bool h2_h3_doubly_contig {false};
     if (check_domains_exist_and_bound({cd_h3})) {
-        h2_h3_doubly_contig = doubly_contiguous(cd_h2, cd_h3);
         bool second_pair_stacked {check_pair_stacked(cd_h2, cd_h3)};
         if (first_pair_stacked and second_pair_stacked) {
+            bool h2_h3_doubly_contig {doubly_contiguous(cd_h2, cd_h3)};
             if (h1_h2_doubly_contig and h2_h3_doubly_contig) {
                 check_triply_contig_helix(cd_h1, cd_h2, cd_h3);
                 if (m_constraints_violated) {
@@ -548,7 +546,9 @@ void JunctionBindingPotential::check_forward_triplet_stacking_combos(
     // Check helices that extend to bound chain
     Domain* cd_h2_next {cd_h3};
     cd_h3 = *(cd_2->m_bound_domain) + 1;
-    if (check_domains_exist_and_bound({cd_h3}) and not h2_h3_doubly_contig) {
+    if (check_domains_exist_and_bound({cd_h3}) and
+            cd_h3->m_bound_domain != cd_h2_next and
+            cd_h3->m_bound_domain != cd_h1) {
         if (check_pair_stacked(cd_2->m_bound_domain, cd_h3)) {
             if (first_pair_stacked) {
                 check_triplet_double_stacking(cd_h1, cd_h2, cd_h3);
@@ -559,7 +559,9 @@ void JunctionBindingPotential::check_forward_triplet_stacking_combos(
         }
     }
     cd_h3 = *(cd_2->m_bound_domain) + -1;
-    if (check_domains_exist_and_bound({cd_h3}) and not h1_h2_doubly_contig) {
+    if (check_domains_exist_and_bound({cd_h3}) and
+            cd_h3->m_bound_domain != cd_h2_next and
+            cd_h3->m_bound_domain != cd_h1) {
         if (check_pair_stacked(cd_h3, cd_2->m_bound_domain)) {
             if (first_pair_stacked) {
                 check_triplet_double_stacking(cd_h1, cd_h2, cd_h3);
