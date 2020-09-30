@@ -21,13 +21,13 @@ def main():
     old_ops = old_ops.sort_values()[::-1]
 #    spline_params = interpolate.splrep(old_temps, old_ops)
     interpolated_ops_f = interpolate.interp1d(old_smults, old_ops, kind='linear',
-            fill_value='extrapolate')
+                                              fill_value='extrapolate')
     guess_temps = np.linspace(old_temps[1], old_temps[len(old_temps) - 2],
-            num=args.threads - 4)
+                              num=args.threads - 4)
     desired_ops = np.linspace(args.max_op - 1, 1, num=args.threads - 4)
     new_temps = minimize(sum_of_squared_errors, guess_temps,
-#             args=(desired_ops, spline_params))
-             args=(desired_ops, interpolated_ops_f)).x
+                         #             args=(desired_ops, spline_params))
+                         args=(desired_ops, interpolated_ops_f)).x
     new_temps.sort()
     low_temps = [new_temps[0] - 3, new_temps[0] - 1, new_temps[0] - 0.3]
     high_temp = new_temps[len(new_temps) - 1]
@@ -42,7 +42,7 @@ def main():
     print(temps_string)
 
 
-#def sum_of_squared_errors(temps, desired_ops, spline_params):
+# def sum_of_squared_errors(temps, desired_ops, spline_params):
 #    new_ops = interpolate.splev(temps, spline_params, der=0)
 #    return ((new_ops - desired_ops)**2).sum()
 def sum_of_squared_errors(temps, desired_ops, interpolated_ops_f):
@@ -55,7 +55,9 @@ def sum_of_squared_errors(temps, desired_ops, interpolated_ops_f):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
         'inp_filename',
         type=str,

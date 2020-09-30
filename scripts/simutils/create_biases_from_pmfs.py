@@ -14,7 +14,7 @@ def main():
     pmf_array = np.loadtxt(pmfs_filename, skiprows=1)
     pmfs = {(i[0], i[1]): i[2] for i in pmf_array}
     for win in wins:
-        biases = {'biases':[]}
+        biases = {'biases': []}
         domain_lims = [win[0][0], win[1][0]]
         staple_lims = [win[0][1], win[1][1]]
         for domain in range(domain_lims[0], domain_lims[1] + 1):
@@ -32,7 +32,7 @@ def main():
 
         win_filename = create_win_filename(win, filebase)
         json.dump(biases, open(win_filename, 'w'), indent=4,
-                separators=(',', ': '))
+                  separators=(',', ': '))
 
 
 if __name__ == '__main__':

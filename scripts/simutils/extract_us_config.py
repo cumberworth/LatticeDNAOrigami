@@ -9,6 +9,7 @@ import sys
 from origamipy.origami_io import *
 from origamipy.us_process import *
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('inp_filebase', type=str, help='Input filebase')

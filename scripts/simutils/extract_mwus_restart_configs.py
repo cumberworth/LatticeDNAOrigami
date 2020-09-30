@@ -9,38 +9,41 @@ import sys
 from origamipy import files
 from origamipy import us_process
 
+
 def main():
     args = parse_args()
     tags, wins = us_process.read_windows_file(args.wins_filename)
     for i, win in enumerate(wins):
         inp_postfix = '_iter-{}.trj'.format(args.iteration)
         trj_inp_filename = us_process.create_win_filename(win,
-                args.inp_filebase, inp_postfix)
+                                                          args.inp_filebase, inp_postfix)
         trj_out_filename = us_process.create_win_filename(win,
-                args.out_filebase, '.trj.restart')
+                                                          args.out_filebase, '.trj.restart')
         trj_file = files.UnparsedMultiLineStepInpFile(trj_inp_filename)
         with open(trj_out_filename, 'w') as out:
             out.write(trj_file.get_last_step())
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
-            'inp_filebase',
-            type=str,
-            help='Input filebase')
+        'inp_filebase',
+        type=str,
+        help='Input filebase')
     parser.add_argument(
-            'out_filebase',
-            type=str,
-            help='Output filebase')
+        'out_filebase',
+        type=str,
+        help='Output filebase')
     parser.add_argument(
-            'wins_filename',
-            type=str,
-            help='Windows file')
+        'wins_filename',
+        type=str,
+        help='Windows file')
     parser.add_argument(
-            'iteration',
-            type=str,
-            help='Iteration')
+        'iteration',
+        type=str,
+        help='Iteration')
 
     return parser.parse_args()
 

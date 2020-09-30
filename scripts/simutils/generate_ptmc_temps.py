@@ -23,12 +23,12 @@ def main():
     # Prevent instabilities in minimization (need monotonically decreasing)
     old_ops = old_ops.sort_values()[::-1]
     interpolated_ops_f = interpolate.interp1d(old_temps, old_ops, kind='linear',
-            fill_value='extrapolate')
+                                              fill_value='extrapolate')
     guess_temps = np.linspace(old_temps[1], old_temps[len(old_temps) - 1],
-            num=args.threads - 6)
+                              num=args.threads - 6)
     desired_ops = np.linspace(args.max_op - 1, 1, num=args.threads - 6)
     new_temps = minimize(sum_of_squared_errors, guess_temps,
-             args=(desired_ops, interpolated_ops_f)).x
+                         args=(desired_ops, interpolated_ops_f)).x
     new_temps.sort()
     low_temps = [new_temps[0] - 3, new_temps[0] - 1, new_temps[0] - 0.3]
     high_temp = new_temps[len(new_temps) - 1]
@@ -53,7 +53,9 @@ def sum_of_squared_errors(temps, desired_ops, interpolated_ops_f):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
         'inp_filename',
         type=str,
@@ -71,13 +73,13 @@ def parse_args():
         type=int,
         help='Number of threads/replicas')
     parser.add_argument(
-            '--rtag',
-            type=str,
-            help='Tag to slice on')
+        '--rtag',
+        type=str,
+        help='Tag to slice on')
     parser.add_argument(
-            '--rvalue',
-            type=float,
-            help='Slice value')
+        '--rvalue',
+        type=float,
+        help='Slice value')
 
     return parser.parse_args()
 

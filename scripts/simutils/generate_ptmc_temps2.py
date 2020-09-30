@@ -74,7 +74,9 @@ def sum_of_squared_errors(temps, desired_ops, interpolated_ops_f):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
         'inp_filename',
         type=str,

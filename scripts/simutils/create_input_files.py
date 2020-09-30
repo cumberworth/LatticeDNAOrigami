@@ -13,6 +13,7 @@ CYCLIC = True
 
 COMPLEMENTARY_BASE_PAIRS = {'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G'}
 
+
 def read_seqfile(filename):
     """Read seq files in ??? format and strip metadata."""
     with open(filename) as inp:
@@ -22,6 +23,7 @@ def read_seqfile(filename):
 
     return seqs
 
+
 def reverse_complement(seq):
     """Return reverse-complement."""
     comp_seq_list = []
@@ -30,6 +32,7 @@ def reverse_complement(seq):
 
     comp_seq = ''.join(comp_seq_list)
     return comp_seq[::-1]
+
 
 # Read sequences from file
 scaffold = read_seqfile(SCAFFOLD_SEQFILE)[0]
@@ -46,7 +49,7 @@ for staple in staples:
     reverse_comp_staple = reverse_complement(staple)
     if len(staple) in [15, 16]:
         domain_identity = identity
-        identity +=1
+        identity += 1
         scaffold_domain = reverse_comp_staple
         domain_index = scaffold.find(scaffold_domain)
         scaffold_domains.append(scaffold_domain)
@@ -92,7 +95,7 @@ for staple in staples:
 
 # Sort scaffold identities based on there order along the scaffold chain
 scaffold_identities = [[-identity for (index, identity) in sorted(zip(
-        scaffold_indices, scaffold_identities), key=lambda pair: pair[0])]]
+    scaffold_indices, scaffold_identities), key=lambda pair: pair[0])]]
 
 # Reorder scaffold domain sequences to be consistent
 scaffold_domains_reordered = []
@@ -109,7 +112,8 @@ positions = []
 orientations = []
 if CYCLIC:
     position = np.array([0, 0, 0])
-    directions = np.array([1, 0, 0]), np.array([0, -1, 0]), np.array([-1, 0, 0]), np.array([0, 1, 0])
+    directions = np.array([1, 0, 0]), np.array(
+        [0, -1, 0]), np.array([-1, 0, 0]), np.array([0, 1, 0])
     for direction in directions:
         for j in range(len(scaffold_domains) // 4):
             position += direction
@@ -119,13 +123,13 @@ if CYCLIC:
 else:
     position = np.array([-1, 0, 0])
     for j in range(len(scaffold_domains)):
-        position += np.array([1, 0 ,0])
+        position += np.array([1, 0, 0])
         position = position.tolist()
         positions.append(position)
         orientations.append([1, 0, 0])
 
 # Output json file
-json_origami = {'origami':{}}
+json_origami = {'origami': {}}
 json_origami['origami']['cyclic'] = CYCLIC
 identities = scaffold_identities + staple_identities
 json_origami['origami']['identities'] = identities
@@ -140,4 +144,5 @@ json_origami['origami']['configurations'][0]['chains'][0]['identity'] = 0
 json_origami['origami']['configurations'][0]['chains'][0]['positions'] = positions
 json_origami['origami']['configurations'][0]['chains'][0]['orientations'] = orientations
 
-json.dump(json_origami, open(OUTPUT_FILENAME, 'w'), indent=4, separators=(',', ': '))
+json.dump(json_origami, open(OUTPUT_FILENAME, 'w'),
+          indent=4, separators=(',', ': '))
