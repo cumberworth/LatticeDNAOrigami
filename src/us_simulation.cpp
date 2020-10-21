@@ -1,5 +1,6 @@
 // us_simulation.cpp
 
+#include <chrono>
 #include <cmath>
 #include <cstdlib>
 
@@ -12,6 +13,7 @@
 namespace us {
 
 using std::ifstream;
+using std::chrono::steady_clock;
 
 using biasFunctions::SquareWellBiasFunction;
 using files::OrigamiTrajInputFile;
@@ -63,9 +65,13 @@ void USGCMCSimulation::run() {
     int n;
     run_equilibration();
     for (n = 0; n != m_max_num_iters; n++) {
-        run_iteration(n);
+        prepare_iteration(n);
+        run_simulation(m_steps);
+        process_iteration(n);
     }
-    run_production(n);
+    prepare_production(n);
+    run_simulation(m_steps);
+    process_production(n);
 }
 
 void USGCMCSimulation::run_equilibration() {
@@ -91,19 +97,33 @@ void USGCMCSimulation::run_equilibration() {
     delete m_logging_stream;
 }
 
-void USGCMCSimulation::run_iteration(int n) {
+void USGCMCSimulation::prepare_iteration(int n) {
     set_max_dur(m_max_iter_dur);
 
     // Write each iteration's output to a seperate file
     string prefix {"_iter-" + std::to_string(n)};
     string output_filebase {m_params.m_output_filebase + prefix};
     m_output_files = simulation::setup_output_files(
-            m_params, output_filebase, m_origami_system, m_ops, m_biases, m_random_gens);
+            m_params,
+            output_filebase,
+            m_origami_system,
+            m_ops,
+            m_biases,
+            m_random_gens);
     m_logging_stream = new ofstream {output_filebase + ".out"};
 
+    // This will need to change for REMC
     m_steps = m_iter_steps;
     clear_grids();
-    m_steps = simulate(m_steps);
+}
+
+void USGCMCSimulation::run_simulation(long long int steps) {
+
+    // Need to change steps for REMC
+    m_steps = simulate(steps);
+}
+
+void USGCMCSimulation::process_iteration(int n) {
     fill_grid_sets();
     m_S_n.insert(m_s_i.begin(), m_s_i.end());
     estimate_current_weights();
@@ -127,19 +147,26 @@ void USGCMCSimulation::clear_grids() {
     m_old_only_points.clear();
 }
 
-void USGCMCSimulation::run_production(int n) {
+void USGCMCSimulation::prepare_production(int n) {
     set_max_dur(m_max_prod_dur);
 
     // Setup output files
     string postfix {"_iter-prod"};
     string output_filebase {m_params.m_output_filebase + postfix};
     m_output_files = simulation::setup_output_files(
-            m_params, output_filebase, m_origami_system, m_ops, m_biases, m_random_gens);
+            m_params,
+            output_filebase,
+            m_origami_system,
+            m_ops,
+            m_biases,
+            m_random_gens);
     m_logging_stream = new ofstream {output_filebase + ".out"};
 
     m_steps = m_prod_steps;
     clear_grids();
-    m_steps = simulate(m_steps);
+}
+
+void USGCMCSimulation::process_production(int n) {
     fill_grid_sets();
     m_S_n.insert(m_s_i.begin(), m_s_i.end());
     estimate_current_weights();
@@ -152,6 +179,10 @@ void USGCMCSimulation::run_production(int n) {
 }
 
 vector<GridPoint> USGCMCSimulation::get_points() { return m_points; }
+
+GridPoint USGCMCSimulation::get_current_point() {
+    return m_grid_bias.get_point();
+}
 
 void USGCMCSimulation::read_weights(string filename) {
     ifstream jsonraw {filename, ifstream::binary};
@@ -210,6 +241,10 @@ void USGCMCSimulation::set_config_from_traj(string filename, int step) {
     OrigamiTrajInputFile traj_inp {filename};
     Chains config {traj_inp.read_config(step)};
     m_origami_system.set_config(config);
+}
+
+void USGCMCSimulation::set_config_from_chains(Chains chains) {
+    m_origami_system.set_config(chains);
 }
 
 void USGCMCSimulation::set_output_stream(ostream* out_stream) {
@@ -381,7 +416,9 @@ void MWUSGCMCSimulation::run() {
     int n;
     m_us_sim->run_equilibration();
     for (n = 0; n != m_max_num_iters; n++) {
-        m_us_sim->run_iteration(n);
+        m_us_sim->prepare_iteration(n);
+        m_us_sim->run_simulation(m_us_sim->m_steps);
+        m_us_sim->process_iteration(n);
         copy_files_to_central_dir(n);
         update_master_order_params(n);
         update_starting_config(n);
@@ -390,7 +427,9 @@ void MWUSGCMCSimulation::run() {
         }
     }
 
-    m_us_sim->run_production(n);
+    m_us_sim->prepare_production(n);
+    m_us_sim->run_simulation(m_us_sim->m_steps);
+    m_us_sim->process_production(n);
 }
 
 void MWUSGCMCSimulation::setup_window_variables() {
@@ -654,6 +693,245 @@ void MWUSGCMCSimulation::parse_windows_file(string filename) {
         m_window_maxs.push_back(max_point);
 
         m_windows++;
+    }
+}
+
+PTMWUSGCMCSimulation::PTMWUSGCMCSimulation(
+        OrigamiSystem& origami,
+        SystemOrderParams& ops,
+        SystemBiases& biases,
+        InputParameters& params):
+        MWUSGCMCSimulation {origami, ops, biases, params},
+        m_iter_swaps {params.m_iter_swaps},
+        m_max_iter_dur {params.m_max_iter_dur},
+        m_prod_swaps {params.m_prod_swaps},
+        m_max_prod_dur {params.m_max_prod_dur},
+        m_exchange_interval {params.m_exchange_interval},
+        m_attempt_count(m_windows - 1, 0),
+        m_swap_count(m_windows - 1, 0),
+        m_win_to_configi(m_windows, 0) {
+    initialize_swap_file(m_params);
+}
+
+void PTMWUSGCMCSimulation::run() {
+    int n;
+    m_us_sim->run_equilibration();
+    for (n = 0; n != m_max_num_iters; n++) {
+        m_us_sim->prepare_iteration(n);
+        run_swaps(m_iter_swaps, m_max_iter_dur);
+        m_us_sim->process_iteration(n);
+        copy_files_to_central_dir(n);
+        update_master_order_params(n);
+        update_starting_config(n);
+        if (m_rank == m_master_node) {
+            output_iter_summary(n);
+        }
+    }
+
+    m_us_sim->prepare_production(n);
+    run_swaps(m_prod_swaps, m_max_prod_dur);
+    m_us_sim->process_production(n);
+}
+
+void PTMWUSGCMCSimulation::run_swaps(long long int swaps, long long int dur) {
+    m_us_sim->m_steps = 0;
+    auto start = steady_clock::now();
+    for (int swap_i {1}; swap_i != m_iter_swaps + 1; swap_i++) {
+        m_us_sim->simulate(m_exchange_interval, m_us_sim->m_steps, false);
+        m_us_sim->m_steps += m_exchange_interval;
+
+        // This is different than other time kills as will keep steps past the
+        // duration as things are already save internally
+        if (m_rank == m_master_node) {
+            std::chrono::duration<double> dt {(steady_clock::now() - start)};
+            if (dt.count() > dur) {
+                master_send_kill(swap_i);
+                cout << "Maximum time allowed reached\n";
+                break;
+            }
+        }
+
+        if (m_rank != m_master_node) {
+            slave_send_ops(swap_i);
+            if (not slave_send_and_recieve_chains(swap_i)) {
+                break;
+            }
+        }
+        else {
+            write_swap_entry(m_us_sim->m_steps);
+            attempt_exchange(swap_i);
+        }
+    }
+
+    // Write end-of-simulation data
+    if (m_rank == m_master_node) {
+        write_swap_entry(m_us_sim->m_steps);
+        write_acceptance_freqs();
+        m_swapfile.close();
+    }
+}
+
+void PTMWUSGCMCSimulation::slave_send_ops(int swap_i) {
+    GridPoint point {m_us_sim->get_current_point()};
+    m_world.send(m_master_node, swap_i, point);
+    m_world.send(m_master_node, swap_i, m_us_sim->m_E_w);
+}
+
+bool PTMWUSGCMCSimulation::slave_send_and_recieve_chains(int swap_i) {
+    int win_i;
+    m_world.recv(m_master_node, swap_i, win_i);
+    if (win_i == 999) {
+        return false;
+    }
+    else if (win_i > m_rank) {
+        m_world.send(win_i, swap_i, m_us_sim->get_chains());
+        Chains chains;
+        m_world.recv(win_i, swap_i, chains);
+        m_us_sim->set_config_from_chains(chains);
+    }
+    else if (win_i < m_rank) {
+        Chains chains;
+        m_world.recv(win_i, swap_i, chains);
+        m_world.send(win_i, swap_i, m_us_sim->get_chains());
+        m_us_sim->set_config_from_chains(chains);
+    }
+
+    return true;
+}
+
+void PTMWUSGCMCSimulation::master_send_kill(int swap_i) {
+    for (int i {1}; i != m_windows; i++) {
+        m_world.send(i, swap_i, 999);
+    }
+}
+
+void PTMWUSGCMCSimulation::attempt_exchange(int swap_i) {
+
+    // Collect order params
+    vector<GridPoint> points {m_us_sim->get_current_point()};
+    vector<GridFloats> biases {m_us_sim->m_E_w};
+    vector<int> win_to_win {0};
+    for (int i {1}; i != m_windows; i++) {
+        win_to_win.push_back(i);
+        GridPoint point;
+        m_world.recv(i, swap_i, point);
+        points.push_back(point);
+        GridFloats bias;
+        m_world.recv(i, swap_i, bias);
+        biases.push_back(bias);
+    }
+
+    // Iterate through pairs in current set and attempt swap
+    int swap_set {swap_i % 2};
+    for (int i {swap_set}; i < (m_windows - 1); i += 2) {
+        m_attempt_count[i]++;
+        int win_1 {i};
+        int win_2 {i + 1};
+        GridPoint point_1 {points[win_1]};
+        GridPoint point_2 {points[win_2]};
+
+        // Test if both inside others window
+        bool inside_windows {true};
+        for (size_t j {0}; j != m_grid_dim; j++) {
+            int min_comp {m_window_mins[win_1][j]};
+            int max_comp {m_window_maxs[win_1][j]};
+            if (point_2[j] < min_comp or point_2[j] > max_comp) {
+                inside_windows = false;
+                break;
+            }
+            min_comp = m_window_mins[win_2][j];
+            max_comp = m_window_maxs[win_2][j];
+            if (point_1[j] < min_comp or point_1[j] > max_comp) {
+                inside_windows = false;
+                break;
+            }
+        }
+
+        if (inside_windows) {
+            bool accepted {true};
+            if (point_1 != point_2) {
+                GridFloats biases_1 {biases[win_1]};
+                GridFloats biases_2 {biases[win_2]};
+                double point_1_bias_1 {biases_1[point_1]};
+                double point_2_bias_1 {biases_1[point_2]};
+                double point_1_bias_2 {biases_2[point_1]};
+                double point_2_bias_2 {biases_2[point_2]};
+                double point_1_bias_diff {point_1_bias_1 - point_1_bias_2};
+                double point_2_bias_diff {point_2_bias_2 - point_2_bias_1};
+                double point_bias_diff_sum {point_1_bias_diff + point_2_bias_diff};
+                cout << point_bias_diff_sum << " ";
+                double p_accept {std::min({1.0, exp(point_bias_diff_sum)})};
+                cout << p_accept << "\n";
+                accepted = test_acceptance(p_accept);
+            }
+            if (accepted) {
+                m_swap_count[i]++;
+                win_to_win[win_1] = win_2;
+                win_to_win[win_2] = win_1;
+            }
+        }
+    }
+    for (int i {1}; i != m_windows; i++) {
+        m_world.send(i, swap_i, win_to_win[i]);
+    }
+    if (win_to_win[0] != 0) {
+        m_world.send(win_to_win[0], swap_i, m_us_sim->get_chains());
+        Chains chains;
+        m_world.recv(win_to_win[0], swap_i, chains);
+        m_us_sim->set_config_from_chains(chains);
+    }
+    m_win_to_configi = win_to_win;
+}
+
+bool PTMWUSGCMCSimulation::test_acceptance(double p_accept) {
+    bool accept;
+    if (p_accept == 1) {
+        accept = true;
+    }
+    else {
+        double prob {m_random_gens.uniform_real()};
+        if (p_accept > prob) {
+            accept = true;
+        }
+        else {
+            accept = false;
+        }
+    }
+
+    return accept;
+}
+
+void PTMWUSGCMCSimulation::write_acceptance_freqs() {
+
+    for (size_t i {0}; i != m_attempt_count.size(); i++) {
+        cout << i << " ";
+        cout << i + 1 << " ";
+        cout << m_swap_count[i] << " ";
+        cout << m_attempt_count[i] << " ";
+        cout << (static_cast<double>(m_swap_count[i]) / m_attempt_count[i])
+             << " ";
+        cout << "\n";
+    }
+    cout << "\n";
+}
+
+void PTMWUSGCMCSimulation::initialize_swap_file(InputParameters& params) {
+    if (m_rank == m_master_node) {
+        m_swapfile.open(params.m_output_filebase + ".swp");
+        for (int rep {0}; rep != m_windows; rep++) {
+            m_swapfile << rep;
+            m_win_to_configi[rep] = rep;
+        }
+        m_swapfile << "\n";
+    }
+}
+
+void PTMWUSGCMCSimulation::write_swap_entry(long long int step) {
+    if (step % m_params.m_configs_output_freq == 0) {
+        for (auto repi: m_win_to_configi) {
+            m_swapfile << repi << " ";
+        }
+        m_swapfile << "\n";
     }
 }
 } // namespace us

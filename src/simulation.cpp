@@ -771,4 +771,6 @@ void GCMCSimulation::close_output_files() {
     }
     m_output_files.clear();
 }
+
+Chains GCMCSimulation::get_chains() {return m_origami_system.chains();}
 } // namespace simulation

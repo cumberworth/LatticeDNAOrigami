@@ -245,12 +245,18 @@ InputParameters::InputParameters(int argc, char* argv[]) {
             "iter_steps",
             po::value<long long int>(&m_iter_steps)->default_value(0),
             "Number of steps per iteration")(
+            "iter_swaps",
+            po::value<long long int>(&m_iter_swaps)->default_value(0),
+            "Maximum number of swaps per iteration")(
             "max_iter_dur",
             po::value<long long int>(&m_max_iter_dur)->default_value(0),
             "Maximum duration of each iteration (s)")(
             "prod_steps",
             po::value<long long int>(&m_prod_steps)->default_value(0),
             "Number of production steps")(
+            "prod_swaps",
+            po::value<long long int>(&m_prod_swaps)->default_value(0),
+            "Maximum number of swaps during production")(
             "max_prod_dur",
             po::value<long long int>(&m_max_prod_dur)->default_value(0),
             "Maximum duration of production (s)")(

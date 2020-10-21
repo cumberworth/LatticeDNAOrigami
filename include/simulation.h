@@ -37,6 +37,8 @@ using std::chrono::steady_clock;
 namespace bp = boost::process;
 
 using biasFunctions::SystemBiases;
+using origami::Chain;
+using origami::Chains;
 using files::OrigamiMovetypeFile;
 using files::OrigamiOrientationOutputFile;
 using files::OrigamiOutputFile;
@@ -75,6 +77,12 @@ class GCMCSimulation {
             InputParameters& params);
     virtual ~GCMCSimulation();
     virtual void run() = 0;
+    Chains get_chains();
+    long long int simulate(
+            long long int steps,
+            long long int start_step = 0,
+            bool summarize = true,
+            steady_clock::time_point = steady_clock::now());
 
   protected:
     // Shared interface
@@ -119,11 +127,6 @@ class GCMCSimulation {
             OrigamiMovetypeFile& movetypes_file,
             MCMovetype* movetype);
     void set_max_dur(long long int dur);
-    long long int simulate(
-            long long int steps,
-            long long int start_step = 0,
-            bool summarize = true,
-            steady_clock::time_point = steady_clock::now());
     MCMovetype& select_movetype();
     void write_log_entry(
             const long long int step,

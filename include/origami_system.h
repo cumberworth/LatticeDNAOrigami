@@ -11,6 +11,8 @@
 #include <valarray>
 #include <vector>
 
+#include "boost/serialization/vector.hpp"
+
 #include "domain.h"
 #include "hash.h"
 #include "origami_potential.h"
@@ -50,6 +52,16 @@ struct Chain {
     int identity;
     vector<VectorThree> positions;
     vector<VectorThree> orientations;
+
+  private:
+    friend class boost::serialization::access;
+    template <class Archive>
+    void serialize(Archive& ar, const unsigned int version) {
+        ar& index;
+        ar& identity;
+        ar& positions;
+        ar& orientations;
+    }
 };
 using Chains = vector<Chain>;
 

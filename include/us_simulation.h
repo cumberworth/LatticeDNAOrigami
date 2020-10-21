@@ -33,6 +33,8 @@ namespace mpi = boost::mpi;
 
 using biasFunctions::GridBiasFunction;
 using biasFunctions::SystemBiases;
+using origami::Chain;
+using origami::Chains;
 using orderParams::OrderParam;
 using orderParams::SystemOrderParams;
 using origami::OrigamiSystem;
@@ -58,18 +60,27 @@ class USGCMCSimulation: public GCMCSimulation {
     virtual ~USGCMCSimulation() {}
     void run();
     void run_equilibration();
-    void run_iteration(int n);
+    void prepare_iteration(int n);
+    void run_simulation(long long int steps);
+    void process_iteration(int n);
     bool weights_converged();
-    void run_production(int n);
+    void prepare_production(int n);
+    void process_production(int n);
     vector<GridPoint> get_points();
+    GridPoint get_current_point();
 
     // Probably move these to files and interface with grid bias
     void read_weights(string filename);
     void output_weights();
 
     void set_config_from_traj(string filename, int step);
+    void set_config_from_chains(Chains chains);
     void set_output_stream(ostream* out_stream);
     int get_grid_dim();
+
+    long long int m_steps;
+    GridBiasFunction& m_grid_bias;
+    GridFloats m_E_w {}; // biases at each each iteration
 
   protected:
     InputParameters& m_params;
@@ -80,8 +91,6 @@ class USGCMCSimulation: public GCMCSimulation {
     long long int m_max_iter_dur;
     long long int m_prod_steps;
     long long int m_max_prod_dur;
-    long long int m_steps;
-    GridBiasFunction& m_grid_bias;
     double m_max_D_bias;
     vector<int> m_equil_dif;
 
@@ -100,7 +109,6 @@ class USGCMCSimulation: public GCMCSimulation {
     GridFloats m_old_p_i {}; // previous m_p_i
     GridFloats m_w_i {}; // relative contribution of grid points for current
                          // iteration
-    GridFloats m_E_w {}; // biases at each each iteration
 
     vector<GridPoint> m_points; // timeseries of grid points visited
 
@@ -139,9 +147,9 @@ class MWUSGCMCSimulation: public GCMCSimulation {
             SystemBiases& biases,
             InputParameters& params);
     ~MWUSGCMCSimulation();
-    void run();
+    virtual void run();
 
-  private:
+  protected:
     void setup_window_variables();
     void setup_window_restraints();
     void setup_window_sims(OrigamiSystem& origami);
@@ -188,6 +196,37 @@ class MWUSGCMCSimulation: public GCMCSimulation {
     vector<int> m_current_iters {};
     vector<string> m_starting_files {};
     vector<int> m_starting_steps {};
+};
+
+class PTMWUSGCMCSimulation: public MWUSGCMCSimulation {
+  public:
+    PTMWUSGCMCSimulation(
+            OrigamiSystem& origami_system,
+            SystemOrderParams& ops,
+            SystemBiases& biases,
+            InputParameters& params);
+    void run() override;
+
+  private:
+    void run_swaps(long long int swaps, long long int dur);
+    void slave_send_ops(int swap_i);
+    bool slave_send_and_recieve_chains(int swap_i);
+    void attempt_exchange(int swap_i);
+    void master_send_kill(int swap_i);
+    void write_acceptance_freqs();
+    void initialize_swap_file(InputParameters& params);
+    void write_swap_entry(long long int step);
+    bool test_acceptance(double p_accept);
+
+    long long int m_iter_swaps;
+    long long int m_max_iter_dur;
+    long long int m_prod_swaps;
+    long long int m_max_prod_dur;
+    long long int m_exchange_interval;
+    vector<int> m_attempt_count;
+    vector<int> m_swap_count;
+    vector<int> m_win_to_configi;
+    ofstream m_swapfile; // Only used by master
 };
 } // namespace us
 

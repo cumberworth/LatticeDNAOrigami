@@ -73,8 +73,12 @@ int main(int argc, char* argv[]) {
                     *origami, ops, biases, params};
         }
         else if (params.m_simulation_type == "mw_umbrella_sampling") {
-            cout << "Running multi window US simulation\n";
+            cout << "Running multi-window US simulation\n";
             sim = new us::MWUSGCMCSimulation {*origami, ops, biases, params};
+        }
+        else if (params.m_simulation_type == "ptmw_umbrella_sampling") {
+            cout << "Running parallel tempering multi-window US simulation\n";
+            sim = new us::PTMWUSGCMCSimulation {*origami, ops, biases, params};
         }
         else {
             cout << "No such simulation type.\n";
