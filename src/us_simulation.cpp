@@ -859,9 +859,7 @@ void PTMWUSGCMCSimulation::attempt_exchange(int swap_i) {
                 double point_1_bias_diff {point_1_bias_1 - point_1_bias_2};
                 double point_2_bias_diff {point_2_bias_2 - point_2_bias_1};
                 double point_bias_diff_sum {point_1_bias_diff + point_2_bias_diff};
-                cout << point_bias_diff_sum << " ";
                 double p_accept {std::min({1.0, exp(point_bias_diff_sum)})};
-                cout << p_accept << "\n";
                 accepted = test_acceptance(p_accept);
             }
             if (accepted) {
