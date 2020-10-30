@@ -154,7 +154,7 @@ void USGCMCSimulation::prepare_production(int n) {
     // Setup output files
     string postfix {"_iter-prod"};
     m_output_filebase = m_params.m_output_filebase + postfix;
-    string filename {m_output_filebase + ".biases-inp"};
+    string filename {m_output_filebase + "-inp.biases"};
     output_weights(filename);
     m_output_files = simulation::setup_output_files(
             m_params,
@@ -179,7 +179,7 @@ void USGCMCSimulation::process_production(int n) {
     // Cleanup
     close_output_files();
     delete m_logging_stream;
-    string filename {m_output_filebase + ".biases-out"};
+    string filename {m_output_filebase + "-out.biases"};
     output_weights(filename);
 }
 
