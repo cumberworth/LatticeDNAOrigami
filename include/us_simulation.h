@@ -71,7 +71,7 @@ class USGCMCSimulation: public GCMCSimulation {
 
     // Probably move these to files and interface with grid bias
     void read_weights(string filename);
-    void output_weights();
+    void output_weights(string filename);
 
     void set_config_from_traj(string filename, int step);
     void set_config_from_chains(Chains chains);
@@ -84,6 +84,7 @@ class USGCMCSimulation: public GCMCSimulation {
 
   protected:
     InputParameters& m_params;
+    string m_output_filebase {};
     long int m_max_num_iters;
     long long int m_equil_steps;
     long long int m_max_equil_dur;

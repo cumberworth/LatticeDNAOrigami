@@ -102,15 +102,15 @@ void USGCMCSimulation::prepare_iteration(int n) {
 
     // Write each iteration's output to a seperate file
     string prefix {"_iter-" + std::to_string(n)};
-    string output_filebase {m_params.m_output_filebase + prefix};
+    m_output_filebase = m_params.m_output_filebase + prefix;
     m_output_files = simulation::setup_output_files(
             m_params,
-            output_filebase,
+            m_output_filebase,
             m_origami_system,
             m_ops,
             m_biases,
             m_random_gens);
-    m_logging_stream = new ofstream {output_filebase + ".out"};
+    m_logging_stream = new ofstream {m_output_filebase + ".out"};
 
     // This will need to change for REMC
     m_steps = m_iter_steps;
@@ -134,7 +134,8 @@ void USGCMCSimulation::process_iteration(int n) {
     // Cleanup
     close_output_files();
     delete m_logging_stream;
-    output_weights();
+    string filename {m_output_filebase + ".biases"};
+    output_weights(filename);
 }
 
 void USGCMCSimulation::clear_grids() {
@@ -152,15 +153,17 @@ void USGCMCSimulation::prepare_production(int n) {
 
     // Setup output files
     string postfix {"_iter-prod"};
-    string output_filebase {m_params.m_output_filebase + postfix};
+    m_output_filebase = m_params.m_output_filebase + postfix;
+    string filename {m_output_filebase + ".biases-inp"};
+    output_weights(filename);
     m_output_files = simulation::setup_output_files(
             m_params,
-            output_filebase,
+            m_output_filebase,
             m_origami_system,
             m_ops,
             m_biases,
             m_random_gens);
-    m_logging_stream = new ofstream {output_filebase + ".out"};
+    m_logging_stream = new ofstream {m_output_filebase + ".out"};
 
     m_steps = m_prod_steps;
     clear_grids();
@@ -176,6 +179,8 @@ void USGCMCSimulation::process_production(int n) {
     // Cleanup
     close_output_files();
     delete m_logging_stream;
+    string filename {m_output_filebase + ".biases-out"};
+    output_weights(filename);
 }
 
 vector<GridPoint> USGCMCSimulation::get_points() { return m_points; }
@@ -199,8 +204,7 @@ void USGCMCSimulation::read_weights(string filename) {
     }
 }
 
-void USGCMCSimulation::output_weights() {
-    string filename {m_params.m_output_filebase + ".biases"};
+void USGCMCSimulation::output_weights(string filename) {
     ofstream weights_file {filename};
     weights_file << "{\n";
     weights_file << "    \"biases\": [";
