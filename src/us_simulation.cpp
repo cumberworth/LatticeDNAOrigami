@@ -529,12 +529,14 @@ void MWUSGCMCSimulation::update_master_order_params(int n) {
                 flattened_points.push_back(comp);
             }
         }
+        cout << "Win " << m_rank << ": About to send points to " << n << "\n";
         m_world.send(m_master_node, n, flattened_points);
     }
     else {
         m_points[m_master_node] = m_us_sim->get_points();
         for (int i {1}; i != m_windows; i++) {
             vector<int> f_points;
+            cout << "Win " << m_rank << ": About to recieve points from " << i << "\n";
             m_world.recv(i, n, f_points);
 
             // Unflatten
@@ -575,13 +577,17 @@ void MWUSGCMCSimulation::update_starting_config(int n) {
         m_starting_file = m_starting_files[m_master_node];
         m_starting_step = m_starting_steps[m_master_node];
         for (int i {1}; i != m_windows; i++) {
+            cout << "Win " << m_rank << ": About to send starting file to " << n << "\n";
             m_world.send(i, n, m_starting_files[i]);
+            cout << "Win " << m_rank << ": About to send starting step to " << n << "\n";
             m_world.send(i, n, m_starting_steps[i]);
         }
         m_us_sim->set_config_from_traj(m_starting_file, m_starting_step);
     }
     else {
+        cout << "Win " << m_rank << ": About to recieve starting file from " << m_master_node << "\n";
         m_world.recv(m_master_node, n, m_starting_file);
+        cout << "Win " << m_rank << ": About to recieve starting step from " << m_master_node << "\n";
         m_world.recv(m_master_node, n, m_starting_step);
         m_us_sim->set_config_from_traj(m_starting_file, m_starting_step);
     }
@@ -730,6 +736,8 @@ void PTMWUSGCMCSimulation::run() {
         if (m_rank == m_master_node) {
             output_iter_summary(n);
         }
+        std::fill(m_attempt_count.begin(), m_attempt_count.end(), 0);
+        std::fill(m_swap_count.begin(), m_swap_count.end(), 0);
     }
 
     m_us_sim->prepare_production(n);
@@ -777,25 +785,32 @@ void PTMWUSGCMCSimulation::run_swaps(long long int swaps, long long int dur) {
 
 void PTMWUSGCMCSimulation::slave_send_ops(int swap_i) {
     GridPoint point {m_us_sim->get_current_point()};
+    cout << "Win " << m_rank << ": About to send point to " << m_master_node << "\n";
     m_world.send(m_master_node, swap_i, point);
+    cout << "Win " << m_rank << ": About to send biases to " << m_master_node << "\n";
     m_world.send(m_master_node, swap_i, m_us_sim->m_E_w);
 }
 
 bool PTMWUSGCMCSimulation::slave_send_and_recieve_chains(int swap_i) {
     int win_i;
+    cout << "Win " << m_rank << ": About to recieve win_i from " << m_master_node << "\n";
     m_world.recv(m_master_node, swap_i, win_i);
     if (win_i == 999) {
         return false;
     }
     else if (win_i > m_rank) {
+        cout << "Win " << m_rank << ": About to send chains to " << win_i << "\n";
         m_world.send(win_i, swap_i, m_us_sim->get_chains());
         Chains chains;
+        cout << "Win " << m_rank << ": About to recieve chains from " << win_i << "\n";
         m_world.recv(win_i, swap_i, chains);
         m_us_sim->set_config_from_chains(chains);
     }
     else if (win_i < m_rank) {
         Chains chains;
+        cout << "Win " << m_rank << ": About to recieve chains from " << win_i << "\n";
         m_world.recv(win_i, swap_i, chains);
+        cout << "Win " << m_rank << ": About to send chains to " << win_i << "\n";
         m_world.send(win_i, swap_i, m_us_sim->get_chains());
         m_us_sim->set_config_from_chains(chains);
     }
@@ -805,6 +820,7 @@ bool PTMWUSGCMCSimulation::slave_send_and_recieve_chains(int swap_i) {
 
 void PTMWUSGCMCSimulation::master_send_kill(int swap_i) {
     for (int i {1}; i != m_windows; i++) {
+        cout << "Win " << m_rank << ": About to send kill signal to " << i << "\n";
         m_world.send(i, swap_i, 999);
     }
 }
@@ -818,9 +834,11 @@ void PTMWUSGCMCSimulation::attempt_exchange(int swap_i) {
     for (int i {1}; i != m_windows; i++) {
         win_to_win.push_back(i);
         GridPoint point;
+        cout << "Win " << m_rank << ": About to recieve point from " << i << "\n";
         m_world.recv(i, swap_i, point);
         points.push_back(point);
         GridFloats bias;
+        cout << "Win " << m_rank << ": About to recieve biases from " << i << "\n";
         m_world.recv(i, swap_i, bias);
         biases.push_back(bias);
     }
@@ -874,11 +892,14 @@ void PTMWUSGCMCSimulation::attempt_exchange(int swap_i) {
         }
     }
     for (int i {1}; i != m_windows; i++) {
+        cout << "Win " << m_rank << ": About to send win_i to " << i << "\n";
         m_world.send(i, swap_i, win_to_win[i]);
     }
     if (win_to_win[0] != 0) {
+        cout << "Win " << m_rank << ": About to send chains to " << win_to_win[0] << "\n";
         m_world.send(win_to_win[0], swap_i, m_us_sim->get_chains());
         Chains chains;
+        cout << "Win " << m_rank << ": About to recieve chains from " << win_to_win[0] << "\n";
         m_world.recv(win_to_win[0], swap_i, chains);
         m_us_sim->set_config_from_chains(chains);
     }
