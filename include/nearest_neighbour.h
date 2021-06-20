@@ -12,9 +12,7 @@
 namespace nearestNeighbour {
 
 using std::map;
-using std::pair;
 using std::string;
-using std::tuple;
 using std::unordered_map;
 using std::vector;
 

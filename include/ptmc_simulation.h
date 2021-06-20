@@ -107,10 +107,9 @@ class PTGCMCSimulation: public GCMCSimulation {
     bool test_acceptance(double acceptance_p);
     double calc_acceptance_p(
             vector<pair<double, double>> control_q_pairs,
-            vector<pair<double, double>>
-                    dependent_q_pairs,
-        vector<pair<vector<double>, vector<double>>>
-                per_staple_dependent_q_pairs);
+            vector<pair<double, double>> dependent_q_pairs,
+            vector<pair<vector<double>, vector<double>>>
+                    per_staple_dependent_q_pairs);
 
     // Output methods
     void write_swap_entry(long long int step);

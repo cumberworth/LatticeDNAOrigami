@@ -9,7 +9,6 @@ namespace topConstraintPoints {
 
 using std::cout;
 using std::find;
-using std::fmin;
 using std::set;
 
 bool domain_included(vector<Domain*> domains, Domain* d) {

@@ -237,7 +237,7 @@ bool MetStapleExchangeMCMovetype::staple_insertion_accepted(
                 accepted = true;
             }
             else {
-                cout << "Nonsensical exchange probability detected\n";
+                std::cout << "Nonsensical exchange probability detected\n";
                 throw SimulationMisuse {};
             }
         }
@@ -277,7 +277,7 @@ bool MetStapleExchangeMCMovetype::staple_deletion_accepted(
         // Check if nonsensical probabilities will result
         if (m_modifier * fmin(1, pratio) > 1) {
             if (m_adaptive_exchange) {
-                cout << c_i_ident << m_modifier << " " << pratio << "\n";
+                std::cout << c_i_ident << m_modifier << " " << pratio << "\n";
                 m_exchange_mults[c_i_ident - 1] /= 10;
                 accepted = false;
             }
@@ -285,7 +285,7 @@ bool MetStapleExchangeMCMovetype::staple_deletion_accepted(
                 accepted = true;
             }
             else {
-                cout << "Nonsensical exchange probability detected\n";
+                std::cout << "Nonsensical exchange probability detected\n";
                 throw SimulationMisuse {};
             }
         }

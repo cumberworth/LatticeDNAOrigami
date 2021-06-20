@@ -8,8 +8,6 @@ namespace annealing {
 
 using std::cout;
 
-using origami::molarity_to_chempots;
-
 AnnealingGCMCSimulation::AnnealingGCMCSimulation(
         OrigamiSystem& origami_system,
         SystemOrderParams& ops,

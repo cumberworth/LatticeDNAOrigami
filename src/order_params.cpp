@@ -8,7 +8,6 @@
 
 namespace orderParams {
 
-using std::abs;
 using std::cout;
 using std::set;
 

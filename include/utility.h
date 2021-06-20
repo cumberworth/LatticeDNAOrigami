@@ -17,10 +17,8 @@
 namespace utility {
 
 using std::array;
-using std::bind;
 using std::pair;
 using std::string;
-using std::unique_ptr;
 using std::unordered_map;
 using std::vector;
 

@@ -24,13 +24,11 @@
 
 namespace movetypes {
 
-using std::cout;
 using std::deque;
 using std::ostream;
 using std::pair;
 using std::set;
 using std::string;
-using std::unique_ptr;
 using std::unordered_map;
 using std::vector;
 

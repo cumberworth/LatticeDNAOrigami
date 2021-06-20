@@ -101,8 +101,8 @@ class LinkerRegrowthMCMovetype: virtual public CTRegrowthMCMovetype {
     unsigned int m_max_linker_length;
     int m_k;
 
-    CTCBLinkerRegrowthTracking m_tracker {};
-    unordered_map<CTCBLinkerRegrowthTracking, MovetypeTracking> m_tracking {};
+    utility::CTCBLinkerRegrowthTracking m_tracker {};
+    unordered_map<utility::CTCBLinkerRegrowthTracking, MovetypeTracking> m_tracking {};
     vector<Domain*> m_linker_endpoints;
 };
 

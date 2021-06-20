@@ -16,8 +16,9 @@ namespace potential {
 
 using std::cout;
 
-using nearestNeighbour::calc_comp_seq;
+using nearestNeighbour::ThermoOfHybrid;
 using utility::Occupancy;
+using utility::VectorThree;
 using utility::OrigamiMisuse;
 
 bool check_domain_orientations_opposing(Domain& cd_i, Domain& cd_j) {

@@ -19,9 +19,7 @@ using std::unordered_map;
 using std::vector;
 
 using domainContainer::Domain;
-using nearestNeighbour::ThermoOfHybrid;
 using parser::InputParameters;
-using utility::VectorThree;
 
 bool check_domain_orientations_opposing(Domain& cd_i, Domain& cd_j);
 bool check_domains_exist_and_bound(vector<Domain*> cdv);

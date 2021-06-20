@@ -30,13 +30,7 @@
 namespace simulation {
 
 using std::cout;
-using std::min;
-using std::pair;
-using std::pow;
-using std::setw;
-using std::chrono::steady_clock;
 
-namespace mpi = boost::mpi;
 namespace bp = boost::process;
 
 using files::OrigamiCountsOutputFile;
@@ -574,7 +568,7 @@ long long int GCMCSimulation::simulate(
         double old_ene {m_origami_system.energy()};
         accepted = movetype.attempt_move(step);
         if (not accepted) {
-            //cout << "\nReseting configuration\n";
+            // cout << "\nReseting configuration\n";
             movetype.reset_origami();
             m_ops.update_move_params();
             m_biases.calc_move();
@@ -772,5 +766,5 @@ void GCMCSimulation::close_output_files() {
     m_output_files.clear();
 }
 
-Chains GCMCSimulation::get_chains() {return m_origami_system.chains();}
+Chains GCMCSimulation::get_chains() { return m_origami_system.chains(); }
 } // namespace simulation

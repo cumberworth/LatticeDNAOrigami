@@ -20,7 +20,6 @@ namespace files {
 
 using std::ifstream;
 using std::ofstream;
-using std::pair;
 using std::reference_wrapper;
 using std::string;
 using std::vector;

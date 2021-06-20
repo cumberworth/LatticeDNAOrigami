@@ -11,12 +11,9 @@
 
 namespace nearestNeighbour {
 
-using std::cout;
 using std::log;
 using std::reverse;
 using std::string;
-using std::tie;
-using std::tuple;
 using std::vector;
 
 double calc_seq_spec_stacking_energy(

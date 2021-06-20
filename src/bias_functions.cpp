@@ -9,7 +9,6 @@ using std::cout;
 using std::set;
 
 using files::OrigamiBiasFunctionsFile;
-using orderParams::DistOrderParam;
 
 double BiasFunction::get_bias() { return m_bias; }
 

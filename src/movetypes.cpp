@@ -11,7 +11,6 @@ namespace movetypes {
 
 using std::find;
 using std::fmin;
-using std::get;
 using std::min;
 using std::set;
 using utility::Occupancy;
@@ -271,7 +270,7 @@ vector<domainPairT> MCMovetype::find_bound_domains(
     }
 
     if (bound_domains.empty()) {
-        cout << "System has unbound staple\n";
+        std::cout << "System has unbound staple\n";
         throw OrigamiMisuse {};
     }
 

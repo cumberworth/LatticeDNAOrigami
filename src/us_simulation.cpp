@@ -18,7 +18,6 @@ using std::chrono::steady_clock;
 using biasFunctions::SquareWellBiasFunction;
 using files::OrigamiTrajInputFile;
 using origami::Chains;
-using utility::SimulationMisuse;
 
 USGCMCSimulation::USGCMCSimulation(
         OrigamiSystem& origami,
@@ -139,7 +138,6 @@ void USGCMCSimulation::process_iteration(int n) {
 }
 
 void USGCMCSimulation::clear_grids() {
-    m_points.clear();
     m_s_i.clear();
     m_f_i.clear();
     m_w_i.clear();
@@ -182,8 +180,6 @@ void USGCMCSimulation::process_production(int n) {
     string filename {m_output_filebase + "-out.biases"};
     output_weights(filename);
 }
-
-vector<GridPoint> USGCMCSimulation::get_points() { return m_points; }
 
 GridPoint USGCMCSimulation::get_current_point() {
     return m_grid_bias.get_point();
@@ -261,11 +257,6 @@ void USGCMCSimulation::update_internal(long long int step) {
     GridPoint point {m_grid_bias.get_point()};
     m_s_i.insert(point);
     m_f_i[point]++;
-
-    int op_freq {m_params.m_order_params_output_freq};
-    if (op_freq != 0 and step % op_freq == 0) {
-        m_points.push_back(point);
-    }
 }
 
 void USGCMCSimulation::estimate_current_weights() {
@@ -422,9 +413,6 @@ void MWUSGCMCSimulation::run() {
         m_us_sim->prepare_iteration(n);
         m_us_sim->run_simulation(m_us_sim->m_steps);
         m_us_sim->process_iteration(n);
-        copy_files_to_central_dir(n);
-        update_master_order_params(n);
-        update_starting_config(n);
         if (m_rank == m_master_node) {
             output_iter_summary(n);
         }
@@ -437,11 +425,6 @@ void MWUSGCMCSimulation::run() {
 
 void MWUSGCMCSimulation::setup_window_variables() {
     for (int i {0}; i != m_windows; i++) {
-        m_points.push_back({});
-        m_starting_files.push_back("");
-        m_starting_steps.push_back(0);
-
-        // Filename bases
         string window_postfix {"_win-"};
         for (auto j: m_window_mins[i]) {
             window_postfix += std::to_string(j);
@@ -454,13 +437,6 @@ void MWUSGCMCSimulation::setup_window_variables() {
         m_window_postfixes.push_back(window_postfix);
         string output_filebase {m_params.m_output_filebase + window_postfix};
         m_output_filebases.push_back(output_filebase);
-
-        // Calculate number of grid points in the window
-        unsigned int num_points {1};
-        for (size_t j {0}; j != m_window_mins[i].size(); j++) {
-            num_points *= (m_window_maxs[i][j] - m_window_mins[i][j] + 1);
-        }
-        m_num_points.push_back(num_points);
     }
 }
 
@@ -515,160 +491,6 @@ void MWUSGCMCSimulation::setup_window_sims(OrigamiSystem& origami) {
 
 void MWUSGCMCSimulation::output_iter_summary(int n) {
     cout << "Iteration: " << n << "\n";
-}
-
-void MWUSGCMCSimulation::update_master_order_params(int n) {
-    if (m_rank != m_master_node) {
-
-        // Must flatten to send
-        vector<int> flattened_points {};
-        vector<GridPoint> points {m_us_sim->get_points()};
-        for (auto point: points) {
-            for (auto comp: point) {
-                flattened_points.push_back(comp);
-            }
-        }
-        cout << "Win " << m_rank << ": Sending points to " << n << "\n";
-        m_world.send(m_master_node, n, flattened_points);
-        cout << "Win " << m_rank << ": Sent points to " << n << "\n";
-    }
-    else {
-        m_points[m_master_node] = m_us_sim->get_points();
-        for (int i {1}; i != m_windows; i++) {
-            vector<int> f_points;
-            cout << "Win " << m_rank << ": Receiving points from " << i << "\n";
-            m_world.recv(i, n, f_points);
-            cout << "Win " << m_rank << ": Received points from " << i << "\n";
-
-            // Unflatten
-            vector<GridPoint> points {};
-            size_t j {0};
-            while (j != f_points.size()) {
-                points.push_back({});
-                for (int k {0}; k != m_grid_dim; k++) {
-                    points.back().push_back(f_points[j]);
-                    j++;
-                }
-            }
-            m_points[i] = points;
-        }
-    }
-}
-
-void MWUSGCMCSimulation::copy_files_to_central_dir(int n) {
-
-    // Move most recent iteration's files to central dir
-    string filebase_cur {
-            m_output_filebases[m_rank] + "_iter-" + std::to_string(n)};
-    string move_command {
-            "mv " + m_local_dir + "/" + filebase_cur + "* " + m_central_dir +
-            "/"};
-    std::system(move_command.c_str());
-
-    // Remove previous iteration files from central dir
-    string filebase_prev {
-            m_output_filebases[m_rank] + "_iter-" + std::to_string(n - 1)};
-    string del_command {"rm -f " + m_central_dir + "/" + filebase_prev + "*"};
-    std::system(del_command.c_str());
-}
-
-void MWUSGCMCSimulation::update_starting_config(int n) {
-    if (m_rank == m_master_node) {
-        select_starting_configs(n);
-        m_starting_file = m_starting_files[m_master_node];
-        m_starting_step = m_starting_steps[m_master_node];
-        for (int i {1}; i != m_windows; i++) {
-            cout << "Win " << m_rank << ": Sending starting file to " << n << "\n";
-            m_world.send(i, n, m_starting_files[i]);
-            cout << "Win " << m_rank << ": Sent starting file to " << n << "\n";
-            cout << "Win " << m_rank << ": Sending starting step to " << n << "\n";
-            m_world.send(i, n, m_starting_steps[i]);
-            cout << "Win " << m_rank << ": Sent starting step to " << n << "\n";
-        }
-        m_us_sim->set_config_from_traj(m_starting_file, m_starting_step);
-    }
-    else {
-        cout << "Win " << m_rank << ": Recieving starting file from " << m_master_node << "\n";
-        m_world.recv(m_master_node, n, m_starting_file);
-        cout << "Win " << m_rank << ": Recieved starting file from " << m_master_node << "\n";
-        cout << "Win " << m_rank << ": Recieving starting step from " << m_master_node << "\n";
-        m_world.recv(m_master_node, n, m_starting_step);
-        cout << "Win " << m_rank << ": Recieved starting step from " << m_master_node << "\n";
-        m_us_sim->set_config_from_traj(m_starting_file, m_starting_step);
-    }
-}
-
-void MWUSGCMCSimulation::select_starting_configs(int n) {
-    sort_configs_by_ops();
-
-    // For each window select an order parameter and then associated config
-    for (int i {0}; i != m_windows; i++) {
-
-        // Select a point in the window that has been sampled
-        GridPoint point {};
-        set<GridPoint> tried_points {};
-        bool point_sampled {false};
-        bool all_points_tried {false};
-        while (not point_sampled) {
-            point.clear();
-
-            // Uniformly draw without replacement point in window's domain
-            for (size_t j {0}; j != m_window_mins[0].size(); j++) {
-                int min_comp {m_window_mins[i][j]};
-                int max_comp {m_window_maxs[i][j]};
-                point.push_back(m_random_gens.uniform_int(min_comp, max_comp));
-            }
-            point_sampled =
-                    (m_order_param_to_configs.find(point) !=
-                     m_order_param_to_configs.end());
-            if (point_sampled) {
-                break;
-            }
-            else {
-                tried_points.insert(point);
-                all_points_tried = (tried_points.size() == m_num_points[i]);
-                if (all_points_tried) {
-                    cout << "Window " << i << " outside of domain\n";
-                    throw SimulationMisuse {};
-                }
-            }
-        }
-
-        // Uniformly select one of the configs with the selected op set
-        vector<pair<int, int>> possible_configs {
-                m_order_param_to_configs[point]};
-        int sel_i {m_random_gens.uniform_int(0, possible_configs.size() - 1)};
-        pair<int, int> selected_config {possible_configs[sel_i]};
-        string filename {
-                m_central_dir + "/" +
-                m_output_filebases[selected_config.first] + "_iter-" +
-                std::to_string(n) + ".trj"};
-        m_starting_files[i] = filename;
-        m_starting_steps[i] = selected_config.second;
-    }
-}
-
-void MWUSGCMCSimulation::sort_configs_by_ops() {
-
-    // For each window order available configs by their order parameters
-    m_order_param_to_configs.clear();
-    for (int i {0}; i != m_windows; i++) {
-        for (size_t step {0}; step != m_points[i].size(); step++) {
-
-            // Would need to modify to allow the use of a subset of
-            // the ops collected during the simulation
-            GridPoint point {m_points[i][step]};
-            bool point_sampled {
-                    m_order_param_to_configs.find(point) !=
-                    m_order_param_to_configs.end()};
-            if (point_sampled) {
-                m_order_param_to_configs[point].push_back({i, step});
-            }
-            else {
-                m_order_param_to_configs[point] = {{i, step}};
-            }
-        }
-    }
 }
 
 void MWUSGCMCSimulation::parse_windows_file(string filename) {
@@ -735,9 +557,6 @@ void PTMWUSGCMCSimulation::run() {
         m_us_sim->prepare_iteration(n);
         run_swaps(m_iter_swaps, m_max_iter_dur);
         m_us_sim->process_iteration(n);
-        copy_files_to_central_dir(n);
-        update_master_order_params(n);
-        update_starting_config(n);
         if (m_rank == m_master_node) {
             output_iter_summary(n);
         }
@@ -800,30 +619,36 @@ void PTMWUSGCMCSimulation::slave_send_ops(int swap_i) {
 
 bool PTMWUSGCMCSimulation::slave_send_and_recieve_chains(int swap_i) {
     int win_i;
-    cout << "Win " << m_rank << ": Recieving win_i from " << m_master_node << "\n";
+    cout << "Win " << m_rank << ": Recieving win_i from " << m_master_node
+         << "\n";
     m_world.recv(m_master_node, swap_i, win_i);
-    cout << "Win " << m_rank << ": Recieved win_i from " << m_master_node << "\n";
+    cout << "Win " << m_rank << ": Recieved win_i from " << m_master_node
+         << "\n";
     if (win_i == 999) {
         return false;
     }
     else if (win_i > m_rank) {
         Chains chains_send {m_us_sim->get_chains()};
-        cout << "Win " << m_rank << ": Sending chains (size " << chains_send.size() << ") to " << win_i << "\n";
+        cout << "Win " << m_rank << ": Sending chains (size "
+             << chains_send.size() << ") to " << win_i << "\n";
         m_world.send(win_i, swap_i, chains_send);
         cout << "Win " << m_rank << ": Sent chains to " << win_i << "\n";
         cout << "Win " << m_rank << ": Recieving chains from " << win_i << "\n";
         Chains chains_rec;
         m_world.recv(win_i, swap_i, chains_rec);
-        cout << "Win " << m_rank << ": Recieved chains (size " << chains_rec.size() << ") from " << win_i << "\n";
+        cout << "Win " << m_rank << ": Recieved chains (size "
+             << chains_rec.size() << ") from " << win_i << "\n";
         m_us_sim->set_config_from_chains(chains_rec);
     }
     else if (win_i < m_rank) {
         Chains chains_rec;
         cout << "Win " << m_rank << ": Recieving chains from " << win_i << "\n";
         m_world.recv(win_i, swap_i, chains_rec);
-        cout << "Win " << m_rank << ": Recieved chains (size " << chains_rec.size() << ") from " << win_i << "\n";
+        cout << "Win " << m_rank << ": Recieved chains (size "
+             << chains_rec.size() << ") from " << win_i << "\n";
         Chains chains_send {m_us_sim->get_chains()};
-        cout << "Win " << m_rank << ": Sending chains (size " << chains_send.size() << ") to " << win_i << "\n";
+        cout << "Win " << m_rank << ": Sending chains (size "
+             << chains_send.size() << ") to " << win_i << "\n";
         m_world.send(win_i, swap_i, chains_send);
         cout << "Win " << m_rank << ": Sent chains to " << win_i << "\n";
         m_us_sim->set_config_from_chains(chains_rec);
@@ -834,7 +659,8 @@ bool PTMWUSGCMCSimulation::slave_send_and_recieve_chains(int swap_i) {
 
 void PTMWUSGCMCSimulation::master_send_kill(int swap_i) {
     for (int i {1}; i != m_windows; i++) {
-        cout << "Win " << m_rank << ": About to send kill signal to " << i << "\n";
+        cout << "Win " << m_rank << ": About to send kill signal to " << i
+             << "\n";
         m_world.send(i, swap_i, 999);
     }
 }
@@ -897,7 +723,8 @@ void PTMWUSGCMCSimulation::attempt_exchange(int swap_i) {
                 double point_2_bias_2 {biases_2[point_2]};
                 double point_1_bias_diff {point_1_bias_1 - point_1_bias_2};
                 double point_2_bias_diff {point_2_bias_2 - point_2_bias_1};
-                double point_bias_diff_sum {point_1_bias_diff + point_2_bias_diff};
+                double point_bias_diff_sum {
+                        point_1_bias_diff + point_2_bias_diff};
                 double p_accept {std::min({1.0, exp(point_bias_diff_sum)})};
                 accepted = test_acceptance(p_accept);
             }
@@ -915,13 +742,17 @@ void PTMWUSGCMCSimulation::attempt_exchange(int swap_i) {
     }
     if (win_to_win[0] != 0) {
         Chains chains_send {m_us_sim->get_chains()};
-        cout << "Win " << m_rank << ": Sending chains (size " << chains_send.size() << ") to " << win_to_win[0] << "\n";
+        cout << "Win " << m_rank << ": Sending chains (size "
+             << chains_send.size() << ") to " << win_to_win[0] << "\n";
         m_world.send(win_to_win[0], swap_i, chains_send);
-        cout << "Win " << m_rank << ": Sent chains to " << win_to_win[0] << "\n";
+        cout << "Win " << m_rank << ": Sent chains to " << win_to_win[0]
+             << "\n";
         Chains chains_rec;
-        cout << "Win " << m_rank << ": Recieving chains from " << win_to_win[0] << "\n";
+        cout << "Win " << m_rank << ": Recieving chains from " << win_to_win[0]
+             << "\n";
         m_world.recv(win_to_win[0], swap_i, chains_rec);
-        cout << "Win " << m_rank << ": Recieved chains (size " << chains_rec.size() << ") from " << win_to_win[0] << "\n";
+        cout << "Win " << m_rank << ": Recieved chains (size "
+             << chains_rec.size() << ") from " << win_to_win[0] << "\n";
         m_us_sim->set_config_from_chains(chains_rec);
     }
     m_win_to_configi = win_to_win;

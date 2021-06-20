@@ -24,21 +24,16 @@
 
 namespace simulation {
 
-using std::map;
 using std::ofstream;
 using std::ostream;
-using std::set;
 using std::string;
 using std::unique_ptr;
-using std::unordered_map;
 using std::vector;
 using std::chrono::steady_clock;
 
 namespace bp = boost::process;
 
 using biasFunctions::SystemBiases;
-using origami::Chain;
-using origami::Chains;
 using files::OrigamiMovetypeFile;
 using files::OrigamiOrientationOutputFile;
 using files::OrigamiOutputFile;
@@ -48,6 +43,7 @@ using files::OrigamiVSFOutputFile;
 using idealRandomWalk::IdealRandomWalks;
 using movetypes::MCMovetype;
 using orderParams::SystemOrderParams;
+using origami::Chains;
 using origami::OrigamiSystem;
 using parser::InputParameters;
 using randomGen::RandomGens;

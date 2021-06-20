@@ -12,7 +12,6 @@
 
 namespace origami {
 
-using std::abs;
 using std::cout;
 using std::max_element;
 
@@ -22,7 +21,6 @@ using domainContainer::ThreeQuarterTurnDomain;
 using files::OrigamiInputFile;
 using files::OrigamiTrajInputFile;
 using orderParams::SystemOrderParams;
-using utility::NotImplemented;
 using utility::OrigamiMisuse;
 
 bool Chain::operator==(Chain chain_2) {
@@ -205,7 +203,7 @@ Occupancy OrigamiSystem::position_occupancy(VectorThree pos) const {
 void OrigamiSystem::update_enthalpy_and_entropy() {
     m_hyb_enthalpy = 0;
     m_hyb_entropy = 0;
-    set<Domain*> accounted_domains; // Domains whose energy is already counted
+    std::set<Domain*> accounted_domains; // Domains whose energy is already counted
     for (auto chain: m_domains) {
         for (auto domain: chain) {
             Occupancy state {domain->m_state};

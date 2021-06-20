@@ -64,7 +64,6 @@ class USGCMCSimulation: public GCMCSimulation {
     bool weights_converged();
     void prepare_production(int n);
     void process_production(int n);
-    vector<GridPoint> get_points();
     GridPoint get_current_point();
 
     // Probably move these to files and interface with grid bias
@@ -108,8 +107,6 @@ class USGCMCSimulation: public GCMCSimulation {
     GridFloats m_old_p_i {}; // previous m_p_i
     GridFloats m_w_i {}; // relative contribution of grid points for current
                          // iteration
-
-    vector<GridPoint> m_points; // timeseries of grid points visited
 
     void clear_grids();
     void update_internal(long long int step);
@@ -155,10 +152,7 @@ class MWUSGCMCSimulation: public GCMCSimulation {
     void output_iter_summary(int n);
     void update_internal(long long int) {}
     void parse_windows_file(string filename);
-    void update_master_order_params(int n);
     void update_master_converged_sims(bool sim_converged, int n);
-    void copy_files_to_central_dir(int n);
-    void update_starting_config(int n);
     void select_starting_configs(int n);
     void sort_configs_by_ops();
 
@@ -181,20 +175,16 @@ class MWUSGCMCSimulation: public GCMCSimulation {
     vector<string> m_window_bias_tags {};
     vector<GridPoint> m_window_mins {};
     vector<GridPoint> m_window_maxs {};
-    vector<unsigned int> m_num_points {}; // num grid points per window
     vector<string> m_output_filebases {};
     vector<string> m_window_postfixes {};
     string m_starting_file {};
     int m_starting_step {};
 
-    vector<vector<GridPoint>> m_points {};
     unordered_map<GridPoint, vector<pair<int, int>>>
             m_order_param_to_configs {};
     vector<bool> m_sims_converged {};
     int m_num_sims_converged {0};
     vector<int> m_current_iters {};
-    vector<string> m_starting_files {};
-    vector<int> m_starting_steps {};
 };
 
 class PTMWUSGCMCSimulation: public MWUSGCMCSimulation {

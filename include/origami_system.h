@@ -30,12 +30,9 @@ class SystemBiases;
 
 namespace origami {
 
-using std::pair;
-using std::set;
 using std::string;
 using std::unique_ptr;
 using std::unordered_map;
-using std::valarray;
 using std::vector;
 
 using domainContainer::Domain;

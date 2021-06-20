@@ -26,23 +26,18 @@ namespace movetypes {
 
 using std::ostream;
 using std::pair;
-using std::set;
 using std::string;
 using std::unordered_map;
 using std::vector;
 
 using domainContainer::Domain;
-using files::OrigamiInputFile;
 using files::OrigamiOutputFile;
 using idealRandomWalk::IdealRandomWalks;
-using movetypes::add_tracker;
 using movetypes::MovetypeTracking;
 using movetypes::RegrowthMCMovetype;
 using origami::OrigamiSystem;
 using parser::InputParameters;
 using randomGen::RandomGens;
-using topConstraintPoints::Constraintpoints;
-using utility::CTCBLinkerRegrowthTracking;
 using utility::CTCBScaffoldRegrowthTracking;
 using utility::StapleRegrowthTracking;
 using utility::VectorThree;
@@ -68,7 +63,6 @@ class CBMCMovetype: virtual public RegrowthMCMovetype {
     virtual void reset_internal() override;
 
   protected:
-
     /** Include external bias on whole configuration in Rosenbluth */
     void add_external_bias() override;
 
@@ -199,7 +193,6 @@ class CTCBRegrowthMCMovetype:
     virtual void reset_internal() override;
 
   protected:
-
     /** Grow out domains from first in given array */
     void grow_chain(vector<Domain*> domains) final override;
 

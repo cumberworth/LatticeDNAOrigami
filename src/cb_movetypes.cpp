@@ -9,11 +9,9 @@
 
 namespace movetypes {
 
-using std::cout;
 using std::map;
 
 using utility::Occupancy;
-using utility::OrigamiMisuse;
 
 CBMCMovetype::CBMCMovetype(
         OrigamiSystem& origami_system,

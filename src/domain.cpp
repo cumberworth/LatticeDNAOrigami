@@ -6,8 +6,6 @@
 
 namespace domainContainer {
 
-using std::cout;
-
 Domain* Domain::operator+(int incr) {
 
     // There is probably a better way to do this

@@ -10,8 +10,6 @@
 
 namespace utility {
 
-using std::cout;
-using std::unique_ptr;
 using std::vector;
 
 int index(vector<int> container, int element) {

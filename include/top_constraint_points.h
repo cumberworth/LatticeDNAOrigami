@@ -25,8 +25,6 @@ using std::vector;
 using domainContainer::Domain;
 using idealRandomWalk::IdealRandomWalks;
 using origami::OrigamiSystem;
-using parser::InputParameters;
-using randomGen::RandomGens;
 using utility::VectorThree;
 
 bool staple_excluded(vector<int> exclude_staples, int staple);

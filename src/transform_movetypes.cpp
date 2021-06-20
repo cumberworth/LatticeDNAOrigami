@@ -8,7 +8,6 @@
 namespace movetypes {
 
 using std::map;
-using std::min;
 
 using utility::Occupancy;
 
@@ -75,10 +74,10 @@ void LinkerRegrowthMCMovetype::write_log_summary(ostream* log_stream) {
     for (auto tracker: m_tracking) {
         auto info = tracker.first;
         auto counts = tracker.second;
-        pair<int, int> length {info.num_linker_domains,
-                               info.num_central_domains};
-        pair<int, int> num_staples {info.num_linker_staples,
-                                    info.num_central_staples};
+        pair<int, int> length {
+                info.num_linker_domains, info.num_central_domains};
+        pair<int, int> num_staples {
+                info.num_linker_staples, info.num_central_staples};
         pair<int, int> transf {info.disp_sum, info.rot_turns};
         lengths.insert(length);
         staples.insert(num_staples);
@@ -226,8 +225,9 @@ set<int> LinkerRegrowthMCMovetype::setup_fixed_end_biases(
     }
 
     // Find the rest
-    vector<vector<Domain*>> linkers {{linker1.begin() + 1, linker1.end()},
-                                     {linker2.begin() + 1, linker2.end()}};
+    vector<vector<Domain*>> linkers {
+            {linker1.begin() + 1, linker1.end()},
+            {linker2.begin() + 1, linker2.end()}};
     vector<int> dirs {-m_dir, m_dir};
     m_constraintpoints.calculate_constraintpoints(linkers, dirs, {});
     set<int> staples {m_constraintpoints.staples_to_be_regrown()};
@@ -281,12 +281,12 @@ bool LinkerRegrowthMCMovetype::scan_for_external_scaffold_domain(
             }
 
             // Check if bound to scaffold
-            bool domain_on_scaffold {bound_domain->m_c ==
-                                     m_origami_system.c_scaffold};
+            bool domain_on_scaffold {
+                    bound_domain->m_c == m_origami_system.c_scaffold};
             if (domain_on_scaffold) {
-                bool domain_in_range {find(domains.begin(),
-                                           domains.end(),
-                                           bound_domain) != domains.end()};
+                bool domain_in_range {
+                        find(domains.begin(), domains.end(), bound_domain) !=
+                        domains.end()};
                 if (not domain_in_range) {
                     externally_bound = true;
                     break;
@@ -332,8 +332,9 @@ double LinkerRegrowthMCMovetype::transform_segment(
         // Select rotation center (from central scaffold domain positions)
         int center_di {
                 m_random_gens.uniform_int(0, central_segment.size() - 1)};
-        pair<int, int> center_key {central_segment[center_di]->m_c,
-                                   central_segment[center_di]->m_d};
+        pair<int, int> center_key {
+                central_segment[center_di]->m_c,
+                central_segment[center_di]->m_d};
         VectorThree center {m_prev_pos[center_key]};
 
         // Select axis and number of turns
@@ -433,10 +434,10 @@ double LinkerRegrowthMCMovetype::apply_transformation(
             bool scaffold_misbinding {
                     domain->m_c == m_origami_system.c_scaffold and
                     unbound_domain->m_c == m_origami_system.c_scaffold};
-            bool new_binding_pair {find(central_domains.begin(),
-                                        central_domains.end(),
-                                        unbound_domain) ==
-                                   central_domains.end()};
+            bool new_binding_pair {
+                    find(central_domains.begin(),
+                         central_domains.end(),
+                         unbound_domain) == central_domains.end()};
             if (not scaffold_misbinding and new_binding_pair) {
                 reset_segment(central_domains, di);
                 bfactor = 0;
@@ -476,8 +477,9 @@ double LinkerRegrowthMCMovetype::revert_transformation(
         // Select rotation center (from central scaffold domain positions)
         int center_di {
                 m_random_gens.uniform_int(0, central_segment.size() - 1)};
-        pair<int, int> center_key {central_domains[center_di]->m_c,
-                                   central_segment[center_di]->m_d};
+        pair<int, int> center_key {
+                central_domains[center_di]->m_c,
+                central_segment[center_di]->m_d};
         VectorThree center {m_prev_pos[center_key]};
 
         // Select axis and number of turns
