@@ -33,9 +33,7 @@ namespace mpi = boost::mpi;
 
 using biasFunctions::GridBiasFunction;
 using biasFunctions::SystemBiases;
-using origami::Chain;
 using origami::Chains;
-using orderParams::OrderParam;
 using orderParams::SystemOrderParams;
 using origami::OrigamiSystem;
 using parser::InputParameters;

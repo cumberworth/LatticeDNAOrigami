@@ -290,7 +290,6 @@ void USGCMCSimulation::estimate_current_weights() {
 }
 
 void USGCMCSimulation::fill_grid_sets() {
-
     m_new_points.resize(m_s_i.size());
     m_old_points.resize(m_s_i.size());
     m_old_only_points.resize(m_S_n.size());
@@ -796,7 +795,7 @@ void PTMWUSGCMCSimulation::slave_send_ops(int swap_i) {
     cout << "Win " << m_rank << ": Sent point to " << m_master_node << "\n";
     cout << "Win " << m_rank << ": Sending biases to " << m_master_node << "\n";
     m_world.send(m_master_node, swap_i, m_us_sim->m_E_w);
-    cout << "Win " << m_rank << ": Sendt biases to " << m_master_node << "\n";
+    cout << "Win " << m_rank << ": Sent biases to " << m_master_node << "\n";
 }
 
 bool PTMWUSGCMCSimulation::slave_send_and_recieve_chains(int swap_i) {
