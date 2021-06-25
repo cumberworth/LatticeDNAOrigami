@@ -330,10 +330,10 @@ double CTRGRegrowthMCMovetype::calc_p_config_open(configT c) {
         Domain* occ_domain {m_origami_system.unbound_domain_at(c.first)};
         bool binding_same_chain {occ_domain->m_c == m_d->m_c};
         bool endpoint {m_constraintpoints.endpoint_reached(m_d, c.first)};
-        bool excluded_staple {find(m_excluded_staples.begin(),
-                                   m_excluded_staples.end(),
-                                   occ_domain->m_c) !=
-                              m_excluded_staples.end()};
+        bool excluded_staple {
+                find(m_excluded_staples.begin(),
+                     m_excluded_staples.end(),
+                     occ_domain->m_c) != m_excluded_staples.end()};
         if (not(binding_same_chain or endpoint or m_stemd or excluded_staple)) {
             return 0;
         }
