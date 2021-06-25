@@ -61,6 +61,7 @@ class InputParameters {
     vector<string> m_restart_traj_files {};
     string m_restart_traj_filebase;
     string m_restart_traj_postfix;
+    string m_restart_us_filebase;
     int m_restart_step;
     vector<int> m_restart_steps;
     string m_rand_engine_state_file;
@@ -104,9 +105,6 @@ class InputParameters {
     long long int m_iter_steps;
     long long int m_iter_swaps;
     long long int m_max_iter_dur;
-    long long int m_prod_steps;
-    long long int m_prod_swaps;
-    long long int m_max_prod_dur;
     double m_max_rel_P_diff;
     string m_biases_file;
     string m_biases_filebase;

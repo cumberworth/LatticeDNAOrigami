@@ -1,12 +1,10 @@
 // files.cpp
 
-#include "files.h"
-#include "utility.h"
-#include <fstream>
 #include <iostream>
 #include <sstream>
-#include <string>
-#include <vector>
+
+#include "files.h"
+#include "utility.h"
 
 namespace files {
 

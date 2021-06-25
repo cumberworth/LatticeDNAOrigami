@@ -146,6 +146,9 @@ InputParameters::InputParameters(int argc, char* argv[]) {
             "restart_traj_files",
             po::value<string>(),
             "Trajectory restart files for each replicate")(
+            "restart_us_filebase",
+            po::value<string>(&m_restart_us_filebase)->default_value(""),
+            "Trajectory restart filebase")(
             "restart_step",
             po::value<int>(&m_restart_step)->default_value(0),
             "Step to restart from")(
@@ -251,15 +254,6 @@ InputParameters::InputParameters(int argc, char* argv[]) {
             "max_iter_dur",
             po::value<long long int>(&m_max_iter_dur)->default_value(0),
             "Maximum duration of each iteration (s)")(
-            "prod_steps",
-            po::value<long long int>(&m_prod_steps)->default_value(0),
-            "Number of production steps")(
-            "prod_swaps",
-            po::value<long long int>(&m_prod_swaps)->default_value(0),
-            "Maximum number of swaps during production")(
-            "max_prod_dur",
-            po::value<long long int>(&m_max_prod_dur)->default_value(0),
-            "Maximum duration of production (s)")(
             "max_rel_P_diff",
             po::value<double>(&m_max_rel_P_diff)->default_value(0.1),
             "Maximum allowed change in P for convergence")(

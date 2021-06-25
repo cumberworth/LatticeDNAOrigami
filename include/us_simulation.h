@@ -23,7 +23,6 @@ namespace us {
 using std::cout;
 using std::ofstream;
 using std::ostream;
-using std::pair;
 using std::set;
 using std::string;
 using std::unordered_map;
@@ -62,8 +61,6 @@ class USGCMCSimulation: public GCMCSimulation {
     void run_simulation(long long int steps);
     void process_iteration(int n);
     bool weights_converged();
-    void prepare_production(int n);
-    void process_production(int n);
     GridPoint get_current_point();
 
     // Probably move these to files and interface with grid bias
@@ -104,7 +101,6 @@ class USGCMCSimulation: public GCMCSimulation {
                        // iteration
     GridFloats m_p_i {}; // locally normalized weight of grid point for current
                          // iteration
-    GridFloats m_old_p_i {}; // previous m_p_i
     GridFloats m_w_i {}; // relative contribution of grid points for current
                          // iteration
 
@@ -112,6 +108,7 @@ class USGCMCSimulation: public GCMCSimulation {
     void update_internal(long long int step);
     void estimate_current_weights();
     virtual void update_grids(int n) = 0;
+    void set_grids_from_file(string filebase);
     void fill_grid_sets();
     virtual void update_bias(int n) = 0;
     virtual void output_summary(int n) = 0;
@@ -164,8 +161,6 @@ class MWUSGCMCSimulation: public GCMCSimulation {
 
     InputParameters& m_params;
     long int m_max_num_iters;
-    string m_local_dir;
-    string m_central_dir;
 
     ofstream* m_us_stream;
 
@@ -175,16 +170,9 @@ class MWUSGCMCSimulation: public GCMCSimulation {
     vector<string> m_window_bias_tags {};
     vector<GridPoint> m_window_mins {};
     vector<GridPoint> m_window_maxs {};
+    string m_output_filebase;
     vector<string> m_output_filebases {};
     vector<string> m_window_postfixes {};
-    string m_starting_file {};
-    int m_starting_step {};
-
-    unordered_map<GridPoint, vector<pair<int, int>>>
-            m_order_param_to_configs {};
-    vector<bool> m_sims_converged {};
-    int m_num_sims_converged {0};
-    vector<int> m_current_iters {};
 };
 
 class PTMWUSGCMCSimulation: public MWUSGCMCSimulation {

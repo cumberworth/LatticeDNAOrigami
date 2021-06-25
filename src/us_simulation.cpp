@@ -3,7 +3,12 @@
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
+#include <fstream>
 
+#include "boost/archive/text_iarchive.hpp"
+#include "boost/archive/text_oarchive.hpp"
+#include "boost/serialization/boost_unordered_map.hpp"
+#include "boost/serialization/set.hpp"
 #include "json/json.h"
 
 #include "files.h"
@@ -31,10 +36,12 @@ USGCMCSimulation::USGCMCSimulation(
         m_max_equil_dur {params.m_max_equil_dur},
         m_iter_steps {params.m_iter_steps},
         m_max_iter_dur {params.m_max_iter_dur},
-        m_prod_steps {params.m_prod_steps},
-        m_max_prod_dur {params.m_max_prod_dur},
         m_grid_bias {biases.get_grid_bias(params.m_us_grid_bias_tag)},
         m_max_D_bias {params.m_max_D_bias} {
+
+    // Add reading in other internal variables here?
+    // But I will also need to specify which iteration to begin on
+    // Also I need to not clear the grid if I am loading it now
 
     // Read in weights if specified
     if (params.m_biases_file != "") {
@@ -49,7 +56,7 @@ USGCMCSimulation::USGCMCSimulation(
         *m_us_stream << "No biases read in\n";
     }
 
-    // Update starting configs if restarting
+    // Update starting configs if specified
     if (m_params.m_restart_traj_file != "") {
         *m_us_stream << "Reading starting config from file\n";
         set_config_from_traj(
@@ -57,6 +64,15 @@ USGCMCSimulation::USGCMCSimulation(
     }
     else {
         *m_us_stream << "Starting from configuration in system file\n";
+    }
+
+    // Update internal grids if specified
+    if (m_params.m_restart_us_filebase != "") {
+        *m_us_stream << "Restarting iteration from file\n";
+        set_grids_from_file(m_params.m_restart_us_filebase);
+    }
+    else {
+        *m_us_stream << "Starting new iteration\n";
     }
 }
 
@@ -68,9 +84,6 @@ void USGCMCSimulation::run() {
         run_simulation(m_steps);
         process_iteration(n);
     }
-    prepare_production(n);
-    run_simulation(m_steps);
-    process_production(n);
 }
 
 void USGCMCSimulation::run_equilibration() {
@@ -102,6 +115,8 @@ void USGCMCSimulation::prepare_iteration(int n) {
     // Write each iteration's output to a seperate file
     string prefix {"_iter-" + std::to_string(n)};
     m_output_filebase = m_params.m_output_filebase + prefix;
+    string filename {m_output_filebase + "-inp.biases"};
+    output_weights(filename);
     m_output_files = simulation::setup_output_files(
             m_params,
             m_output_filebase,
@@ -113,7 +128,6 @@ void USGCMCSimulation::prepare_iteration(int n) {
 
     // This will need to change for REMC
     m_steps = m_iter_steps;
-    clear_grids();
 }
 
 void USGCMCSimulation::run_simulation(long long int steps) {
@@ -135,6 +149,7 @@ void USGCMCSimulation::process_iteration(int n) {
     delete m_logging_stream;
     string filename {m_output_filebase + ".biases"};
     output_weights(filename);
+    clear_grids();
 }
 
 void USGCMCSimulation::clear_grids() {
@@ -144,41 +159,6 @@ void USGCMCSimulation::clear_grids() {
     m_new_points.clear();
     m_old_points.clear();
     m_old_only_points.clear();
-}
-
-void USGCMCSimulation::prepare_production(int n) {
-    set_max_dur(m_max_prod_dur);
-
-    // Setup output files
-    string postfix {"_iter-prod"};
-    m_output_filebase = m_params.m_output_filebase + postfix;
-    string filename {m_output_filebase + "-inp.biases"};
-    output_weights(filename);
-    m_output_files = simulation::setup_output_files(
-            m_params,
-            m_output_filebase,
-            m_origami_system,
-            m_ops,
-            m_biases,
-            m_random_gens);
-    m_logging_stream = new ofstream {m_output_filebase + ".out"};
-
-    m_steps = m_prod_steps;
-    clear_grids();
-}
-
-void USGCMCSimulation::process_production(int n) {
-    fill_grid_sets();
-    m_S_n.insert(m_s_i.begin(), m_s_i.end());
-    estimate_current_weights();
-    update_grids(n);
-    output_summary(n);
-
-    // Cleanup
-    close_output_files();
-    delete m_logging_stream;
-    string filename {m_output_filebase + "-out.biases"};
-    output_weights(filename);
 }
 
 GridPoint USGCMCSimulation::get_current_point() {
@@ -257,6 +237,24 @@ void USGCMCSimulation::update_internal(long long int step) {
     GridPoint point {m_grid_bias.get_point()};
     m_s_i.insert(point);
     m_f_i[point]++;
+
+    // Write archive of US state
+    // Probably shouldn't use this output freq
+    if (m_params.m_order_params_output_freq != 0 and
+        step % m_params.m_order_params_output_freq == 0) {
+
+        std::ofstream S_n_outfile {m_output_filebase + ".S_n"};
+        boost::archive::text_oarchive S_n_archive {S_n_outfile};
+        S_n_archive << m_S_n;
+
+        std::ofstream s_i_outfile {m_output_filebase + ".s_i"};
+        boost::archive::text_oarchive s_i_archive {s_i_outfile};
+        s_i_archive << m_s_i;
+
+        std::ofstream f_i_outfile {m_output_filebase + ".f_i"};
+        boost::archive::text_oarchive f_i_archive {f_i_outfile};
+        f_i_archive << m_f_i;
+    }
 }
 
 void USGCMCSimulation::estimate_current_weights() {
@@ -278,6 +276,20 @@ void USGCMCSimulation::estimate_current_weights() {
     for (auto point: m_old_only_points) {
         m_p_i[point] = 0;
     }
+}
+
+void USGCMCSimulation::set_grids_from_file(string filebase) {
+    std::ifstream S_n_infile {filebase + ".S_n"};
+    boost::archive::text_iarchive S_n_archive {S_n_infile};
+    S_n_archive >> m_S_n;
+
+    std::ifstream s_i_infile {filebase + ".s_i"};
+    boost::archive::text_iarchive s_i_archive {s_i_infile};
+    s_i_archive >> m_s_i;
+
+    std::ifstream f_i_infile {filebase + ".f_i"};
+    boost::archive::text_iarchive f_i_archive {f_i_infile};
+    f_i_archive >> m_f_i;
 }
 
 void USGCMCSimulation::fill_grid_sets() {
@@ -324,7 +336,6 @@ SimpleUSGCMCSimulation::SimpleUSGCMCSimulation(
         USGCMCSimulation(origami, ops, biases, params) {}
 
 void SimpleUSGCMCSimulation::update_bias(int) {
-    m_old_p_i = m_p_i;
     for (auto point: m_S_n) {
 
         // No T to be consistent with biases here
@@ -392,8 +403,7 @@ MWUSGCMCSimulation::MWUSGCMCSimulation(
         GCMCSimulation {origami, ops, biases, params},
         m_params {params},
         m_max_num_iters {params.m_max_num_iters},
-        m_local_dir {params.m_local_dir},
-        m_central_dir {params.m_central_dir} {
+        m_output_filebase {params.m_output_filebase} {
 
     parse_windows_file(params.m_windows_file);
     setup_window_variables();
@@ -417,10 +427,6 @@ void MWUSGCMCSimulation::run() {
             output_iter_summary(n);
         }
     }
-
-    m_us_sim->prepare_production(n);
-    m_us_sim->run_simulation(m_us_sim->m_steps);
-    m_us_sim->process_production(n);
 }
 
 void MWUSGCMCSimulation::setup_window_variables() {
@@ -459,7 +465,7 @@ void MWUSGCMCSimulation::setup_window_sims(OrigamiSystem& origami) {
 
     // US sims reads filebase names from params object, so update
     string window_postfix {m_window_postfixes[m_rank]};
-    string output_filebase {m_local_dir + "/" + m_output_filebases[m_rank]};
+    string output_filebase {m_output_filebases[m_rank]};
     m_params.m_output_filebase = output_filebase;
 
     // If available read modify filename for input biases
@@ -541,8 +547,6 @@ PTMWUSGCMCSimulation::PTMWUSGCMCSimulation(
         MWUSGCMCSimulation {origami, ops, biases, params},
         m_iter_swaps {params.m_iter_swaps},
         m_max_iter_dur {params.m_max_iter_dur},
-        m_prod_swaps {params.m_prod_swaps},
-        m_max_prod_dur {params.m_max_prod_dur},
         m_exchange_interval {params.m_exchange_interval},
         m_attempt_count(m_windows - 1, 0),
         m_swap_count(m_windows - 1, 0),
@@ -551,6 +555,8 @@ PTMWUSGCMCSimulation::PTMWUSGCMCSimulation(
 }
 
 void PTMWUSGCMCSimulation::run() {
+
+    // Somehow based on input file decide where to restart
     int n;
     m_us_sim->run_equilibration();
     for (n = 0; n != m_max_num_iters; n++) {
@@ -563,10 +569,6 @@ void PTMWUSGCMCSimulation::run() {
         std::fill(m_attempt_count.begin(), m_attempt_count.end(), 0);
         std::fill(m_swap_count.begin(), m_swap_count.end(), 0);
     }
-
-    m_us_sim->prepare_production(n);
-    run_swaps(m_prod_swaps, m_max_prod_dur);
-    m_us_sim->process_production(n);
 }
 
 void PTMWUSGCMCSimulation::run_swaps(long long int swaps, long long int dur) {
@@ -792,9 +794,9 @@ void PTMWUSGCMCSimulation::write_acceptance_freqs() {
 
 void PTMWUSGCMCSimulation::initialize_swap_file(InputParameters& params) {
     if (m_rank == m_master_node) {
-        m_swapfile.open(params.m_output_filebase + ".swp");
+        m_swapfile.open(m_output_filebase + ".swp");
         for (int rep {0}; rep != m_windows; rep++) {
-            m_swapfile << rep;
+            m_swapfile << rep << " ";
             m_win_to_configi[rep] = rep;
         }
         m_swapfile << "\n";
