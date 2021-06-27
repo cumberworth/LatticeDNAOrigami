@@ -44,12 +44,16 @@ USGCMCSimulation::USGCMCSimulation(
     // Also I need to not clear the grid if I am loading it now
 
     // Read in weights if specified
-    if (params.m_biases_file != "") {
+    if (params.m_read_biases == true) {
         ifstream bias_file {params.m_biases_file};
         if (bias_file.good()) {
             *m_us_stream << "Reading biases from file\n";
             read_weights(params.m_biases_file);
             m_grid_bias.replace_biases(m_E_w);
+        }
+        else {
+            *m_us_stream << "Bias file not good\n";
+            throw utility::SimulationMisuse {};
         }
     }
     else {
@@ -57,7 +61,7 @@ USGCMCSimulation::USGCMCSimulation(
     }
 
     // Update starting configs if specified
-    if (m_params.m_restart_traj_file != "") {
+    if (m_params.m_restart_from_config == true) {
         *m_us_stream << "Reading starting config from file\n";
         set_config_from_traj(
                 m_params.m_restart_traj_file, params.m_restart_step);
@@ -67,7 +71,7 @@ USGCMCSimulation::USGCMCSimulation(
     }
 
     // Update internal grids if specified
-    if (m_params.m_restart_us_filebase != "") {
+    if (m_params.m_restart_us_iter == true) {
         *m_us_stream << "Restarting iteration from file\n";
         set_grids_from_file(m_params.m_restart_us_filebase);
     }
@@ -105,6 +109,7 @@ void USGCMCSimulation::run_equilibration() {
     m_steps = simulate(m_steps);
 
     // Cleanup
+    clear_grids(); 
     close_output_files();
     delete m_logging_stream;
 }
@@ -290,6 +295,9 @@ void USGCMCSimulation::set_grids_from_file(string filebase) {
     std::ifstream f_i_infile {filebase + ".f_i"};
     boost::archive::text_iarchive f_i_archive {f_i_infile};
     f_i_archive >> m_f_i;
+    for (auto f: m_f_i) {
+        *m_us_stream << f.first[0] << ": " << f.second << std::endl;
+    }
 }
 
 void USGCMCSimulation::fill_grid_sets() {
@@ -469,17 +477,20 @@ void MWUSGCMCSimulation::setup_window_sims(OrigamiSystem& origami) {
     m_params.m_output_filebase = output_filebase;
 
     // If available read modify filename for input biases
-    if (m_params.m_biases_filebase != "") {
+    if (m_params.m_read_biases == true) {
         m_params.m_biases_file = m_params.m_biases_filebase + window_postfix;
         m_params.m_biases_file += ".biases";
     }
 
     // If available modify filename for seperate starting config for each window
     // Standard names
-    if (m_params.m_restart_traj_filebase != "") {
+    if (m_params.m_restart_from_config == true) {
         m_params.m_restart_traj_filebase += window_postfix;
         m_params.m_restart_traj_file = m_params.m_restart_traj_filebase +
                                        m_params.m_restart_traj_postfix;
+    }
+    if (m_params.m_restart_us_iter == true) {
+        m_params.m_restart_us_filebase += window_postfix;
     }
 
     // Names invididually specified in param file
@@ -558,7 +569,9 @@ void PTMWUSGCMCSimulation::run() {
 
     // Somehow based on input file decide where to restart
     int n;
-    m_us_sim->run_equilibration();
+    if (m_params.m_restart_us_iter == false) {
+        m_us_sim->run_equilibration();
+    }
     for (n = 0; n != m_max_num_iters; n++) {
         m_us_sim->prepare_iteration(n);
         run_swaps(m_iter_swaps, m_max_iter_dur);

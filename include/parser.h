@@ -57,10 +57,12 @@ class InputParameters {
     int m_random_seed;
     string m_movetype_filename;
     string m_num_walks_filename;
+    bool m_restart_from_config;
     string m_restart_traj_file;
     vector<string> m_restart_traj_files {};
     string m_restart_traj_filebase;
     string m_restart_traj_postfix;
+    bool m_restart_us_iter;
     string m_restart_us_filebase;
     int m_restart_step;
     vector<int> m_restart_steps;
@@ -106,6 +108,7 @@ class InputParameters {
     long long int m_iter_swaps;
     long long int m_max_iter_dur;
     double m_max_rel_P_diff;
+    bool m_read_biases;
     string m_biases_file;
     string m_biases_filebase;
     bool m_multi_window;

@@ -134,6 +134,9 @@ InputParameters::InputParameters(int argc, char* argv[]) {
             "num_walks_filename",
             po::value<string>(&m_num_walks_filename)->default_value(""),
             "Precalculated number of ideal random walks archive")(
+            "restart_from_config",
+            po::value<bool>(&m_restart_from_config)->default_value(false),
+            "Restart simulation from provided configuration(s)")(
             "restart_traj_file",
             po::value<string>(&m_restart_traj_file)->default_value(""),
             "Trajectory file to restart from")(
@@ -146,6 +149,9 @@ InputParameters::InputParameters(int argc, char* argv[]) {
             "restart_traj_files",
             po::value<string>(),
             "Trajectory restart files for each replicate")(
+            "restart_us_iter",
+            po::value<bool>(&m_restart_us_iter)->default_value(false),
+            "Restart US simulation iteration")(
             "restart_us_filebase",
             po::value<string>(&m_restart_us_filebase)->default_value(""),
             "Trajectory restart filebase")(
@@ -257,6 +263,9 @@ InputParameters::InputParameters(int argc, char* argv[]) {
             "max_rel_P_diff",
             po::value<double>(&m_max_rel_P_diff)->default_value(0.1),
             "Maximum allowed change in P for convergence")(
+            "read_biases",
+            po::value<bool>(&m_read_biases)->default_value(false),
+            "Read US biases from file")(
             "biases_file",
             po::value<string>(&m_biases_file)->default_value(""),
             "Initial guesses at grid biases")(

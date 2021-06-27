@@ -139,7 +139,7 @@ class MWUSGCMCSimulation: public GCMCSimulation {
             SystemOrderParams& ops,
             SystemBiases& biases,
             InputParameters& params);
-    ~MWUSGCMCSimulation();
+    virtual ~MWUSGCMCSimulation();
     virtual void run();
 
   protected:
