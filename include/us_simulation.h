@@ -41,10 +41,8 @@ using simulation::GCMCSimulation;
 using GridPoint = vector<int>;
 using SetOfGridPoints = set<GridPoint>;
 using ArrayOfSets = vector<SetOfGridPoints>;
-using GridInts = unordered_map<GridPoint, int>;
+using GridInts = unordered_map<GridPoint, long long int>;
 using GridFloats = unordered_map<GridPoint, double>;
-using GridOfIntArrays = unordered_map<GridPoint, vector<int>>;
-using GridOfFloatArrays = unordered_map<GridPoint, vector<double>>;
 
 // Adaptive US base class. For 2D order parameters only
 class USGCMCSimulation: public GCMCSimulation {
@@ -62,6 +60,7 @@ class USGCMCSimulation: public GCMCSimulation {
     void process_iteration(int n);
     bool weights_converged();
     GridPoint get_current_point();
+    long long int get_current_iter_steps();
 
     // Probably move these to files and interface with grid bias
     void read_weights(string filename);
@@ -76,6 +75,8 @@ class USGCMCSimulation: public GCMCSimulation {
     GridBiasFunction& m_grid_bias;
     GridFloats m_E_w {}; // biases at each each iteration
 
+    ostream* m_us_stream {&cout};
+
   protected:
     InputParameters& m_params;
     string m_output_filebase {};
@@ -88,8 +89,6 @@ class USGCMCSimulation: public GCMCSimulation {
     long long int m_max_prod_dur;
     double m_max_D_bias;
     vector<int> m_equil_dif;
-
-    ostream* m_us_stream {&cout};
 
     vector<GridPoint> m_new_points {};
     vector<GridPoint> m_old_points {};
@@ -195,6 +194,7 @@ class PTMWUSGCMCSimulation: public MWUSGCMCSimulation {
     void write_swap_entry(long long int step);
     bool test_acceptance(double p_accept);
 
+    int m_iter {0};
     long long int m_iter_swaps;
     long long int m_max_iter_dur;
     long long int m_prod_swaps;
