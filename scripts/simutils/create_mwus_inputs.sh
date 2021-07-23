@@ -74,14 +74,6 @@ vars+=("$isteps")
 fields+=(IMAXDUR)
 vars+=("$imaxdur")
 
-#echo "Production steps:"; read psteps
-fields+=(PSTEPS)
-vars+=("$psteps")
-
-#echo "Max time for production (s):"; read pmaxdur
-fields+=(PMAXDUR)
-vars+=("$pmaxdur")
-
 #echo "Iterations:"; read iters
 fields+=(ITERS)
 vars+=("$iters")
