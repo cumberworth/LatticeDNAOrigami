@@ -769,6 +769,9 @@ void PTMWUSGCMCSimulation::attempt_exchange(int swap_i) {
                 m_swap_count[i]++;
                 win_to_win[win_1] = win_2;
                 win_to_win[win_2] = win_1;
+                auto configi_1 = m_win_to_configi[win_1];
+                m_win_to_configi[win_1] = m_win_to_configi[win_2];
+                m_win_to_configi[win_2] = configi_1;
             }
         }
     }
@@ -792,7 +795,6 @@ void PTMWUSGCMCSimulation::attempt_exchange(int swap_i) {
         //     << chains_rec.size() << ") from " << win_to_win[0] << "\n";
         m_us_sim->set_config_from_chains(chains_rec);
     }
-    m_win_to_configi = win_to_win;
 }
 
 bool PTMWUSGCMCSimulation::test_acceptance(double p_accept) {
