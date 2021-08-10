@@ -449,9 +449,6 @@ void MWUSGCMCSimulation::run() {
         m_us_sim->prepare_iteration(n);
         m_us_sim->run_simulation(m_us_sim->m_steps);
         m_us_sim->process_iteration(n);
-        if (m_rank == m_master_node) {
-            output_iter_summary(n);
-        }
     }
 }
 
@@ -524,10 +521,6 @@ void MWUSGCMCSimulation::setup_window_sims(OrigamiSystem& origami) {
     m_grid_dim = m_us_sim->get_grid_dim();
 }
 
-void MWUSGCMCSimulation::output_iter_summary(int n) {
-    cout << "Iteration: " << n << "\n";
-}
-
 void MWUSGCMCSimulation::parse_windows_file(string filename) {
     ifstream file {filename};
     string window_raw;
@@ -591,9 +584,6 @@ void PTMWUSGCMCSimulation::run() {
         m_us_sim->prepare_iteration(m_iter);
         run_swaps(m_iter_swaps, m_max_iter_dur);
         m_us_sim->process_iteration(m_iter);
-        if (m_rank == m_master_node) {
-            output_iter_summary(m_iter);
-        }
         std::fill(m_attempt_count.begin(), m_attempt_count.end(), 0);
         std::fill(m_swap_count.begin(), m_swap_count.end(), 0);
     }
@@ -817,6 +807,7 @@ bool PTMWUSGCMCSimulation::test_acceptance(double p_accept) {
 
 void PTMWUSGCMCSimulation::write_acceptance_freqs() {
 
+    cout << "Iter " << m_iter << std::endl;
     cout << "Window 1, Window 2, Swaps, Attempts, Frequency" << std::endl;
     for (size_t i {0}; i != m_attempt_count.size(); i++) {
         cout << i << " ";
