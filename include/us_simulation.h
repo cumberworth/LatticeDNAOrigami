@@ -172,6 +172,7 @@ class MWUSGCMCSimulation: public GCMCSimulation {
     string m_output_filebase;
     vector<string> m_output_filebases {};
     vector<string> m_window_postfixes {};
+    string m_restart_us_filebase;
 };
 
 class PTMWUSGCMCSimulation: public MWUSGCMCSimulation {
@@ -204,6 +205,7 @@ class PTMWUSGCMCSimulation: public MWUSGCMCSimulation {
     vector<int> m_swap_count;
     vector<int> m_win_to_configi;
     ofstream m_swapfile; // Only used by master
+    string m_restart_swap_filename; //Only used by master
 };
 } // namespace us
 
