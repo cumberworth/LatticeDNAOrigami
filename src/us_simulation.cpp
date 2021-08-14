@@ -600,7 +600,7 @@ PTMWUSGCMCSimulation::PTMWUSGCMCSimulation(
 }
 
 void PTMWUSGCMCSimulation::run() {
-    if (m_params.m_restart_us_iter == false) {
+    if (not (m_params.m_restart_us_iter or m_params.m_read_biases)) {
         m_us_sim->run_equilibration();
     }
     for (; m_iter != m_max_num_iters; m_iter++) {
