@@ -198,17 +198,19 @@ void USGCMCSimulation::output_weights(string filename) {
     ofstream weights_file {filename};
     weights_file << "{\n";
     weights_file << "    \"biases\": [";
-    for (auto iter = m_S_n.begin(); iter != m_S_n.end(); iter++) {
+    unordered_map<vector<int>, double> grid {m_grid_bias.get_grid()};
+    for (auto iter = grid.begin(); iter != grid.end(); iter++) {
 
         // Last comma shit
-        if (iter == m_S_n.begin()) {
+        if (iter == grid.begin()) {
             weights_file << "\n";
         }
         else {
             weights_file << ",\n";
         }
 
-        GridPoint point {*iter};
+        GridPoint point {(*iter).first};
+        double bias {(*iter).second};
         weights_file << "        {\n";
         weights_file << "            \"point\": [\n";
         for (size_t i {0}; i != point.size() - 1; i++) {
@@ -223,7 +225,7 @@ void USGCMCSimulation::output_weights(string filename) {
         weights_file << "],\n";
         weights_file << "            ";
         weights_file << "\"bias\": ";
-        weights_file << std::to_string(m_E_w[point]);
+        weights_file << std::to_string(bias);
         weights_file << "\n";
         weights_file << "        }";
     }

@@ -147,6 +147,7 @@ class GridBiasFunction: public BiasFunction {
     double update_bias();
     double check_bias();
     double calc_bias(vector<int> params);
+    unordered_map<vector<int>, double> get_grid() { return m_bias_grid; }
 
   private:
     vector<reference_wrapper<OrderParam>> m_ops;
