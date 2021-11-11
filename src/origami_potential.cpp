@@ -1085,7 +1085,7 @@ void OrigamiPotential::calc_energies() {
             }
         }
     }
-    write_energies_to_file();
+    //write_energies_to_file();
 }
 
 void OrigamiPotential::calc_hybridization_energy(
