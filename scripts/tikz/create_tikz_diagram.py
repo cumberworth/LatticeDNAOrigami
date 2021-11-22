@@ -7,16 +7,41 @@ script for configurations at specified steps in the specified intput file.
 """
 
 import argparse
-import sys
 import string
 
-from origamipy.files import JSONStructInpFile, TxtTrajInpFile
+from origamipy.files import JSONStructInpFile
 
 
-TEMPLATE_FILENAME = 'tikz_template.tex'
+def main():
+    args = parse_args()
+    if not args.axis:
+        axis = '%'
+    else:
+        axis = ''
+
+    # This assumes the traj file is json
+    traj_file = JSONStructInpFile(args.traj_filename)
+    chains = traj_file.chains(args.step)
+    inserts = make_tikz_position_bond_orientation_list(
+        chains,
+        args.orelen,
+        args.exclude_scaffold,
+        args.exclude_staples)
+    insert_list_and_write(
+        inserts,
+        args.output_filename,
+        args.coor1,
+        args.coor2,
+        axis,
+        args.template_filename)
 
 
-def make_tikz_position_bond_orientation_list(chains, orelen):
+def make_tikz_position_bond_orientation_list(
+        chains,
+        orelen,
+        exclude_scaffold,
+        exclude_staples):
+    # ndr is for the next domain vector
     scaffold_list = ''
     scaffold_list_ndr = ''
     staple_list = ''
@@ -57,70 +82,102 @@ def make_tikz_position_bond_orientation_list(chains, orelen):
 
     # Remove last comma and space
     scaffold_list = scaffold_list[:-2]
-    staple_list = staple_list[:-2]
     scaffold_list_ndr = scaffold_list_ndr[:-2]
+    staple_list = staple_list[:-2]
     staple_list_ndr = staple_list_ndr[:-2]
 
-    return scaffold_list, staple_list, scaffold_list_ndr, staple_list_ndr
+    if exclude_scaffold:
+        scaffold_list = ''
+        scaffold_list_ndr = ''
+
+    if exclude_staples:
+        staple_list = ''
+        staple_list_ndr = ''
+
+    inserts = {
+        'scaffold_list': scaffold_list,
+        'scaffold_list_ndr': scaffold_list_ndr,
+        'staple_list': staple_list,
+        'staple_list_ndr': staple_list_ndr}
+
+    return inserts
 
 
-def insert_list_and_write(scaffold_list, staple_list, scaffold_list_ndr,
-        staple_list_ndr, output_filename, coor1, coor2, axis):
+def insert_list_and_write(
+        inserts,
+        output_filename,
+        coor1,
+        coor2,
+        axis,
+        template_filename):
 
-    with open(TEMPLATE_FILENAME) as input:
+    with open(template_filename) as input:
         template = string.Template(input.read())
 
-    template = template.substitute(scaffold_list=scaffold_list,
-            staple_list=staple_list, scaffold_list_ndr=scaffold_list_ndr,
-            staple_list_ndr=staple_list_ndr, coor1=coor1, coor2=coor2,
-            axis=axis)
+    template = template.substitute(
+        scaffold_list=inserts['scaffold_list'],
+        scaffold_list_ndr=inserts['scaffold_list_ndr'],
+        staple_list=inserts['staple_list'],
+        staple_list_ndr=inserts['staple_list_ndr'],
+        coor1=coor1,
+        coor2=coor2,
+        axis=axis)
     with open(output_filename, 'w') as output:
         output.write(template)
 
 
-def main():
+def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('system_filename',
-            help='System filename')
-    parser.add_argument('traj_filename',
-            help='Trajectory filename')
-    parser.add_argument('output_filename',
-            help='Tex filename')
-    parser.add_argument('step', type=int,
-            help='Step in configuration file to draw')
-    parser.add_argument('--coor1', dest='coor1', default=0,
-            help='First perspective coordinate (default 0)')
-    parser.add_argument('--coor2', dest='coor2', default=0,
-            help='Second perspective coordinate (default 0)')
-    parser.add_argument('--orelen', dest='orelen', default=0.5, type=float,
-            help='Length of orientation vector (default 0.5)')
-    parser.add_argument('--axis', dest='axis', action='store_true',
-            default=False,
-            help='Switch off axis')
+    parser.add_argument(
+        'traj_filename',
+        help='Trajectory filename (only json for now)')
+    parser.add_argument(
+        'output_filename',
+        help='Tex filename')
+    parser.add_argument(
+        'step',
+        type=int,
+        help='Step in configuration file to draw')
+    parser.add_argument(
+        '--coor1',
+        dest='coor1',
+        default=0,
+        help='First perspective coordinate (default 0)')
+    parser.add_argument(
+        '--coor2',
+        dest='coor2',
+        default=0,
+        help='Second perspective coordinate (default 0)')
+    parser.add_argument(
+        '--orelen',
+        dest='orelen',
+        default=0.5,
+        type=float,
+        help='Length of orientation vector (default 0.5)')
+    parser.add_argument(
+        '--axis',
+        dest='axis',
+        action='store_true',
+        default=False,
+        help='Switch off axis')
+    parser.add_argument(
+        '--exclude_scaffold',
+        default=False,
+        help='Do not draw scaffold')
+    parser.add_argument(
+        '--exclude_staples',
+        default=False,
+        help='Do not draw staples')
+    parser.add_argument(
+        '--tikz_template',
+        dest='template_filename',
+        default='tikz_template.tex',
+        help='Tikz template')
+#    parser.add_argument(
+#        '--system_filename',
+#        help='System filename if using non-json traj file')
 
-    args = parser.parse_args()
-    system_filename = args.system_filename
-    traj_filename = args.traj_filename
-    output_filename = args.output_filename
-    step = args.step
-    coor1 = args.coor1
-    coor2 = args.coor2
-    axis = args.axis
-    orelen = args.orelen
-    if not axis:
-        axis = '%'
-    else:
-        axis = ''
-
-
-#    system_file = JSONStructInpFile(system_filename)
-    traj_file = JSONStructInpFile(traj_filename)
-    chains = traj_file.chains(step)
-    scaffold_list, staple_list, scaffold_list_ndr, staple_list_ndr = (
-            make_tikz_position_bond_orientation_list(chains, orelen))
-    insert_list_and_write(scaffold_list, staple_list, scaffold_list_ndr,
-            staple_list_ndr, output_filename, coor1, coor2, axis)
-
+    return parser.parse_args()
 
 if __name__ == '__main__':
     main()
