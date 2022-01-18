@@ -65,6 +65,7 @@ class InputParameters {
     bool m_restart_us_iter;
     string m_restart_us_filebase;
     int m_restart_step;
+    bool m_restart_from_swap;
     vector<int> m_restart_steps;
     string m_rand_engine_state_file;
     string m_vmd_file_dir;

@@ -33,7 +33,7 @@ PTGCMCSimulation::PTGCMCSimulation(
     string string_rank {std::to_string(m_rank)};
 
     // Update starting configs if restarting
-    if (m_params.m_restart_traj_filebase != "") {
+    if (m_params.m_restart_from_config == true) {
         string filename {
                 params.m_restart_traj_filebase + "-" + string_rank +
                 params.m_restart_traj_postfix};
@@ -56,7 +56,7 @@ PTGCMCSimulation::PTGCMCSimulation(
     if (m_rank == m_master_rep) {
 
         // For now just take last line of restart file
-        if (params.m_restart_swap_file != "") {
+        if (m_params.m_restart_from_swap == true) {
             string q_to_repi_str;
             std::ifstream swap_file {params.m_restart_swap_file};
             string line;

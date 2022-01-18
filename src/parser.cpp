@@ -149,6 +149,9 @@ InputParameters::InputParameters(int argc, char* argv[]) {
             "restart_traj_files",
             po::value<string>(),
             "Trajectory restart files for each replicate")(
+            "restart_from_swap",
+            po::value<bool>(&m_restart_from_swap)->default_value(false),
+            "Restart simulation from swap file")(
             "restart_us_iter",
             po::value<bool>(&m_restart_us_iter)->default_value(false),
             "Restart US simulation iteration")(
