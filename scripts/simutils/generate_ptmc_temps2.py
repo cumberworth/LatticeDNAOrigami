@@ -28,8 +28,8 @@ def main():
     for i, op in old_ops.items():
         if op > args.max_op - args.max_op*args.op_margin:
             if boundary_reached:
-                old_ops = old_ops.drop(i, 0)
-                old_temps = old_temps.drop(i, 0)
+                old_ops = old_ops.drop(index=i)
+                old_temps = old_temps.drop(index=i)
             else:
                 boundary_reached = True
 
@@ -38,23 +38,30 @@ def main():
     for i, op in old_ops.items():
         if op < args.max_op*args.op_margin:
             if boundary_reached:
-                old_ops = old_ops.drop(i, 0)
-                old_temps = old_temps.drop(i, 0)
+                old_ops = old_ops.drop(index=i)
+                old_temps = old_temps.drop(index=i)
             else:
                 boundary_reached = True
+
+    if args.temp_cap == 0:
+        num_temps = args.threads
+    else:
+        num_temps = args.threads - 2
 
     interpolated_ops_f = interpolate.interp1d(old_temps, old_ops, kind='linear',
                                               fill_value='extrapolate')
     guess_temps = np.linspace(old_temps.iloc[0], old_temps.iloc[-1],
-                              num=args.threads - 2)
+                              num=num_temps)
     desired_ops = np.linspace(args.max_op - args.max_op*args.op_margin,
-                              args.max_op*args.op_margin, num=args.threads - 2)
+                              args.max_op*args.op_margin, num=num_temps)
     new_temps = minimize(sum_of_squared_errors, guess_temps,
                          args=(desired_ops, interpolated_ops_f)).x
     new_temps.sort()
-    low_temps = [new_temps[0] - args.temp_cap]
-    high_temps = [new_temps[-1] + args.temp_cap]
-    new_temps = np.concatenate([low_temps, new_temps, high_temps])
+    if args.temp_cap != 0:
+        low_temps = [new_temps[0] - args.temp_cap]
+        high_temps = [new_temps[-1] + args.temp_cap]
+        new_temps = np.concatenate([low_temps, new_temps, high_temps])
+
     np.set_printoptions(formatter={'float': '{:0.3f}'.format}, linewidth=200)
     new_temps = np.around(new_temps, decimals=3)
     temps_string = ''
@@ -94,13 +101,14 @@ def parse_args():
         type=float,
         help='Percentage of order parameter to use for range margins')
     parser.add_argument(
-        'temp_cap',
-        type=float,
-        help='Additional temperature to add to bottom and top of range')
-    parser.add_argument(
         'threads',
         type=int,
         help='Number of threads/replicas')
+    parser.add_argument(
+        '--temp_cap',
+        default=0,
+        type=float,
+        help='Additional temperature to add to bottom and top of range')
     parser.add_argument(
         '--rtag',
         type=str,
