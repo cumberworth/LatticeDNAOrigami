@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.15)
 
 project(
   LatticeDNAOrigami
@@ -73,8 +73,9 @@ find_package(Boost 1.69 REQUIRED COMPONENTS program_options mpi serialization
                                             system filesystem)
 message(STATUS "Boost version: ${Boost_VERSION}")
 target_link_libraries(
-  LatticeDNAOrigami_lib PUBLIC Boost::filesystem Boost::program_options Boost::mpi
-                           Boost::serialization Boost::system Boost::filesystem)
+  LatticeDNAOrigami_lib
+  PUBLIC Boost::filesystem Boost::program_options Boost::mpi
+         Boost::serialization Boost::system Boost::filesystem)
 
 # Interprocedular optimization
 include(CheckIPOSupported)
@@ -91,8 +92,8 @@ endif()
 # CMake does not support it for clang There is a bug in the llvm code that
 # prevents this from being used in combination with clang-tidy
 # target_compile_options(LatticeDNAOrigami_lib PUBLIC -flto=thin)
-# set_target_properties(LatticeDNAOrigami_lib PROPERTIES LINK_FLAGS "-fuse-ld=lld
-# -flto=thin")
+# set_target_properties(LatticeDNAOrigami_lib PROPERTIES LINK_FLAGS
+# "-fuse-ld=lld -flto=thin")
 
 # CCache (increased compiliation speed)
 find_program(CCACHE_PROGRAM ccache)
@@ -115,9 +116,7 @@ install(TARGETS LatticeDNAOrigami_lib RUNTIME DESTINATION bin)
 # -Wdouble-promotion)
 
 # Create program
-add_executable(
-  LatticeDNAOrigami
-  apps/main.cpp)
+add_executable(LatticeDNAOrigami apps/main.cpp)
 target_link_libraries(LatticeDNAOrigami PUBLIC LatticeDNAOrigami_lib)
 
 # Testing
