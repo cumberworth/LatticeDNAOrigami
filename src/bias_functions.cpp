@@ -1,7 +1,7 @@
 // bias_functions.cpp
 
-#include "bias_functions.h"
-#include "files.h"
+#include "LatticeDNAOrigami/bias_functions.hpp"
+#include "LatticeDNAOrigami/files.hpp"
 
 namespace biasFunctions {
 

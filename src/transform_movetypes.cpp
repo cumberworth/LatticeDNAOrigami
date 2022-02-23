@@ -2,8 +2,8 @@
 
 #include <map>
 
-#include "transform_movetypes.h"
-#include "utility.h"
+#include "LatticeDNAOrigami/transform_movetypes.hpp"
+#include "LatticeDNAOrigami/utility.hpp"
 
 namespace movetypes {
 

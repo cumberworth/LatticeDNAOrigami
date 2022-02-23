@@ -3,8 +3,8 @@
 #include <fstream>
 #include <iostream>
 
-#include "parser.h"
-#include "utility.h"
+#include "LatticeDNAOrigami/parser.hpp"
+#include "LatticeDNAOrigami/utility.hpp"
 
 namespace parser {
 

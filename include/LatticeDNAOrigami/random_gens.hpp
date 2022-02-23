@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <utility>
 
-#include "hash.h"
+#include "LatticeDNAOrigami/hash.hpp"
 
 namespace randomGen {
 

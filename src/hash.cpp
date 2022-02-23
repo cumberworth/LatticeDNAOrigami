@@ -1,6 +1,6 @@
 // hash.cpp
 
-#include "hash.h"
+#include "LatticeDNAOrigami/hash.hpp"
 
 namespace std {
 size_t hash_value(utility::VectorThree const& v) {

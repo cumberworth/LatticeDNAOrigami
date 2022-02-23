@@ -3,10 +3,10 @@
 #ifndef ANNEALING_SIMULATION_H
 #define ANNEALING_SIMULATION_H
 
-#include "bias_functions.h"
-#include "order_params.h"
-#include "origami_system.h"
-#include "simulation.h"
+#include "LatticeDNAOrigami/bias_functions.hpp"
+#include "LatticeDNAOrigami/order_params.hpp"
+#include "LatticeDNAOrigami/origami_system.hpp"
+#include "LatticeDNAOrigami/simulation.hpp"
 
 namespace annealing {
 

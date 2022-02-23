@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "annealing_simulation.h"
+#include "LatticeDNAOrigami/annealing_simulation.hpp"
 
 namespace annealing {
 

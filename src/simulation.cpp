@@ -14,18 +14,17 @@
 #include <boost/mpi/environment.hpp>
 #include <boost/process.hpp>
 
-#include "cb_movetypes.h"
-#include "files.h"
-#include "met_movetypes.h"
-#include "movetypes.h"
-#include "orientation_movetype.h"
-#include "random_gens.h"
-#include "rg_movetypes.h"
-#include "simulation.h"
-#include "transform_movetypes.h"
-#include "utility.h"
+#include "LatticeDNAOrigami/cb_movetypes.hpp"
+#include "LatticeDNAOrigami/files.hpp"
+#include "LatticeDNAOrigami/met_movetypes.hpp"
+#include "LatticeDNAOrigami/movetypes.hpp"
+#include "LatticeDNAOrigami/orientation_movetype.hpp"
+#include "LatticeDNAOrigami/random_gens.hpp"
+#include "LatticeDNAOrigami/rg_movetypes.hpp"
+#include "LatticeDNAOrigami/simulation.hpp"
+#include "LatticeDNAOrigami/transform_movetypes.hpp"
+#include "LatticeDNAOrigami/utility.hpp"
 
-#include "random_gens.h"
 
 namespace simulation {
 

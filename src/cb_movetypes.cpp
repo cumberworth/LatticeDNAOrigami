@@ -1,11 +1,11 @@
 // cb_movetypes.cpp
 
+#include <algorithm>
 #include <iostream>
 #include <map>
 #include <utility>
 
-#include "algorithm"
-#include "cb_movetypes.h"
+#include "LatticeDNAOrigami/cb_movetypes.hpp"
 
 namespace movetypes {
 

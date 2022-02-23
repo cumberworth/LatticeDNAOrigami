@@ -3,7 +3,7 @@
 #include <iostream>
 #include <random>
 
-#include "random_gens.h"
+#include "LatticeDNAOrigami/random_gens.hpp"
 
 namespace randomGen {
 

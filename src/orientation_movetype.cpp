@@ -1,6 +1,6 @@
 // orientation_movetype.cpp
 
-#include "orientation_movetype.h"
+#include "LatticeDNAOrigami/orientation_movetype.hpp"
 
 namespace movetypes {
 

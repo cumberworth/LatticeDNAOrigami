@@ -5,11 +5,11 @@
 
 #include <vector>
 
-#include "domain.h"
-#include "hash.h"
-#include "nearest_neighbour.h"
-#include "parser.h"
-#include "utility.h"
+#include "LatticeDNAOrigami/domain.hpp"
+#include "LatticeDNAOrigami/hash.hpp"
+#include "LatticeDNAOrigami/nearest_neighbour.hpp"
+#include "LatticeDNAOrigami/parser.hpp"
+#include "LatticeDNAOrigami/utility.hpp"
 
 namespace potential {
 

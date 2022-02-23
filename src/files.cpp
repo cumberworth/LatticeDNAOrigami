@@ -3,8 +3,8 @@
 #include <iostream>
 #include <sstream>
 
-#include "files.h"
-#include "utility.h"
+#include "LatticeDNAOrigami/files.hpp"
+#include "LatticeDNAOrigami/utility.hpp"
 
 namespace files {
 

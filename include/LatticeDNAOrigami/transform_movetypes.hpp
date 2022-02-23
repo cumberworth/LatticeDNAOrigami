@@ -3,8 +3,8 @@
 #ifndef TRANSFORM_MOVETYPES_H
 #define TRANSFORM_MOVETYPES_H
 
-#include "cb_movetypes.h"
-#include "rg_movetypes.h"
+#include "LatticeDNAOrigami/cb_movetypes.hpp"
+#include "LatticeDNAOrigami/rg_movetypes.hpp"
 
 namespace movetypes {
 

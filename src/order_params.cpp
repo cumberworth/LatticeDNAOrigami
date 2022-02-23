@@ -3,8 +3,8 @@
 #include <numeric>
 #include <utility>
 
-#include "files.h"
-#include "order_params.h"
+#include "LatticeDNAOrigami/files.hpp"
+#include "LatticeDNAOrigami/order_params.hpp"
 
 namespace orderParams {
 

@@ -4,7 +4,7 @@
 #include <set>
 #include <utility>
 
-#include "met_movetypes.h"
+#include "LatticeDNAOrigami/met_movetypes.hpp"
 
 namespace movetypes {
 

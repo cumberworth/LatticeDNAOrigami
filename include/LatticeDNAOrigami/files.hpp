@@ -11,10 +11,10 @@
 
 #include "json/json.h"
 
-#include "bias_functions.h"
-#include "order_params.h"
-#include "origami_system.h"
-#include "random_gens.h"
+#include "LatticeDNAOrigami/bias_functions.hpp"
+#include "LatticeDNAOrigami/order_params.hpp"
+#include "LatticeDNAOrigami/origami_system.hpp"
+#include "LatticeDNAOrigami/random_gens.hpp"
 
 namespace files {
 

@@ -9,12 +9,12 @@
 #include <utility>
 #include <vector>
 
-#include "bias_functions.h"
-#include "domain.h"
-#include "order_params.h"
-#include "origami_system.h"
-#include "parser.h"
-#include "utility.h"
+#include "LatticeDNAOrigami/bias_functions.hpp"
+#include "LatticeDNAOrigami/domain.hpp"
+#include "LatticeDNAOrigami/order_params.hpp"
+#include "LatticeDNAOrigami/origami_system.hpp"
+#include "LatticeDNAOrigami/parser.hpp"
+#include "LatticeDNAOrigami/utility.hpp"
 
 namespace enumerator {
 

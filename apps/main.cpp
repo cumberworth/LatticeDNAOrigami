@@ -2,18 +2,18 @@
 
 #include <iostream>
 
-#include "annealing_simulation.h"
-#include "bias_functions.h"
-#include "constant_temp_simulation.h"
-#include "domain.h"
-#include "enumerate.h"
-#include "files.h"
-#include "nearest_neighbour.h"
-#include "order_params.h"
-#include "parser.h"
-#include "ptmc_simulation.h"
-#include "us_simulation.h"
-#include "version.h"
+#include "LatticeDNAOrigami/annealing_simulation.hpp"
+#include "LatticeDNAOrigami/bias_functions.hpp"
+#include "LatticeDNAOrigami/constant_temp_simulation.hpp"
+#include "LatticeDNAOrigami/domain.hpp"
+#include "LatticeDNAOrigami/enumerate.hpp"
+#include "LatticeDNAOrigami/files.hpp"
+#include "LatticeDNAOrigami/nearest_neighbour.hpp"
+#include "LatticeDNAOrigami/order_params.hpp"
+#include "LatticeDNAOrigami/parser.hpp"
+#include "LatticeDNAOrigami/ptmc_simulation.hpp"
+#include "LatticeDNAOrigami/us_simulation.hpp"
+#include "LatticeDNAOrigami/version.hpp"
 
 int main(int argc, char* argv[]) {
 

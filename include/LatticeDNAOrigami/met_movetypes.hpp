@@ -8,10 +8,10 @@
 #include <unordered_map>
 #include <vector>
 
-#include "domain.h"
-#include "hash.h"
-#include "movetypes.h"
-#include "utility.h"
+#include "LatticeDNAOrigami/domain.hpp"
+#include "LatticeDNAOrigami/hash.hpp"
+#include "LatticeDNAOrigami/movetypes.hpp"
+#include "LatticeDNAOrigami/utility.hpp"
 
 namespace movetypes {
 

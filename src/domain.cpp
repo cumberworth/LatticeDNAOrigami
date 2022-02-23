@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "domain.h"
+#include "LatticeDNAOrigami/domain.hpp"
 
 namespace domainContainer {
 

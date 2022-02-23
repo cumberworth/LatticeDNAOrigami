@@ -6,7 +6,7 @@
 #include <sstream>
 #include <vector>
 
-#include "utility.h"
+#include "LatticeDNAOrigami/utility.hpp"
 
 namespace utility {
 

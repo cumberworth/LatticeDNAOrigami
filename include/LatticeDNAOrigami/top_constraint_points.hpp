@@ -8,12 +8,12 @@
 #include <utility>
 #include <vector>
 
-#include "domain.h"
-#include "ideal_random_walk.h"
-#include "origami_system.h"
-#include "parser.h"
-#include "random_gens.h"
-#include "utility.h"
+#include "LatticeDNAOrigami/domain.hpp"
+#include "LatticeDNAOrigami/ideal_random_walk.hpp"
+#include "LatticeDNAOrigami/origami_system.hpp"
+#include "LatticeDNAOrigami/parser.hpp"
+#include "LatticeDNAOrigami/random_gens.hpp"
+#include "LatticeDNAOrigami/utility.hpp"
 
 namespace topConstraintPoints {
 

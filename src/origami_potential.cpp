@@ -1,8 +1,5 @@
 // origami_potential.cpp
 
-#include "origami_potential.h"
-#include "nearest_neighbour.h"
-
 #include <fstream>
 #include <iostream>
 #include <utility>
@@ -11,6 +8,9 @@
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/serialization/unordered_map.hpp>
 #include <boost/serialization/utility.hpp>
+
+#include "LatticeDNAOrigami/origami_potential.hpp"
+#include "LatticeDNAOrigami/nearest_neighbour.hpp"
 
 namespace potential {
 

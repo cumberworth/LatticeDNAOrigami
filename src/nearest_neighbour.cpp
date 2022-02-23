@@ -7,7 +7,7 @@
 #include <utility>
 #include <vector>
 
-#include "nearest_neighbour.h"
+#include "LatticeDNAOrigami/nearest_neighbour.hpp"
 
 namespace nearestNeighbour {
 

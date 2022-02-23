@@ -5,7 +5,7 @@
 
 #include <list>
 
-#include "movetypes.h"
+#include "LatticeDNAOrigami/movetypes.hpp"
 
 namespace movetypes {
 

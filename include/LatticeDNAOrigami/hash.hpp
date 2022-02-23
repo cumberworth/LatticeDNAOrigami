@@ -6,7 +6,7 @@
 
 #include "boost/functional/hash.hpp"
 
-#include "utility.h"
+#include "LatticeDNAOrigami/utility.hpp"
 
 namespace std {
 

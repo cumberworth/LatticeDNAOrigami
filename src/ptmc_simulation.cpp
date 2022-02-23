@@ -4,8 +4,8 @@
 #include <sstream>
 #include <string>
 
-#include "files.h"
-#include "ptmc_simulation.h"
+#include "LatticeDNAOrigami/files.hpp"
+#include "LatticeDNAOrigami/ptmc_simulation.hpp"
 
 namespace ptmc {
 

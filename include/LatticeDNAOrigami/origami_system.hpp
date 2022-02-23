@@ -13,11 +13,11 @@
 
 #include "boost/serialization/vector.hpp"
 
-#include "domain.h"
-#include "hash.h"
-#include "origami_potential.h"
-#include "parser.h"
-#include "utility.h"
+#include "LatticeDNAOrigami/domain.hpp"
+#include "LatticeDNAOrigami/hash.hpp"
+#include "LatticeDNAOrigami/origami_potential.hpp"
+#include "LatticeDNAOrigami/parser.hpp"
+#include "LatticeDNAOrigami/utility.hpp"
 
 // Forward declaration
 

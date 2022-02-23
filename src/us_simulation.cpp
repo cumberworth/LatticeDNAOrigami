@@ -9,11 +9,12 @@
 #include "boost/archive/text_oarchive.hpp"
 #include "boost/serialization/boost_unordered_map.hpp"
 #include "boost/serialization/set.hpp"
+
 #include "json/json.h"
 
-#include "files.h"
-#include "us_simulation.h"
-#include "utility.h"
+#include "LatticeDNAOrigami/files.hpp"
+#include "LatticeDNAOrigami/us_simulation.hpp"
+#include "LatticeDNAOrigami/utility.hpp"
 
 namespace us {
 

@@ -5,11 +5,11 @@
 
 #include <vector>
 
-#include "bias_functions.h"
-#include "order_params.h"
-#include "origami_system.h"
-#include "parser.h"
-#include "simulation.h"
+#include "LatticeDNAOrigami/bias_functions.hpp"
+#include "LatticeDNAOrigami/order_params.hpp"
+#include "LatticeDNAOrigami/origami_system.hpp"
+#include "LatticeDNAOrigami/parser.hpp"
+#include "LatticeDNAOrigami/simulation.hpp"
 
 namespace constantTemp {
 

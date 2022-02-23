@@ -9,14 +9,14 @@
 #include <utility>
 #include <vector>
 
-#include "boost/mpi/communicator.hpp"
-#include "boost/mpi/environment.hpp"
-#include "boost/serialization/vector.hpp"
+#include <boost/mpi/communicator.hpp>
+#include <boost/mpi/environment.hpp>
+#include <boost/serialization/vector.hpp>
 
-#include "order_params.h"
-#include "origami_system.h"
-#include "parser.h"
-#include "simulation.h"
+#include "LatticeDNAOrigami/order_params.hpp"
+#include "LatticeDNAOrigami/origami_system.hpp"
+#include "LatticeDNAOrigami/parser.hpp"
+#include "LatticeDNAOrigami/simulation.hpp"
 
 namespace us {
 

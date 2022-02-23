@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "constant_temp_simulation.h"
+#include "LatticeDNAOrigami/constant_temp_simulation.hpp"
 
 namespace constantTemp {
 

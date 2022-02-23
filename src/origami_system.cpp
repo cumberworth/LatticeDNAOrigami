@@ -5,10 +5,10 @@
 #include <fstream>
 #include <iostream>
 
-#include "bias_functions.h"
-#include "files.h"
-#include "order_params.h"
-#include "origami_system.h"
+#include "LatticeDNAOrigami/bias_functions.hpp"
+#include "LatticeDNAOrigami/files.hpp"
+#include "LatticeDNAOrigami/order_params.hpp"
+#include "LatticeDNAOrigami/origami_system.hpp"
 
 namespace origami {
 

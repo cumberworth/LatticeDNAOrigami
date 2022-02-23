@@ -5,7 +5,7 @@
 
 #include <boost/math/special_functions/factorials.hpp>
 
-#include "ideal_random_walk.h"
+#include "LatticeDNAOrigami/ideal_random_walk.hpp"
 
 namespace idealRandomWalk {
 

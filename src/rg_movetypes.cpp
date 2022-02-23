@@ -2,7 +2,7 @@
 
 #include <map>
 
-#include "rg_movetypes.h"
+#include "LatticeDNAOrigami/rg_movetypes.hpp"
 
 namespace movetypes {
 

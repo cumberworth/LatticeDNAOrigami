@@ -13,14 +13,14 @@
 
 #include <boost/process.hpp>
 
-#include "bias_functions.h"
-#include "files.h"
-#include "ideal_random_walk.h"
-#include "movetypes.h"
-#include "order_params.h"
-#include "origami_system.h"
-#include "parser.h"
-#include "random_gens.h"
+#include "LatticeDNAOrigami/bias_functions.hpp"
+#include "LatticeDNAOrigami/files.hpp"
+#include "LatticeDNAOrigami/ideal_random_walk.hpp"
+#include "LatticeDNAOrigami/movetypes.hpp"
+#include "LatticeDNAOrigami/order_params.hpp"
+#include "LatticeDNAOrigami/origami_system.hpp"
+#include "LatticeDNAOrigami/parser.hpp"
+#include "LatticeDNAOrigami/random_gens.hpp"
 
 namespace simulation {
 

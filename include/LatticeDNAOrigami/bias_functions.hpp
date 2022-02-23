@@ -8,12 +8,12 @@
 #include <utility>
 #include <vector>
 
-#include "domain.h"
-#include "hash.h"
-#include "order_params.h"
-#include "origami_system.h"
-#include "parser.h"
-#include "utility.h"
+#include "LatticeDNAOrigami/domain.hpp"
+#include "LatticeDNAOrigami/hash.hpp"
+#include "LatticeDNAOrigami/order_params.hpp"
+#include "LatticeDNAOrigami/origami_system.hpp"
+#include "LatticeDNAOrigami/parser.hpp"
+#include "LatticeDNAOrigami/utility.hpp"
 
 namespace biasFunctions {
 

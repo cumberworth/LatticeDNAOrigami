@@ -13,8 +13,8 @@
 #include <boost/serialization/unordered_map.hpp>
 #include <boost/serialization/utility.hpp>
 
-#include "hash.h"
-#include "utility.h"
+#include "LatticeDNAOrigami/hash.hpp"
+#include "LatticeDNAOrigami/utility.hpp"
 
 namespace idealRandomWalk {
 

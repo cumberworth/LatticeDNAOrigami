@@ -3,7 +3,7 @@
 #ifndef ORIENTATION_MOVETYPE_H
 #define ORIENTATION_MOVETYPE_H
 
-#include "movetypes.h"
+#include "LatticeDNAOrigami/movetypes.hpp"
 
 namespace movetypes {
 

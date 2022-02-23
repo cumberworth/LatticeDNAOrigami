@@ -2,8 +2,8 @@
 
 #include <cmath>
 
-#include "top_constraint_points.h"
-#include "utility.h"
+#include "LatticeDNAOrigami/top_constraint_points.hpp"
+#include "LatticeDNAOrigami/utility.hpp"
 
 namespace topConstraintPoints {
 

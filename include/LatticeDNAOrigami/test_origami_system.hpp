@@ -3,7 +3,7 @@
 #ifndef TEST_ORIGAMI_SYSTEM_H
 #define TEST_ORIGAMI_SYSTEM_H
 
-#include "origami_system.h"
+#include "LatticeDNAOrigami/origami_system.hpp"
 
 namespace testOrigamiSystem {
 

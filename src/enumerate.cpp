@@ -5,8 +5,8 @@
 #include <fstream>
 #include <iostream>
 
-#include "enumerate.h"
-#include "order_params.h"
+#include "LatticeDNAOrigami/enumerate.hpp"
+#include "LatticeDNAOrigami/order_params.hpp"
 
 namespace enumerator {
 

@@ -3,7 +3,7 @@
 #ifndef DOMAIN_H
 #define DOMAIN_H
 
-#include "utility.h"
+#include "LatticeDNAOrigami/utility.hpp"
 
 namespace domainContainer {
 

@@ -11,16 +11,16 @@
 #include <utility>
 #include <vector>
 
-#include "bias_functions.h"
-#include "domain.h"
-#include "files.h"
-#include "ideal_random_walk.h"
-#include "order_params.h"
-#include "origami_system.h"
-#include "parser.h"
-#include "random_gens.h"
-#include "top_constraint_points.h"
-#include "utility.h"
+#include "LatticeDNAOrigami/bias_functions.hpp"
+#include "LatticeDNAOrigami/domain.hpp"
+#include "LatticeDNAOrigami/files.hpp"
+#include "LatticeDNAOrigami/ideal_random_walk.hpp"
+#include "LatticeDNAOrigami/order_params.hpp"
+#include "LatticeDNAOrigami/origami_system.hpp"
+#include "LatticeDNAOrigami/parser.hpp"
+#include "LatticeDNAOrigami/random_gens.hpp"
+#include "LatticeDNAOrigami/top_constraint_points.hpp"
+#include "LatticeDNAOrigami/utility.hpp"
 
 namespace movetypes {
 
