@@ -1,44 +1,52 @@
-Simulation package for lattice models of the self-assembly of DNA origami. The models are intended to include only the most important details for allowing an explicit representation of the geometry of the system. Simulations are run in the grand canonical ensemble, with annealing, Hamiltonian parallel tempering, and umbrella sampling variants available and configurable through a plain text input parameter file. Relatively general facilities are available for defining order parameters and associated bias functions in JSON formatted files. Output is in simple plain text file and JSON formats, and real-time visualization is possible with VMD via the bundled TCL scripts.
+# Monte Carlo simulation program for a DNA origami lattice model
 
-The core simulation package is implemented with C++14.
+A program for running Monte Carlo (MC) simulations of a lattice model of DNA origami, especially for studying its self-assembly process.
 
-## Core dependencies:
+The original version of the model and simulation techniques implemented here are described originally in [Ref. 1](), while an updated version can be found in [Ref. 2]().
+Simulations are run in the grand canonical ensemble, with annealing, replica exchange, and umbrella sampling variants available and configurable through a plain text input parameter file.
+Relatively general facilities are available for defining order parameters and associated bias functions in JSON formatted files.
+Output is in simple plain text file and JSON formats, and real-time visualization is possible with VMD via the bundled TCL scripts.
 
-* boost
-* JsonCpp
-* openmpi (other backends may be used by the boost mpi wrapper)
+## Installation
 
-## Running simulations:
+The program requires the Boost library and an MPI implementation compatible with Boost.MPI.
+Building and installation is done with CMake.
+To configure, build and install in `installdir`, run
+```
+CXX=clang++ cmake -S . -B build -DCMAKE_INSTALL_PREFIX=[installdir] -DBUILD_TESTING=OFF
+cmake --build build
+cmake --install build
+```
 
-Templates for running simulations and scripts for creating instances of input files can be found in `scripts/simutils/`. To see all configuration options, run
+## Running a simulation
 
-`latticeDNAOrigami -h`
+Examples of configuration files and scripts for creating instances of input files can be found in `scripts/simutils/`.
+To see all configuration options, run
+```
+latticeDNAOrigami -h
+```
+To run a simulation with `configuration_file.inp`, run
+```
+latticeDNAOrigami -i [configuration_file.inp]
+```
+For running a simulation with MPI on `procs` processors, run
+```
+mpirun -np [procs] latticeDNAOrigami -i [configuration file]
+```
 
- To run a simulation, enter
-
-`latticeDNAOrigami -i [configuration file] > [log file]`
-
-To run a parallel simulation, enter
-
-`mpirun -np [procs] latticeDNAOrigami -i [configuration file] > [log file]`
-
-## Analysis
+## Analysis and visualization
 
 A python package for analyzing the results of simulations (origamipy) is also provided. Example scripts using the package are located in
 
 `scripts/analysis/`
 
-Analysis dependencies:
-* python3
-* python-numpy
-* python-scipy
-* python-matplotlib
-* python-pymbar (for analysis of umbrella sampling simulations)
-
-Configurations can be visualized in two ways. For vector based graphics, latex scripts using pgf/tikz library are provided in
+Configurations can be visualized in two ways.
+For vector based graphics, latex scripts using pgf/tikz library are provided in
 
 `scripts/tikz/`
 
 Alternatively, VMD may be used with the scripts provided in
 
 `scripts/vmd/`
+
+## Links
