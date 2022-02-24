@@ -101,8 +101,6 @@ if(CCACHE_PROGRAM)
   set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
 endif()
 
-install(TARGETS LatticeDNAOrigami_lib RUNTIME DESTINATION bin)
-
 # Compiler warnings
 
 # target_compile_options(LatticeDNAOrigami_lib PUBLIC -Wall -Wextra -Wshadow
@@ -116,8 +114,8 @@ install(TARGETS LatticeDNAOrigami_lib RUNTIME DESTINATION bin)
 # -Wdouble-promotion)
 
 # Create program
-add_executable(LatticeDNAOrigami apps/main.cpp)
-target_link_libraries(LatticeDNAOrigami PUBLIC LatticeDNAOrigami_lib)
+add_executable(latticeDNAOrigami apps/main.cpp)
+target_link_libraries(latticeDNAOrigami PUBLIC LatticeDNAOrigami_lib)
 
 # Testing
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -127,3 +125,6 @@ endif()
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
   add_subdirectory(tests)
 endif()
+
+# Install executable
+install(TARGETS latticeDNAOrigami RUNTIME DESTINATION bin)
