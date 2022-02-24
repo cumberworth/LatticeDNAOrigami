@@ -3,12 +3,13 @@
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 
-#include "boost/archive/text_iarchive.hpp"
-#include "boost/archive/text_oarchive.hpp"
-#include "boost/serialization/boost_unordered_map.hpp"
-#include "boost/serialization/set.hpp"
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/serialization/boost_unordered_map.hpp>
+#include <boost/serialization/set.hpp>
 
 #include "json/json.h"
 
@@ -17,6 +18,8 @@
 #include "LatticeDNAOrigami/utility.hpp"
 
 namespace us {
+
+namespace fs = std::filesystem;
 
 using std::ifstream;
 using std::chrono::steady_clock;
@@ -46,15 +49,21 @@ USGCMCSimulation::USGCMCSimulation(
 
     // Read in weights if specified
     if (params.m_read_biases == true) {
-        ifstream bias_file {params.m_biases_file};
-        if (bias_file.good()) {
-            *m_us_stream << "Reading biases from file\n";
+        auto filename {params.m_biases_file};
+        fs::path f {filename};
+        if (!fs::exists(f)) {
+            throw utility::FileError {
+                    "Restart bias file " + filename + " does not exist"};
+        }
+        ifstream bias_file {};
+        *m_us_stream << "Reading biases from file\n";
+        try {
             read_weights(params.m_biases_file);
             m_grid_bias.replace_biases(m_E_w);
-        }
-        else {
-            *m_us_stream << "Bias file not good\n";
-            throw utility::SimulationMisuse {};
+        } catch (const Json::Exception& e) {
+            string message {
+                    "Restart bias file " + filename + " is not well formed:\n"};
+            throw utility::FileError {message + e.what()};
         }
     }
     else {
@@ -296,15 +305,33 @@ void USGCMCSimulation::estimate_current_weights() {
 }
 
 void USGCMCSimulation::set_grids_from_file(string filebase) {
-    std::ifstream S_n_infile {filebase + ".S_n"};
+    string S_n_infilename {filebase + ".S_n"};
+    fs::path f_S_n {S_n_infilename};
+    if (!fs::exists(f_S_n)) {
+        throw utility::FileError {
+                "Restart grid file " + S_n_infilename + " does not exist"};
+    }
+    std::ifstream S_n_infile {S_n_infilename};
     boost::archive::text_iarchive S_n_archive {S_n_infile};
     S_n_archive >> m_S_n;
 
-    std::ifstream s_i_infile {filebase + ".s_i"};
+    string s_i_infilename {filebase + ".s_i"};
+    fs::path f_s_i {s_i_infilename};
+    if (!fs::exists(f_s_i)) {
+        throw utility::FileError {
+                "Restart grid file " + s_i_infilename + " does not exist"};
+    }
+    std::ifstream s_i_infile {s_i_infilename};
     boost::archive::text_iarchive s_i_archive {s_i_infile};
     s_i_archive >> m_s_i;
 
-    std::ifstream f_i_infile {filebase + ".f_i"};
+    string f_i_infilename {filebase + ".f_i"};
+    fs::path f_f_i {f_i_infilename};
+    if (!fs::exists(f_f_i)) {
+        throw utility::FileError {
+                "Restart grid file " + f_i_infilename + " does not exist"};
+    }
+    std::ifstream f_i_infile {f_i_infilename};
     boost::archive::text_iarchive f_i_archive {f_i_infile};
     f_i_archive >> m_f_i;
     for (auto f: m_f_i) {
@@ -526,7 +553,14 @@ void MWUSGCMCSimulation::setup_window_sims(OrigamiSystem& origami) {
 }
 
 void MWUSGCMCSimulation::parse_windows_file(string filename) {
+    fs::path f {filename};
+    if (!fs::exists(f)) {
+        throw utility::FileError {
+                "Windows file " + filename + " does not exist"};
+    }
     ifstream file {filename};
+
+    // Should somehow wrap this in try catch (or make its own file class)
     string window_raw;
 
     // Get op tags
@@ -582,8 +616,16 @@ PTMWUSGCMCSimulation::PTMWUSGCMCSimulation(
     if (m_rank == m_master_node) {
         if (m_params.m_restart_us_iter == true) {
             string win_to_configi_str;
-            std::ifstream swap_file {m_restart_swap_filename};
+            string filename {m_restart_swap_filename};
+            fs::path f {filename};
+            if (!fs::exists(f)) {
+                throw utility::FileError {
+                        "Restart swap file " + filename + " does not exist"};
+            }
+            std::ifstream swap_file {filename};
             string line;
+            
+            // Should wrap this in try catch (or make its own file class)
             while (std::getline(swap_file, line)) {
                 win_to_configi_str = line;
             }
@@ -603,7 +645,7 @@ PTMWUSGCMCSimulation::PTMWUSGCMCSimulation(
 }
 
 void PTMWUSGCMCSimulation::run() {
-    if (not (m_params.m_restart_us_iter or m_params.m_read_biases)) {
+    if (not(m_params.m_restart_us_iter or m_params.m_read_biases)) {
         m_us_sim->run_equilibration();
     }
     for (; m_iter != m_max_num_iters; m_iter++) {
@@ -637,7 +679,8 @@ void PTMWUSGCMCSimulation::run_swaps(long long int swaps, long long int dur) {
             std::chrono::duration<double> dt {(steady_clock::now() - start)};
             if (dt.count() > dur) {
                 master_send_kill(swap_i);
-                cout << "Maximum time allowed reached" << std::endl << std::endl;
+                cout << "Maximum time allowed reached" << std::endl
+                     << std::endl;
                 break;
             }
         }

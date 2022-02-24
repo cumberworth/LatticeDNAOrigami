@@ -21,6 +21,7 @@ using domainContainer::ThreeQuarterTurnDomain;
 using files::OrigamiInputFile;
 using files::OrigamiTrajInputFile;
 using orderParams::SystemOrderParams;
+using utility::NotImplemented;
 using utility::OrigamiMisuse;
 
 bool Chain::operator==(Chain chain_2) {
@@ -203,7 +204,8 @@ Occupancy OrigamiSystem::position_occupancy(VectorThree pos) const {
 void OrigamiSystem::update_enthalpy_and_entropy() {
     m_hyb_enthalpy = 0;
     m_hyb_entropy = 0;
-    std::set<Domain*> accounted_domains; // Domains whose energy is already counted
+    std::set<Domain*>
+            accounted_domains; // Domains whose energy is already counted
     for (auto chain: m_domains) {
         for (auto domain: chain) {
             Occupancy state {domain->m_state};
@@ -264,16 +266,16 @@ double OrigamiSystem::init_energy() { return m_pot.init_energy(); }
 
 void OrigamiSystem::check_all_constraints() {
 
-    //cout << "\nChecking all constraints\n";
-    // Unassign everything (and check nothing was already unassigned)
+    // cout << "\nChecking all constraints\n";
+    //  Unassign everything (and check nothing was already unassigned)
     if (m_num_unassigned_domains != 0) {
-        throw OrigamiMisuse {};
+        throw OrigamiMisuse {
+                "Number of unassigned domains is no zero on constraint check"};
     }
     for (auto chain: m_domains) {
         for (auto domain: chain) {
             if (domain->m_state == Occupancy::unassigned) {
-                cout << "Domain unassigned after move complete\n";
-                throw OrigamiMisuse {};
+                throw OrigamiMisuse {"Domain unassigned after move complete"};
             }
             else {
                 unassign_domain(*domain);
@@ -292,19 +294,19 @@ void OrigamiSystem::check_all_constraints() {
 
     // Check that number of stacked pairs is consistent
     if (m_num_stacked_domain_pairs != 0) {
-        cout << "Stack count inconsistency\n";
-        cout << m_num_stacked_domain_pairs << "\n";
+        auto stacked_pairs {m_num_stacked_domain_pairs};
         set_all_domains();
-        throw OrigamiMisuse {};
+        throw OrigamiMisuse {
+                "Stack count inconsistency: " + std::to_string(stacked_pairs)};
     }
 
     // Check that energy has returned to 0 (eps is totally arbitrary)
     double eps {0.000001};
     if (m_energy < -eps or m_energy > eps) {
-        cout << "Inconsistency in system energy\n";
-        cout << m_energy << "\n";
+        auto ene {m_energy};
         set_all_domains();
-        throw OrigamiMisuse {};
+        throw OrigamiMisuse {
+                "System energy inconsistency: " + std::to_string(ene)};
     }
     else {
 
@@ -342,7 +344,7 @@ double OrigamiSystem::check_domain_constraints(
         Domain& cd_i,
         VectorThree pos,
         VectorThree ore) {
-    //cout << m_num_stacked_domain_pairs << " Checking domain constraints ("
+    // cout << m_num_stacked_domain_pairs << " Checking domain constraints ("
     //<< cd_i.m_c << " " << cd_i.m_d << ")\n";
 
     DeltaConfig delta_config {
@@ -362,8 +364,8 @@ void OrigamiSystem::check_distance_constraints() {
             else {
                 VectorThree dist {next_domain->m_pos - domain->m_pos};
                 if (dist.abssum() != 1) {
-                    cout << "Contiguous domains not on adjacent sites\n";
-                    throw OrigamiMisuse {};
+                    throw OrigamiMisuse {
+                            "Contiguous domains not on adjacent sites"};
                 }
             }
         }
@@ -371,7 +373,7 @@ void OrigamiSystem::check_distance_constraints() {
 }
 
 double OrigamiSystem::unassign_domain(Domain& cd_i) {
-    //cout << m_num_stacked_domain_pairs << " Unassigning domain ("
+    // cout << m_num_stacked_domain_pairs << " Unassigning domain ("
     //<< cd_i.m_c
     //<< " " << cd_i.m_d << ")\n";
     DeltaConfig delta_config {internal_unassign_domain(cd_i)};
@@ -419,7 +421,7 @@ int OrigamiSystem::add_chain(int c_i_ident, int c_i) {
                     c_i, c_i_ident, d_i, d_i_ident, chain_length};
         }
         else {
-            throw OrigamiMisuse {};
+            throw NotImplemented {m_domain_type + ": No such domain type"};
         }
 
         // Set forward and backwards domains
@@ -477,7 +479,7 @@ double OrigamiSystem::set_checked_domain_config(
         Domain& cd_i,
         VectorThree pos,
         VectorThree ore) {
-    //cout << m_num_stacked_domain_pairs << " Setting checked domain ("
+    // cout << m_num_stacked_domain_pairs << " Setting checked domain ("
     //<< cd_i.m_c << " " << cd_i.m_d << ")\n";
     update_domain(cd_i, pos, ore);
     update_occupancies(cd_i, pos);
@@ -516,13 +518,12 @@ double OrigamiSystem::set_domain_config(
         Domain& cd_i,
         VectorThree pos,
         VectorThree ore) {
-    //cout << m_num_stacked_domain_pairs << " Setting domain (" <<
-    //cd_i.m_c
+    // cout << m_num_stacked_domain_pairs << " Setting domain (" <<
+    // cd_i.m_c
     //<< " "
     //<< cd_i.m_d << ")\n";
     if (cd_i.m_state != Occupancy::unassigned) {
-        cout << "Trying to set an already assigned domain\n";
-        throw OrigamiMisuse {};
+        throw OrigamiMisuse {"Trying to set an already assigned domain"};
     }
 
     // Check constraints and update if obeyed, otherwise throw
@@ -575,9 +576,9 @@ void OrigamiSystem::set_all_domains() {
         for (auto domain: chain) {
             set_domain_config(*domain, domain->m_pos, domain->m_ore);
             if (m_constraints_violated) {
-                cout << "Constaints in violation after move complete\n";
                 set_domain_config(*domain, domain->m_pos, domain->m_ore);
-                throw OrigamiMisuse {};
+                throw OrigamiMisuse {
+                        "Constaints in violation after move complete"};
             }
         }
     }
@@ -605,9 +606,9 @@ void OrigamiSystem::set_all_domains(Chains config) {
         for (auto domain: chain) {
             set_domain_config(*domain, domain->m_pos, domain->m_ore);
             if (m_constraints_violated) {
-                cout << "Constaints in violation after move complete\n";
                 set_domain_config(*domain, domain->m_pos, domain->m_ore);
-                throw OrigamiMisuse {};
+                throw OrigamiMisuse {
+                        "Constaints in violation after move complete"};
             }
         }
     }
@@ -800,8 +801,7 @@ void OrigamiSystem::update_occupancies(Domain& cd_i, VectorThree pos) {
         m_pos_to_unbound_d[pos] = &cd_i;
         break;
     default:
-        cout << "Trying to bind to an already bound domain\n";
-        throw OrigamiMisuse {};
+        throw OrigamiMisuse {"Trying to bind to an already bound domain"};
     }
 }
 

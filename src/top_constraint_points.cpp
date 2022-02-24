@@ -385,8 +385,7 @@ long double Constraintpoints::calc_num_walks_prod(
         int end_d_i {endpoint.first};
         int steps {calc_remaining_steps(end_d_i, domain, dir, offset)};
         if (steps < 0) {
-            cout << "Bad endpoint detected\n";
-            throw utility::SimulationMisuse {};
+            throw utility::SimulationMisuse {"Bad endpoint detected"};
         }
         VectorThree end_p {endpoint.second};
         prod_nws *= m_ideal_random_walks.num_walks(pos, end_p, steps);

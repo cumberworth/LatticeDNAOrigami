@@ -2213,9 +2213,9 @@ JSONCPP_ISTREAM& operator>>(JSONCPP_ISTREAM& sin, Value& root) {
   JSONCPP_STRING errs;
   bool ok = parseFromStream(b, sin, &root, &errs);
   if (!ok) {
-    fprintf(stderr,
-            "Error from reader: %s",
-            errs.c_str());
+    //fprintf(stderr,
+    //        "Error from reader: %s",
+    //        errs.c_str());
 
     throwRuntimeError(errs);
   }

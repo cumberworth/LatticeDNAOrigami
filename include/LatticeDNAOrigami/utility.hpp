@@ -7,6 +7,7 @@
 #include <functional>
 #include <list>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -26,11 +27,35 @@ using std::vector;
 int index(vector<int> container, int element);
 
 // Exception types
-struct NoElement {};
-struct OrigamiMisuse {};
-struct FileMisuse {};
-struct NotImplemented {};
-struct SimulationMisuse {};
+class NoElement: public virtual std::runtime_error {
+  public:
+    using std::runtime_error::runtime_error;
+    NoElement(): std::runtime_error {""} {};
+};
+
+class OrigamiMisuse: public virtual std::runtime_error {
+  public:
+    using std::runtime_error::runtime_error;
+    OrigamiMisuse(): std::runtime_error {""} {};
+};
+
+class FileError: public virtual std::runtime_error {
+  public:
+    using std::runtime_error::runtime_error;
+    FileError(): std::runtime_error {""} {};
+};
+
+class NotImplemented: public virtual std::runtime_error {
+  public:
+    using std::runtime_error::runtime_error;
+    NotImplemented(): std::runtime_error {""} {};
+};
+
+class SimulationMisuse: public virtual std::runtime_error {
+  public:
+    using std::runtime_error::runtime_error;
+    SimulationMisuse(): std::runtime_error {""} {};
+};
 
 // Constrants
 const double NA {6.022140857e23};
@@ -128,12 +153,13 @@ const VectorThree yhat {0, 1, 0};
 const VectorThree zhat {0, 0, 1};
 
 // All possible unit vectors
-const vector<VectorThree> vectors {{1, 0, 0},
-                                   {-1, 0, 0},
-                                   {0, 1, 0},
-                                   {0, -1, 0},
-                                   {0, 0, 1},
-                                   {0, 0, -1}};
+const vector<VectorThree> vectors {
+        {1, 0, 0},
+        {-1, 0, 0},
+        {0, 1, 0},
+        {0, -1, 0},
+        {0, 0, 1},
+        {0, 0, -1}};
 
 const vector<VectorThree> basis_vectors {xhat, yhat, zhat};
 

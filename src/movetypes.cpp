@@ -209,8 +209,8 @@ bool MCMovetype::scan_for_scaffold_domain(
             }
 
             // Check if bound to scaffold
-            bool domain_on_scaffold {bound_domain->m_c ==
-                                     m_origami_system.c_scaffold};
+            bool domain_on_scaffold {
+                    bound_domain->m_c == m_origami_system.c_scaffold};
             if (domain_on_scaffold) {
                 return true;
             }
@@ -270,8 +270,7 @@ vector<domainPairT> MCMovetype::find_bound_domains(
     }
 
     if (bound_domains.empty()) {
-        std::cout << "System has unbound staple\n";
-        throw OrigamiMisuse {};
+        throw OrigamiMisuse {"System has unbound staple"};
     }
 
     return bound_domains;

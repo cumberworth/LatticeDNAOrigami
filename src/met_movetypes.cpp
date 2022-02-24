@@ -237,8 +237,8 @@ bool MetStapleExchangeMCMovetype::staple_insertion_accepted(
                 accepted = true;
             }
             else {
-                std::cout << "Nonsensical exchange probability detected\n";
-                throw SimulationMisuse {};
+                throw SimulationMisuse {
+                        "Nonsensical exchange probability detected"};
             }
         }
         else {
@@ -285,8 +285,8 @@ bool MetStapleExchangeMCMovetype::staple_deletion_accepted(
                 accepted = true;
             }
             else {
-                std::cout << "Nonsensical exchange probability detected\n";
-                throw SimulationMisuse {};
+                throw SimulationMisuse {
+                        "Nonsensical exchange probability detected"};
             }
         }
         else {

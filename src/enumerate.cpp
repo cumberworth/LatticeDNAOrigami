@@ -13,6 +13,7 @@ namespace enumerator {
 using std::cout;
 using std::ofstream;
 
+using utility::NotImplemented;
 using utility::Occupancy;
 
 void enumerate_main(
@@ -29,8 +30,7 @@ void enumerate_main(
         overcount_calculator = new MisbindingOnlyOvercountCalculator {};
     }
     else {
-        cout << "No enumerator available for system.\n";
-        return;
+        throw NotImplemented {"No enumerator available for system"};
     }
     ConformationalEnumerator* conf_enumerator;
     if (params.m_enumerate_staples_only) {

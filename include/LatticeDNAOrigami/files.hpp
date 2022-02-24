@@ -77,6 +77,7 @@ class RandomEngineStateInputFile {
 
   private:
     ifstream m_file;
+    string m_filename;
 };
 
 class OrigamiMovetypeFile {

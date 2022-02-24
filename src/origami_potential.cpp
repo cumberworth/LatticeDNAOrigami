@@ -9,17 +9,18 @@
 #include <boost/serialization/unordered_map.hpp>
 #include <boost/serialization/utility.hpp>
 
-#include "LatticeDNAOrigami/origami_potential.hpp"
 #include "LatticeDNAOrigami/nearest_neighbour.hpp"
+#include "LatticeDNAOrigami/origami_potential.hpp"
 
 namespace potential {
 
 using std::cout;
 
 using nearestNeighbour::ThermoOfHybrid;
+using utility::NotImplemented;
 using utility::Occupancy;
-using utility::VectorThree;
 using utility::OrigamiMisuse;
+using utility::VectorThree;
 
 bool check_domain_orientations_opposing(Domain& cd_i, Domain& cd_j) {
     bool domain_orientations_opposing {true};
@@ -114,11 +115,13 @@ int check_junction_stacking_penalty(
         else {
             stacking_penalty = 1;
         }
-        //cout << stacking_penalty << " (" << cd_j1.m_c << " " << cd_j1.m_d
-        //     << "), (" << cd_j2.m_c << " " << cd_j2.m_d << "), (" << cd_j3.m_c
-        //     << " " << cd_j3.m_d << "), (" << cd_j4.m_c << " " << cd_j4.m_d
-        //     << "), (" << cd_k1.m_c << " " << cd_k1.m_d << "), (" << cd_k2.m_c
-        //     << " " << cd_k2.m_d << ")\n";
+        // cout << stacking_penalty << " (" << cd_j1.m_c << " " << cd_j1.m_d
+        //      << "), (" << cd_j2.m_c << " " << cd_j2.m_d << "), (" <<
+        //      cd_j3.m_c
+        //      << " " << cd_j3.m_d << "), (" << cd_j4.m_c << " " << cd_j4.m_d
+        //      << "), (" << cd_k1.m_c << " " << cd_k1.m_d << "), (" <<
+        //      cd_k2.m_c
+        //      << " " << cd_k2.m_d << ")\n";
     }
     return stacking_penalty;
 }
@@ -167,9 +170,11 @@ void BindingPotential::check_triplet_single_stacking(
     if (ndr_1 != ndr_2) {
         m_delta_config.e -= m_pot.stacking_energy(*cd_h2, *cd_h3);
         m_delta_config.stacked_pairs -= 1;
-        //cout << "(" << cd_h1->m_c << " " << cd_h1->m_d << "), (" << cd_h2->m_c
-        //     << " " << cd_h2->m_d << "), (" << cd_h3->m_c << " " << cd_h3->m_d
-        //     << ")\n";
+        // cout << "(" << cd_h1->m_c << " " << cd_h1->m_d << "), (" <<
+        // cd_h2->m_c
+        //      << " " << cd_h2->m_d << "), (" << cd_h3->m_c << " " <<
+        //      cd_h3->m_d
+        //      << ")\n";
     }
 }
 
@@ -184,9 +189,11 @@ void BindingPotential::check_triplet_double_stacking(
         m_delta_config.e -= m_pot.stacking_energy(*cd_h1, *cd_h2) / 2;
         m_delta_config.e -= m_pot.stacking_energy(*cd_h2, *cd_h3) / 2;
         m_delta_config.stacked_pairs -= 1;
-        //cout << "(" << cd_h1->m_c << " " << cd_h1->m_d << "), (" << cd_h2->m_c
-        //     << " " << cd_h2->m_d << "), (" << cd_h3->m_c << " " << cd_h3->m_d
-        //     << ")\n";
+        // cout << "(" << cd_h1->m_c << " " << cd_h1->m_d << "), (" <<
+        // cd_h2->m_c
+        //      << " " << cd_h2->m_d << "), (" << cd_h3->m_c << " " <<
+        //      cd_h3->m_d
+        //      << ")\n";
     }
 }
 
@@ -291,8 +298,8 @@ void JunctionBindingPotential::check_regular_pair_constraints(
     if (check_pair_stacked(cd_1, cd_2)) {
         m_delta_config.e += m_pot.stacking_energy(*cd_1, *cd_2);
         m_delta_config.stacked_pairs += 1;
-        //cout << cd_1->m_c << " " << cd_1->m_d << ", " << cd_2->m_c << " "
-        //     << cd_2->m_d << "\n";
+        // cout << cd_1->m_c << " " << cd_1->m_d << ", " << cd_2->m_c << " "
+        //      << cd_2->m_d << "\n";
         if (i == -1) {
             check_backward_single_junction(cd_1, cd_2);
         }
@@ -332,8 +339,8 @@ void JunctionBindingPotential::check_doubly_contig_helix_pair(
     if (cd_1->check_twist_constraint(ndr, *cd_2)) {
         m_delta_config.e += m_pot.stacking_energy(*cd_1, *cd_2);
         m_delta_config.stacked_pairs += 1;
-        //cout << cd_1->m_c << " " << cd_1->m_d << ", " << cd_2->m_c << " "
-        //     << cd_2->m_d << "\n";
+        // cout << cd_1->m_c << " " << cd_1->m_d << ", " << cd_2->m_c << " "
+        //      << cd_2->m_d << "\n";
     }
     else {
         m_constraints_violated = true;
@@ -492,16 +499,16 @@ void JunctionBindingPotential::check_backward_triplet_stacking_combos(
     Domain* cd_h2_prev {cd_h1};
     cd_h1 = *(cd_1->m_bound_domain) + 1;
     if (check_domains_exist_and_bound({cd_h1}) and
-            cd_h1->m_bound_domain != cd_h2_prev and
-            cd_h1->m_bound_domain != cd_h3) {
+        cd_h1->m_bound_domain != cd_h2_prev and
+        cd_h1->m_bound_domain != cd_h3) {
         if (check_pair_stacked(cd_1->m_bound_domain, cd_h1)) {
             check_triplet_double_stacking(cd_h1, cd_h2, cd_h3);
         }
     }
     cd_h1 = *(cd_1->m_bound_domain) + -1;
     if (check_domains_exist_and_bound({cd_h1}) and
-            cd_h1->m_bound_domain != cd_h2_prev and
-            cd_h1->m_bound_domain != cd_h3) {
+        cd_h1->m_bound_domain != cd_h2_prev and
+        cd_h1->m_bound_domain != cd_h3) {
         if (check_pair_stacked(cd_h1, cd_1->m_bound_domain)) {
             check_triplet_double_stacking(cd_h1, cd_h2, cd_h3);
         }
@@ -548,8 +555,8 @@ void JunctionBindingPotential::check_forward_triplet_stacking_combos(
     Domain* cd_h2_next {cd_h3};
     cd_h3 = *(cd_2->m_bound_domain) + 1;
     if (check_domains_exist_and_bound({cd_h3}) and
-            cd_h3->m_bound_domain != cd_h2_next and
-            cd_h3->m_bound_domain != cd_h1) {
+        cd_h3->m_bound_domain != cd_h2_next and
+        cd_h3->m_bound_domain != cd_h1) {
         if (check_pair_stacked(cd_2->m_bound_domain, cd_h3)) {
             if (first_pair_stacked) {
                 check_triplet_double_stacking(cd_h1, cd_h2, cd_h3);
@@ -561,8 +568,8 @@ void JunctionBindingPotential::check_forward_triplet_stacking_combos(
     }
     cd_h3 = *(cd_2->m_bound_domain) + -1;
     if (check_domains_exist_and_bound({cd_h3}) and
-            cd_h3->m_bound_domain != cd_h2_next and
-            cd_h3->m_bound_domain != cd_h1) {
+        cd_h3->m_bound_domain != cd_h2_next and
+        cd_h3->m_bound_domain != cd_h1) {
         if (check_pair_stacked(cd_h3, cd_2->m_bound_domain)) {
             if (first_pair_stacked) {
                 check_triplet_double_stacking(cd_h1, cd_h2, cd_h3);
@@ -963,7 +970,8 @@ OrigamiPotential::OrigamiPotential(
         m_binding_pot = new JunctionBindingPotential(*this);
     }
     else {
-        std::cout << "No such binding potential";
+        throw NotImplemented {
+                params.m_binding_pot + ": No such binding potential"};
     }
 
     if (params.m_misbinding_pot == "Opposing") {
@@ -973,11 +981,16 @@ OrigamiPotential::OrigamiPotential(
         m_misbinding_pot = new DisallowedMisbindingPotential(*this);
     }
     else {
-        std::cout << "No such binding potential";
+        throw NotImplemented {
+                params.m_misbinding_pot + ": No such misbinding potential"};
     }
 
     if (m_stacking_pot == "Constant") {
         m_stacking_ene = params.m_stacking_ene;
+    }
+    else if (m_stacking_pot != "SequenceSpecific") {
+        throw NotImplemented {
+                params.m_stacking_pot + ": No such stacking potential"};
     }
 
     if (m_hybridization_pot == "Uniform") {
@@ -986,9 +999,13 @@ OrigamiPotential::OrigamiPotential(
         m_misbinding_h = params.m_misbinding_h;
         m_misbinding_s = params.m_misbinding_s;
     }
-    if (m_hybridization_pot == "Specified") {
+    else if (m_hybridization_pot == "Specified") {
         m_misbinding_h = params.m_misbinding_h;
         m_misbinding_s = params.m_misbinding_s;
+    }
+    else if (m_hybridization_pot != "NearestNeighbour") {
+        throw NotImplemented {
+                params.m_stacking_pot + ": No such hybridization potential"};
     }
 
     get_energies();
@@ -1066,9 +1083,6 @@ void OrigamiPotential::calc_energies() {
                     else if (m_hybridization_pot == "Specified") {
                         set_hybridization_energy(key);
                     }
-                    else {
-                        std::cout << "No such hybridization potential";
-                    }
 
                     if (m_stacking_pot == "SequenceSpecific") {
                         string seq_i {m_sequences[c_i][d_i]};
@@ -1078,14 +1092,11 @@ void OrigamiPotential::calc_energies() {
                     else if (m_stacking_pot == "Constant") {
                         calc_stacking_energy(key);
                     }
-                    else {
-                        std::cout << "No such stacking potential";
-                    }
                 }
             }
         }
     }
-    //write_energies_to_file();
+    // write_energies_to_file();
 }
 
 void OrigamiPotential::calc_hybridization_energy(
@@ -1128,8 +1139,9 @@ void OrigamiPotential::calc_hybridization_energy(
             // Check that sequences are complementary if they should be
             if (comp_seqs[0].size() != seq_i.size() and
                 seq_i.size() == seq_j.size()) {
-                cout << "Sequences that should be complementary are not\n";
-                throw OrigamiMisuse {};
+                throw OrigamiMisuse {
+                        "Sequences that should be complementary are not: \n" +
+                        seq_i + "\n" + seq_j};
             }
         }
 
@@ -1137,8 +1149,9 @@ void OrigamiPotential::calc_hybridization_energy(
         else {
             if (comp_seqs[0].size() == seq_i.size() and
                 seq_i.size() == seq_j.size()) {
-                cout << "Sequences that should not be complementary are\n";
-                throw OrigamiMisuse {};
+                throw OrigamiMisuse {
+                        "Sequences that should not be complementary are: \n" +
+                        seq_i + "\n" + seq_j};
             }
         }
     }

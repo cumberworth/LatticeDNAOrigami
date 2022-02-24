@@ -1,5 +1,6 @@
 // files.cpp
 
+#include <filesystem>
 #include <iostream>
 #include <sstream>
 
@@ -12,16 +13,23 @@ using std::cout;
 using std::ifstream;
 using std::vector;
 
-using utility::FileMisuse;
+using utility::FileError;
 using utility::Occupancy;
 using utility::VectorThree;
 
+namespace fs = std::filesystem;
+
 OrigamiInputFile::OrigamiInputFile(string filename) {
+    fs::path f {filename};
+    if (!fs::exists(f)) {
+        throw FileError {"Origami input file " + filename + " does not exist"};
+    }
     try {
         read_file(filename);
-    } catch (Json::RuntimeError) {
-        cout << "Problem reading origami system file\n";
-        throw;
+    } catch (const Json::Exception& e) {
+        string message {
+                "Origami input file " + filename + " is not well formed:\n"};
+        throw FileError {message + e.what()};
     }
 }
 
@@ -109,15 +117,23 @@ bool OrigamiInputFile::is_cyclic() { return m_cyclic; }
 
 OrigamiTrajInputFile::OrigamiTrajInputFile(string filename):
         m_filename {filename} {
+
+    fs::path f {filename};
+    if (!fs::exists(f)) {
+        throw FileError {
+                "Trajectory input file " + filename + " does not exist"};
+    }
     m_file.open(m_filename);
 }
 
 vector<Chain> OrigamiTrajInputFile::read_config(int step) {
     try {
         return internal_read_config(step);
-    } catch (Json::RuntimeError) {
-        cout << "Problem reading trajectory file config\n";
-        throw;
+    } catch (const Json::Exception& e) {
+        string message {
+                "Trajetory input file " + m_filename +
+                " is not well formed:\n"};
+        throw FileError {message + e.what()};
     }
 }
 
@@ -185,7 +201,9 @@ void OrigamiTrajInputFile::go_to_step(unsigned int step) {
                 end_of_step_reached = true;
             }
             if (m_file.eof()) {
-                throw FileMisuse {};
+                throw FileError {
+                        "Step " + std::to_string(step) + " not found in " +
+                        "trajectory input file" + m_filename};
             }
         }
     }
@@ -195,11 +213,19 @@ void OrigamiTrajInputFile::go_to_step(unsigned int step) {
     std::getline(m_file, step_s);
     // int read_step {std::stoi(step_s)};
     // if (read_step != step) {
-    //    throw FileMisuse {};
+    //    throw FileError {"fill"};
     //}
 }
 
-RandomEngineStateInputFile::RandomEngineStateInputFile(string filename) {
+RandomEngineStateInputFile::RandomEngineStateInputFile(string filename):
+        m_filename {filename} {
+
+    fs::path f {filename};
+    if (!fs::exists(f)) {
+        throw FileError {
+                "Random engine state input file " + filename +
+                " does not exist"};
+    }
     m_file.open(filename);
 }
 
@@ -209,7 +235,9 @@ string RandomEngineStateInputFile::read_state(int step) {
     for (unsigned int i = 0; i != step; ++i) {
         std::getline(m_file, line);
         if (m_file.eof()) {
-            throw FileMisuse {};
+            throw FileError {
+                    "Step " + std::to_string(step) + " not found in " +
+                    "trajectory input file" + m_filename};
         }
     }
     std::getline(m_file, line);
@@ -220,11 +248,16 @@ string RandomEngineStateInputFile::read_state(int step) {
 OrigamiMovetypeFile::OrigamiMovetypeFile(string filename):
         m_filename {filename} {
 
+    fs::path f {filename};
+    if (!fs::exists(f)) {
+        throw FileError {"Move type file " + filename + " does not exist"};
+    }
     try {
         read_file(filename);
-    } catch (Json::RuntimeError) {
-        cout << "Problem reading movetype file\n";
-        throw;
+    } catch (const Json::Exception& e) {
+        string message {
+                "Move type file " + m_filename + " is not well formed:\n"};
+        throw FileError {message + e.what()};
     }
 }
 
@@ -326,11 +359,17 @@ vector<string> OrigamiLeveledInput::get_vector_string_option(
 
 OrigamiOrderParamsFile::OrigamiOrderParamsFile(string filename) {
     m_filename = filename;
+    fs::path f {filename};
+    if (!fs::exists(f)) {
+        throw FileError {
+                "Order parameter file " + filename + " does not exist"};
+    }
     try {
         read_file(filename);
-    } catch (Json::RuntimeError) {
-        cout << "Problem reading order parameter file\n";
-        throw;
+    } catch (const Json::Exception& e) {
+        string message {
+                "Order parameter file " + filename + " is not well formed:\n"};
+        throw FileError {message + e.what()};
     }
 }
 
@@ -375,11 +414,16 @@ void OrigamiOrderParamsFile::read_file(string filename) {
 
 OrigamiBiasFunctionsFile::OrigamiBiasFunctionsFile(string filename) {
     m_filename = filename;
+    fs::path f {filename};
+    if (!fs::exists(f)) {
+        throw FileError {"Bias functions file " + filename + " does not exist"};
+    }
     try {
         read_file(filename);
-    } catch (Json::RuntimeError) {
-        cout << "Problem reading bias function file\n";
-        throw;
+    } catch (const Json::Exception& e) {
+        string message {
+                "Bias functions file " + filename + " is not well formed:\n"};
+        throw FileError {message + e.what()};
     }
 }
 

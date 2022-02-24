@@ -408,8 +408,8 @@ void SystemBiases::setup_biases(
                 bias_f = new GridBiasFunction {ops};
             }
             else {
-                cout << "No such bias function type";
-                throw utility::SimulationMisuse {};
+                throw utility::SimulationMisuse {
+                        type + "; no such bias function type"};
             }
 
             m_level_to_biases[i].emplace_back(bias_f);

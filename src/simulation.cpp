@@ -25,7 +25,6 @@
 #include "LatticeDNAOrigami/transform_movetypes.hpp"
 #include "LatticeDNAOrigami/utility.hpp"
 
-
 namespace simulation {
 
 using std::cout;
@@ -297,8 +296,7 @@ void GCMCSimulation::construct_movetypes(InputParameters& params) {
                     setup_rg_movetype(i, type, label, movetypes_file, movetype);
         }
         else {
-            cout << "No such movetype\n";
-            throw utility::SimulationMisuse {};
+            throw utility::SimulationMisuse {type + ": no such movetype"};
         }
         m_movetypes.emplace_back(movetype);
     }
@@ -586,7 +584,7 @@ long long int GCMCSimulation::simulate(
             // cout << "check\n";
             try {
                 m_origami_system.check_all_constraints();
-            } catch (utility::OrigamiMisuse) {
+            } catch (utility::OrigamiMisuse& e) {
                 write_log_entry(step, accepted, movetype);
                 std::chrono::duration<double> dt {
                         (steady_clock::now() - start)};
@@ -594,14 +592,20 @@ long long int GCMCSimulation::simulate(
                     output_file->write(step, dt.count());
                 }
                 pipe_to_vmd();
-                cout << "Origami misuse at constraint check\n";
+
+                // I would like to make this an exception, but I may have done
+                // this because the main loop is juggling raw pointers and
+                // things might not be written to file if I don't return the
+                // function
+                cout << "Origami misuse at constraint check: " << std::endl
+                     << e.what() << std::endl;
                 break;
             }
         }
 
         std::chrono::duration<double> dt {(steady_clock::now() - start)};
         if (dt.count() > m_max_duration) {
-            cout << "Maximum time allowed reached\n";
+            cout << "Maximum time allowed reached" << std::endl;
             break;
         }
 

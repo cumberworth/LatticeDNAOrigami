@@ -1,6 +1,7 @@
 // ptmc_simulation.cpp
 
 #include <chrono>
+#include <filesystem>
 #include <sstream>
 #include <string>
 
@@ -8,6 +9,8 @@
 #include "LatticeDNAOrigami/ptmc_simulation.hpp"
 
 namespace ptmc {
+
+namespace fs = std::filesystem;
 
 using std::cout;
 using std::min;
@@ -58,8 +61,16 @@ PTGCMCSimulation::PTGCMCSimulation(
         // For now just take last line of restart file
         if (m_params.m_restart_from_swap == true) {
             string q_to_repi_str;
-            std::ifstream swap_file {params.m_restart_swap_file};
+            string filename {params.m_restart_swap_file};
+            fs::path f {filename};
+            if (!fs::exists(f)) {
+                throw utility::FileError {
+                        "Restart swap file " + filename + " does not exist"};
+            }
+            std::ifstream swap_file {filename};
             string line;
+
+            // Should wrap this in try catch (or make its own file class)
             while (std::getline(swap_file, line)) {
                 q_to_repi_str = line;
             }

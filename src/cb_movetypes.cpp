@@ -499,10 +499,10 @@ vector<double> CTCBRegrowthMCMovetype::calc_bias(
             bool binding_same_chain {occ_domain->m_c == domain->m_c};
             bool endpoint {
                     m_constraintpoints.endpoint_reached(domain, cur_pos)};
-            bool excluded_staple {find(m_excluded_staples.begin(),
-                                       m_excluded_staples.end(),
-                                       occ_domain->m_c) !=
-                                  m_excluded_staples.end()};
+            bool excluded_staple {
+                    find(m_excluded_staples.begin(),
+                         m_excluded_staples.end(),
+                         occ_domain->m_c) != m_excluded_staples.end()};
             if (not(binding_same_chain or endpoint or excluded_staple)) {
                 weights[i] = 0;
             }

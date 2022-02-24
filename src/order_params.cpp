@@ -12,6 +12,7 @@ using std::cout;
 using std::set;
 
 using files::OrigamiOrderParamsFile;
+using utility::NotImplemented;
 
 string OrderParam::get_label() { return m_label; }
 
@@ -231,8 +232,7 @@ int NumStaplesTypeOrderParam::check_param(
         VectorThree,
         Occupancy) {
 
-    cout << "CHECK STACKING NOT IMPLEMENTED\n";
-    return 0;
+    throw NotImplemented {"Check stacking not implemented"};
 }
 
 StapleTypeFullyBoundOrderParam::StapleTypeFullyBoundOrderParam(
@@ -272,8 +272,7 @@ int StapleTypeFullyBoundOrderParam::check_param(
         VectorThree,
         Occupancy) {
 
-    cout << "CHECK STACKING NOT IMPLEMENTED\n";
-    return 0;
+    throw NotImplemented {"Check stacking not implemented"};
 }
 
 NumBoundDomainPairsOrderParam::NumBoundDomainPairsOrderParam(
@@ -378,8 +377,8 @@ int NumStackedPairsOrderParam::check_param(
 
             return m_checked_param;
             */
-    cout << "CHECK STACKING NOT IMPLEMENTED\n";
-    return 0;
+
+    throw NotImplemented {"Check stacking not implemented"};
 }
 
 NumLinearHelicesOrderParam::NumLinearHelicesOrderParam(
@@ -412,8 +411,7 @@ int NumLinearHelicesOrderParam::check_param(
 
             return m_checked_param;
             */
-    cout << "CHECK LINEAR HELICES NOT IMPLEMENTED\n";
-    return 0;
+    throw NotImplemented {"Check stacking not implemented"};
 }
 
 NumStackedJunctsOrderParam::NumStackedJunctsOrderParam(
@@ -446,8 +444,8 @@ int NumStackedJunctsOrderParam::check_param(
 
             return m_checked_param;
             */
-    cout << "CHECK STACKED JUNCTIONS NOT IMPLEMENTED\n";
-    return 0;
+
+    throw NotImplemented {"Check stacking not implemented"};
 }
 
 SystemOrderParams::SystemOrderParams(
@@ -559,8 +557,8 @@ void SystemOrderParams::setup_ops(
                 op = new NumStackedJunctsOrderParam {m_origami, label};
             }
             else {
-                cout << "Order parameter type does not exist";
-                throw utility::SimulationMisuse {};
+                throw utility::SimulationMisuse {
+                        type + ": order parameter type does not exist"};
             }
             m_level_to_ops[i].emplace_back(op);
             OrderParam& op_ref {*m_level_to_ops[i].back()};

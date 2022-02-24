@@ -7,6 +7,7 @@
 namespace annealing {
 
 using std::cout;
+using utility::SimulationMisuse;
 
 AnnealingGCMCSimulation::AnnealingGCMCSimulation(
         OrigamiSystem& origami_system,
@@ -22,7 +23,7 @@ AnnealingGCMCSimulation::AnnealingGCMCSimulation(
         m_constant_staple_M {params.m_constant_staple_M} {
 
     if (fmod(m_max_temp - m_min_temp, m_temp_interval) != 0) {
-        cout << "Bad temperature interval";
+        throw SimulationMisuse {"Bad temperature interval"};
     }
     m_logging_stream = &cout;
     m_output_files = simulation::setup_output_files(
