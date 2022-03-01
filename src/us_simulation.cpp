@@ -105,15 +105,15 @@ void USGCMCSimulation::run_equilibration() {
 
     // Setup output files
     string postfix {"_iter-equil"};
-    string output_filebase {m_params.m_output_filebase + postfix};
+    m_output_filebase = m_params.m_output_filebase + postfix;
     m_output_files = simulation::setup_output_files(
             m_params,
-            output_filebase,
+            m_output_filebase,
             m_origami_system,
             m_ops,
             m_biases,
             m_random_gens);
-    m_logging_stream = new ofstream {output_filebase + ".out"};
+    m_logging_stream = new ofstream {m_output_filebase + ".out"};
 
     m_steps = m_equil_steps;
     m_steps = simulate(m_steps);
