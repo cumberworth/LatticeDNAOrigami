@@ -503,6 +503,9 @@ OrigamiOutputFile::OrigamiOutputFile(
     m_max_num_domains = max_staple_size * max_num_staples +
                         m_origami_system.get_chain(0).size();
     m_file.open(m_filename);
+    if (!m_file.good()) {
+        throw FileError {filename + ": output path does not exist"};
+    }
 }
 
 void OrigamiOutputFile::open_write_close() {

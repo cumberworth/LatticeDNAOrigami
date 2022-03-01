@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <filesystem>
 #include <iostream>
 #include <numeric>
 #include <random>
@@ -30,6 +31,7 @@ namespace simulation {
 using std::cout;
 
 namespace bp = boost::process;
+namespace fs = std::filesystem;
 
 using files::OrigamiCountsOutputFile;
 using files::OrigamiEnergiesOutputFile;
@@ -236,9 +238,22 @@ GCMCSimulation::GCMCSimulation(
 
     // Load precalculated ideal random walk count data
     if (params.m_num_walks_filename.size() != 0) {
-        std::ifstream num_walks_file {params.m_num_walks_filename};
-        boost::archive::binary_iarchive num_walks_arch {num_walks_file};
-        num_walks_arch >> m_ideal_random_walks;
+        string filename {params.m_num_walks_filename};
+        fs::path f {filename};
+        if (!fs::exists(f)) {
+            throw utility::FileError {
+                    "Origami input file " + filename + " does not exist"};
+        }
+        std::ifstream num_walks_file {};
+        try {
+            boost::archive::binary_iarchive num_walks_arch {num_walks_file};
+            num_walks_arch >> m_ideal_random_walks;
+        } catch (const std::exception& e) {
+            string message {
+                    "Number of ideal random walks file " + filename +
+                    " is not well formed:\n"};
+            throw utility::FileError {message + e.what()};
+        }
     }
 }
 

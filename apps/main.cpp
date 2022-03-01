@@ -90,12 +90,17 @@ int main(int argc, char* argv[]) {
                         *origami, ops, biases, params};
             }
             else {
-                cout << "No such simulation type.\n";
                 delete origami;
-                return EXIT_FAILURE;
+                throw utility::NotImplemented {"No such simulation type"};
             }
 
-            sim->run();
+            try {
+                sim->run();
+            } catch (const std::exception& e) {
+                delete sim;
+                delete origami;
+                throw;
+            }
             delete sim;
             delete origami;
         }

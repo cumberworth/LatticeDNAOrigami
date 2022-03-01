@@ -178,6 +178,10 @@ InputParameters::InputParameters(int argc, char* argv[]) {
             po::value<string>(&m_movetype_filename),
             "Movetype specificiation file")(
 
+            "read_num_walks",
+            po::value<bool>(&m_read_num_walks)->default_value(false),
+            "Read precalculated number of ideal random walks archive")(
+
             "num_walks_filename",
             po::value<string>(&m_num_walks_filename)->default_value(""),
             "Precalculated number of ideal random walks archive")(
@@ -221,6 +225,10 @@ InputParameters::InputParameters(int argc, char* argv[]) {
             "restart_steps",
             po::value<string>(),
             "Restart step for each replicate")(
+
+            "read_rand_engine_state",
+            po::value<bool>(&m_read_rand_engine_state)->default_value(false),
+            "Read random engine state file")(
 
             "rand_engine_state_file",
             po::value<string>(&m_rand_engine_state_file)->default_value(""),

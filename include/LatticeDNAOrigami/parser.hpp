@@ -56,6 +56,7 @@ class InputParameters {
     // General simulation parameters
     int m_random_seed;
     string m_movetype_filename;
+    bool m_read_num_walks;
     string m_num_walks_filename;
     bool m_restart_from_config;
     string m_restart_traj_file;
@@ -67,6 +68,7 @@ class InputParameters {
     int m_restart_step;
     bool m_restart_from_swap;
     vector<int> m_restart_steps;
+    bool m_read_rand_engine_state;
     string m_rand_engine_state_file;
     string m_vmd_file_dir;
     int m_logging_freq;
