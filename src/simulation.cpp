@@ -201,7 +201,7 @@ GCMCSimulation::GCMCSimulation(
         m_random_gens.set_seed(m_params.m_random_seed);
         cout << "Using specified seed: " << m_params.m_random_seed << "\n";
     }
-    else if (not m_params.m_rand_engine_state_file.empty()) {
+    else if (m_params.m_read_rand_engine_state) {
         cout << "Loading random engine state\n";
         RandomEngineStateInputFile rand_engine_state_file {
                 m_params.m_rand_engine_state_file};
@@ -237,7 +237,7 @@ GCMCSimulation::GCMCSimulation(
     }
 
     // Load precalculated ideal random walk count data
-    if (params.m_num_walks_filename.size() != 0) {
+    if (params.m_read_num_walks) {
         string filename {params.m_num_walks_filename};
         fs::path f {filename};
         if (!fs::exists(f)) {
