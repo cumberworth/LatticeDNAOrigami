@@ -431,6 +431,8 @@ void OrigamiBiasFunctionsFile::read_file(string filename) {
     ifstream jsonraw {filename, ifstream::binary};
     Json::Value jsonroot;
     jsonraw >> jsonroot;
+
+    // Should rename this in the base class to be general for this
     m_json_ops = jsonroot["origami"]["bias_functions"];
     int max_level {0};
     vector<string> types {};

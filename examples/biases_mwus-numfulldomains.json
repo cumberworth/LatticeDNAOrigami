@@ -1,0 +1,24 @@
+{
+    "origami": {
+        "bias_functions": [
+            {
+                "label": "Linear step well for number bound domains",
+                "tag": "lswnumfulldomains",
+                "type": "LinearStepWell",
+                "min_op": 0,
+                "max_op": 24,
+                "well_bias": 0,
+                "min_bias": 20,
+                "slope": 10,
+                "ops": ["numfulldomains"],
+                "update_per_domain": false
+            }, {
+                "label": "Grid bias for US",
+                "tag": "grid",
+                "type": "Grid",
+                "ops": ["numfulldomains"],
+                "update_per_domain": false
+            }
+        ]
+    }
+}

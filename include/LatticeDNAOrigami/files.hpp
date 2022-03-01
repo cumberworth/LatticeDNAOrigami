@@ -119,6 +119,8 @@ class OrigamiLeveledInput {
 
   protected:
     string m_filename;
+
+    // This is not a general name
     Json::Value m_json_ops {};
 
     vector<vector<string>> m_level_to_types {};
