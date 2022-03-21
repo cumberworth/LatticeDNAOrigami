@@ -636,11 +636,11 @@ A python package, [origamipy](https://github.com/cumberworth/origamipy), that wa
 
 ## References
 
-[1] A. Cumberworth, A. Reinhardt, and D. Frenkel, Lattice models and Monte Carlo methods for simulating DNA origami self-assembly, J. Chem. Phys. 149, 234905 (2018).
+[1] A. Cumberworth, A. Reinhardt, and D. Frenkel, Lattice models and Monte Carlo methods for simulating DNA origami self-assembly, [J. Chem. Phys. 149, 234905 (2018).](https://doi.org/10.1063/1.5051835)
 
 [2] A. Cumberworth, D. Frenkel, and A. Reinhardt, The role of nucleation barriers in the folding of DNA origami: a numerical study, (2022).
 
-[[3] A. Cumberworth, Monte Carlo simulation of DNA origami self-assembly, Ph.D. thesis, University of Cambridge (2021).](https://doi.org/10.17863/CAM.64168)
+[3] A. Cumberworth, Monte Carlo simulation of DNA origami self-assembly, [Ph.D. thesis, University of Cambridge (2021).](https://doi.org/10.17863/CAM.64168)
 
 ## Links
 
