@@ -21,7 +21,7 @@ cmake --install build
 
 ## Running a simulation
 
-Examples of configuration files and scripts for creating instances of input files can be found in `scripts/simutils/`.
+Examples of configuration files and scripts for creating instances of input files can be found in `examples`.
 To run a simulation with `configuration_file.inp`, run
 ```
 latticeDNAOrigami -i [configuration_file.inp]
