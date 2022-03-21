@@ -1,4 +1,4 @@
-# Shitty pipe
+# vmd -e $vmd_file_dir/pipe.tcl -args $vmd_file_dir $filebase $staplelength
 
 set vmd_file_dir [lindex $argv 0]
 set filebase [lindex $argv 1]
@@ -26,7 +26,7 @@ mol delrep 0 0
 create_domain_reps
 animate read vcf $filebase.vcf waitfor all $origami
 animate read vcf $filebase.vcf waitfor all $origami
-#create_legend
+create_legend
 axes location off
 display projection orthographic
 mol top $origami

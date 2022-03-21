@@ -23,7 +23,7 @@ set cylinderradius 0.03
 mol delrep 0 0
 create_domain_reps
 mol addfile $filebase.vcf type vcf waitfor all
-#create_legend
+create_legend
 axes location off
 display projection orthographic
 mol top $origami
