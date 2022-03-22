@@ -1,20 +1,26 @@
 // calc_num_walks.cpp
 
 #include <fstream>
+#include <string>
+#include <unordered_map>
+#include <utility>
 
-#include "calc_num_walks.h"
-#include "parser.h"
-#include "utility.h"
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/serialization/array.hpp>
+#include <boost/serialization/unordered_map.hpp>
+#include <boost/serialization/utility.hpp>
 
-using namespace calcNumWalks;
-using namespace parser;
+#include "LatticeDNAOrigami/ideal_random_walk.hpp"
+#include "LatticeDNAOrigami/parser.hpp"
+#include "LatticeDNAOrigami/utility.hpp"
+
+using namespace idealRandomWalk;
 
 int main(int argc, char* argv[]) {
-    InputParameters params {argc, argv};
-    calc_num_ideal_walks(78, 156, params.m_num_walks_filename);
-}
-
-void calcNumWalks::calc_num_ideal_walks(int max_d, int max_N, string filename) {
+    int max_d {78};
+    int max_N {156};
+    string filename {"num_walks.arch"};
     IdealRandomWalks ideal_random_walks {};
     VectorThree start_pos {0, 0, 0};
     for (int x {0}; x <= max_d; x++) {
