@@ -3,8 +3,8 @@
 A program for running Monte Carlo (MC) simulations of a lattice model of DNA origami, especially for studying its self-assembly process.
 
 The original version of the model and simulation techniques implemented here are described originally in Ref. 1, while an updated version can be found in Ref. 2.
-Additional background and extended description of the move types can be found in Ref. 3
-Simulations are run in the grand canonical ensemble, with annealing, replica exchange, and umbrella sampling variants available and configurable through a plain text input parameter file.
+Additional background and extended description of the move types can be found in Ref. 3.
+Simulations are run in the grand ensemble, with annealing, replica exchange, and umbrella sampling variants available and configurable through a plain text input parameter file.
 Relatively general facilities are available for defining order parameters and associated bias functions in JSON formatted files.
 Output is in simple plain text file and JSON formats, and real-time visualization is possible with VMD via the bundled Tcl scripts.
 
@@ -638,7 +638,7 @@ A python package, [origamipy](https://github.com/cumberworth/origamipy), that wa
 
 [1] A. Cumberworth, A. Reinhardt, and D. Frenkel, Lattice models and Monte Carlo methods for simulating DNA origami self-assembly, [J. Chem. Phys. 149, 234905 (2018).](https://doi.org/10.1063/1.5051835)
 
-[2] A. Cumberworth, D. Frenkel, and A. Reinhardt, The role of nucleation barriers in the folding of DNA origami: a numerical study, (2022).
+[2] A. Cumberworth, D. Frenkel, and A. Reinhardt, Simulations of DNA-origami self-assembly reveal design-dependent nucleation barriers, (2022).
 
 [3] A. Cumberworth, Monte Carlo simulation of DNA origami self-assembly, [Ph.D. thesis, University of Cambridge (2021).](https://doi.org/10.17863/CAM.64168)
 
