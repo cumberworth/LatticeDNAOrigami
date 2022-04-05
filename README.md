@@ -1,5 +1,7 @@
 # Monte Carlo simulation program for a DNA origami lattice model
 
+[![DOI](https://zenodo.org/badge/462344588.svg)](https://zenodo.org/badge/latestdoi/462344588)
+
 A program for running Monte Carlo (MC) simulations of a lattice model of DNA origami, especially for studying its self-assembly process.
 
 The original version of the model and simulation techniques implemented here are described originally in Ref. 1, while an updated version can be found in Ref. 2.
