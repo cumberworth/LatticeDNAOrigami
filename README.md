@@ -4,7 +4,7 @@
 
 A program for running Monte Carlo (MC) simulations of a lattice model of DNA origami, especially for studying its self-assembly process.
 
-The original version of the model and simulation techniques implemented here are described originally in Ref. 1, while an updated version can be found in Ref. 2.
+The original version of the model and simulation techniques implemented here are described in Ref. 1, while an updated version can be found in Ref. 2.
 Additional background and extended description of the move types can be found in Ref. 3.
 Simulations are run in the grand ensemble, with annealing, replica exchange, and umbrella sampling variants available and configurable through a plain text input parameter file.
 Relatively general facilities are available for defining order parameters and associated bias functions in JSON formatted files.
@@ -44,25 +44,25 @@ latticeDNAOrigami -h
 ```
 Example configuration files can be found in `examples/`.
 There is an example of a constant temperature simulation, `constant-temp.inp`, a temperature replica exchange simulation, `ptmc.inp`, (also known as temperature parallel tempering, hence the abbreviation) a replica-exchange multi-window umbrella sampling simulation, and an enumeration run, `enum.inp`.
-Some additional details of the key parameters are given below
+Some additional details of the key parameters are given below.
 
 ### `domain_type`
 
 This can be either `HalfTurn` or `ThreeQuarterTurn`.
-`HalfTurn` is what is used in [Ref. 1](), [Ref. 2](), and?.
-It is used to model systems that have some number of turns plus an additional half turn.
-For example, 16 base pairs (bp) corresponds to about 1.5 turns of a helix.
-`ThreeQuarterTurn` can be used to model systems with binding domains that correspond to some number of turns plus an additional three-quarter turn of a helix.
-For example, 8 bp corresponds to about 0.75 of a helix.
-Note that single binding domains in the design can be simulation with multiple binding domains as defined in the model.
-For example, 16 bp binding domains can be modeled as a single `Halfturn` binding domain, or two `ThreeQuarterTurn` binding domains.
+`HalfTurn` is what is used in [Ref. 1]() and [Ref. 2]().
+It is used to model systems that have n whole turns, where n can be 0, plus a half turn.
+For example, 16 base pairs (bp) corresponds to about 1.5 turns of a helix, and so can be modeled with a `HalfTurn` domain type.
+`ThreeQuarterTurn` can be used to model systems with binding domains that correspond to n whole turns, where n can be 0, plus a three-quarter turn.
+For example, 8 bp corresponds to about 0.75 of a helix, and so can be modeled with a `ThreeQuarterTurn` domain type.
+Note that single binding domains in the design can be simulated with multiple binding domains as defined in the model.
+For example, 16 bp binding domains can be modeled as a single `Halfturn` binding domain, or two 8 bp `ThreeQuarterTurn` binding domains.
 The `ThreeQuarterTurn` binding domain type also allows to model designs that are 3D (note that the model is always in 3D, but `HalfTurn` binding domains can only produce planar designs).
 
 ### `binding_pot`
 
 The potential used for describing the binding of two complementary binding domains.
 Only one option is provided, `FourBody`, which is the potential used and described in [Ref. 2]().
-The potential used in [Ref. 1]() is no longer provided, but the code used for that paper can be found in [Ref. 4](), as well as in the history of this repository.
+The potential used in [Ref. 1]() is no longer provided, but the code used for that paper can be found in the supplementary information of [Ref. 1](), as well as in the history of this repository.
 
 ### misbinding_pot
 
@@ -89,8 +89,8 @@ This is because some of the output file formats require a constant number of sta
 
 ### `domain_update_biases_present`
 
-This should be set to true if any bias functions being used are defined for specific binding domains in the system.
-For example, if a bias function is defined on the distance between two binding domains.
+This should be set to `true` if any bias functions being used are defined for specific binding domains in the system.
+For example, this should be `true` if a bias function is defined on the distance between two binding domains.
 This ensures that the bias is updated each time a domain is set, rather than after the whole configuration of the system has been set.
 
 ### `simulation_type`
@@ -152,7 +152,7 @@ Replica exchange with temperature and the stacking multiplier as a combined exch
 
 Adaptive umbrella sampling.
 An initial equilibration round of sampling will be performed, followed by a set number of iterations that update a grid bias.
-All of `us_grid_bias_tag`, `max_num_iters`, `max_D_bias`, `equil_steps`, `max_equil_dur`, `iter_steps`, and `max_iter_dur`.
+All of `us_grid_bias_tag`, `max_num_iters`, `max_D_bias`, `equil_steps`, `max_equil_dur`, `iter_steps`, and `max_iter_dur` must be set.
 Either the number of steps or the maximum duration can be used to control the length of the equilibrium (`equil_steps`, `max_equil_dur`) and the iterations (`iter_steps`, `max_iter_dur`), although currently both must still be set.
 The tag of the grid bias defined in the bias function file is specified with `us_grid_bias_tag`.
 The number of iterations is set by `max_num_iters`.
@@ -176,9 +176,9 @@ The frequency of swap attempts is set with `iter_swaps`.
 ### Restart options
 
 The simulations are able to be restarted from previous runs.
-If restarting from configurations, set `restart_from_config`.
+If restarting from configurations, set `restart_from_config` to `true`.
 Then, if running a serial simulation, set `restart_traj_file`.
-If running parallel simulation, set `restart_traj_filebase` and `restart_traj_postfix` if following the file naming scheme the program uses for replicas, or directly set all files in a space-delimited list with `restart_traj_files`.
+If running a parallel simulation, set `restart_traj_filebase` and `restart_traj_postfix` if following the file naming scheme the program uses for replicas, or directly set all files in a space-delimited list with `restart_traj_files`.
 The filetype can be the trajectory format (`trj`) or the system input file format (`json`).
 If the restart files contain more than one configuration, set the index of which to use with `restart_step`, or individually for each replica with `restart_steps`.
 For restarting replica exchange simulations, one can also read in the current state of the swaps by setting `restart_from_swap`; this assumes that `restart_traj_filebase` is being used, and will also use `restart_steps`, which is the index in that file, not the simulation step number.
@@ -274,7 +274,7 @@ It must be a string of a fraction, with no spaces (e.g. `1/2`).
 
 The class of move type.
 Below are listed the types, along with move type specific options.
-See [Ref ?]() for definitions and details of the move types.
+See [Ref 3]() for definitions and details of the move types.
 
 #### `OrientationRotation`
 
@@ -512,7 +512,7 @@ This is used by umbrella sampling.
 To run MWUS, an additional file is required to specify the windows.
 This file is a simple text file.
 The first line must contain the tags of the bias functions that will be used to create the restraints for the windows.
-These is usually a `LinearStepWell` bias function type.
+These are usually `LinearStepWell` bias function types.
 For 1D MWUS, only one tag is needed.
 Each subsequent row defines the minimum and maximum values of the order parameters, which override the `min_op` and `max_op` specified in the definition of the bias function.
 If multidimensional MWUS is to be performed, all minimum values are listed first, delimited by spaces, followed by a comma, and then all maximum values, with the order parameters in the same order as the tags in the top row.
