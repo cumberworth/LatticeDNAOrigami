@@ -977,7 +977,8 @@ OrigamiPotential::OrigamiPotential(
         m_misbinding_pot = std::make_unique<OpposingMisbindingPotential>(*this);
     }
     else if (params.m_misbinding_pot == "Disallowed") {
-        m_misbinding_pot = std::make_unique<DisallowedMisbindingPotential>(*this);
+        m_misbinding_pot =
+                std::make_unique<DisallowedMisbindingPotential>(*this);
     }
     else {
         throw NotImplemented {

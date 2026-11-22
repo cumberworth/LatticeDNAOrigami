@@ -62,12 +62,13 @@ OutputFiles setup_output_files(
 
     OutputFiles outs {};
     if (params.m_configs_output_freq != 0) {
-        outs.push_back(std::make_unique<OrigamiTrajOutputFile>(
-                output_filebase + ".trj",
-                params.m_configs_output_freq,
-                params.m_max_total_staples,
-                params.m_max_staple_size,
-                origami));
+        outs.push_back(
+                std::make_unique<OrigamiTrajOutputFile>(
+                        output_filebase + ".trj",
+                        params.m_configs_output_freq,
+                        params.m_max_total_staples,
+                        params.m_max_staple_size,
+                        origami));
     }
     if (params.m_vtf_output_freq != 0) {
         setup_config_files(
@@ -79,58 +80,65 @@ OutputFiles setup_output_files(
                 outs);
     }
     if (params.m_counts_output_freq != 0) {
-        outs.push_back(std::make_unique<OrigamiCountsOutputFile>(
-                output_filebase + ".counts",
-                params.m_counts_output_freq,
-                params.m_max_total_staples,
-                params.m_max_staple_size,
-                origami));
-        outs.push_back(std::make_unique<OrigamiStaplesBoundOutputFile>(
-                output_filebase + ".staples",
-                params.m_counts_output_freq,
-                params.m_max_total_staples,
-                params.m_max_staple_size,
-                origami));
-        outs.push_back(std::make_unique<OrigamiStaplesFullyBoundOutputFile>(
-                output_filebase + ".staplestates",
-                params.m_counts_output_freq,
-                params.m_max_total_staples,
-                params.m_max_staple_size,
-                origami));
+        outs.push_back(
+                std::make_unique<OrigamiCountsOutputFile>(
+                        output_filebase + ".counts",
+                        params.m_counts_output_freq,
+                        params.m_max_total_staples,
+                        params.m_max_staple_size,
+                        origami));
+        outs.push_back(
+                std::make_unique<OrigamiStaplesBoundOutputFile>(
+                        output_filebase + ".staples",
+                        params.m_counts_output_freq,
+                        params.m_max_total_staples,
+                        params.m_max_staple_size,
+                        origami));
+        outs.push_back(
+                std::make_unique<OrigamiStaplesFullyBoundOutputFile>(
+                        output_filebase + ".staplestates",
+                        params.m_counts_output_freq,
+                        params.m_max_total_staples,
+                        params.m_max_staple_size,
+                        origami));
     }
     if (params.m_times_output_freq != 0) {
-        outs.push_back(std::make_unique<OrigamiTimesOutputFile>(
-                output_filebase + ".times",
-                params.m_times_output_freq,
-                params.m_max_total_staples,
-                params.m_max_staple_size,
-                origami));
+        outs.push_back(
+                std::make_unique<OrigamiTimesOutputFile>(
+                        output_filebase + ".times",
+                        params.m_times_output_freq,
+                        params.m_max_total_staples,
+                        params.m_max_staple_size,
+                        origami));
     }
     if (params.m_energies_output_freq != 0) {
-        outs.push_back(std::make_unique<OrigamiEnergiesOutputFile>(
-                output_filebase + ".ene",
-                params.m_energies_output_freq,
-                params.m_max_total_staples,
-                params.m_max_staple_size,
-                origami,
-                biases));
+        outs.push_back(
+                std::make_unique<OrigamiEnergiesOutputFile>(
+                        output_filebase + ".ene",
+                        params.m_energies_output_freq,
+                        params.m_max_total_staples,
+                        params.m_max_staple_size,
+                        origami,
+                        biases));
     }
     if (params.m_order_params_output_freq != 0) {
-        outs.push_back(std::make_unique<OrigamiOrderParamsOutputFile>(
-                output_filebase + ".ops",
-                params.m_order_params_output_freq,
-                params.m_max_total_staples,
-                params.m_max_staple_size,
-                origami,
-                ops,
-                params.m_ops_to_output));
+        outs.push_back(
+                std::make_unique<OrigamiOrderParamsOutputFile>(
+                        output_filebase + ".ops",
+                        params.m_order_params_output_freq,
+                        params.m_max_total_staples,
+                        params.m_max_staple_size,
+                        origami,
+                        ops,
+                        params.m_ops_to_output));
     }
     if (params.m_rand_engine_state_output_freq != 0) {
-        outs.push_back(std::make_unique<RandomEngineStateOutputFile>(
-                output_filebase + ".randstate",
-                params.m_rand_engine_state_output_freq,
-                random_gens,
-                origami));
+        outs.push_back(
+                std::make_unique<RandomEngineStateOutputFile>(
+                        output_filebase + ".randstate",
+                        params.m_rand_engine_state_output_freq,
+                        random_gens,
+                        origami));
     }
 
     return outs;
@@ -144,12 +152,27 @@ void setup_config_files(
         OrigamiSystem& origami,
         OutputFiles& files) {
 
-    files.push_back(std::make_unique<OrigamiVCFOutputFile>(
-            filebase + ".vcf", freq, max_total_staples, max_staple_size, origami));
-    files.push_back(std::make_unique<OrigamiStateOutputFile>(
-            filebase + ".states", freq, max_total_staples, max_staple_size, origami));
-    files.push_back(std::make_unique<OrigamiOrientationOutputFile>(
-            filebase + ".ores", freq, max_total_staples, max_staple_size, origami));
+    files.push_back(
+            std::make_unique<OrigamiVCFOutputFile>(
+                    filebase + ".vcf",
+                    freq,
+                    max_total_staples,
+                    max_staple_size,
+                    origami));
+    files.push_back(
+            std::make_unique<OrigamiStateOutputFile>(
+                    filebase + ".states",
+                    freq,
+                    max_total_staples,
+                    max_staple_size,
+                    origami));
+    files.push_back(
+            std::make_unique<OrigamiOrientationOutputFile>(
+                    filebase + ".ores",
+                    freq,
+                    max_total_staples,
+                    max_staple_size,
+                    origami));
 }
 
 GCMCSimulation::GCMCSimulation(
@@ -718,12 +741,14 @@ void GCMCSimulation::setup_vmd_pipe() {
     pipe_to_vmd();
     if (m_params.m_create_vmd_instance) {
 
-        // Start VMD in the background; it reads the files written by pipe_to_vmd
+        // Start VMD in the background; it reads the files written by
+        // pipe_to_vmd
         auto quote = [](const string& s) { return "'" + s + "'"; };
         string command {
                 "vmd -e " + quote(m_params.m_vmd_file_dir + "/pipe.tcl") +
                 " -args " + quote(m_params.m_vmd_file_dir) + " " +
-                quote(m_params.m_output_filebase + "_vmd") + " > /dev/null 2>&1 &"};
+                quote(m_params.m_output_filebase + "_vmd") +
+                " > /dev/null 2>&1 &"};
         if (std::system(command.c_str()) != 0) {
             cout << "Could not start VMD with: " << command << "\n";
         }

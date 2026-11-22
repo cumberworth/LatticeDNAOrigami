@@ -26,8 +26,8 @@ double RandomGens::uniform_real() {
 
 int RandomGens::uniform_int(int lower, int upper) {
 
-    // Constructing an integer distribution is cheap and it holds no state between
-    // calls, so there is no need to cache one per range
+    // Constructing an integer distribution is cheap and it holds no state
+    // between calls, so there is no need to cache one per range
     return std::uniform_int_distribution<int> {lower, upper}(m_random_engine);
 }
 } // namespace randomGen

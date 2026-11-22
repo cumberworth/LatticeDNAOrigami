@@ -138,7 +138,9 @@ class GCMCSimulation {
     SystemBiases& m_biases;
 
     ostream* m_logging_stream {&std::cout}; // Not owned; see m_logging_file
-    unique_ptr<ofstream> m_logging_file {}; // Owns the log stream when logging to a file
+
+    // Owns the log stream when logging to a file
+    unique_ptr<ofstream> m_logging_file {};
     int m_logging_freq;
     int m_centering_freq;
     int m_centering_domain;
@@ -148,8 +150,8 @@ class GCMCSimulation {
     InputParameters& m_params;
     OutputFiles m_output_files {};
 
-    // Per-move configuration files live as long as the simulation; the movetypes
-    // write to them through the non-owning pointers
+    // Per-move configuration files live as long as the simulation; the
+    // movetypes write to them through the non-owning pointers
     OutputFiles m_config_per_move_files {};
     vector<OrigamiOutputFile*> m_config_per_move_file_ptrs {};
     vector<unique_ptr<MCMovetype>> m_movetypes {};

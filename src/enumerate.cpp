@@ -25,10 +25,12 @@ void enumerate_main(
 
     std::unique_ptr<OvercountCalculator> overcount_calculator;
     if (params.m_max_staple_size == 2) {
-        overcount_calculator = std::make_unique<MaxTwoDomainOvercountCalculator>();
+        overcount_calculator =
+                std::make_unique<MaxTwoDomainOvercountCalculator>();
     }
     else if (params.m_misbinding_pot == "Disallowed") {
-        overcount_calculator = std::make_unique<MisbindingOnlyOvercountCalculator>();
+        overcount_calculator =
+                std::make_unique<MisbindingOnlyOvercountCalculator>();
     }
     else {
         throw NotImplemented {"No enumerator available for system"};
@@ -54,12 +56,14 @@ void enumerate_main(
     }
     std::unique_ptr<GrowthpointEnumerator> growthpoint_enumerator;
     if (params.m_misbinding_pot == "Disallowed") {
-        growthpoint_enumerator = std::make_unique<NoMisbindingGrowthpointEnumerator>(
-                *conf_enumerator, origami);
+        growthpoint_enumerator =
+                std::make_unique<NoMisbindingGrowthpointEnumerator>(
+                        *conf_enumerator, origami);
     }
     else {
-        growthpoint_enumerator = std::make_unique<MisbindingGrowthpointEnumerator>(
-                *conf_enumerator, origami);
+        growthpoint_enumerator =
+                std::make_unique<MisbindingGrowthpointEnumerator>(
+                        *conf_enumerator, origami);
     }
     StapleEnumerator staple_enumerator {
             *growthpoint_enumerator,

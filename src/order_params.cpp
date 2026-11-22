@@ -506,7 +506,8 @@ void SystemOrderParams::setup_ops(
                     op = std::make_unique<DistOrderParam>(d1, d2, label);
                 }
                 else if (type == "AdjacentSite") {
-                    op = std::make_unique<AdjacentSiteOrderParam>(d1, d2, label);
+                    op = std::make_unique<AdjacentSiteOrderParam>(
+                            d1, d2, label);
                 }
 
                 update_per_domain =
@@ -535,7 +536,8 @@ void SystemOrderParams::setup_ops(
             }
             else if (type == "NumStaplesType") {
                 int staple {ops_file.get_int_option(i, j, "staple")};
-                op = std::make_unique<NumStaplesTypeOrderParam>(m_origami, staple, label);
+                op = std::make_unique<NumStaplesTypeOrderParam>(
+                        m_origami, staple, label);
             }
             else if (type == "StapleTypeFullyBound") {
                 int staple {ops_file.get_int_option(i, j, "staple")};
@@ -543,19 +545,24 @@ void SystemOrderParams::setup_ops(
                         m_origami, staple, label);
             }
             else if (type == "NumBoundDomainPairs") {
-                op = std::make_unique<NumBoundDomainPairsOrderParam>(m_origami, label);
+                op = std::make_unique<NumBoundDomainPairsOrderParam>(
+                        m_origami, label);
             }
             else if (type == "NumMisboundDomainPairs") {
-                op = std::make_unique<NumMisboundDomainPairsOrderParam>(m_origami, label);
+                op = std::make_unique<NumMisboundDomainPairsOrderParam>(
+                        m_origami, label);
             }
             else if (type == "NumStackedPairs") {
-                op = std::make_unique<NumStackedPairsOrderParam>(m_origami, label);
+                op = std::make_unique<NumStackedPairsOrderParam>(
+                        m_origami, label);
             }
             else if (type == "NumLinearHelices") {
-                op = std::make_unique<NumLinearHelicesOrderParam>(m_origami, label);
+                op = std::make_unique<NumLinearHelicesOrderParam>(
+                        m_origami, label);
             }
             else if (type == "NumStackedJuncts") {
-                op = std::make_unique<NumStackedJunctsOrderParam>(m_origami, label);
+                op = std::make_unique<NumStackedJunctsOrderParam>(
+                        m_origami, label);
             }
             else {
                 throw utility::SimulationMisuse {
