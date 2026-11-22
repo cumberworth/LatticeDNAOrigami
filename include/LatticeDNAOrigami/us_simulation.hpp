@@ -4,6 +4,7 @@
 #define US_SIMULATION_H
 
 #include <iostream>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -161,9 +162,9 @@ class MWUSGCMCSimulation: public GCMCSimulation {
     InputParameters& m_params;
     long int m_max_num_iters;
 
-    ofstream* m_us_stream;
+    std::unique_ptr<ofstream> m_us_stream;
 
-    USGCMCSimulation* m_us_sim;
+    std::unique_ptr<USGCMCSimulation> m_us_sim;
     int m_windows {0};
     int m_grid_dim {0};
     vector<string> m_window_bias_tags {};

@@ -113,7 +113,8 @@ void USGCMCSimulation::run_equilibration() {
             m_ops,
             m_biases,
             m_random_gens);
-    m_logging_stream = new ofstream {m_output_filebase + ".out"};
+    m_logging_file = std::make_unique<ofstream>(m_output_filebase + ".out");
+    m_logging_stream = m_logging_file.get();
 
     m_steps = m_equil_steps;
     m_steps = simulate(m_steps);
@@ -121,7 +122,8 @@ void USGCMCSimulation::run_equilibration() {
     // Cleanup
     clear_grids();
     close_output_files();
-    delete m_logging_stream;
+    m_logging_file.reset();
+    m_logging_stream = &cout;
 }
 
 void USGCMCSimulation::prepare_iteration(int n) {
@@ -139,7 +141,8 @@ void USGCMCSimulation::prepare_iteration(int n) {
             m_ops,
             m_biases,
             m_random_gens);
-    m_logging_stream = new ofstream {m_output_filebase + ".out"};
+    m_logging_file = std::make_unique<ofstream>(m_output_filebase + ".out");
+    m_logging_stream = m_logging_file.get();
 
     // This will need to change for REMC
     m_steps = m_iter_steps;
@@ -161,7 +164,8 @@ void USGCMCSimulation::process_iteration(int n) {
 
     // Cleanup
     close_output_files();
-    delete m_logging_stream;
+    m_logging_file.reset();
+    m_logging_stream = &cout;
     string filename {m_output_filebase + ".biases"};
     output_weights(filename);
     clear_grids();
@@ -468,10 +472,7 @@ MWUSGCMCSimulation::MWUSGCMCSimulation(
     setup_window_sims(origami);
 }
 
-MWUSGCMCSimulation::~MWUSGCMCSimulation() {
-    delete m_us_sim;
-    delete m_us_stream;
-}
+MWUSGCMCSimulation::~MWUSGCMCSimulation() = default;
 
 void MWUSGCMCSimulation::run() {
     int n;
@@ -546,9 +547,10 @@ void MWUSGCMCSimulation::setup_window_sims(OrigamiSystem& origami) {
     }
 
     // Create simulation objects
-    m_us_sim = new SimpleUSGCMCSimulation {origami, m_ops, m_biases, m_params};
-    m_us_stream = new ofstream {output_filebase + ".out"};
-    m_us_sim->set_output_stream(m_us_stream);
+    m_us_sim = std::make_unique<SimpleUSGCMCSimulation>(
+            origami, m_ops, m_biases, m_params);
+    m_us_stream = std::make_unique<ofstream>(output_filebase + ".out");
+    m_us_sim->set_output_stream(m_us_stream.get());
     m_grid_dim = m_us_sim->get_grid_dim();
 }
 

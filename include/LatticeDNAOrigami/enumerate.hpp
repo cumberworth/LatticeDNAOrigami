@@ -42,6 +42,7 @@ void enumerate_main(
 
 class OvercountCalculator {
   public:
+    virtual ~OvercountCalculator() = default;
     virtual double calc_multiplier(Domain* domain, Domain* other_domain) = 0;
 };
 

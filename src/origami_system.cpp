@@ -988,7 +988,7 @@ vector<double> chempots_to_reduced_chempots(
     return chempots;
 }
 
-OrigamiSystem* setup_origami(InputParameters& params) {
+std::unique_ptr<OrigamiSystem> setup_origami(InputParameters& params) {
 
     OrigamiInputFile origami_input {params.m_origami_input_filename};
     vector<vector<int>> identities {origami_input.get_identities()};
@@ -1002,9 +1002,9 @@ OrigamiSystem* setup_origami(InputParameters& params) {
         configs = traj_file.read_config(params.m_restart_step);
     }
 
-    OrigamiSystem* origami;
+    std::unique_ptr<OrigamiSystem> origami;
     if (params.m_domain_update_biases_present) {
-        origami = new OrigamiSystemWithBias {
+        origami = std::make_unique<OrigamiSystemWithBias>(
                 identities,
                 sequences,
                 enthalpies,
@@ -1012,10 +1012,10 @@ OrigamiSystem* setup_origami(InputParameters& params) {
                 configs,
                 cyclic,
                 params.m_staple_M,
-                params};
+                params);
     }
     else {
-        origami = new OrigamiSystem {
+        origami = std::make_unique<OrigamiSystem>(
                 identities,
                 sequences,
                 enthalpies,
@@ -1023,7 +1023,7 @@ OrigamiSystem* setup_origami(InputParameters& params) {
                 configs,
                 cyclic,
                 params.m_staple_M,
-                params};
+                params);
     }
 
     return origami;

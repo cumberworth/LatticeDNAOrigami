@@ -1,6 +1,7 @@
 // main.cpp
 
 #include <iostream>
+#include <memory>
 
 #include "LatticeDNAOrigami/annealing_simulation.hpp"
 #include "LatticeDNAOrigami/bias_functions.hpp"
@@ -21,7 +22,9 @@ int main(int argc, char* argv[]) {
         using std::cout;
 
         parser::InputParameters params {argc, argv};
-        origami::OrigamiSystem* origami {origami::setup_origami(params)};
+        // Declared before the simulation, so it is destroyed after it
+        std::unique_ptr<origami::OrigamiSystem> origami {
+                origami::setup_origami(params)};
         orderParams::SystemOrderParams& ops {
                 origami->get_system_order_params()};
         biasFunctions::SystemBiases& biases {origami->get_system_biases()};
@@ -36,73 +39,64 @@ int main(int argc, char* argv[]) {
         else {
 
             // Select simulation type
-            simulation::GCMCSimulation* sim;
+            std::unique_ptr<simulation::GCMCSimulation> sim;
             if (params.m_simulation_type == "constant_temp") {
                 cout << "Running serial constant temperature simulation\n";
-                sim = new constantTemp::ConstantTGCMCSimulation {
-                        *origami, ops, biases, params};
+                sim = std::make_unique<constantTemp::ConstantTGCMCSimulation>(
+                        *origami, ops, biases, params);
             }
             else if (params.m_simulation_type == "annealing") {
                 cout << "Running serial annealing simulation\n";
-                sim = new annealing::AnnealingGCMCSimulation {
-                        *origami, ops, biases, params};
+                sim = std::make_unique<annealing::AnnealingGCMCSimulation>(
+                        *origami, ops, biases, params);
             }
             else if (params.m_simulation_type == "t_parallel_tempering") {
                 cout << "Running T parallel tempering simulation\n";
-                sim = new ptmc::TPTGCMCSimulation {
-                        *origami, ops, biases, params};
+                sim = std::make_unique<ptmc::TPTGCMCSimulation>(
+                        *origami, ops, biases, params);
             }
             else if (params.m_simulation_type == "ut_parallel_tempering") {
                 cout << "Running uT parallel tempering simulation\n";
-                sim = new ptmc::UTPTGCMCSimulation {
-                        *origami, ops, biases, params};
+                sim = std::make_unique<ptmc::UTPTGCMCSimulation>(
+                        *origami, ops, biases, params);
             }
             else if (params.m_simulation_type == "hut_parallel_tempering") {
                 cout << "Running HuT parallel tempering simulation\n";
-                sim = new ptmc::HUTPTGCMCSimulation {
-                        *origami, ops, biases, params};
+                sim = std::make_unique<ptmc::HUTPTGCMCSimulation>(
+                        *origami, ops, biases, params);
             }
             else if (params.m_simulation_type == "st_parallel_tempering") {
                 cout << "Running ST parallel tempering simulation\n";
-                sim = new ptmc::STPTGCMCSimulation {
-                        *origami, ops, biases, params};
+                sim = std::make_unique<ptmc::STPTGCMCSimulation>(
+                        *origami, ops, biases, params);
             }
             else if (params.m_simulation_type == "2d_parallel_tempering") {
                 cout << "Running 2D (T and stacking) parallel tempering "
                         "simulation\n";
-                sim = new ptmc::TwoDPTGCMCSimulation {
-                        *origami, ops, biases, params};
+                sim = std::make_unique<ptmc::TwoDPTGCMCSimulation>(
+                        *origami, ops, biases, params);
             }
             else if (params.m_simulation_type == "umbrella_sampling") {
                 cout << "Running single window US simulation\n";
-                sim = new us::SimpleUSGCMCSimulation {
-                        *origami, ops, biases, params};
+                sim = std::make_unique<us::SimpleUSGCMCSimulation>(
+                        *origami, ops, biases, params);
             }
             else if (params.m_simulation_type == "mw_umbrella_sampling") {
                 cout << "Running multi-window US simulation\n";
-                sim = new us::MWUSGCMCSimulation {
-                        *origami, ops, biases, params};
+                sim = std::make_unique<us::MWUSGCMCSimulation>(
+                        *origami, ops, biases, params);
             }
             else if (params.m_simulation_type == "ptmw_umbrella_sampling") {
                 cout << "Running parallel tempering multi-window US "
                         "simulation\n";
-                sim = new us::PTMWUSGCMCSimulation {
-                        *origami, ops, biases, params};
+                sim = std::make_unique<us::PTMWUSGCMCSimulation>(
+                        *origami, ops, biases, params);
             }
             else {
-                delete origami;
                 throw utility::NotImplemented {"No such simulation type"};
             }
 
-            try {
-                sim->run();
-            } catch (const std::exception& e) {
-                delete sim;
-                delete origami;
-                throw;
-            }
-            delete sim;
-            delete origami;
+            sim->run();
         }
     } catch (const std::exception& e) {
         std::cout << std::endl;

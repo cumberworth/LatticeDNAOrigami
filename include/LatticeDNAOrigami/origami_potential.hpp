@@ -3,6 +3,7 @@
 #ifndef ORIGAMI_POTENTIAL_H
 #define ORIGAMI_POTENTIAL_H
 
+#include <memory>
 #include <vector>
 
 #include "LatticeDNAOrigami/domain.hpp"
@@ -242,8 +243,6 @@ class OrigamiPotential {
             const vector<double> enthaplies,
             const vector<double> entropies,
             InputParameters& params);
-    ~OrigamiPotential();
-
     bool m_constraints_violated;
 
     void update_temp(double temp, double stacking_mult = 1);
@@ -272,8 +271,8 @@ class OrigamiPotential {
     const vector<double> m_complementary_entropies;
 
     // Containers for binding rules
-    BindingPotential* m_binding_pot;
-    MisbindingPotential* m_misbinding_pot;
+    std::unique_ptr<BindingPotential> m_binding_pot;
+    std::unique_ptr<MisbindingPotential> m_misbinding_pot;
     string m_stacking_pot;
     string m_hybridization_pot;
     bool m_apply_mean_field_cor;

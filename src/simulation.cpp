@@ -43,7 +43,7 @@ using files::OrigamiTrajOutputFile;
 using files::RandomEngineStateInputFile;
 using files::RandomEngineStateOutputFile;
 
-vector<OrigamiOutputFile*> setup_output_files(
+OutputFiles setup_output_files(
         InputParameters& params,
         string output_filebase,
         OrigamiSystem& origami,
@@ -60,15 +60,14 @@ vector<OrigamiOutputFile*> setup_output_files(
             origami};
     vsf_file.write(0, 0);
 
-    vector<OrigamiOutputFile*> outs {};
+    OutputFiles outs {};
     if (params.m_configs_output_freq != 0) {
-        OrigamiOutputFile* config_out = new OrigamiTrajOutputFile {
+        outs.push_back(std::make_unique<OrigamiTrajOutputFile>(
                 output_filebase + ".trj",
                 params.m_configs_output_freq,
                 params.m_max_total_staples,
                 params.m_max_staple_size,
-                origami};
-        outs.push_back(config_out);
+                origami));
     }
     if (params.m_vtf_output_freq != 0) {
         setup_config_files(
@@ -80,66 +79,58 @@ vector<OrigamiOutputFile*> setup_output_files(
                 outs);
     }
     if (params.m_counts_output_freq != 0) {
-        OrigamiOutputFile* counts_out = new OrigamiCountsOutputFile {
+        outs.push_back(std::make_unique<OrigamiCountsOutputFile>(
                 output_filebase + ".counts",
                 params.m_counts_output_freq,
                 params.m_max_total_staples,
                 params.m_max_staple_size,
-                origami};
-        outs.push_back(counts_out);
-        OrigamiOutputFile* staples_bound = new OrigamiStaplesBoundOutputFile {
+                origami));
+        outs.push_back(std::make_unique<OrigamiStaplesBoundOutputFile>(
                 output_filebase + ".staples",
                 params.m_counts_output_freq,
                 params.m_max_total_staples,
                 params.m_max_staple_size,
-                origami};
-        outs.push_back(staples_bound);
-        OrigamiOutputFile* staples_fully_bound =
-                new OrigamiStaplesFullyBoundOutputFile {
-                        output_filebase + ".staplestates",
-                        params.m_counts_output_freq,
-                        params.m_max_total_staples,
-                        params.m_max_staple_size,
-                        origami};
-        outs.push_back(staples_fully_bound);
+                origami));
+        outs.push_back(std::make_unique<OrigamiStaplesFullyBoundOutputFile>(
+                output_filebase + ".staplestates",
+                params.m_counts_output_freq,
+                params.m_max_total_staples,
+                params.m_max_staple_size,
+                origami));
     }
     if (params.m_times_output_freq != 0) {
-        OrigamiOutputFile* times_out = new OrigamiTimesOutputFile {
+        outs.push_back(std::make_unique<OrigamiTimesOutputFile>(
                 output_filebase + ".times",
                 params.m_times_output_freq,
                 params.m_max_total_staples,
                 params.m_max_staple_size,
-                origami};
-        outs.push_back(times_out);
+                origami));
     }
     if (params.m_energies_output_freq != 0) {
-        OrigamiOutputFile* energies_out = new OrigamiEnergiesOutputFile {
+        outs.push_back(std::make_unique<OrigamiEnergiesOutputFile>(
                 output_filebase + ".ene",
                 params.m_energies_output_freq,
                 params.m_max_total_staples,
                 params.m_max_staple_size,
                 origami,
-                biases};
-        outs.push_back(energies_out);
+                biases));
     }
     if (params.m_order_params_output_freq != 0) {
-        OrigamiOutputFile* order_params_out = new OrigamiOrderParamsOutputFile {
+        outs.push_back(std::make_unique<OrigamiOrderParamsOutputFile>(
                 output_filebase + ".ops",
                 params.m_order_params_output_freq,
                 params.m_max_total_staples,
                 params.m_max_staple_size,
                 origami,
                 ops,
-                params.m_ops_to_output};
-        outs.push_back(order_params_out);
+                params.m_ops_to_output));
     }
     if (params.m_rand_engine_state_output_freq != 0) {
-        OrigamiOutputFile* rand_state_out = new RandomEngineStateOutputFile {
+        outs.push_back(std::make_unique<RandomEngineStateOutputFile>(
                 output_filebase + ".randstate",
                 params.m_rand_engine_state_output_freq,
                 random_gens,
-                origami};
-        outs.push_back(rand_state_out);
+                origami));
     }
 
     return outs;
@@ -151,31 +142,14 @@ void setup_config_files(
         const int max_staple_size,
         const int freq,
         OrigamiSystem& origami,
-        vector<OrigamiOutputFile*>& files) {
+        OutputFiles& files) {
 
-    OrigamiOutputFile* config_out = new OrigamiVCFOutputFile {
-            filebase + ".vcf",
-            freq,
-            max_total_staples,
-            max_staple_size,
-            origami};
-    files.push_back(config_out);
-
-    config_out = new OrigamiStateOutputFile {
-            filebase + ".states",
-            freq,
-            max_total_staples,
-            max_staple_size,
-            origami};
-    files.push_back(config_out);
-
-    config_out = new OrigamiOrientationOutputFile {
-            filebase + ".ores",
-            freq,
-            max_total_staples,
-            max_staple_size,
-            origami};
-    files.push_back(config_out);
+    files.push_back(std::make_unique<OrigamiVCFOutputFile>(
+            filebase + ".vcf", freq, max_total_staples, max_staple_size, origami));
+    files.push_back(std::make_unique<OrigamiStateOutputFile>(
+            filebase + ".states", freq, max_total_staples, max_staple_size, origami));
+    files.push_back(std::make_unique<OrigamiOrientationOutputFile>(
+            filebase + ".ores", freq, max_total_staples, max_staple_size, origami));
 }
 
 GCMCSimulation::GCMCSimulation(
@@ -223,6 +197,9 @@ GCMCSimulation::GCMCSimulation(
                 params.m_configs_output_freq,
                 m_origami_system,
                 m_config_per_move_files);
+        for (auto& file: m_config_per_move_files) {
+            m_config_per_move_file_ptrs.push_back(file.get());
+        }
     }
 
     // Constructor movetypes
@@ -256,12 +233,7 @@ GCMCSimulation::GCMCSimulation(
     }
 }
 
-GCMCSimulation::~GCMCSimulation() {
-    close_output_files();
-    if (m_vmd_pipe_freq != 0) {
-        close_vmd_pipe();
-    }
-}
+GCMCSimulation::~GCMCSimulation() = default;
 
 void GCMCSimulation::construct_movetypes(InputParameters& params) {
     OrigamiMovetypeFile movetypes_file {params.m_movetype_filename};
@@ -329,7 +301,7 @@ MCMovetype* GCMCSimulation::setup_orientation_movetype(
             m_origami_system,
             m_random_gens,
             m_ideal_random_walks,
-            m_config_per_move_files,
+            m_config_per_move_file_ptrs,
             label,
             m_ops,
             m_biases,
@@ -353,7 +325,7 @@ MCMovetype* GCMCSimulation::setup_staple_exchange_movetype(
             m_origami_system,
             m_random_gens,
             m_ideal_random_walks,
-            m_config_per_move_files,
+            m_config_per_move_file_ptrs,
             label,
             m_ops,
             m_biases,
@@ -376,7 +348,7 @@ MCMovetype* GCMCSimulation::setup_staple_regrowth_movetype(
                 m_origami_system,
                 m_random_gens,
                 m_ideal_random_walks,
-                m_config_per_move_files,
+                m_config_per_move_file_ptrs,
                 label,
                 m_ops,
                 m_biases,
@@ -387,7 +359,7 @@ MCMovetype* GCMCSimulation::setup_staple_regrowth_movetype(
                 m_origami_system,
                 m_random_gens,
                 m_ideal_random_walks,
-                m_config_per_move_files,
+                m_config_per_move_file_ptrs,
                 label,
                 m_ops,
                 m_biases,
@@ -413,7 +385,7 @@ MCMovetype* GCMCSimulation::setup_scaffold_regrowth_movetype(
                 m_origami_system,
                 m_random_gens,
                 m_ideal_random_walks,
-                m_config_per_move_files,
+                m_config_per_move_file_ptrs,
                 label,
                 m_ops,
                 m_biases,
@@ -428,7 +400,7 @@ MCMovetype* GCMCSimulation::setup_scaffold_regrowth_movetype(
                 m_origami_system,
                 m_random_gens,
                 m_ideal_random_walks,
-                m_config_per_move_files,
+                m_config_per_move_file_ptrs,
                 label,
                 m_ops,
                 m_biases,
@@ -460,7 +432,7 @@ MCMovetype* GCMCSimulation::setup_scaffold_transform_movetype(
                 m_origami_system,
                 m_random_gens,
                 m_ideal_random_walks,
-                m_config_per_move_files,
+                m_config_per_move_file_ptrs,
                 label,
                 m_ops,
                 m_biases,
@@ -477,7 +449,7 @@ MCMovetype* GCMCSimulation::setup_scaffold_transform_movetype(
                 m_origami_system,
                 m_random_gens,
                 m_ideal_random_walks,
-                m_config_per_move_files,
+                m_config_per_move_file_ptrs,
                 label,
                 m_ops,
                 m_biases,
@@ -496,7 +468,7 @@ MCMovetype* GCMCSimulation::setup_scaffold_transform_movetype(
                 m_origami_system,
                 m_random_gens,
                 m_ideal_random_walks,
-                m_config_per_move_files,
+                m_config_per_move_file_ptrs,
                 label,
                 m_ops,
                 m_biases,
@@ -532,7 +504,7 @@ MCMovetype* GCMCSimulation::setup_rg_movetype(
                 m_origami_system,
                 m_random_gens,
                 m_ideal_random_walks,
-                m_config_per_move_files,
+                m_config_per_move_file_ptrs,
                 label,
                 m_ops,
                 m_biases,
@@ -549,7 +521,7 @@ MCMovetype* GCMCSimulation::setup_rg_movetype(
                 m_origami_system,
                 m_random_gens,
                 m_ideal_random_walks,
-                m_config_per_move_files,
+                m_config_per_move_file_ptrs,
                 label,
                 m_ops,
                 m_biases,
@@ -602,7 +574,7 @@ long long int GCMCSimulation::simulate(
                 write_log_entry(step, accepted, movetype);
                 std::chrono::duration<double> dt {
                         (steady_clock::now() - start)};
-                for (auto output_file: m_output_files) {
+                for (auto& output_file: m_output_files) {
                     output_file->write(step, dt.count());
                 }
                 pipe_to_vmd();
@@ -637,7 +609,7 @@ long long int GCMCSimulation::simulate(
         update_internal(step);
 
         // Write system properties to file
-        for (auto output_file: m_output_files) {
+        for (auto& output_file: m_output_files) {
             if (output_file->m_write_freq != 0 and
                 step % output_file->m_write_freq == 0) {
                 output_file->write(step, dt.count());
@@ -705,46 +677,43 @@ void GCMCSimulation::write_log_entry(
 void GCMCSimulation::write_log_summary() {
     *m_logging_stream << "Run summary"
                       << "\n\n";
-    ofstream* movetype_sum_stream;
-    movetype_sum_stream = new ofstream {m_params.m_output_filebase + ".moves"};
+    ofstream movetype_sum_stream {m_params.m_output_filebase + ".moves"};
     for (auto& movetype: m_movetypes) {
         movetype->write_log_summary_header(m_logging_stream);
-        movetype->write_log_summary(movetype_sum_stream);
+        movetype->write_log_summary(&movetype_sum_stream);
         *m_logging_stream << "\n";
     }
-    movetype_sum_stream->close();
-    delete movetype_sum_stream;
 }
 
 void GCMCSimulation::setup_vmd_pipe() {
     string output_filebase {m_params.m_output_filebase + "_vmd"};
-    vmd_struct_file = new OrigamiVSFOutputFile {
+    vmd_struct_file = std::make_unique<OrigamiVSFOutputFile>(
             output_filebase + ".vsf",
             0,
             m_params.m_max_total_staples,
             m_params.m_max_staple_size,
-            m_origami_system};
+            m_origami_system);
 
-    vmd_coors_file = new OrigamiVCFOutputFile {
+    vmd_coors_file = std::make_unique<OrigamiVCFOutputFile>(
             output_filebase + ".vcf",
             0,
             m_params.m_max_total_staples,
             m_params.m_max_staple_size,
-            m_origami_system};
+            m_origami_system);
 
-    vmd_states_file = new OrigamiStateOutputFile {
+    vmd_states_file = std::make_unique<OrigamiStateOutputFile>(
             output_filebase + ".states",
             0,
             m_params.m_max_total_staples,
             m_params.m_max_staple_size,
-            m_origami_system};
+            m_origami_system);
 
-    vmd_ores_file = new OrigamiOrientationOutputFile {
+    vmd_ores_file = std::make_unique<OrigamiOrientationOutputFile>(
             output_filebase + ".ores",
             0,
             m_params.m_max_total_staples,
             m_params.m_max_staple_size,
-            m_origami_system};
+            m_origami_system);
 
     pipe_to_vmd();
     if (m_params.m_create_vmd_instance) {
@@ -769,19 +738,16 @@ void GCMCSimulation::pipe_to_vmd() {
 }
 
 void GCMCSimulation::close_vmd_pipe() {
-    delete vmd_struct_file;
-    delete vmd_coors_file;
-    delete vmd_states_file;
-    delete vmd_ores_file;
+    vmd_struct_file.reset();
+    vmd_coors_file.reset();
+    vmd_states_file.reset();
+    vmd_ores_file.reset();
 }
 
 void GCMCSimulation::close_output_files() {
-    for (auto output_file: m_output_files) {
-        delete output_file;
-    }
-    for (auto file: m_config_per_move_files) {
-        delete file;
-    }
+
+    // Per-move configuration files stay open: the movetypes write to them for
+    // the lifetime of the simulation
     m_output_files.clear();
 }
 

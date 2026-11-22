@@ -1,5 +1,6 @@
 // order_params.cpp
 
+#include <memory>
 #include <numeric>
 #include <utility>
 
@@ -486,7 +487,7 @@ void SystemOrderParams::setup_ops(
 
         bool update_per_domain {false};
         for (size_t j {0}; j != level_to_types[i].size(); j++) {
-            OrderParam* op;
+            std::unique_ptr<OrderParam> op;
             set<pair<int, int>> d_domains {};
             string type {level_to_types[i][j]};
             string tag {level_to_tags[i][j]};
@@ -502,10 +503,10 @@ void SystemOrderParams::setup_ops(
                 Domain& d1 {*m_origami.get_domain(c1i, d1i)};
                 Domain& d2 {*m_origami.get_domain(c2i, d2i)};
                 if (type == "Dist") {
-                    op = new DistOrderParam {d1, d2, label};
+                    op = std::make_unique<DistOrderParam>(d1, d2, label);
                 }
                 else if (type == "AdjacentSite") {
-                    op = new AdjacentSiteOrderParam {d1, d2, label};
+                    op = std::make_unique<AdjacentSiteOrderParam>(d1, d2, label);
                 }
 
                 update_per_domain =
@@ -527,40 +528,40 @@ void SystemOrderParams::setup_ops(
                     reference_wrapper<OrderParam> d_op {m_tag_to_op.at(d_tag)};
                     d_ops.push_back(d_op);
                 }
-                op = new SumOrderParam {d_ops, label};
+                op = std::make_unique<SumOrderParam>(d_ops, label);
             }
             else if (type == "NumStaples") {
-                op = new NumStaplesOrderParam {m_origami, label};
+                op = std::make_unique<NumStaplesOrderParam>(m_origami, label);
             }
             else if (type == "NumStaplesType") {
                 int staple {ops_file.get_int_option(i, j, "staple")};
-                op = new NumStaplesTypeOrderParam {m_origami, staple, label};
+                op = std::make_unique<NumStaplesTypeOrderParam>(m_origami, staple, label);
             }
             else if (type == "StapleTypeFullyBound") {
                 int staple {ops_file.get_int_option(i, j, "staple")};
-                op = new StapleTypeFullyBoundOrderParam {
-                        m_origami, staple, label};
+                op = std::make_unique<StapleTypeFullyBoundOrderParam>(
+                        m_origami, staple, label);
             }
             else if (type == "NumBoundDomainPairs") {
-                op = new NumBoundDomainPairsOrderParam {m_origami, label};
+                op = std::make_unique<NumBoundDomainPairsOrderParam>(m_origami, label);
             }
             else if (type == "NumMisboundDomainPairs") {
-                op = new NumMisboundDomainPairsOrderParam {m_origami, label};
+                op = std::make_unique<NumMisboundDomainPairsOrderParam>(m_origami, label);
             }
             else if (type == "NumStackedPairs") {
-                op = new NumStackedPairsOrderParam {m_origami, label};
+                op = std::make_unique<NumStackedPairsOrderParam>(m_origami, label);
             }
             else if (type == "NumLinearHelices") {
-                op = new NumLinearHelicesOrderParam {m_origami, label};
+                op = std::make_unique<NumLinearHelicesOrderParam>(m_origami, label);
             }
             else if (type == "NumStackedJuncts") {
-                op = new NumStackedJunctsOrderParam {m_origami, label};
+                op = std::make_unique<NumStackedJunctsOrderParam>(m_origami, label);
             }
             else {
                 throw utility::SimulationMisuse {
                         type + ": order parameter type does not exist"};
             }
-            m_level_to_ops[i].emplace_back(op);
+            m_level_to_ops[i].emplace_back(std::move(op));
             OrderParam& op_ref {*m_level_to_ops[i].back()};
             m_tag_to_op.emplace(tag, op_ref);
             if (not update_per_domain) {

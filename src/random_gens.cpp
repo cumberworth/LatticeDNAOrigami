@@ -18,12 +18,6 @@ RandomGens::RandomGens() {
     m_random_engine.seed(seed);
 }
 
-RandomGens::~RandomGens() {
-    for (auto const key: m_uniform_int_dists) {
-        delete &m_uniform_int_dists.at(key.first);
-    }
-}
-
 void RandomGens::set_seed(int seed) { m_random_engine.seed(seed); }
 
 double RandomGens::uniform_real() {
@@ -32,19 +26,8 @@ double RandomGens::uniform_real() {
 
 int RandomGens::uniform_int(int lower, int upper) {
 
-    // Check if distribution used previously
-    pair<int, int> key {lower, upper};
-    if (m_uniform_int_dists.find(key) != m_uniform_int_dists.end()) {
-        auto dist {m_uniform_int_dists.at(key)};
-        return dist(m_random_engine);
-    }
-
-    // If not, make it and store it
-    else {
-        auto dist {new std::uniform_int_distribution<int> {lower, upper}};
-        int random_int {(*dist)(m_random_engine)};
-        m_uniform_int_dists.insert({key, *dist});
-        return random_int;
-    }
+    // Constructing an integer distribution is cheap and it holds no state between
+    // calls, so there is no need to cache one per range
+    return std::uniform_int_distribution<int> {lower, upper}(m_random_engine);
 }
 } // namespace randomGen

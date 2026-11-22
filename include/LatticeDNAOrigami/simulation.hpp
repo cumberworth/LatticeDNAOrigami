@@ -45,7 +45,9 @@ using origami::OrigamiSystem;
 using parser::InputParameters;
 using randomGen::RandomGens;
 
-vector<OrigamiOutputFile*> setup_output_files(
+using OutputFiles = vector<unique_ptr<OrigamiOutputFile>>;
+
+OutputFiles setup_output_files(
         InputParameters& params,
         string output_filebase,
         OrigamiSystem& origami,
@@ -59,7 +61,7 @@ void setup_config_files(
         const int max_staple_size,
         const int freq,
         OrigamiSystem& origami,
-        vector<OrigamiOutputFile*>& files);
+        OutputFiles& files);
 
 class GCMCSimulation {
   public:
@@ -135,7 +137,8 @@ class GCMCSimulation {
     SystemOrderParams& m_ops;
     SystemBiases& m_biases;
 
-    ostream* m_logging_stream;
+    ostream* m_logging_stream {&std::cout}; // Not owned; see m_logging_file
+    unique_ptr<ofstream> m_logging_file {}; // Owns the log stream when logging to a file
     int m_logging_freq;
     int m_centering_freq;
     int m_centering_domain;
@@ -143,8 +146,12 @@ class GCMCSimulation {
     int m_vmd_pipe_freq;
     double m_max_duration;
     InputParameters& m_params;
-    vector<OrigamiOutputFile*> m_output_files {};
-    vector<OrigamiOutputFile*> m_config_per_move_files {};
+    OutputFiles m_output_files {};
+
+    // Per-move configuration files live as long as the simulation; the movetypes
+    // write to them through the non-owning pointers
+    OutputFiles m_config_per_move_files {};
+    vector<OrigamiOutputFile*> m_config_per_move_file_ptrs {};
     vector<unique_ptr<MCMovetype>> m_movetypes {};
     vector<double> m_movetype_freqs {};
     vector<double> m_cumulative_probs {};
@@ -152,10 +159,10 @@ class GCMCSimulation {
     IdealRandomWalks m_ideal_random_walks {};
 
     // VMD realtime visualization
-    OrigamiVSFOutputFile* vmd_struct_file {nullptr};
-    OrigamiVCFOutputFile* vmd_coors_file {nullptr};
-    OrigamiStateOutputFile* vmd_states_file {nullptr};
-    OrigamiOrientationOutputFile* vmd_ores_file {nullptr};
+    unique_ptr<OrigamiVSFOutputFile> vmd_struct_file {};
+    unique_ptr<OrigamiVCFOutputFile> vmd_coors_file {};
+    unique_ptr<OrigamiStateOutputFile> vmd_states_file {};
+    unique_ptr<OrigamiOrientationOutputFile> vmd_ores_file {};
 };
 } // namespace simulation
 

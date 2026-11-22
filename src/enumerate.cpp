@@ -4,6 +4,7 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <memory>
 
 #include "LatticeDNAOrigami/enumerate.hpp"
 #include "LatticeDNAOrigami/order_params.hpp"
@@ -22,43 +23,43 @@ void enumerate_main(
         SystemBiases& biases,
         InputParameters& params) {
 
-    OvercountCalculator* overcount_calculator;
+    std::unique_ptr<OvercountCalculator> overcount_calculator;
     if (params.m_max_staple_size == 2) {
-        overcount_calculator = new MaxTwoDomainOvercountCalculator {};
+        overcount_calculator = std::make_unique<MaxTwoDomainOvercountCalculator>();
     }
     else if (params.m_misbinding_pot == "Disallowed") {
-        overcount_calculator = new MisbindingOnlyOvercountCalculator {};
+        overcount_calculator = std::make_unique<MisbindingOnlyOvercountCalculator>();
     }
     else {
         throw NotImplemented {"No enumerator available for system"};
     }
-    ConformationalEnumerator* conf_enumerator;
+    std::unique_ptr<ConformationalEnumerator> conf_enumerator;
     if (params.m_enumerate_staples_only) {
-        conf_enumerator = new StapleConformationalEnumerator {
+        conf_enumerator = std::make_unique<StapleConformationalEnumerator>(
                 origami,
                 *overcount_calculator,
                 ops,
                 biases,
                 params.m_ops_to_output,
-                params.m_apply_mean_field_cor};
+                params.m_apply_mean_field_cor);
     }
     else {
-        conf_enumerator = new ConformationalEnumerator {
+        conf_enumerator = std::make_unique<ConformationalEnumerator>(
                 origami,
                 *overcount_calculator,
                 ops,
                 biases,
                 params.m_ops_to_output,
-                params.m_apply_mean_field_cor};
+                params.m_apply_mean_field_cor);
     }
-    GrowthpointEnumerator* growthpoint_enumerator;
+    std::unique_ptr<GrowthpointEnumerator> growthpoint_enumerator;
     if (params.m_misbinding_pot == "Disallowed") {
-        growthpoint_enumerator = new NoMisbindingGrowthpointEnumerator {
-                *conf_enumerator, origami};
+        growthpoint_enumerator = std::make_unique<NoMisbindingGrowthpointEnumerator>(
+                *conf_enumerator, origami);
     }
     else {
-        growthpoint_enumerator =
-                new MisbindingGrowthpointEnumerator {*conf_enumerator, origami};
+        growthpoint_enumerator = std::make_unique<MisbindingGrowthpointEnumerator>(
+                *conf_enumerator, origami);
     }
     StapleEnumerator staple_enumerator {
             *growthpoint_enumerator,
@@ -76,8 +77,6 @@ void enumerate_main(
     cout << "\n";
     cout << conf_enumerator->average_energy() << "\n";
     cout << conf_enumerator->average_bias() << "\n";
-    delete growthpoint_enumerator;
-    delete conf_enumerator;
 }
 
 double MisbindingOnlyOvercountCalculator::calc_multiplier(

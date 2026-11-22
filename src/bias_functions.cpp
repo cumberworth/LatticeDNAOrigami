@@ -1,5 +1,7 @@
 // bias_functions.cpp
 
+#include <memory>
+
 #include "LatticeDNAOrigami/bias_functions.hpp"
 #include "LatticeDNAOrigami/files.hpp"
 
@@ -327,7 +329,7 @@ void SystemBiases::setup_biases(
             m_domain_update_biases[key].push_back({});
         }
         for (size_t j {0}; j != level_to_types[i].size(); j++) {
-            BiasFunction* bias_f;
+            std::unique_ptr<BiasFunction> bias_f;
             string type {level_to_types[i][j]};
             string tag {level_to_tags[i][j]};
             vector<string> op_tags {level_to_ops[i][j]};
@@ -370,8 +372,8 @@ void SystemBiases::setup_biases(
                 int max_op {biases_file.get_int_option(i, j, "max_op")};
                 double max_bias {
                         biases_file.get_double_option(i, j, "max_bias")};
-                bias_f = new LinearStepBiasFunction {
-                        op, min_op, max_op, max_bias};
+                bias_f = std::make_unique<LinearStepBiasFunction>(
+                        op, min_op, max_op, max_bias);
             }
             if (type == "LinearStepWell") {
                 OrderParam& op {
@@ -383,8 +385,8 @@ void SystemBiases::setup_biases(
                 double min_bias {
                         biases_file.get_double_option(i, j, "min_bias")};
                 double slope {biases_file.get_double_option(i, j, "slope")};
-                bias_f = new LinearStepWellBiasFunction {
-                        op, min_op, max_op, well_bias, min_bias, slope};
+                bias_f = std::make_unique<LinearStepWellBiasFunction>(
+                        op, min_op, max_op, well_bias, min_bias, slope);
             }
             else if (type == "SquareWell") {
                 OrderParam& op {
@@ -395,8 +397,8 @@ void SystemBiases::setup_biases(
                         biases_file.get_double_option(i, j, "well_bias")};
                 double outside_bias {
                         biases_file.get_double_option(i, j, "outside_bias")};
-                bias_f = new SquareWellBiasFunction {
-                        op, min_op, max_op, well_bias, outside_bias};
+                bias_f = std::make_unique<SquareWellBiasFunction>(
+                        op, min_op, max_op, well_bias, outside_bias);
             }
             else if (type == "Grid") {
                 vector<reference_wrapper<OrderParam>> ops {};
@@ -405,14 +407,14 @@ void SystemBiases::setup_biases(
                             m_system_order_params.get_order_param(op_tag)};
                     ops.push_back(op);
                 }
-                bias_f = new GridBiasFunction {ops};
+                bias_f = std::make_unique<GridBiasFunction>(ops);
             }
             else {
                 throw utility::SimulationMisuse {
                         type + "; no such bias function type"};
             }
 
-            m_level_to_biases[i].emplace_back(bias_f);
+            m_level_to_biases[i].emplace_back(std::move(bias_f));
             BiasFunction& bias_f_r {*m_level_to_biases[i].back()};
             m_tag_to_biases.emplace(tag, bias_f_r);
             if (update_per_domain) {

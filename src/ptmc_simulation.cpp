@@ -53,7 +53,8 @@ PTGCMCSimulation::PTGCMCSimulation(
             m_ops,
             m_biases,
             m_random_gens);
-    m_logging_stream = new ofstream {output_filebase + ".out"};
+    m_logging_file = std::make_unique<ofstream>(output_filebase + ".out");
+    m_logging_stream = m_logging_file.get();
 
     // Initialize quantity index to replica index vectors
     if (m_rank == m_master_rep) {

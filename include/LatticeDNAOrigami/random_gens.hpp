@@ -4,20 +4,12 @@
 #define RANDOM_GENS_H
 
 #include <random>
-#include <unordered_map>
-#include <utility>
-
-#include "LatticeDNAOrigami/hash.hpp"
 
 namespace randomGen {
-
-using std::pair;
-using std::unordered_map;
 
 class RandomGens {
   public:
     RandomGens();
-    ~RandomGens();
 
     void set_seed(int seed);
     double uniform_real();
@@ -26,8 +18,6 @@ class RandomGens {
 
   private:
     std::uniform_real_distribution<double> m_uniform_real_dist;
-    unordered_map<pair<int, int>, std::uniform_int_distribution<int>&>
-            m_uniform_int_dists {};
 };
 } // namespace randomGen
 

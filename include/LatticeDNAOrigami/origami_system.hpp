@@ -4,6 +4,7 @@
 #define ORIGAMI_SYSTEM_H
 
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -260,7 +261,7 @@ class OrigamiSystemWithBias: public OrigamiSystem {
 };
 
 // Moved from main
-OrigamiSystem* setup_origami(InputParameters& params);
+std::unique_ptr<OrigamiSystem> setup_origami(InputParameters& params);
 
 // Convert concentration to reduced (u/kb) chemical potential
 vector<double> molarity_to_chempots(

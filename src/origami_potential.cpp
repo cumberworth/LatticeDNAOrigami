@@ -967,7 +967,7 @@ OrigamiPotential::OrigamiPotential(
         m_apply_mean_field_cor {params.m_apply_mean_field_cor} {
 
     if (params.m_binding_pot == "FourBody") {
-        m_binding_pot = new JunctionBindingPotential(*this);
+        m_binding_pot = std::make_unique<JunctionBindingPotential>(*this);
     }
     else {
         throw NotImplemented {
@@ -975,10 +975,10 @@ OrigamiPotential::OrigamiPotential(
     }
 
     if (params.m_misbinding_pot == "Opposing") {
-        m_misbinding_pot = new OpposingMisbindingPotential(*this);
+        m_misbinding_pot = std::make_unique<OpposingMisbindingPotential>(*this);
     }
     else if (params.m_misbinding_pot == "Disallowed") {
-        m_misbinding_pot = new DisallowedMisbindingPotential(*this);
+        m_misbinding_pot = std::make_unique<DisallowedMisbindingPotential>(*this);
     }
     else {
         throw NotImplemented {
@@ -1009,11 +1009,6 @@ OrigamiPotential::OrigamiPotential(
     }
 
     get_energies();
-}
-
-OrigamiPotential::~OrigamiPotential() {
-    delete m_binding_pot;
-    delete m_misbinding_pot;
 }
 
 void OrigamiPotential::update_temp(double temp, double stacking_mult) {
