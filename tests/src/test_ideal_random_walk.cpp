@@ -1,4 +1,5 @@
-#include <catch2/catch.hpp>
+#include <catch2/catch_approx.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include "LatticeDNAOrigami/ideal_random_walk.hpp"
 
@@ -40,7 +41,7 @@ SCENARIO("Computed ideal random walks match hand calculated values") {
         end_pos = {0, 2, 3};
         N = 51;
         number_of_walks = 5.947398897268465e+36;
-        REQUIRE(Approx(number_of_walks) ==
+        REQUIRE(Catch::Approx(number_of_walks) ==
                 ideal_walk.num_walks(start_pos, end_pos, N));
     }
 

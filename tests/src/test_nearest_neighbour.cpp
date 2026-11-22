@@ -1,4 +1,5 @@
-#include <catch2/catch.hpp>
+#include <catch2/catch_approx.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #define private public
 #define protected public
@@ -43,7 +44,7 @@ SCENARIO("Longest contiguous complementary sequences are extracted") {
                 N++;
             }
             ene2 /= N;
-            REQUIRE(Approx(ene1) == ene2);
+            REQUIRE(Catch::Approx(ene1) == ene2);
         }
     }
 
@@ -118,7 +119,7 @@ SCENARIO("Computed free energies are compared to hand calculated values") {
             for (size_t i {0}; i != seqs.size(); i++) {
                 double hybrid_e {calc_unitless_hybridization_energy(
                         seqs[i], temp, cation_M)};
-                REQUIRE(Approx(hybrid_e) == energies[i]);
+                REQUIRE(Catch::Approx(hybrid_e) == energies[i]);
             }
         }
     }
@@ -136,7 +137,7 @@ SCENARIO("Computed free energies are compared to hand calculated values") {
         THEN("The associated energies match expected") {
             double hybrid_e {
                     calc_unitless_hybridization_energy(seq, temp, cation_M)};
-            REQUIRE(Approx(hybrid_e) == energy);
+            REQUIRE(Catch::Approx(hybrid_e) == energy);
         }
     }
 }

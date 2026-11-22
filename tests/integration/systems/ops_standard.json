@@ -1,0 +1,38 @@
+{
+    "origami": {
+        "order_params": [
+            {
+                "label": "Number of bound staples",
+                "tag": "numstaples",
+                "type": "NumStaples",
+                "level": 0
+            }, {
+                "label": "Number of fully bound domain pairs",
+                "tag": "numfulldomains",
+                "type": "NumBoundDomainPairs",
+                "level": 0
+            }, {
+                "label": "Number of misbound domain pairs",
+                "tag": "nummisdomains",
+                "type": "NumMisboundDomainPairs",
+                "level": 0
+            }, {
+                "label": "Number of stacked domain pairs",
+                "tag": "numstackedpairs",
+                "type": "NumStackedPairs",
+                "level": 0
+            }, {
+                "label": "Number of linear helices",
+                "tag": "numlinearhelices",
+                "type": "NumLinearHelices",
+                "level": 0
+            }, {
+                "label": "Number of stacked junctions",
+                "tag": "numstackedjuncts",
+                "type": "NumStackedJuncts",
+                "level": 0
+            }
+        ]
+    }
+}
+
