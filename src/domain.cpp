@@ -57,11 +57,11 @@ bool HalfTurnDomain::check_kink_constraint(VectorThree ndr, Domain& cd_2) {
 }
 
 bool HalfTurnDomain::check_junction_constraint(
-        Domain& cd_j2,
-        Domain& cd_j3,
-        Domain& cd_j4,
-        Domain& cd_k1,
-        Domain& cd_k2) {
+        Domain&,
+        Domain&,
+        Domain&,
+        Domain&,
+        Domain&) {
 
     return true;
 }
@@ -98,8 +98,8 @@ bool ThreeQuarterTurnDomain::check_kink_constraint(
 
 bool ThreeQuarterTurnDomain::check_junction_constraint(
         Domain& cd_j2,
-        Domain& cd_j3,
-        Domain& cd_j4,
+        Domain&,
+        Domain&,
         Domain& cd_k1,
         Domain& cd_k2) {
 

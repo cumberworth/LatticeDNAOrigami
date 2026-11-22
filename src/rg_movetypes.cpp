@@ -94,7 +94,7 @@ double CTRGRegrowthMCMovetype::unassign_and_save_domains() {
     m_prev_ore[key] = domain->m_ore;
     for (size_t i {1}; i != m_regrow_ds.size(); i++) {
         domain = m_regrow_ds[i];
-        pair<int, int> key {domain->m_c, domain->m_d};
+        key = {domain->m_c, domain->m_d};
         m_prev_pos[key] = domain->m_pos;
         m_prev_ore[key] = domain->m_ore;
         m_modified_domains.push_back(key);

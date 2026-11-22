@@ -232,7 +232,7 @@ RandomEngineStateInputFile::RandomEngineStateInputFile(string filename):
 string RandomEngineStateInputFile::read_state(int step) {
     m_file.seekg(std::ios::beg);
     string line;
-    for (unsigned int i = 0; i != step; ++i) {
+    for (int i = 0; i != step; ++i) {
         std::getline(m_file, line);
         if (m_file.eof()) {
             throw FileError {
@@ -351,8 +351,8 @@ vector<string> OrigamiLeveledInput::get_vector_string_option(
         string key) {
     int json_i {m_level_to_indices[i][j]};
     vector<string> sv {};
-    for (unsigned int i {0}; i != m_json_ops[json_i][key].size(); i++) {
-        sv.push_back(m_json_ops[json_i][key][i].asString());
+    for (unsigned int k {0}; k != m_json_ops[json_i][key].size(); k++) {
+        sv.push_back(m_json_ops[json_i][key][k].asString());
     }
     return sv;
 }
@@ -783,8 +783,8 @@ RandomEngineStateOutputFile::RandomEngineStateOutputFile(
         int write_freq,
         RandomGens& random_gens,
         OrigamiSystem& origami_system):
-        m_random_gens {random_gens},
-        OrigamiOutputFile {filename, write_freq, 0, 0, origami_system} {}
+        OrigamiOutputFile {filename, write_freq, 0, 0, origami_system},
+        m_random_gens {random_gens} {}
 
 void RandomEngineStateOutputFile::write(long int, double) {
     m_file << m_random_gens.m_random_engine;

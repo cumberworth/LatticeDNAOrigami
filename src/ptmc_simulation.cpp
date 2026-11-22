@@ -462,7 +462,6 @@ void TwoDPTGCMCSimulation::initialize_control_qs(InputParameters& params) {
         for (size_t v2_i {0}; v2_i != params.m_stacking_mults.size(); v2_i++) {
             double temp {params.m_temps[v1_i]};
             temps.push_back(temp);
-            double staple_u_mult;
             staple_us.push_back(params.m_staple_u_mult);
             bias_mults.push_back(1);
             double stacking_mult {params.m_stacking_mults[v2_i]};
@@ -477,8 +476,7 @@ void TwoDPTGCMCSimulation::initialize_control_qs(InputParameters& params) {
         // Chemical potentials and volumes
         m_control_qs.push_back(staple_us);
 
-        // Biases
-        vector<double> bias_mults(temps.size(), 1);
+        // Biases (all 1)
         m_control_qs.push_back(bias_mults);
 
         // Stacks

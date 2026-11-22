@@ -99,17 +99,20 @@ if(CCACHE_PROGRAM)
   set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
 endif()
 
-# Compiler warnings
+# Compiler warnings (off by default; the dev preset turns them on)
+option(LDO_WARNINGS "Compile with warnings enabled" OFF)
+if(LDO_WARNINGS)
+  target_compile_options(
+    LatticeDNAOrigami_lib
+    PRIVATE -Wall
+            -Wextra
+            -Wshadow
+            -Wnon-virtual-dtor
+            -Woverloaded-virtual)
 
-# target_compile_options(LatticeDNAOrigami_lib PUBLIC -Wall -Wextra -Wshadow
-# -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual
-# -Wpedantic -Wconversion -Wsign-conversion -Wnull-dereference
-# -Wdouble-promotion -Werror)
-
-# target_compile_options(LatticeDNAOrigami_lib PUBLIC -Wall -Wextra -Wshadow
-# -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Woverloaded-virtual
-# -Wpedantic -Wconversion -Wsign-conversion -Wnull-dereference
-# -Wdouble-promotion)
+  # Bundled third-party code
+  set_source_files_properties(src/jsoncpp.cpp PROPERTIES COMPILE_OPTIONS "-w")
+endif()
 
 # Main simulation program
 add_executable(latticeDNAOrigami apps/main.cpp)

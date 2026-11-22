@@ -181,8 +181,8 @@ ConformationalEnumerator::ConformationalEnumerator(
         m_overcount_calculator {overcount_calculator},
         m_ops {ops},
         m_biases {biases},
-        m_optags {optags},
-        m_apply_mean_field_cor {apply_mean_field_cor} {
+        m_apply_mean_field_cor {apply_mean_field_cor},
+        m_optags {optags} {
 
     for (auto tag: optags) {
         m_ops_to_output.emplace_back(m_ops.get_order_param(tag));
@@ -612,22 +612,22 @@ void ConformationalEnumerator::create_staple_stack(Domain* domain) {
 
     // Iterate through domains in three prime direction
     for (size_t d_i = domain->m_d + 1; d_i != staple.size(); d_i++) {
-        Domain* domain {staple[d_i]};
-        bool is_growthpoint {m_growthpoints.count(domain) > 0};
-        m_domains.push_back(domain);
+        Domain* staple_domain {staple[d_i]};
+        bool is_growthpoint {m_growthpoints.count(staple_domain) > 0};
+        m_domains.push_back(staple_domain);
         if (is_growthpoint) {
-            Domain* new_domain {m_growthpoints[domain]};
+            Domain* new_domain {m_growthpoints[staple_domain]};
             create_staple_stack(new_domain);
         }
     }
 
     // Add domains in five prime direction
     for (int d_i {domain->m_d - 1}; d_i != -1; d_i--) {
-        Domain* domain {staple[d_i]};
-        bool is_growthpoint {m_growthpoints.count(domain) > 0};
-        m_domains.push_back(domain);
+        Domain* staple_domain {staple[d_i]};
+        bool is_growthpoint {m_growthpoints.count(staple_domain) > 0};
+        m_domains.push_back(staple_domain);
         if (is_growthpoint) {
-            Domain* new_domain {m_growthpoints[domain]};
+            Domain* new_domain {m_growthpoints[staple_domain]};
             create_staple_stack(new_domain);
         }
     }

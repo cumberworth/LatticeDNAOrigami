@@ -11,15 +11,15 @@
 
 ## Running
 
-Configure with tests enabled. The build in `experiments/build-test` uses the compat flags for current Boost:
+With CMake presets (see `CMakePresets.json` at the repository root):
 ```
-cmake -S . -B build-test -DBUILD_TESTING=ON
-cmake --build build-test -j
-cd build-test
-ctest -L 'unit|quick' -j 3 --output-on-failure   # ~5 min on 3 cores
-ctest -L slow -j 8 --output-on-failure           # thorough MC checks, ~15 min on 8+ cores
+cmake --preset dev && cmake --build --preset dev
+ctest --preset quick       # unit + quick integration tests, ~5 min on 3 cores
+ctest --preset slow        # thorough MC checks (use many cores, e.g. the cloud batch)
+cmake --preset sanitize && cmake --build --preset sanitize
+ctest --preset sanitize    # consistency, regression and enumeration under ASan/UBSan
 ```
-A single test can also be run directly, e.g. `run_tests.py --exe build-test/latticeDNAOrigami mc-enumeration --temp 345 --seeds 3`.
+A single test can also be run directly, e.g. `run_tests.py --exe build/dev/latticeDNAOrigami mc-enumeration --temp 345 --seeds 3`.
 
 ## Systems and temperatures
 

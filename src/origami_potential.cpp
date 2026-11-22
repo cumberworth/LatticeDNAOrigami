@@ -464,7 +464,7 @@ void JunctionBindingPotential::check_junction(
 void JunctionBindingPotential::check_backward_triplet_stacking_combos(
         Domain* cd_1,
         Domain* cd_2,
-        int i) {
+        int) {
 
     Domain* cd_h1;
     Domain* cd_h2;
@@ -521,7 +521,7 @@ void JunctionBindingPotential::check_backward_triplet_stacking_combos(
 void JunctionBindingPotential::check_forward_triplet_stacking_combos(
         Domain* cd_1,
         Domain* cd_2,
-        int i) {
+        int) {
 
     Domain* cd_h1;
     Domain* cd_h2;
@@ -672,7 +672,6 @@ void JunctionBindingPotential::check_backward_single_junction(
 
     // Add kink pairs that are on the chain bound to j3
     Domain* cd_j3_bound {cd_j3->m_bound_domain};
-    Domain* cd_j4_bound {cd_j4->m_bound_domain};
     Domain* cd_j3_bound_for {cd_j3_bound->m_forward_domain};
     Domain* cd_j3_bound_bac {cd_j3_bound->m_backward_domain};
 

@@ -630,17 +630,17 @@ void CTRegrowthMCMovetype::select_noncontig_segs(
         m_constraintpoints.add_stem_seg_pair(stem_d, {seg_i, seg_i + 1});
         vector<int> stem_seg_pair {};
         for (auto seg: paired_segs[i]) {
-            int dir {dirs[seg_i]};
+            int seg_dir {dirs[seg_i]};
             if (seg.size() != 0) {
                 last_d = seg.back();
             }
             else {
                 last_d = stem_d;
             }
-            Domain* next_d {*last_d + dir};
-            if (next_d != nullptr) {
+            Domain* seg_next_d {*last_d + seg_dir};
+            if (seg_next_d != nullptr) {
                 m_constraintpoints.add_active_endpoint(
-                        next_d, next_d->m_pos, seg_i);
+                        seg_next_d, seg_next_d->m_pos, seg_i);
             }
             seg_i++;
         }

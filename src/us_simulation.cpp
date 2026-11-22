@@ -34,13 +34,13 @@ USGCMCSimulation::USGCMCSimulation(
         SystemBiases& biases,
         InputParameters& params):
         GCMCSimulation(origami, ops, biases, params),
+        m_grid_bias {biases.get_grid_bias(params.m_us_grid_bias_tag)},
         m_params {params},
         m_max_num_iters {params.m_max_num_iters},
         m_equil_steps {params.m_equil_steps},
         m_max_equil_dur {params.m_max_equil_dur},
         m_iter_steps {params.m_iter_steps},
         m_max_iter_dur {params.m_max_iter_dur},
-        m_grid_bias {biases.get_grid_bias(params.m_us_grid_bias_tag)},
         m_max_D_bias {params.m_max_D_bias} {
 
     // Add reading in other internal variables here?
@@ -661,7 +661,7 @@ void PTMWUSGCMCSimulation::run() {
     }
 }
 
-void PTMWUSGCMCSimulation::run_swaps(long long int swaps, long long int dur) {
+void PTMWUSGCMCSimulation::run_swaps(long long int, long long int dur) {
     if (m_iter == 0 and m_params.m_restart_us_iter == true) {
         m_us_sim->m_steps = m_us_sim->get_current_iter_steps();
         cout << "Restarting iteration from step " << m_us_sim->m_steps
@@ -801,7 +801,7 @@ void PTMWUSGCMCSimulation::attempt_exchange(int swap_i) {
 
         // Test if both inside others window
         bool inside_windows {true};
-        for (size_t j {0}; j != m_grid_dim; j++) {
+        for (int j {0}; j != m_grid_dim; j++) {
             int min_comp {m_window_mins[win_1][j]};
             int max_comp {m_window_maxs[win_1][j]};
             if (point_2[j] < min_comp or point_2[j] > max_comp) {
@@ -899,7 +899,7 @@ void PTMWUSGCMCSimulation::write_acceptance_freqs() {
     cout << "\n";
 }
 
-void PTMWUSGCMCSimulation::initialize_swap_file(InputParameters& params) {
+void PTMWUSGCMCSimulation::initialize_swap_file(InputParameters&) {
     if (m_rank == m_master_node) {
         string prefix {"_iter-" + std::to_string(m_iter)};
         m_swapfile.open(m_output_filebase + prefix + ".swp");

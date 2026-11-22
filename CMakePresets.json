@@ -1,0 +1,77 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {"major": 3, "minor": 25, "patch": 0},
+  "configurePresets": [
+    {
+      "name": "release",
+      "displayName": "Release (production runs)",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTING": "OFF"
+      }
+    },
+    {
+      "name": "dev",
+      "displayName": "Development: optimized, with tests and warnings",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "BUILD_TESTING": "ON",
+        "LDO_WARNINGS": "ON"
+      }
+    },
+    {
+      "name": "sanitize",
+      "displayName": "AddressSanitizer + UndefinedBehaviorSanitizer, with tests",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "BUILD_TESTING": "ON",
+        "CMAKE_CXX_FLAGS": "-fsanitize=address,undefined -fno-omit-frame-pointer",
+        "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=address,undefined"
+      }
+    },
+    {
+      "name": "profile",
+      "displayName": "Profiling: optimized with frame pointers (for perf)",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "BUILD_TESTING": "OFF",
+        "CMAKE_CXX_FLAGS": "-fno-omit-frame-pointer"
+      }
+    }
+  ],
+  "buildPresets": [
+    {"name": "release", "configurePreset": "release"},
+    {"name": "dev", "configurePreset": "dev"},
+    {"name": "sanitize", "configurePreset": "sanitize"},
+    {"name": "profile", "configurePreset": "profile"}
+  ],
+  "testPresets": [
+    {
+      "name": "quick",
+      "displayName": "Unit and quick integration tests (~5 min on 3 cores)",
+      "configurePreset": "dev",
+      "filter": {"include": {"label": "unit|quick"}},
+      "output": {"outputOnFailure": true},
+      "execution": {"jobs": 3}
+    },
+    {
+      "name": "slow",
+      "displayName": "Thorough MC-vs-enumeration tests (use many cores)",
+      "configurePreset": "dev",
+      "filter": {"include": {"label": "slow"}},
+      "output": {"outputOnFailure": true}
+    },
+    {
+      "name": "sanitize",
+      "displayName": "Consistency, regression and enumeration tests under sanitizers",
+      "configurePreset": "sanitize",
+      "filter": {"include": {"name": "consistency|regression|enumeration-"}, "exclude": {"name": "mc-"}},
+      "output": {"outputOnFailure": true},
+      "environment": {"ASAN_OPTIONS": "detect_leaks=1", "UBSAN_OPTIONS": "print_stacktrace=1:halt_on_error=1"}
+    }
+  ]
+}
