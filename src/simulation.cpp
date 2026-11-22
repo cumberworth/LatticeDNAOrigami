@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <numeric>
@@ -13,7 +14,6 @@
 
 #include <boost/mpi/communicator.hpp>
 #include <boost/mpi/environment.hpp>
-#include <boost/process.hpp>
 
 #include "LatticeDNAOrigami/cb_movetypes.hpp"
 #include "LatticeDNAOrigami/files.hpp"
@@ -30,7 +30,6 @@ namespace simulation {
 
 using std::cout;
 
-namespace bp = boost::process;
 namespace fs = std::filesystem;
 
 using files::OrigamiCountsOutputFile;
@@ -749,14 +748,16 @@ void GCMCSimulation::setup_vmd_pipe() {
 
     pipe_to_vmd();
     if (m_params.m_create_vmd_instance) {
-        vmd_proc = new bp::child {
-                bp::search_path("vmd"),
-                "-e",
-                m_params.m_vmd_file_dir + "/pipe.tcl",
-                "-args",
-                m_params.m_vmd_file_dir,
-                m_params.m_output_filebase + "_vmd",
-                bp::std_out > "/dev/null"};
+
+        // Start VMD in the background; it reads the files written by pipe_to_vmd
+        auto quote = [](const string& s) { return "'" + s + "'"; };
+        string command {
+                "vmd -e " + quote(m_params.m_vmd_file_dir + "/pipe.tcl") +
+                " -args " + quote(m_params.m_vmd_file_dir) + " " +
+                quote(m_params.m_output_filebase + "_vmd") + " > /dev/null 2>&1 &"};
+        if (std::system(command.c_str()) != 0) {
+            cout << "Could not start VMD with: " << command << "\n";
+        }
     }
 }
 

@@ -69,13 +69,11 @@ message(
 target_link_libraries(LatticeDNAOrigami_lib PUBLIC MPI::MPI_CXX)
 
 # Boost
-find_package(Boost 1.69 REQUIRED COMPONENTS program_options mpi serialization
-                                            system filesystem)
+find_package(Boost 1.69 REQUIRED COMPONENTS program_options mpi serialization)
 message(STATUS "Boost version: ${Boost_VERSION}")
 target_link_libraries(
   LatticeDNAOrigami_lib
-  PUBLIC Boost::filesystem Boost::program_options Boost::mpi
-         Boost::serialization Boost::system Boost::filesystem)
+  PUBLIC Boost::program_options Boost::mpi Boost::serialization)
 
 # Interprocedular optimization
 include(CheckIPOSupported)

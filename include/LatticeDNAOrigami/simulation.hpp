@@ -3,6 +3,7 @@
 #ifndef SIMULATION_H
 #define SIMULATION_H
 
+#include <chrono>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -10,8 +11,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-
-#include <boost/process.hpp>
 
 #include "LatticeDNAOrigami/bias_functions.hpp"
 #include "LatticeDNAOrigami/files.hpp"
@@ -30,8 +29,6 @@ using std::string;
 using std::unique_ptr;
 using std::vector;
 using std::chrono::steady_clock;
-
-namespace bp = boost::process;
 
 using biasFunctions::SystemBiases;
 using files::OrigamiMovetypeFile;
@@ -159,7 +156,6 @@ class GCMCSimulation {
     OrigamiVCFOutputFile* vmd_coors_file {nullptr};
     OrigamiStateOutputFile* vmd_states_file {nullptr};
     OrigamiOrientationOutputFile* vmd_ores_file {nullptr};
-    bp::child* vmd_proc {nullptr};
 };
 } // namespace simulation
 
