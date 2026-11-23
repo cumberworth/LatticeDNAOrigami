@@ -11,25 +11,26 @@ using std::cout;
 using std::find;
 using std::set;
 
-bool domain_included(vector<Domain*> domains, Domain* d) {
+bool domain_included(const vector<Domain*>& domains, Domain* d) {
     return find(domains.begin(), domains.end(), d) != domains.end();
 }
 
-bool chain_included(vector<int> staples, int staple) {
+bool chain_included(const vector<int>& staples, int staple) {
     return find(staples.begin(), staples.end(), staple) != staples.end();
 }
 
-bool chain_included(set<int> staples, int staple) {
+bool chain_included(const set<int>& staples, int staple) {
     return staples.find(staple) != staples.end();
 }
 
 StapleNetwork::StapleNetwork(OrigamiSystem& origami): m_origami {origami} {}
 
-void StapleNetwork::set_excluded_staples(vector<int> excluded_staples) {
+void StapleNetwork::set_excluded_staples(const vector<int>& excluded_staples) {
     m_ex_staples = excluded_staples;
 }
 
-void StapleNetwork::set_scaffold_domains(vector<Domain*> scaffold_domains) {
+void StapleNetwork::set_scaffold_domains(
+        const vector<Domain*>& scaffold_domains) {
     m_scaffold_ds = scaffold_domains;
 }
 
@@ -287,7 +288,9 @@ void Constraintpoints::add_growthpoint(Domain* growthpoint, Domain* stemd) {
     m_stemdomains[stemd] = growthpoint;
 }
 
-void Constraintpoints::add_stem_seg_pair(Domain* stemd, vector<int> seg_pair) {
+void Constraintpoints::add_stem_seg_pair(
+        Domain* stemd,
+        const vector<int>& seg_pair) {
 
     m_stemd_to_segs[stemd] = seg_pair;
 }
@@ -529,7 +532,8 @@ void Constraintpoints::add_regrowth_staples(
     }
 }
 
-void Constraintpoints::add_domains_to_stack(vector<Domain*> potential_d_stack) {
+void Constraintpoints::add_domains_to_stack(
+        const vector<Domain*>& potential_d_stack) {
 
     m_d_stack.insert(
             m_d_stack.end(),

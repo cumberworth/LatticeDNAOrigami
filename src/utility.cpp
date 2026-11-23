@@ -12,7 +12,7 @@ namespace utility {
 
 using std::vector;
 
-int index(vector<int> container, int element) {
+int index(const vector<int>& container, int element) {
     for (size_t i {0}; i != container.size(); i++) {
         if (container[i] == element) {
             return i;

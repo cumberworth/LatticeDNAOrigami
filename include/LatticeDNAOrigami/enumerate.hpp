@@ -89,7 +89,7 @@ class ConformationalEnumerator {
     unordered_map<vector<int>, double> m_normalized_weights {};
 
   protected:
-    virtual void unassign_domains(vector<vector<Domain*>> all_chains);
+    virtual void unassign_domains(const vector<vector<Domain*>>& all_chains);
     void enumerate_domain(Domain* domain, VectorThree p_prev);
     void set_growthpoint_domains(Domain* domain, VectorThree p_new);
     void set_comp_growthpoint_domains(
@@ -156,7 +156,7 @@ class StapleConformationalEnumerator: public ConformationalEnumerator {
     void enumerate();
 
   private:
-    void unassign_domains(vector<vector<Domain*>>);
+    void unassign_domains(const vector<vector<Domain*>>&);
     void grow_next_domain(Domain* domain, VectorThree p_new);
     void create_domains_stack();
     void set_unbound_domain(Domain* domain, VectorThree p_new);

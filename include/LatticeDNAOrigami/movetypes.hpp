@@ -126,10 +126,10 @@ class MCMovetype {
      * removed would leave the system in a state with staples
      * unconnected to the scaffold
      */
-    bool staple_is_connector(vector<Domain*> staple);
+    bool staple_is_connector(const vector<Domain*>& staple);
 
     /** Find all staples in bound network to given domains */
-    set<int> find_staples(vector<Domain*> domains);
+    set<int> find_staples(const vector<Domain*>& domains);
 
     /** Write the config to move file
      *
@@ -214,7 +214,7 @@ class RegrowthMCMovetype: virtual public MCMovetype {
     void reset_internal() override;
 
     /** Grow given contiguous domains from a chain */
-    virtual void grow_chain(vector<Domain*> domains) = 0;
+    virtual void grow_chain(const vector<Domain*>& domains) = 0;
 
     /** Set domain to have complementary orientation to given */
     double set_growth_point(
@@ -235,7 +235,7 @@ class RegrowthMCMovetype: virtual public MCMovetype {
     domainPairT select_old_growthpoint(vector<domainPairT> bound_domains);
 
     /** Number of staple domains (mis)bound to external chains **/
-    int num_bound_staple_domains(vector<Domain*> staple);
+    int num_bound_staple_domains(const vector<Domain*>& staple);
 
     // Store old positions and orientations
     unordered_map<pair<int, int>, VectorThree> m_old_pos {};

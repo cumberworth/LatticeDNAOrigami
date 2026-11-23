@@ -27,25 +27,25 @@ using idealRandomWalk::IdealRandomWalks;
 using origami::OrigamiSystem;
 using utility::VectorThree;
 
-bool staple_excluded(vector<int> exclude_staples, int staple);
-bool staple_excluded(set<int> exclude_staples, int staple);
+bool staple_excluded(const vector<int>& exclude_staples, int staple);
+bool staple_excluded(const set<int>& exclude_staples, int staple);
 
 /** Check if domain in given domains */
-bool domain_included(vector<Domain*> domains, Domain* d);
+bool domain_included(const vector<Domain*>& domains, Domain* d);
 
 /** Check if chain in given chain */
-bool chain_included(vector<int> staples, int staple);
-bool chain_included(set<int> staples, int staple);
+bool chain_included(const vector<int>& staples, int staple);
+bool chain_included(const set<int>& staples, int staple);
 
 /** Network of bound staples with potential growth- and endpoint info */
 class StapleNetwork {
   public:
     StapleNetwork(OrigamiSystem& origami);
 
-    void set_excluded_staples(vector<int> excluded_staples);
+    void set_excluded_staples(const vector<int>& excluded_staples);
 
     /** Set internal scaffold domains */
-    void set_scaffold_domains(vector<Domain*> scaffold_domains);
+    void set_scaffold_domains(const vector<Domain*>& scaffold_domains);
 
     /** Scan the staple network starting from the given staple domain
      *
@@ -160,7 +160,7 @@ class Constraintpoints {
     void add_active_endpoint(Domain* domain, VectorThree endpoint_pos, int seg);
     void add_inactive_endpoint(Domain* d_i, Domain* d_j);
     void add_growthpoint(Domain* growthpoint, Domain* stemd);
-    void add_stem_seg_pair(Domain* stemd, vector<int> seg_pair);
+    void add_stem_seg_pair(Domain* stemd, const vector<int>& seg_pair);
 
     /** Reset the set of active endpoints to the initial set
      *
@@ -227,7 +227,7 @@ class Constraintpoints {
     void add_regrowth_staples(
             set<int> participating_chains,
             vector<int> excluded_staples);
-    void add_domains_to_stack(vector<Domain*> potential_d_stack);
+    void add_domains_to_stack(const vector<Domain*>& potential_d_stack);
     void add_active_endpoints_on_scaffold(
             vector<pair<Domain*, Domain*>> potential_growthpoints,
             vector<pair<Domain*, Domain*>> potential_inactive_endpoints,

@@ -89,7 +89,7 @@ class CBMCMovetype: virtual public RegrowthMCMovetype {
     /** Select and set a configuration for a domain using CB */
     void select_and_set_config(
             const int i, // Index in segment array of domain to regrow
-            vector<Domain*> domains); // Segment being regrown
+            const vector<Domain*>& domains); // Segment being regrown
 
     /** Select and set configuration from given configs and weights */
     void select_and_set_new_config(
@@ -115,7 +115,7 @@ class CBMCMovetype: virtual public RegrowthMCMovetype {
     bool test_cb_acceptance();
 
     /** Unassign all given domains and store old configurations */
-    double unassign_domains(vector<Domain*>);
+    double unassign_domains(const vector<Domain*>&);
 
     /** Prepare interals for regrowing old configuration */
     void setup_for_regrow_old();
@@ -153,7 +153,7 @@ class CBStapleRegrowthMCMovetype: public CBMCMovetype {
     virtual void add_tracker(bool accepted) override;
 
     /** Grow out domains from first in given array */
-    void grow_chain(vector<Domain*> domains) override;
+    void grow_chain(const vector<Domain*>& domains) override;
 
     /** Calculate the CB trial weights and rosenbluth-type weight */
     vector<double> calc_bias(
@@ -194,7 +194,7 @@ class CTCBRegrowthMCMovetype:
 
   protected:
     /** Grow out domains from first in given array */
-    void grow_chain(vector<Domain*> domains) final override;
+    void grow_chain(const vector<Domain*>& domains) final override;
 
     /** Calculate the CB trial weights and rosenbluth-type weight */
     vector<double> calc_bias(

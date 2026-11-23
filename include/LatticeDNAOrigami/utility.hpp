@@ -24,7 +24,7 @@ using std::unordered_map;
 using std::vector;
 
 // Find index for given element
-int index(vector<int> container, int element);
+int index(const vector<int>& container, int element);
 
 // Exception types
 class NoElement: public virtual std::runtime_error {

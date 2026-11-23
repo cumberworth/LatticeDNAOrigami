@@ -238,7 +238,7 @@ class CTRGLinkerRegrowthMCMovetype:
             const CTRGLinkerRegrowthMCMovetype&) = delete;
 
     bool internal_attempt_move() override;
-    void grow_chain(vector<Domain*>) override {};
+    void grow_chain(const vector<Domain*>&) override {};
 
   protected:
     void reset_internal() override;

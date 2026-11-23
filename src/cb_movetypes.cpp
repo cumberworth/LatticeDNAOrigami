@@ -101,7 +101,9 @@ void CBMCMovetype::calc_biases(
     }
 }
 
-void CBMCMovetype::select_and_set_config(const int i, vector<Domain*> domains) {
+void CBMCMovetype::select_and_set_config(
+        const int i,
+        const vector<Domain*>& domains) {
 
     Domain* domain {domains[i]};
     Domain* prev_domain {domains[i - 1]};
@@ -197,7 +199,7 @@ bool CBMCMovetype::test_cb_acceptance() {
     return accepted;
 }
 
-double CBMCMovetype::unassign_domains(vector<Domain*> domains) {
+double CBMCMovetype::unassign_domains(const vector<Domain*>& domains) {
     double delta_e {0};
     for (auto domain: domains) {
         pair<int, int> key {domain->m_c, domain->m_d};
@@ -351,7 +353,7 @@ void CBStapleRegrowthMCMovetype::add_tracker(bool accepted) {
     movetypes::add_tracker(m_tracker, m_tracking, accepted);
 }
 
-void CBStapleRegrowthMCMovetype::grow_chain(vector<Domain*> domains) {
+void CBStapleRegrowthMCMovetype::grow_chain(const vector<Domain*>& domains) {
     for (size_t i {1}; i != domains.size(); i++) {
         select_and_set_config(i, domains);
         if (m_rejected) {
@@ -460,7 +462,7 @@ void CTCBRegrowthMCMovetype::reset_internal() {
     CTRegrowthMCMovetype::reset_internal();
 }
 
-void CTCBRegrowthMCMovetype::grow_chain(vector<Domain*> domains) {
+void CTCBRegrowthMCMovetype::grow_chain(const vector<Domain*>& domains) {
     if (domains.size() <= 1) {
         return;
     }

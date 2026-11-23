@@ -210,7 +210,7 @@ ConformationalEnumerator::ConformationalEnumerator(
 }
 
 void ConformationalEnumerator::unassign_domains(
-        vector<vector<Domain*>> all_chains) {
+        const vector<vector<Domain*>>& all_chains) {
     for (size_t i {0}; i != all_chains.size(); i++) {
         for (auto domain: all_chains[i]) {
             m_origami_system.unassign_domain(*domain);
@@ -720,7 +720,7 @@ void StapleConformationalEnumerator::enumerate() {
 }
 
 void StapleConformationalEnumerator::unassign_domains(
-        vector<vector<Domain*>> all_chains) {
+        const vector<vector<Domain*>>& all_chains) {
 
     for (size_t i {1}; i != all_chains.size(); i++) {
         for (auto domain: all_chains[i]) {

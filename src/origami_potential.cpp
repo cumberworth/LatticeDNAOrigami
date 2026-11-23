@@ -31,7 +31,7 @@ bool check_domain_orientations_opposing(Domain& cd_i, Domain& cd_j) {
     return domain_orientations_opposing;
 }
 
-bool check_domains_exist_and_bound(vector<Domain*> cdv) {
+bool check_domains_exist_and_bound(std::initializer_list<Domain*> cdv) {
     bool exists_and_bound {true};
     for (auto cd: cdv) {
         if (cd == nullptr) {

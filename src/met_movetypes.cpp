@@ -47,7 +47,7 @@ void MetMCMovetype::reset_internal() {
     m_delta_e = 0;
 }
 
-void MetMCMovetype::grow_chain(vector<Domain*> domains) {
+void MetMCMovetype::grow_chain(const vector<Domain*>& domains) {
     for (size_t i {1}; i != domains.size(); i++) {
         Domain* domain {domains[i]};
         Domain* prev_domain {domains[i - 1]};
@@ -74,7 +74,7 @@ void MetMCMovetype::add_external_bias() {
     return;
 }
 
-void MetMCMovetype::unassign_domains(vector<Domain*> domains) {
+void MetMCMovetype::unassign_domains(const vector<Domain*>& domains) {
     for (auto domain: domains) {
         pair<int, int> key {domain->m_c, domain->m_d};
         m_prev_pos[key] = domain->m_pos;

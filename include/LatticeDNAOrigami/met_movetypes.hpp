@@ -43,10 +43,10 @@ class MetMCMovetype: virtual public RegrowthMCMovetype {
     void reset_internal() override;
 
   protected:
-    void grow_chain(vector<Domain*> domains) override;
+    void grow_chain(const vector<Domain*>& domains) override;
     void add_external_bias() override;
 
-    void unassign_domains(vector<Domain*> domains);
+    void unassign_domains(const vector<Domain*>& domains);
 
     double m_delta_e {0};
 };

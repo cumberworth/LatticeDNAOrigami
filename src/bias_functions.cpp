@@ -241,7 +241,7 @@ void GridBiasFunction::replace_biases(
     m_bias_grid = bias_grid;
 }
 
-double GridBiasFunction::calc_bias(vector<int> params) {
+double GridBiasFunction::calc_bias(const vector<int>& params) {
     auto key_value = m_bias_grid.find(params);
     double g_bias;
     if (key_value == m_bias_grid.end()) {

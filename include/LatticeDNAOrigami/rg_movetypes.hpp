@@ -116,7 +116,7 @@ class CTRGScaffoldRegrowthMCMovetype: public CTRGRegrowthMCMovetype {
             const CTRGScaffoldRegrowthMCMovetype&) = delete;
 
     void write_log_summary(ostream* log_entry) override;
-    void grow_chain(vector<Domain*>) override {};
+    void grow_chain(const vector<Domain*>&) override {};
 
   private:
     bool internal_attempt_move() override;
@@ -150,7 +150,7 @@ class CTRGJumpScaffoldRegrowthMCMovetype: public CTRGRegrowthMCMovetype {
             const CTRGScaffoldRegrowthMCMovetype&) = delete;
 
     void write_log_summary(ostream* log_entry) override;
-    void grow_chain(vector<Domain*>) override {};
+    void grow_chain(const vector<Domain*>&) override {};
 
   private:
     bool internal_attempt_move() override;

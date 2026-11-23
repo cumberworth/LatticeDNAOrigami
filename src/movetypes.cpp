@@ -157,7 +157,7 @@ bool MCMovetype::test_acceptance(long double p_ratio) {
     return accept;
 }
 
-bool MCMovetype::staple_is_connector(vector<Domain*> staple) {
+bool MCMovetype::staple_is_connector(const vector<Domain*>& staple) {
     for (auto domain: staple) {
         if (domain->m_state != Occupancy::unbound) {
             Domain* bound_domain {domain->m_bound_domain};
@@ -176,7 +176,7 @@ bool MCMovetype::staple_is_connector(vector<Domain*> staple) {
     return false;
 }
 
-set<int> MCMovetype::find_staples(vector<Domain*> domains) {
+set<int> MCMovetype::find_staples(const vector<Domain*>& domains) {
     set<int> staples {};
     for (auto domain: domains) {
         Domain* bound_domain {domain->m_bound_domain};
@@ -392,7 +392,8 @@ domainPairT RegrowthMCMovetype::select_old_growthpoint(
     return {growth_domain_new, growth_domain_old};
 }
 
-int RegrowthMCMovetype::num_bound_staple_domains(vector<Domain*> staple) {
+int RegrowthMCMovetype::num_bound_staple_domains(
+        const vector<Domain*>& staple) {
     int num_bd {0};
     for (auto d: staple) {
         if (d->m_state == Occupancy::bound or

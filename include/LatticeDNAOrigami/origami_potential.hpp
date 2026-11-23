@@ -3,6 +3,7 @@
 #ifndef ORIGAMI_POTENTIAL_H
 #define ORIGAMI_POTENTIAL_H
 
+#include <initializer_list>
 #include <memory>
 #include <vector>
 
@@ -23,7 +24,7 @@ using domainContainer::Domain;
 using parser::InputParameters;
 
 bool check_domain_orientations_opposing(Domain& cd_i, Domain& cd_j);
-bool check_domains_exist_and_bound(vector<Domain*> cdv);
+bool check_domains_exist_and_bound(std::initializer_list<Domain*> cdv);
 bool doubly_contiguous(Domain* cd_1, Domain* cd_2);
 
 // Domain order will be checked
