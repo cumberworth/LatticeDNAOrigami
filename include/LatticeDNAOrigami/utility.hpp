@@ -75,6 +75,7 @@ class VectorThree {
     bool operator!=(const VectorThree& v_2) const;
 
     int& operator[](const size_t& i) { return m_container[i]; };
+    const int& operator[](const size_t& i) const { return m_container[i]; };
     const int& at(const size_t& i) const { return m_container.at(i); };
 
     VectorThree rotate_half(VectorThree axis);

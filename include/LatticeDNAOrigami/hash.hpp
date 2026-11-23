@@ -2,6 +2,7 @@
 #ifndef HASH_H
 #define HASH_H
 
+#include <cstdint>
 #include <iostream>
 
 #include "boost/functional/hash.hpp"
@@ -13,14 +14,17 @@ namespace std {
 using boost::hash_combine;
 using boost::hash_value;
 
+// Multiply each coordinate by a different odd constant and combine. The flat
+// hash maps that use this mix the result further, so it need not avalanche.
 template <>
 struct hash<utility::VectorThree> {
     inline size_t operator()(const utility::VectorThree& v) const {
-        size_t seed = 0;
-        for (size_t i {0}; i != 3; i++) {
-            hash_combine(seed, v.at(i));
-        }
-        return seed;
+        auto x {static_cast<uint64_t>(static_cast<uint32_t>(v[0]))};
+        auto y {static_cast<uint64_t>(static_cast<uint32_t>(v[1]))};
+        auto z {static_cast<uint64_t>(static_cast<uint32_t>(v[2]))};
+        return static_cast<size_t>(
+                x * 0x9E3779B97F4A7C15ull ^ y * 0xC2B2AE3D27D4EB4Full ^
+                z * 0x165667B19E3779F9ull);
     }
 };
 

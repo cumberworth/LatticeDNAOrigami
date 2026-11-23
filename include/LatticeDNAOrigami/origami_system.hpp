@@ -12,6 +12,8 @@
 #include <valarray>
 #include <vector>
 
+#include <boost/unordered/unordered_flat_map.hpp>
+
 #include "boost/serialization/vector.hpp"
 
 #include "LatticeDNAOrigami/domain.hpp"
@@ -182,10 +184,13 @@ class OrigamiSystem {
     vector<int> m_chain_indices {}; // Working to unique index
     vector<int> m_chain_identities {}; // Working index to id
     vector<vector<int>> m_identity_to_index {}; // ID to unique indices
-    unordered_map<VectorThree, Domain*>
-            m_pos_to_unbound_d {}; // Position to unbound domain
-    unordered_map<VectorThree, Occupancy>
-            m_position_occupancies {}; // State of positions
+    // State of each occupied lattice site (unoccupied sites are absent)
+    struct SiteState {
+        Occupancy occupancy;
+        Domain* unbound_domain; // Only set when occupancy is unbound
+    };
+    boost::unordered_flat_map<VectorThree, SiteState, std::hash<VectorThree>>
+            m_sites {};
     int m_num_bound_domain_pairs {0}; // Num bound domains pairs
     int m_num_fully_bound_domain_pairs {
             0}; // Num bound fully complementary domain pairs

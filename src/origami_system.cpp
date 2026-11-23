@@ -128,7 +128,11 @@ vector<int> OrigamiSystem::complementary_scaffold_domains(
 }
 
 Domain* OrigamiSystem::unbound_domain_at(VectorThree pos) const {
-    return m_pos_to_unbound_d.at(pos);
+    auto site {m_sites.find(pos)};
+    if (site == m_sites.end() or site->second.occupancy != Occupancy::unbound) {
+        throw OrigamiMisuse {"No unbound domain at position"};
+    }
+    return site->second.unbound_domain;
 }
 
 bool OrigamiSystem::check_domains_complementary(Domain& cd_i, Domain& cd_j) {
@@ -191,14 +195,9 @@ Chains OrigamiSystem::chains() const {
 }
 
 Occupancy OrigamiSystem::position_occupancy(VectorThree pos) const {
-    Occupancy occ;
-    if (m_position_occupancies.count(pos) == 0) {
-        occ = Occupancy::unassigned;
-    }
-    else {
-        occ = m_position_occupancies.at(pos);
-    }
-    return occ;
+    auto site {m_sites.find(pos)};
+    return site == m_sites.end() ? Occupancy::unassigned :
+                                   site->second.occupancy;
 }
 
 void OrigamiSystem::update_enthalpy_and_entropy() {
@@ -553,21 +552,20 @@ void OrigamiSystem::set_domain_orientation(Domain& cd_i, VectorThree ore) {
 void OrigamiSystem::center(int centering_domain) {
     // Translate the system such that the first scaffold domain is on the origin
 
-    // The maps that go from a position to something need to be reset
-    unordered_map<VectorThree, Domain*> pos_to_unbound_d {};
-    unordered_map<VectorThree, Occupancy> position_occupancies {};
+    // The map from positions to site states needs to be rebuilt
+    decltype(m_sites) sites {};
     VectorThree refpos {m_domains[0][centering_domain]->m_pos};
     for (auto chain: m_domains) {
         for (auto domain: chain) {
             VectorThree new_pos {domain->m_pos - refpos};
-            pos_to_unbound_d[new_pos] = m_pos_to_unbound_d[domain->m_pos];
-            position_occupancies[new_pos] =
-                    m_position_occupancies[domain->m_pos];
+            auto site {m_sites.find(domain->m_pos)};
+            if (site != m_sites.end()) {
+                sites[new_pos] = site->second;
+            }
             domain->m_pos = new_pos;
         }
     }
-    m_pos_to_unbound_d = pos_to_unbound_d;
-    m_position_occupancies = position_occupancies;
+    m_sites = std::move(sites);
 }
 
 void OrigamiSystem::set_all_domains() {
@@ -746,16 +744,13 @@ double OrigamiSystem::unassign_bound_domain(Domain& cd_i) {
     cd_j.m_bound_domain = nullptr;
     cd_i.m_state = Occupancy::unassigned;
 
-    m_pos_to_unbound_d[cd_i.m_pos] = &cd_j;
-    m_position_occupancies[cd_i.m_pos] = Occupancy::unbound;
+    m_sites[cd_i.m_pos] = {Occupancy::unbound, &cd_j};
     cd_j.m_state = Occupancy::unbound;
     return delta_e;
 }
 
 void OrigamiSystem::unassign_unbound_domain(Domain& cd_i) {
-    VectorThree pos {cd_i.m_pos};
-    m_pos_to_unbound_d.erase(pos);
-    m_position_occupancies.erase(pos);
+    m_sites.erase(cd_i.m_pos);
     cd_i.m_state = Occupancy::unassigned;
 }
 
@@ -786,10 +781,9 @@ void OrigamiSystem::update_occupancies(Domain& cd_i, VectorThree pos) {
             new_state = Occupancy::misbound;
         }
 
-        m_pos_to_unbound_d.erase(pos);
         cd_i.m_state = new_state;
         cd_j->m_state = new_state;
-        m_position_occupancies[pos] = new_state;
+        m_sites[pos] = {new_state, nullptr};
         cd_j->m_bound_domain = &cd_i;
         cd_i.m_bound_domain = cd_j;
         break;
@@ -797,8 +791,7 @@ void OrigamiSystem::update_occupancies(Domain& cd_i, VectorThree pos) {
     case Occupancy::unassigned:
         new_state = Occupancy::unbound;
         cd_i.m_state = new_state;
-        m_position_occupancies[pos] = new_state;
-        m_pos_to_unbound_d[pos] = &cd_i;
+        m_sites[pos] = {new_state, &cd_i};
         break;
     default:
         throw OrigamiMisuse {"Trying to bind to an already bound domain"};
