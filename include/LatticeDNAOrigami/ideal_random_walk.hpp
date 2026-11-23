@@ -3,27 +3,18 @@
 #ifndef IDEAL_RANDOM_WALK_H
 #define IDEAL_RANDOM_WALK_H
 
-#include <string>
-#include <unordered_map>
-#include <utility>
+#include <cstdint>
 
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/serialization/array.hpp>
-#include <boost/serialization/unordered_map.hpp>
-#include <boost/serialization/utility.hpp>
+#include <boost/unordered/unordered_flat_map.hpp>
 
-#include "LatticeDNAOrigami/hash.hpp"
 #include "LatticeDNAOrigami/utility.hpp"
 
 namespace idealRandomWalk {
 
-using std::pair;
-using std::string;
-using std::unordered_map;
-
 using utility::VectorThree;
 
+// Number of ideal (non-self-avoiding) random walks on a cubic lattice between
+// two points with a given number of steps, computed on demand and memoized
 class IdealRandomWalks {
   public:
     long double num_walks(
@@ -31,15 +22,12 @@ class IdealRandomWalks {
             VectorThree end_pos,
             int steps);
 
-    void delete_entry(VectorThree start_pos, VectorThree end_pos, int steps);
-
   private:
-    unordered_map<pair<VectorThree, int>, long double> m_num_walks {};
-    friend class boost::serialization::access;
-    template <typename Archive>
-    void serialize(Archive& arch, const unsigned int) {
-        arch& m_num_walks;
-    }
+    static long double calc_num_walks(int dx, int dy, int dz, int steps);
+
+    // Keyed on the sorted absolute displacement and the number of steps,
+    // packed into 16 bits each
+    boost::unordered_flat_map<std::uint64_t, long double> m_num_walks {};
 };
 } // namespace idealRandomWalk
 

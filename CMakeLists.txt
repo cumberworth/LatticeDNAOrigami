@@ -118,9 +118,6 @@ endif()
 add_executable(latticeDNAOrigami apps/main.cpp)
 target_link_libraries(latticeDNAOrigami PUBLIC LatticeDNAOrigami_lib)
 
-# Script to caculate number of ideal random walks
-add_executable(calc_num_walks apps/calc_num_walks.cpp)
-target_link_libraries(calc_num_walks PUBLIC LatticeDNAOrigami_lib)
 
 # Testing
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -132,4 +129,4 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
 endif()
 
 # Install executable
-install(TARGETS latticeDNAOrigami calc_num_walks RUNTIME DESTINATION bin)
+install(TARGETS latticeDNAOrigami RUNTIME DESTINATION bin)

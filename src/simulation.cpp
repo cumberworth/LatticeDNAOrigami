@@ -235,24 +235,11 @@ GCMCSimulation::GCMCSimulation(
         m_cumulative_probs.push_back(cum_prob);
     }
 
-    // Load precalculated ideal random walk count data
+    // Ideal random walk counts are computed on demand and memoized, which is
+    // fast; the precalculated archive is no longer used
     if (params.m_read_num_walks) {
-        string filename {params.m_num_walks_filename};
-        fs::path f {filename};
-        if (!fs::exists(f)) {
-            throw utility::FileError {
-                    "Origami input file " + filename + " does not exist"};
-        }
-        std::ifstream num_walks_file {};
-        try {
-            boost::archive::binary_iarchive num_walks_arch {num_walks_file};
-            num_walks_arch >> m_ideal_random_walks;
-        } catch (const std::exception& e) {
-            string message {
-                    "Number of ideal random walks file " + filename +
-                    " is not well formed:\n"};
-            throw utility::FileError {message + e.what()};
-        }
+        cout << "Note: read_num_walks is ignored; random walk counts are "
+                "computed as needed\n";
     }
 }
 

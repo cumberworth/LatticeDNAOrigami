@@ -1,7 +1,6 @@
 // ideal_random_walk.cpp
 
-#include <algorithm>
-#include <fstream>
+#include <cstdint>
 
 #include <boost/math/special_functions/factorials.hpp>
 
@@ -16,27 +15,37 @@ long double IdealRandomWalks::num_walks(
         VectorThree end_pos,
         int steps) {
 
-    // Check stored values
-    VectorThree DR {end_pos - start_pos};
-
-    // Only work with one permutation of DR
-    DR = DR.absolute().sort();
-    pair<VectorThree, int> walk_key {DR, steps};
-    if (m_num_walks.count(walk_key)) {
-        return m_num_walks.at(walk_key);
+    // The count only depends on one permutation of the absolute displacement
+    VectorThree DR {(end_pos - start_pos).absolute().sort()};
+    if (steps < 0 or steps > 0xFFFF or DR[2] > 0xFFFF) {
+        throw utility::OrigamiMisuse {"Random walk outside supported range"};
     }
-    int DX {DR[0]};
-    int DY {DR[1]};
-    int DZ {DR[2]};
+    std::uint64_t key {
+            static_cast<std::uint64_t>(DR[0]) << 48 |
+            static_cast<std::uint64_t>(DR[1]) << 32 |
+            static_cast<std::uint64_t>(DR[2]) << 16 |
+            static_cast<std::uint64_t>(steps)};
+    auto stored {m_num_walks.find(key)};
+    if (stored != m_num_walks.end()) {
+        return stored->second;
+    }
+    long double walks {calc_num_walks(DR[0], DR[1], DR[2], steps)};
+    m_num_walks.emplace(key, walks);
+
+    return walks;
+}
+
+long double IdealRandomWalks::calc_num_walks(
+        int DX,
+        int DY,
+        int DZ,
+        int steps) {
     int Nminus {(steps - DX - DY - DZ) / 2};
     int Nplus {(steps - DX - DY + DZ) / 2};
     long double walks {0};
 
     int DR_sum {DX + DY + DZ};
     if (DR_sum > steps or (steps - DR_sum) % 2 != 0) {
-
-        // Add entry
-        m_num_walks[walk_key] = walks;
         return walks;
     }
 
@@ -66,20 +75,6 @@ long double IdealRandomWalks::num_walks(
         }
     }
 
-    // Add entries
-    m_num_walks[walk_key] = walks;
-
     return walks;
-}
-
-void IdealRandomWalks::delete_entry(
-        VectorThree start_pos,
-        VectorThree end_pos,
-        int steps) {
-
-    VectorThree DR {end_pos - start_pos};
-    DR = DR.absolute().sort();
-    pair<VectorThree, int> walk_key {DR, steps};
-    m_num_walks.erase(walk_key);
 }
 } // namespace idealRandomWalk
