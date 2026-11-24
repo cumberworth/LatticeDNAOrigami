@@ -57,11 +57,14 @@ CTRGRegrowthMCMovetype::CTRGRegrowthMCMovetype(
                 max_regrowth),
         m_all_configs {all_pairs<VectorThree>(utility::vectors)},
         m_config_to_i {pair_to_index<VectorThree>(m_all_configs)},
-        m_all_cis(m_all_configs.size()),
+        m_all_cis {ConfigSet::first_n(static_cast<int>(m_all_configs.size()))},
         m_max_recoils {max_recoils},
         m_max_c_attempts {max_c_attempts} {
 
-    std::iota(m_all_cis.begin(), m_all_cis.end(), 0);
+    if (m_all_configs.size() > 64) {
+        throw utility::OrigamiMisuse {
+                "ConfigSet holds at most 64 configurations"};
+    }
 }
 
 void CTRGRegrowthMCMovetype::reset_internal() {
@@ -236,8 +239,7 @@ double CTRGRegrowthMCMovetype::set_config(Domain* d, configT c) {
     pair<int, int> key {d->m_c, d->m_d};
     m_assigned_domains.push_back(key);
     m_constraintpoints.update_endpoints(m_d);
-    auto erased_endpoints = m_constraintpoints.get_erased_endpoints();
-    m_erased_endpoints_q.push_back(erased_endpoints);
+    m_erased_endpoints_q.push_back(m_constraintpoints.get_erased_endpoints());
     write_config();
 
     return delta_e;
@@ -287,7 +289,7 @@ double CTRGRegrowthMCMovetype::prepare_for_regrowth() {
 
 void CTRGRegrowthMCMovetype::restore_endpoints() {
     m_constraintpoints.remove_activated_endpoint(m_d);
-    auto erased_endpoints = m_erased_endpoints_q.back();
+    auto erased_endpoints {std::move(m_erased_endpoints_q.back())};
     m_erased_endpoints_q.pop_back();
     for (auto pos: erased_endpoints) {
         m_constraintpoints.add_active_endpoint(m_d, pos);
@@ -302,9 +304,7 @@ configT CTRGRegrowthMCMovetype::select_trial_config() {
     }
     else {
         ci = m_random_gens.uniform_int(0, m_avail_cis.size() - 1);
-        std::list<int>::iterator it {std::next(m_avail_cis.begin(), ci)};
-        int i {*it}; // TODO check this does what you think
-        m_avail_cis.erase(it);
+        int i {m_avail_cis.take_nth(ci)};
         c = m_all_configs[i];
         c.first = c.first + m_ref_d->m_pos;
     }
@@ -383,9 +383,8 @@ void CTRGRegrowthMCMovetype::calc_weights() {
                     m_origami_system.set_checked_domain_config(
                             *m_d, c.first, c.second);
                     m_constraintpoints.update_endpoints(m_d);
-                    auto erased_endpoints =
-                            m_constraintpoints.get_erased_endpoints();
-                    m_erased_endpoints_q.push_back(erased_endpoints);
+                    m_erased_endpoints_q.push_back(
+                            m_constraintpoints.get_erased_endpoints());
                     write_config();
                     auto dir = m_dir;
                     auto ref_d = m_ref_d;
@@ -409,8 +408,8 @@ void CTRGRegrowthMCMovetype::calc_weights() {
         VectorThree o {m_prev_ore[key]};
         m_origami_system.set_checked_domain_config(*m_d, p, o);
         m_constraintpoints.update_endpoints(m_d);
-        auto erased_endpoints = m_constraintpoints.get_erased_endpoints();
-        m_erased_endpoints_q.push_back(erased_endpoints);
+        m_erased_endpoints_q.push_back(
+                m_constraintpoints.get_erased_endpoints());
         write_config();
     }
     m_weight /= m_c_opens[m_di];

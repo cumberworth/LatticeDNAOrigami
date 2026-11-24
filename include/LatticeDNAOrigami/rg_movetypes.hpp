@@ -3,16 +3,51 @@
 #ifndef RG_MOVETYPES_H
 #define RG_MOVETYPES_H
 
-#include <list>
+#include <cstdint>
 
 #include "LatticeDNAOrigami/movetypes.hpp"
 
 namespace movetypes {
 
-using std::list;
 using utility::ScaffoldRGRegrowthTracking;
 
 typedef pair<VectorThree, VectorThree> configT;
+
+/** Set of configuration indices (at most 64), kept as a bit mask
+ *
+ * Indices are ordered, so the n-th available configuration is the n-th set
+ * bit counting from the lowest.
+ */
+class ConfigSet {
+  public:
+    ConfigSet() = default;
+
+    /** Set containing indices 0 to n - 1 */
+    static ConfigSet first_n(int n) {
+        ConfigSet set {};
+        set.m_bits =
+                n == 64 ? ~std::uint64_t {0} : (std::uint64_t {1} << n) - 1;
+        return set;
+    }
+
+    int size() const { return __builtin_popcountll(m_bits); }
+
+    /** Remove and return the n-th smallest index */
+    int take_nth(int n) {
+        std::uint64_t bits {m_bits};
+        for (int k {0}; k != n; k++) {
+            bits &= bits - 1; // Drop the lowest set bit
+        }
+        int i {__builtin_ctzll(bits)};
+        remove(i);
+        return i;
+    }
+
+    void remove(int i) { m_bits &= ~(std::uint64_t {1} << i); }
+
+  private:
+    std::uint64_t m_bits {0};
+};
 
 /** Conserved topology recoil growth base class */
 class CTRGRegrowthMCMovetype: virtual public CTRegrowthMCMovetype {
@@ -60,7 +95,7 @@ class CTRGRegrowthMCMovetype: virtual public CTRegrowthMCMovetype {
 
     const vector<configT> m_all_configs;
     const unordered_map<configT, int> m_config_to_i;
-    list<int> m_all_cis;
+    ConfigSet m_all_cis;
 
     // Movetype parameters
     int m_max_recoils;
@@ -71,8 +106,8 @@ class CTRGRegrowthMCMovetype: virtual public CTRegrowthMCMovetype {
     vector<Domain*> m_regrow_ds {}; // Domains to regrow
     vector<int> m_c_attempts_q {}; // Num. attempted configs per domain
     vector<int> m_c_attempts_wq {}; // Store of above for weight calc
-    vector<list<int>> m_avail_cis_q {}; // Available configs per domain
-    vector<list<int>> m_avail_cis_wq {}; // Store of above for weight calc
+    vector<ConfigSet> m_avail_cis_q {}; // Available configs per domain
+    vector<ConfigSet> m_avail_cis_wq {}; // Store of above for weight calc
     vector<double> m_c_opens; // Configuration open probability
     unordered_map<pair<int, int>, VectorThree> m_new_pos {};
     unordered_map<pair<int, int>, VectorThree> m_new_ore {};
@@ -90,7 +125,7 @@ class CTRGRegrowthMCMovetype: virtual public CTRegrowthMCMovetype {
     int m_c_attempts; // Number of configs tried for current domain
     int m_d_max_c_attempts; // Max number of configs to be tried for current
                             // domain
-    list<int> m_avail_cis; // Available configurations
+    ConfigSet m_avail_cis; // Available configurations
 };
 
 /** CTRG of a scaffold segment and bound staples */
