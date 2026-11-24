@@ -57,13 +57,12 @@ vector<pair<Domain*, Domain*>> StapleNetwork::
 
 vector<Domain*> StapleNetwork::get_potential_domain_stack() { return m_pot_ds; }
 
-unordered_map<Domain*, int> StapleNetwork::get_staple_to_segs_map() {
+boost::unordered_flat_map<Domain*, int> StapleNetwork::
+        get_staple_to_segs_map() {
     return m_segs;
 }
 
-unordered_map<pair<int, int>, int> StapleNetwork::get_dirs() {
-    return m_domain_to_dir;
-}
+hashing::IntPairMap<int> StapleNetwork::get_dirs() { return m_domain_to_dir; }
 
 bool StapleNetwork::externally_bound() { return m_external; }
 
@@ -402,24 +401,21 @@ bool Constraintpoints::walks_remain(
         VectorThree pos,
         int offset) {
 
-    vector<int> segs {};
-    bool w_remain {true};
-    if (is_stemdomain(domain)) {
-        segs = m_stemd_to_segs[domain];
-    }
-    else {
-        segs = {m_segs.at(domain)};
-    }
-    for (auto seg: segs) {
+    auto segment_walks_remain = [&](int seg) {
         pair<int, int> key {domain->m_c, seg};
         int dir {m_domain_to_dir[key]};
-        w_remain = walks_remain(key, domain, pos, dir, offset);
-        if (not w_remain) {
-            break;
+        return walks_remain(key, domain, pos, dir, offset);
+    };
+    if (not is_stemdomain(domain)) {
+        return segment_walks_remain(m_segs.at(domain));
+    }
+    for (int seg: m_stemd_to_segs[domain]) {
+        if (not segment_walks_remain(seg)) {
+            return false;
         }
     }
 
-    return w_remain;
+    return true;
 }
 
 bool Constraintpoints::walks_remain(
@@ -563,12 +559,12 @@ void Constraintpoints::add_active_endpoints_on_scaffold(
 }
 
 void Constraintpoints::add_staple_to_segs_maps(
-        unordered_map<Domain*, int> s_seg_map) {
+        boost::unordered_flat_map<Domain*, int> s_seg_map) {
 
     m_segs.insert(s_seg_map.begin(), s_seg_map.end());
 }
 
-void Constraintpoints::add_dirs(unordered_map<pair<int, int>, int> dirs) {
+void Constraintpoints::add_dirs(hashing::IntPairMap<int> dirs) {
     m_domain_to_dir.insert(dirs.begin(), dirs.end());
 }
 

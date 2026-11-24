@@ -60,8 +60,8 @@ class StapleNetwork {
     vector<pair<Domain*, Domain*>> get_potential_growthpoints();
     vector<pair<Domain*, Domain*>> get_potential_inactive_endpoints();
     vector<Domain*> get_potential_domain_stack();
-    unordered_map<Domain*, int> get_staple_to_segs_map();
-    unordered_map<pair<int, int>, int> get_dirs();
+    boost::unordered_flat_map<Domain*, int> get_staple_to_segs_map();
+    hashing::IntPairMap<int> get_dirs();
     bool externally_bound();
 
   private:
@@ -79,10 +79,11 @@ class StapleNetwork {
     vector<pair<Domain*, Domain*>> m_pot_gps {}; // Potential growthpoints
     vector<Domain*> m_pot_ds {}; // Potential domain stack
     vector<pair<Domain*, Domain*>> m_pot_iaes; // Potential inactive endpoints
-    unordered_map<Domain*, int> m_segs {}; // Map from domain to segment
+    boost::unordered_flat_map<Domain*, int>
+            m_segs {}; // Map from domain to segment
 
     // Map from domain and segment to regrowth direction
-    unordered_map<pair<int, int>, int> m_domain_to_dir {};
+    hashing::IntPairMap<int> m_domain_to_dir {};
 };
 
 /** Topology of an associated scaffold segment
@@ -232,8 +233,9 @@ class Constraintpoints {
             vector<pair<Domain*, Domain*>> potential_growthpoints,
             vector<pair<Domain*, Domain*>> potential_inactive_endpoints,
             int seg);
-    void add_staple_to_segs_maps(unordered_map<Domain*, int> s_seg_map);
-    void add_dirs(unordered_map<pair<int, int>, int> domain_to_dirs);
+    void add_staple_to_segs_maps(
+            boost::unordered_flat_map<Domain*, int> s_seg_map);
+    void add_dirs(hashing::IntPairMap<int> domain_to_dirs);
     int calc_remaining_steps(
             int endpoint_d_i,
             Domain* domain,
@@ -259,31 +261,30 @@ class Constraintpoints {
     vector<VectorThree> m_erased_endpoints;
 
     // Map from domain to segment
-    unordered_map<Domain*, int> m_segs {};
+    boost::unordered_flat_map<Domain*, int> m_segs {};
 
     // Map from domain and segment to regrowth direction
-    unordered_map<pair<int, int>, int> m_domain_to_dir {};
+    hashing::IntPairMap<int> m_domain_to_dir {};
 
     // Map from growthpoint domain to domain to grow
-    unordered_map<Domain*, Domain*> m_growthpoints {};
+    boost::unordered_flat_map<Domain*, Domain*> m_growthpoints {};
 
     // Map from stem domain to growthpoint domain
-    unordered_map<Domain*, Domain*> m_stemdomains {};
+    boost::unordered_flat_map<Domain*, Domain*> m_stemdomains {};
 
     // Map from chain to its active endpoints (absolute positions)
-    unordered_map<pair<int, int>, vector<pair<int, VectorThree>>>
-            m_active_endpoints {};
+    hashing::IntPairMap<vector<pair<int, VectorThree>>> m_active_endpoints {};
 
     // Map from chain to its inactive endpoints
     // (domain that hasn't been set)
-    unordered_map<pair<int, int>, vector<pair<int, VectorThree>>>
+    hashing::IntPairMap<vector<pair<int, VectorThree>>>
             m_initial_active_endpoints {};
 
     // Map from chain to endpoints it will impose once grown
-    unordered_map<Domain*, Domain*> m_inactive_endpoints {};
+    boost::unordered_flat_map<Domain*, Domain*> m_inactive_endpoints {};
 
     // Stem domain to segments to grow out
-    unordered_map<Domain*, vector<int>> m_stemd_to_segs {};
+    boost::unordered_flat_map<Domain*, vector<int>> m_stemd_to_segs {};
 };
 } // namespace topConstraintPoints
 

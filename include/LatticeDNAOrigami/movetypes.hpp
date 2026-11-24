@@ -159,8 +159,8 @@ class MCMovetype {
     vector<int> m_added_chains {};
 
     // Domains mapped to previous configs
-    unordered_map<pair<int, int>, VectorThree> m_prev_pos {};
-    unordered_map<pair<int, int>, VectorThree> m_prev_ore {};
+    hashing::IntPairMap<VectorThree> m_prev_pos {};
+    hashing::IntPairMap<VectorThree> m_prev_ore {};
 
     // Modifier to correct for excluded volume and overcounting
     double m_modifier {1};
@@ -238,8 +238,8 @@ class RegrowthMCMovetype: virtual public MCMovetype {
     int num_bound_staple_domains(const vector<Domain*>& staple);
 
     // Store old positions and orientations
-    unordered_map<pair<int, int>, VectorThree> m_old_pos {};
-    unordered_map<pair<int, int>, VectorThree> m_old_ore {};
+    hashing::IntPairMap<VectorThree> m_old_pos {};
+    hashing::IntPairMap<VectorThree> m_old_ore {};
 };
 
 /** Parent class of moves with constant topology regrowth */

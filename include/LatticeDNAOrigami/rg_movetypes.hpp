@@ -109,8 +109,8 @@ class CTRGRegrowthMCMovetype: virtual public CTRegrowthMCMovetype {
     vector<ConfigSet> m_avail_cis_q {}; // Available configs per domain
     vector<ConfigSet> m_avail_cis_wq {}; // Store of above for weight calc
     vector<double> m_c_opens; // Configuration open probability
-    unordered_map<pair<int, int>, VectorThree> m_new_pos {};
-    unordered_map<pair<int, int>, VectorThree> m_new_ore {};
+    hashing::IntPairMap<VectorThree> m_new_pos {};
+    hashing::IntPairMap<VectorThree> m_new_ore {};
     vector<vector<VectorThree>> m_erased_endpoints_q {};
 
     double m_delta_e; // Energy change

@@ -289,19 +289,19 @@ class OrigamiPotential {
 
     // CONSIDER DEFINING TYPE FOR THESE TABLES
     // Energy tables index by chain/domain identity pair
-    unordered_map<pair<int, int>, double> m_hybridization_energies {};
-    unordered_map<pair<int, int>, double> m_hybridization_enthalpies {};
-    unordered_map<pair<int, int>, double> m_hybridization_entropies {};
-    unordered_map<pair<int, int>, double> m_stacking_energies {};
+    hashing::IntPairMap<double> m_hybridization_energies {};
+    hashing::IntPairMap<double> m_hybridization_enthalpies {};
+    hashing::IntPairMap<double> m_hybridization_entropies {};
+    hashing::IntPairMap<double> m_stacking_energies {};
 
     // Energies tables indexed by temperature
-    unordered_map<double, unordered_map<pair<int, int>, double>>
+    unordered_map<double, hashing::IntPairMap<double>>
             m_hybridization_energy_tables {};
-    unordered_map<double, unordered_map<pair<int, int>, double>>
+    unordered_map<double, hashing::IntPairMap<double>>
             m_hybridization_enthalpy_tables {};
-    unordered_map<double, unordered_map<pair<int, int>, double>>
+    unordered_map<double, hashing::IntPairMap<double>>
             m_hybridization_entropy_tables {};
-    unordered_map<pair<double, double>, unordered_map<pair<int, int>, double>>
+    unordered_map<pair<double, double>, hashing::IntPairMap<double>>
             m_stacking_energy_tables {};
 
     // Initiation enthalpy and entropy

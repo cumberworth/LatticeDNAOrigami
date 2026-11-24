@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <iostream>
 
+#include <boost/unordered/unordered_flat_map.hpp>
+
 #include "boost/functional/hash.hpp"
 
 #include "LatticeDNAOrigami/utility.hpp"
@@ -109,5 +111,25 @@ struct hash<vector<T>> {
 };
 
 } // namespace std
+
+namespace hashing {
+
+// Hash for (chain index, domain index) style keys: pack both into 64 bits.
+// The flat maps mix the result further.
+struct IntPairHash {
+    size_t operator()(const std::pair<int, int>& p) const noexcept {
+        return static_cast<size_t>(
+                static_cast<uint64_t>(static_cast<uint32_t>(p.first)) << 32 |
+                static_cast<uint32_t>(p.second));
+    }
+};
+
+// Open-addressing map keyed on a pair of ints. Unlike std::unordered_map,
+// inserting can move elements, so don't hold references across inserts.
+template <typename V>
+using IntPairMap =
+        boost::unordered_flat_map<std::pair<int, int>, V, IntPairHash>;
+
+} // namespace hashing
 
 #endif // HASH_H
